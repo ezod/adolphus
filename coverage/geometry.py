@@ -227,14 +227,14 @@ class Pose:
         elif T is None:
             self.T = Point( 0, 0, 0 )
         else:
-            raise TypeError( "Translation vector must be a Point or None." )
+            raise TypeError( "Translation vector must be a Point or None" )
         if isinstance( R, numpy.ndarray ):
             self.R = R
         elif R is None:
             self.R = numpy.array( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ], \
             [ 0.0, 0.0, 1.0 ] ] )
         else:
-            raise TypeError( "Rotation matrix must be a NumPy array or None." )
+            raise TypeError( "Rotation matrix must be a NumPy array or None" )
 
     def __add__( self, other ):
         """\
@@ -246,7 +246,7 @@ class Pose:
         @rtype: L{Pose}
         """
         if not isinstance( other, Pose ):
-            raise TypeError( "Argument must be a pose." )
+            raise TypeError( "Argument must be a pose" )
         Tnew = Point( ( other.R[ 0 ][ 0 ] * self.T.x + other.R[ 0 ][ 1 ] * \
         self.T.y + other.R[ 0 ][ 2 ] * self.T.z ), ( other.R[ 1 ][ 0 ] * \
         self.T.x + other.R[ 1 ][ 1 ] * self.T.y + other.R[ 1 ][ 2 ] * \
