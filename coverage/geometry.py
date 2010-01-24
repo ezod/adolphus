@@ -18,7 +18,7 @@ class Point:
     """
     def __init__( self, x, y, z ):
         """\
-        Initialize the point.
+        Constructor.
     
         @param x: The x coordinate.
         @type x: C{float}
@@ -215,7 +215,7 @@ class Pose:
     """
     def __init__( self, T, R ):
         """\
-        Initialize the pose.
+        Constructor.
 
         @param T: The 3-element translation vector.
         @type T: L{Point}
