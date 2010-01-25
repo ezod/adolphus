@@ -12,7 +12,7 @@ from math import sqrt, sin, cos, asin, acos, atan
 import numpy
 
 
-class Point:
+class Point( object ):
     """\
     3D point (vector) class.
     """
@@ -209,7 +209,7 @@ class Point:
 # FIXME: what is the proper way?
 TOO_SMALL = 0.0000000001
 
-class Pose:
+class Pose( object ):
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
