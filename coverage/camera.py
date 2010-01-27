@@ -8,6 +8,8 @@ Single-camera coverage model module.
 """
 
 from math import sqrt, sin, atan
+from fuzz import TrapezoidalFuzzyNumber, RealRange
+
 from geometry import Pose
 
 
@@ -51,25 +53,37 @@ class Camera( object ):
         @param pose: Pose of the camera in space.
         @type pose: L{geometry.Pose}
         """
-        # fuzzy set for visibility
+        # fuzzy sets for visibility
         ahl = atan( ( ou * su ) / ( 2. * f ) )
         ahr = atan( ( ( w - ou ) * su ) / ( 2. * f ) )
+        Cvh = TrapezoidalFuzzyNumber( \
+              RealRange( ( -sin( ahl ) + gamma, sin( ahr ) - gamma ) ),
+              RealRange( ( -sin( ahl ), sin( ahr ) ) ) )
+
         avl = atan( ( ov * sv ) / ( 2. * f ) )
         avr = atan( ( ( h - ov ) * sv ) / ( 2. * f ) )
+        Cvv = TrapezoidalFuzzyNumber( \
+              RealRange( ( -sin( avl ) + gamma, sin( avr ) - gamma ) ),
+              RealRange( ( -sin( avl ), sin( avr ) ) ) )
 
         # fuzzy set for resolution
         mr = min( ( w / ( 2. * sin( ( ahl + ahr ) / 2. ) ) ), 
                   ( h / ( 2. * sin( ( avl + avr ) / 2. ) ) ) )
         zr1 = ( 1. / r1 ) * mr
         zr2 = ( 1. / r2 ) * mr
+        Cr = TrapezoidalFuzzyNumber( RealRange( ( 0, zr1 ) ),
+                                     RealRange( ( 0, zr2 ) ) )
 
         # fuzzy set for focus
         zl = ( A * f * zS ) / ( A * f + min( su, sv ) * ( zS - f ) )
         zr = ( A * f * zS ) / ( A * f - min( su, sv ) * ( zS - f ) )
         zn = ( A * f * zS ) / ( A * f + cmax * ( zS - f ) )
         zf = ( A * f * zS ) / ( A * f - cmax * ( zS - f ) )
+        Cf = TrapezoidalFuzzyNumber( RealRange( ( zl, zr ) ),
+                                     RealRange( ( zn, zf ) ) )
         
         # fuzzy set for direction
+        # TODO: deal with angle stuff (2pi -> 0...)
 
         # pose
         self.pose = pose
