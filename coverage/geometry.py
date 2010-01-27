@@ -8,8 +8,43 @@ geometric descriptor functions for features.
 @license: GPL-3
 """
 
-from math import sqrt, sin, cos, asin, acos, atan
+from math import pi, sqrt, sin, cos, asin, acos, atan
 import numpy
+
+
+class Angle( float ):
+    """\
+    Angle class. All operations are modulo 2 * pi.
+    """
+    def __new__( cls, arg = 0.0 ):
+        return float.__new__( cls, float( arg ) % ( 2 * pi ) )
+
+    def __eq__( self, other ):
+        return float( self ) == float( other ) % ( 2 * pi )
+
+    def __ne__( self, other ):
+        return not self == other
+
+    def __gt__( self, other ):
+        return float( self ) > float( other ) % ( 2 * pi )
+
+    def __lt__( self, other ):
+        return float( self ) < float( other ) % ( 2 * pi )
+
+    def __ge__( self, other ):
+        return float( self ) >= float( other ) % ( 2 * pi )
+
+    def __le__( self, other ):
+        return float( self ) <= float( other ) % ( 2 * pi )
+
+    def __add__( self, other ):
+        return Angle( float( self ) + float( other ) )
+
+    def __sub__( self, other ):
+        return Angle( float( self ) - float( other ) )
+
+    def __neg__( self ):
+        return Angle( -float( self ) )
 
 
 class Point( object ):
@@ -202,12 +237,10 @@ class Point( object ):
         @param p: The other vector.
         @type p: L{Point}
         @return: Angle in radians.
-        @rtype: C{float}
+        @rtype: L{Angle}
         """
-        return fabs( acos( p.normal * self.normal ) )
+        return Angle( acos( p.normal * self.normal ) )
 
-# FIXME: what is the proper way?
-TOO_SMALL = 0.0000000001
 
 class Pose( object ):
     """\
@@ -248,10 +281,11 @@ class Pose( object ):
         if not isinstance( other, Pose ):
             raise TypeError( "Argument must be a pose" )
         Tnew = Point( ( other.R[ 0 ][ 0 ] * self.T.x + other.R[ 0 ][ 1 ] * \
-        self.T.y + other.R[ 0 ][ 2 ] * self.T.z ), ( other.R[ 1 ][ 0 ] * \
-        self.T.x + other.R[ 1 ][ 1 ] * self.T.y + other.R[ 1 ][ 2 ] * \
-        self.T.z ), ( other.R[ 2 ][ 0 ] * self.T.x + other.R[ 2 ][ 1 ] * \
-        self.T.y + other.R[ 2 ][ 2 ] * self.T.z ) ) + other.T
+                      self.T.y + other.R[ 0 ][ 2 ] * self.T.z ),
+                      ( other.R[ 1 ][ 0 ] * self.T.x + other.R[ 1 ][ 1 ] * \
+                      self.T.y + other.R[ 1 ][ 2 ] * self.T.z ),
+                      ( other.R[ 2 ][ 0 ] * self.T.x + other.R[ 2 ][ 1 ] * \
+                      self.T.y + other.R[ 2 ][ 2 ] * self.T.z ) ) + other.T
         Rnew = numpy.dot( other.R, self.R )
         return Pose( Tnew, Rnew )
 
@@ -302,17 +336,20 @@ class Pose( object ):
         @param z: The z translation coordinate.
         @type z: C{float}
         @param theta: Rotation about the x axis (roll) in radians.
-        @type theta: C{float}
+        @type theta: L{Angle}
         @param phi: Rotation about the y axis (pitch) in radians.
-        @type phi: C{float}
+        @type phi: L{Angle}
         @param psi: Rotation about the z axis (yaw) in radians.
-        @type psi: C{float}
+        @type psi: L{Angle}
         """
         self.T = Point( float( x ), float( y ), float( z ) )
 
-        theta = float( theta ) % ( acos( -1 ) * 2 )
-        phi = float( phi ) % ( acos( -1 ) * 2 )
-        psi = float( psi ) % ( acos( -1 ) * 2 )
+        if not isinstance( theta, Angle ):
+            theta = Angle( theta )
+        if not isinstance( phi, Angle ):
+            phi = Angle( phi )
+        if not isinstance( psi, Angle ):
+            psi = Angle( psi )
 
         self.R[ 0 ][ 0 ] = cos( phi ) * cos( psi )
         self.R[ 0 ][ 1 ] = sin( theta ) * sin( phi ) * \
@@ -328,11 +365,6 @@ class Pose( object ):
         self.R[ 2 ][ 1 ] = sin( theta ) * cos( phi )
         self.R[ 2 ][ 2 ] = cos( theta ) * cos( phi )
 
-        for i in range( 3 ):
-            for j in range( 3 ):
-                if abs( self.R[ i ][ j ] ) < TOO_SMALL:
-                    self.R[ i ][ j ] = 0.0
-
     @property
     def om( self ):
         """\
@@ -341,28 +373,14 @@ class Pose( object ):
         @return: Tuple containing roll, pitch, and yaw angles.
         @rtype: C{tuple}
         """
-        phi = asin( -1.0 * self.R[ 2 ][ 0 ] )
-        if phi < -TOO_SMALL:
-            phi += 2.0 * pi
-        if abs( phi ) < TOO_SMALL:
-            phi = 0.0
+        phi = Angle( asin( -1.0 * self.R[ 2 ][ 0 ] ) )
         sign = cos( phi ) / abs( cos( phi ) )
-        theta = atan( self.R[ 2 ][ 1 ] / self.R[ 2 ][ 2 ] )
-        if abs( theta ) > TOO_SMALL:
-            if sign * self.R[ 2 ][ 2 ] < 0:
-                theta += pi
-            elif sign * self.R[ 2 ][ 1 ] < 0:
-                theta += 2.0 * pi
-        else:
-            theta = 0.0
-        psi = atan( self.R[ 1 ][ 0 ] / self.R[ 0 ][ 0 ] )
-        if abs( psi ) > TOO_SMALL:
-            if sign * self.R[ 0 ][ 0 ] < 0:
-                psi += pi
-            elif sign * self.R[ 1 ][ 0 ] < 0:
-                psi += 2.0 * pi
-        else:
-            psi = 0.0
+        theta = Angle( atan( self.R[ 2 ][ 1 ] / self.R[ 2 ][ 2 ] ) )
+        if sign * self.R[ 2 ][ 2 ] < 0:
+            theta += pi
+        psi = Angle( atan( self.R[ 1 ][ 0 ] / self.R[ 0 ][ 0 ] ) )
+        if sign * self.R[ 0 ][ 0 ] < 0:
+            psi += pi
         return ( theta, phi, psi )
 
     @property
