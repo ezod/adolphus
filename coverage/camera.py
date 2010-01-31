@@ -7,10 +7,10 @@ Single-camera coverage model module.
 @license: GPL-3
 """
 
-from math import sqrt, sin, atan, pi
+from math import sin, atan, pi
 from fuzz import TrapezoidalFuzzyNumber
 
-from geometry import Angle, Point, Pose
+from geometry import Angle, Point, Pose, rotation_matrix
 
 
 class Camera( object ):
@@ -81,7 +81,7 @@ class Camera( object ):
         
         # fuzzy set for direction
         self.Cd = TrapezoidalFuzzyNumber( \
-                  ( Angle( pi / 2. + delta ), Angle( 3 * pi / 2. - delta ) )
+                  ( Angle( pi / 2. + delta ), Angle( 3 * pi / 2. - delta ) ),
                   ( Angle( pi / 2. ), Angle( 3 * pi / 2. ) ) )
 
         # pose
