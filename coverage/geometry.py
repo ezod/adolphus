@@ -324,47 +324,6 @@ class Pose( object ):
         """
         return str( self.T ) + "\n" + str( self.R )
 
-    def generate( self, x, y, z, theta, phi, psi ):
-        """\
-        Generate a T and R given a translation point and 3 fixed-axis rotation
-        angles.
-
-        @param x: The x translation coordinate.
-        @type x: C{float}
-        @param y: The y translation coordinate.
-        @type y: C{float}
-        @param z: The z translation coordinate.
-        @type z: C{float}
-        @param theta: Rotation about the x axis (roll) in radians.
-        @type theta: L{Angle}
-        @param phi: Rotation about the y axis (pitch) in radians.
-        @type phi: L{Angle}
-        @param psi: Rotation about the z axis (yaw) in radians.
-        @type psi: L{Angle}
-        """
-        self.T = Point( float( x ), float( y ), float( z ) )
-
-        if not isinstance( theta, Angle ):
-            theta = Angle( theta )
-        if not isinstance( phi, Angle ):
-            phi = Angle( phi )
-        if not isinstance( psi, Angle ):
-            psi = Angle( psi )
-
-        self.R[ 0 ][ 0 ] = cos( phi ) * cos( psi )
-        self.R[ 0 ][ 1 ] = sin( theta ) * sin( phi ) * \
-                           cos( psi ) - cos( theta ) * sin( psi )
-        self.R[ 0 ][ 2 ] = cos( theta ) * sin( phi ) * \
-                           cos( psi ) + sin( theta ) * sin( psi )
-        self.R[ 1 ][ 0 ] = cos( phi ) * sin( psi )
-        self.R[ 1 ][ 1 ] = sin( theta ) * sin( phi ) * \
-                           sin( psi ) + cos( theta ) * cos( psi )
-        self.R[ 1 ][ 2 ] = cos( theta ) * sin( phi ) * \
-                           sin( psi ) - sin( theta ) * cos( psi )
-        self.R[ 2 ][ 0 ] = -sin( phi )
-        self.R[ 2 ][ 1 ] = sin( theta ) * cos( phi )
-        self.R[ 2 ][ 2 ] = cos( theta ) * cos( phi )
-
     @property
     def om( self ):
         """\
@@ -439,3 +398,35 @@ class Pose( object ):
         """
         q = p + self.T
         return q
+
+
+def rotation_matrix( angle ):
+    """\
+    Generate R given a tuple of 3 fixed-axis rotation angles.
+
+    @param angle: Rotation angles in radians.
+    @type angle: C{tuple} of L{Angle}
+    @return: Rotation matrix.
+    @rtype: L{numpy.ndarray}
+    """
+    theta = Angle( angle[ 0 ] )
+    phi = Angle( angle[ 1 ] )
+    psi = Angle( angle[ 2 ] )
+
+    R = numpy.ndarray( ( 3, 3 ) )
+
+    R[ 0 ][ 0 ] = cos( phi ) * cos( psi )
+    R[ 0 ][ 1 ] = sin( theta ) * sin( phi ) * \
+                  cos( psi ) - cos( theta ) * sin( psi )
+    R[ 0 ][ 2 ] = cos( theta ) * sin( phi ) * \
+                  cos( psi ) + sin( theta ) * sin( psi )
+    R[ 1 ][ 0 ] = cos( phi ) * sin( psi )
+    R[ 1 ][ 1 ] = sin( theta ) * sin( phi ) * \
+                  sin( psi ) + cos( theta ) * cos( psi )
+    R[ 1 ][ 2 ] = cos( theta ) * sin( phi ) * \
+                  sin( psi ) - sin( theta ) * cos( psi )
+    R[ 2 ][ 0 ] = -sin( phi )
+    R[ 2 ][ 1 ] = sin( theta ) * cos( phi )
+    R[ 2 ][ 2 ] = cos( theta ) * cos( phi )
+
+    return R
