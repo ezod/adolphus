@@ -101,13 +101,13 @@ class Camera( object ):
         self.name = name
 
         # fuzzy sets for visibility
-        ahl = atan( ( ou * su ) / ( 2. * f ) )
-        ahr = atan( ( ( w - ou ) * su ) / ( 2. * f ) )
+        ahl = 2. * atan( ( ou * su ) / ( 2. * f ) )
+        ahr = 2. * atan( ( ( w - ou ) * su ) / ( 2. * f ) )
         self.Cvh = TrapezoidalFuzzyNumber( \
                    ( -sin( ahl ) + gamma, sin( ahr ) - gamma ),
                    ( -sin( ahl ), sin( ahr ) ) )
-        avl = atan( ( ov * sv ) / ( 2. * f ) )
-        avr = atan( ( ( h - ov ) * sv ) / ( 2. * f ) )
+        avl = 2. * atan( ( ov * sv ) / ( 2. * f ) )
+        avr = 2. * atan( ( ( h - ov ) * sv ) / ( 2. * f ) )
         self.Cvv = TrapezoidalFuzzyNumber( \
                    ( -sin( avl ) + gamma, sin( avr ) - gamma ),
                    ( -sin( avl ), sin( avr ) ) )
