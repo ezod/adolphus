@@ -59,7 +59,7 @@ class Point( object ):
         @type x: C{float}
         @param y: The y coordinate.
         @type y: C{float}
-        @param z: The z coordinate (optional, for 3D points).
+        @param z: The z coordinate.
         @type z: C{float}
         """
         self.x = float( x )
@@ -242,6 +242,40 @@ class Point( object ):
         return Angle( acos( p.normal * self.normal ) )
 
 
+class DirectionalPoint( Point ):
+    """\
+    3D directional point (spatial-directional vector) class.
+    """
+    def __init__( self, x, y, z, rho, eta ):
+        """\
+        Constructor.
+    
+        @param x: The x coordinate.
+        @type x: C{float}
+        @param y: The y coordinate.
+        @type y: C{float}
+        @param z: The z coordinate.
+        @type z: C{float}
+        @param rho: The inclination angle, from positive z-axis.
+        @type rho: L{Angle}
+        @param eta: The azimuth angle, right-handed from positive x-axis.
+        @type eta: L{Angle}
+        """
+        Point.__init__( self, x, y, z )
+        self.rho = Angle( rho )
+        self.eta = Angle( eta )
+        self._normalize()
+
+    def _normalize( self ):
+        """\
+        Normalize the inclination angle to within [0,pi), reversing the azimuth
+        angle as necesary.
+        """
+        if self.rho > pi:
+            self.rho -= 2. * ( self.rho - pi )
+            self.eta += pi
+
+
 class Pose( object ):
     """\
     Pose (rigid 3D Euclidean transformation) class.
@@ -376,16 +410,21 @@ class Pose( object ):
         @return: The rotated point/vector.
         @rtype: L{Point}
         """
-        q = Point( ( self.R[ 0 ][ 0 ] * p.x + \
-                     self.R[ 0 ][ 1 ] * p.y + \
-                     self.R[ 0 ][ 2 ] * p.z ),
-                   ( self.R[ 1 ][ 0 ] * p.x + \
-                     self.R[ 1 ][ 1 ] * p.y + \
-                     self.R[ 1 ][ 2 ] * p.z ),
-                   ( self.R[ 2 ][ 0 ] * p.x + \
-                     self.R[ 2 ][ 1 ] * p.y + \
-                     self.R[ 2 ][ 2 ] * p.z ) )
-        return q
+        x = ( self.R[ 0 ][ 0 ] * p.x + \
+              self.R[ 0 ][ 1 ] * p.y + \
+              self.R[ 0 ][ 2 ] * p.z )
+        y = ( self.R[ 1 ][ 0 ] * p.x + \
+              self.R[ 1 ][ 1 ] * p.y + \
+              self.R[ 1 ][ 2 ] * p.z )
+        z = ( self.R[ 2 ][ 0 ] * p.x + \
+              self.R[ 2 ][ 1 ] * p.y + \
+              self.R[ 2 ][ 2 ] * p.z )
+        if isinstance( p, DirectionalPoint ):
+            rho = p.rho # TODO: calculate new rho
+            eta = p.eta # TODO: calculate new eta
+            return DirectionalPoint( x, y, z, rho, eta )
+        else:
+            return Point( x, y, z )
 
     def map_translate( self, p ):
         """\

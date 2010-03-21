@@ -9,6 +9,7 @@ Coverage model module.
 
 from numpy import arange
 from math import sin, atan, pi
+from itertools import combinations
 from fuzz import IndexedSet, RealRange, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
 
 from geometry import Angle, Point, Pose, rotation_matrix
@@ -16,7 +17,7 @@ from geometry import Angle, Point, Pose, rotation_matrix
 
 class SpatialDirectionalRange( object ):
     """\
-    Spatial-directional range class.
+    Discrete spatial-directional range class.
     """
     def __init__( self, x, y, z, pstep, dstep ):
         """\
@@ -41,24 +42,22 @@ class SpatialDirectionalRange( object ):
 
     def generate_points( self ):
         """\
-        Directional point generator.
+        Discrete directional point generator.
 
         @return: The next directional point in the range.
-        @rtype: L{geometry.Point}, C{tuple} of L{geometry.Angle}
+        @rtype: L{geometry.DirectionalPoint}
         """
         for x in arange( self.x[ 0 ], self.x[ 1 ], self.pstep ):
             for y in arange( self.y[ 0 ], self.y[ 1 ], self.pstep ):
                 for z in arange( self.z[ 0 ], self.z[ 1 ], self.pstep ):
-                    for theta in arange( 0., 2 * pi, self.dstep ):
-                        for phi in arange( 0., 2 * pi, self.dstep ):
-                            for psi in arange( 0., 2 * pi, self.dstep ):
-                                yield Point( x, y, z ),( Angle( theta ),
-                                      Angle( phi ), Angle( psi ) )
+                    for rho in arange( 0., pi, self.dstep ):
+                        for eta in arange( 0., 2 * pi, self.dstep ):
+                            yield DirectionalPoint( x, y, z, rho, eta )
 
 
 class Camera( object ):
     """\
-    Single-camera model.
+    Single-camera model, using continous fuzzy sets.
     """
     def __init__( self, name, A, f, su, sv, ou, ov, h, w, zS, gamma,
                   r1, r2, cmax, delta, pose = Pose( None, None ) ):
@@ -126,11 +125,6 @@ class Camera( object ):
         zf = ( A * f * zS ) / ( A * f - cmax * ( zS - f ) )
         self.Cf = TrapezoidalFuzzyNumber( ( zl, zr ) , ( zn, zf ) )
         
-        # fuzzy set for direction
-        self.Cd = TrapezoidalFuzzyNumber( \
-                  ( Angle( pi / 2. + delta ), Angle( 3 * pi / 2. - delta ) ),
-                  ( Angle( pi / 2. ), Angle( 3 * pi / 2. ) ) )
-
         # pose
         self.pose = pose
 
@@ -153,23 +147,19 @@ class Camera( object ):
             return False
         return self.name == other.name
 
-    def mu( self, point, direction ):
+    def mu( self, dpoint ):
         """\
         Return the membership degree (coverage) for a directional point.
     
-        @param point: The point location.
-        @type point: L{geometry.Point}
-        @param direction: The direction of the point.
-        @type direction: C{tuple} of L{geometry.Angle}
+        @param dpoint: The point location.
+        @type dpoint: L{geometry.DirectionalPoint}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        if not isinstance( point, Point ):
-            raise TypeError, ( "invalid point" )
-        if not len( direction ) == 3:
-            raise ValueError, ( "direction must consist of three angles" )
+        if not isinstance( dpoint, DirectionalPoint ):
+            raise TypeError, ( "invalid directional point" )
 
-        campoint = ( -self.pose ).map( point )
+        campoint = ( -self.pose ).map( dpoint )
 
         # visibility
         mu_v = min( self.Cvh.mu( campoint.x / campoint.z ),
@@ -182,10 +172,8 @@ class Camera( object ):
         mu_f = self.Cf.mu( campoint.z )
 
         # direction
-        dirpose = Pose( Point( 0, 0, 0 ), rotation_matrix( direction ) )
-        dirangle = ( point - self.pose.T ).normal.angle( dirpose.map_rotate( Point( 0, 0, 1 ) ) )
-        mu_d = self.Cd.mu( dirangle )
-       
+        mu_d = 0 # TODO: calculate mu_d
+
         # return min( mu_v, mu_r, mu_f, mu_d )
         return mu_v * mu_r * mu_f * mu_d
 
@@ -229,12 +217,12 @@ class MultiCamera( IndexedSet ):
         @param key: The name of the camera to update.
         @type key: C{str}
         """
-        points = []
-        for point, direction in self.range.generate_points():
-            mu = self[ key ].mu( point, direction )
+        dpoints = []
+        for dpoint in self.range.generate_points():
+            mu = self[ key ].mu( dpoint )
             if mu > 0:
-                points.append( FuzzyElement( ( point, direction ), mu ) )
-        self.inscene[ key ] = FuzzySet( points )
+                dpoints.append( FuzzyElement( dpoint, mu ) )
+        self.inscene[ key ] = FuzzySet( dpoints )
 
 
 class MultiCameraSimple( MultiCamera ):
@@ -281,3 +269,15 @@ class MultiCamera3D( MultiCamera ):
         @type cameras: C{set}
         """
         MultiCamera.__init__( self, range, cameras )
+
+    def mu( point, direction ):
+        """\
+        TODO
+        """
+        pairs = set()
+        for pair in combinations( self, 2 ):
+            # intersection of pair -> set of intersections
+            # need inscene for it? ugh
+        # for intersection in set of intersections:
+            # mu = max( mu, this.mu )
+            pass
