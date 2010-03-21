@@ -177,6 +177,8 @@ class Point( object ):
         return "(" + str( self.x ) + ", " + str( self.y ) + ", " + \
         str( self.z ) + ")"
 
+    __str__ = __repr__
+
     @property
     def tuple( self ):
         """
@@ -274,6 +276,18 @@ class DirectionalPoint( Point ):
         if self.rho > pi:
             self.rho -= 2. * ( self.rho - pi )
             self.eta += pi
+
+    def __repr__( self ):
+        """\
+        String representation, displays in a tuple format.
+
+        @return: Spatial-directional vector string.
+        @rtype: C{string}
+        """
+        return "(" + str( self.x ) + ", " + str( self.y ) + ", " + \
+        str( self.z ) + ", " + str( self.rho ) + ", " + str( self.eta ) + ")"
+
+    __str__ = __repr__
 
 
 class Pose( object ):
