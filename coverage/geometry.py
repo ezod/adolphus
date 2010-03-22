@@ -434,8 +434,12 @@ class Pose( object ):
               self.R[ 2 ][ 1 ] * p.y + \
               self.R[ 2 ][ 2 ] * p.z )
         if isinstance( p, DirectionalPoint ):
-            rho = p.rho # TODO: calculate new rho
-            eta = p.eta # TODO: calculate new eta
+            unit = Point( sin( p.rho ) * cos( p.eta ),
+                          sin( p.rho ) * sin( p.eta ),
+                          cos( p.rho ) ).map( Pose( 0, self.R ) )
+            rho = unit.angle( Point( 0, 0, 1 ) )
+            unit.z = 0.0
+            eta = unit.angle( Point( 1, 0, 0 ) )
             return DirectionalPoint( x, y, z, rho, eta )
         else:
             return Point( x, y, z )
