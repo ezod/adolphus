@@ -11,6 +11,12 @@ geometric descriptor functions for features.
 from math import pi, sqrt, sin, cos, asin, acos, atan
 import numpy
 
+try:
+    import visual
+    vis = True
+except ImportError:
+    vis = False
+
 
 class Angle( float ):
     """\
@@ -233,7 +239,7 @@ class Point( object ):
         ( self.z - p.z ) ** 2 )
 
     def angle( self, p ):
-        """
+        """\
         Return the angle between this vector and another.
     
         @param p: The other vector.
@@ -242,6 +248,21 @@ class Point( object ):
         @rtype: L{Angle}
         """
         return Angle( acos( p.normal * self.normal ) )
+
+    def visualize( self, radius = 0.1, color = visual.color.white ):
+        """\
+        Plot the point in a 3D visual model.
+
+        @param radius: The radius of the sphere to plot at the point location.
+        @type radius: C{float}
+        @param color: The color in which to plot the point.
+        @type color: C{tuple}
+        """
+        if not vis:
+            raise NotImplementedError( "visual module not loaded" )
+        self.vis_point = visual.sphere( radius = radius,
+                                        pos = ( self.x, self.y, self.z ),
+                                        color = color )
 
 
 class DirectionalPoint( Point ):
@@ -288,6 +309,33 @@ class DirectionalPoint( Point ):
         str( self.z ) + ", " + str( self.rho ) + ", " + str( self.eta ) + ")"
 
     __str__ = __repr__
+
+    @property
+    def direction_unit( self ):
+        """\
+        Return a unit vector representation of the direction of this
+        directional point.
+
+        @return: Unit vector representation of the direction.
+        @rtype: L{Point}
+        """
+        return Point( sin( self.rho ) * cos( self.eta ),
+                      sin( self.rho ) * sin( self.eta ), cos( self.rho ) )
+
+    def visualize( self, radius = 0.1, color = visual.color.white ):
+        """\
+        Plot the directional point in a 3D visual model.
+
+        @param radius: The radius of the sphere to plot at the point location.
+        @type radius: C{float}
+        @param color: The color in which to plot the point.
+        @type color: C{tuple}
+        """
+        Point.visualize( self, radius, color )
+        unit = self.direction_unit
+        self.vis_dir = visual.arrow( pos = ( self.x, self.y, self.z ),
+                                     axis = ( unit.x, unit.y, unit.z ),
+                                     color = color )
 
 
 class Pose( object ):
@@ -434,9 +482,7 @@ class Pose( object ):
               self.R[ 2 ][ 1 ] * p.y + \
               self.R[ 2 ][ 2 ] * p.z )
         if isinstance( p, DirectionalPoint ):
-            unit = Point( sin( p.rho ) * cos( p.eta ),
-                          sin( p.rho ) * sin( p.eta ),
-                          cos( p.rho ) ).map( Pose( 0, self.R ) )
+            unit = p.direction_unit.map( Pose( 0, self.R ) )
             rho = unit.angle( Point( 0, 0, 1 ) )
             unit.z = 0.0
             eta = unit.angle( Point( 1, 0, 0 ) )
