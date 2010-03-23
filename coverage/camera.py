@@ -175,7 +175,18 @@ class Camera( object ):
         mu_f = self.Cf.mu( campoint.z )
 
         # direction
-        mu_d = 0 # TODO: calculate mu_d
+        r = sqrt( dpoint.x ** 2 + dpoint.y ** 2 )
+        try:
+            terma = ( dpoint.y / r ) * sin( dpoint.eta ) + \
+                    ( dpoint.x / r ) * cos( dpoint.eta )
+        except ZeroDivisionError:
+            terma = 1.0
+        try:
+            termb = atan( r / dpoint.z )
+        except ZeroDivisionError:
+            termb = pi / 2.0
+        mu_d = min( max( ( float( dpoint.rho ) - ( ( pi / 2.0 ) + \
+                         terma * termb ) ) / zeta, 0.0 ), 1.0 )
 
         # return min( mu_v, mu_r, mu_f, mu_d )
         return mu_v * mu_r * mu_f * mu_d
