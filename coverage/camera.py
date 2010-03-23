@@ -50,7 +50,10 @@ class SpatialDirectionalRange( object ):
         for x in arange( self.x[ 0 ], self.x[ 1 ], self.pstep ):
             for y in arange( self.y[ 0 ], self.y[ 1 ], self.pstep ):
                 for z in arange( self.z[ 0 ], self.z[ 1 ], self.pstep ):
-                    for rho in arange( 0., pi, self.dstep ):
+                    for rho in arange( 0., pi + self.dstep, self.dstep ):
+                        if rho in [ 0, pi ]:
+                            yield DirectionalPoint( x, y, z, rho, 0 )
+                            continue
                         for eta in arange( 0., 2 * pi, self.dstep ):
                             yield DirectionalPoint( x, y, z, rho, eta )
 
