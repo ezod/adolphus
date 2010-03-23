@@ -13,9 +13,9 @@ import numpy
 
 try:
     import visual
-    vis = True
+    VIS = True
 except ImportError:
-    vis = False
+    VIS = False
 
 
 class Angle( float ):
@@ -164,6 +164,21 @@ class Point( object ):
         """
         return Point( self.x / p, self.y / p, self.z / p )
 
+    def __pow__( self, p ):
+        """\
+        Cross product.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Result vector.
+        @rtype: L{Point}
+        """
+        if not isinstance( p, Point ):
+            raise TypeError( "cross product operand must be a vector" )
+        return Point( self.y * p.z - self.z * p.y,
+                      self.z * p.x - self.x * p.z,
+                      self.x * p.y - self.y * p.x )
+
     def __neg__( self ):
         """\
         Negation.
@@ -258,7 +273,7 @@ class Point( object ):
         @param color: The color in which to plot the point.
         @type color: C{tuple}
         """
-        if not vis:
+        if not VIS:
             raise NotImplementedError( "visual module not loaded" )
         self.vis_point = visual.sphere( radius = radius,
                                         pos = ( self.x, self.y, self.z ),
@@ -287,9 +302,9 @@ class DirectionalPoint( Point ):
         Point.__init__( self, x, y, z )
         self.rho = Angle( rho )
         self.eta = Angle( eta )
-        self._normalize()
+        self._normalize_direction()
 
-    def _normalize( self ):
+    def _normalize_direction( self ):
         """\
         Normalize the inclination angle to within [0,pi), reversing the azimuth
         angle as necesary.
@@ -297,6 +312,112 @@ class DirectionalPoint( Point ):
         if self.rho > pi:
             self.rho -= 2. * ( self.rho - pi )
             self.eta += pi
+
+    def __getitem__( self, i ):
+        """\
+        Return x, y, z, rho, and eta via numerical indexing.
+    
+        @param i: The numerical index.
+        @type i: C{int}
+        @return: The indexed coordinate.
+        @rtype: C{float}
+        """
+        if i < 3:
+            return Point.__getitem__( self, i )
+        elif i == 3:
+            return self.rho
+        elif i == 4:
+            return self.eta
+
+    def __setitem__( self, i, value ):
+        """\
+        Set x, y, z, rho, and eta via numerical indexing.
+    
+        @param i: The numerical index.
+        @type i: C{int}
+        @param value: The new coordinate value.
+        @type value: C{float}
+        """
+        if i < 3:
+            Point.__setitem__( self, i, value )
+        elif i == 3:
+            self.rho = value
+        elif i == 4:
+            self.eta = value
+
+    def __add__( self, p ):
+        """\
+        Vector addition.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint( self.x + p.x, self.y + p.y, self.z + p.z,
+                                 self.rho, self.eta )
+
+    def __sub__( self, p ):
+        """\
+        Vector subtraction.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint( self.x - p.x, self.y - p.y, self.z - p.z,
+                                 self.rho, self.eta )
+
+    def __mul__( self, p ):
+        """\
+        Scalar multiplication (if p is a scalar) or dot product (if p is a
+        vector).
+
+        @param p: The operand scalar or vector.
+        @type p: C{float} or L{Point}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        if isinstance( p, Point ):
+            return ( self.x * p.x + self.y * p.y + self.z * p.z )
+        else:
+            return DirectionalPoint( self.x * p, self.y * p, self.z * p,
+                                     self.rho, self.eta )
+
+    def __rmul__( self, p ):
+        """\
+        Scalar multiplication (if p is a scalar) or dot product (if p is a
+        vector).
+
+        @param p: The operand scalar or vector.
+        @type p: C{float} or L{Point}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return self.__mul__( p )
+
+    def __div__( self, p ):
+        """\
+        Scalar division.
+
+        @param p: The scalar divisor.
+        @type p: C{float}
+        @return: Result vector.
+        @rtype: L{Point}
+        """
+        return DirectionalPoint( self.x / p, self.y / p, self.z / p,
+                                 self.rho, self.eta )
+
+    def __neg__( self ):
+        """\
+        Negation.
+
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint( -self.x, -self.y, -self.z,
+                                 self.rho + pi, self.eta )
 
     def __repr__( self ):
         """\
@@ -482,7 +603,7 @@ class Pose( object ):
               self.R[ 2 ][ 1 ] * p.y + \
               self.R[ 2 ][ 2 ] * p.z )
         if isinstance( p, DirectionalPoint ):
-            unit = p.direction_unit.map( Pose( 0, self.R ) )
+            unit = Pose( None, self.R ).map( p.direction_unit )
             rho = unit.angle( Point( 0, 0, 1 ) )
             unit.z = 0.0
             eta = unit.angle( Point( 1, 0, 0 ) )
@@ -533,3 +654,45 @@ def rotation_matrix( angle ):
     R[ 2 ][ 2 ] = cos( theta ) * cos( phi )
 
     return R
+
+
+def visual_axes( scale ):
+    """\
+    Display a set of 3D axes.
+
+    @param scale: The scale of the axis set.
+    @type scale: C{float}
+    """
+    if not VIS:
+        raise NotImplementedError( "visual module not loaded" )
+
+    for a in [ tuple( [ i == j and scale * 5 or 0 for i in range( 3 ) ] ) \
+                  for j in range( 3 ) ]:
+        visual.arrow( pos = ( 0, 0, 0 ), axis = a, shaftwidth = scale / 10.0 )
+
+    visual.cylinder( pos = ( ( scale * 6.0 ), -( scale / 4.0 ), 0 ),
+              axis = ( -( scale / 2.0 ), ( scale / 2.0 ), 0 ),
+              radius = scale / 20.0 )
+    visual.cylinder( pos = ( scale * 5.5, -( scale / 4.0 ), 0 ),
+              axis = ( ( scale / 2.0 ), ( scale / 2.0 ), 0 ),
+              radius = scale / 20.0 )
+
+    visual.cylinder( pos = ( 0, ( scale * 5.5 ), 0 ),
+              axis = ( 0, ( scale / 4.0 ), 0 ),
+              radius = scale / 20.0 )
+    visual.cylinder( pos = ( 0, ( scale * 5.75 ), 0 ),
+              axis = ( -( scale * 0.17 ), ( scale / 4.0 ), ( scale * 0.17 ) ),
+              radius = scale / 20.0 )
+    visual.cylinder( pos = ( 0, ( scale * 5.75 ), 0 ),
+              axis = ( ( scale * 0.17 ), ( scale / 4.0 ), -( scale * 0.17 ) ),
+              radius = scale / 20.0 )
+
+    visual.cylinder( pos = ( 0, -( scale / 4.0 ), ( scale * 6.0 ) ),
+              axis = ( 0.0, ( scale / 2.0 ), -( scale / 2.0 ) ),
+              radius = scale / 20.0 )
+    visual.cylinder( pos = ( 0, -( scale / 4.0 ), ( scale * 6.0 ) ),
+              axis = ( 0.0, 0.0, -( scale / 2.0 ) ),
+              radius = scale / 20.0 )
+    visual.cylinder( pos = ( 0, ( scale / 4.0 ), ( scale * 6.0 ) ),
+              axis = ( 0.0, 0.0, -( scale / 2.0 ) ),
+              radius = scale / 20.0 )
