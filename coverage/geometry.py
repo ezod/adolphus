@@ -264,7 +264,7 @@ class Point( object ):
         """
         return Angle( acos( p.normal * self.normal ) )
 
-    def visualize( self, radius = 0.1, color = visual.color.white ):
+    def visualize( self, radius = 0.1, color = ( 1, 1, 1 ), opacity = 1.0 ):
         """\
         Plot the point in a 3D visual model.
 
@@ -272,12 +272,14 @@ class Point( object ):
         @type radius: C{float}
         @param color: The color in which to plot the point.
         @type color: C{tuple}
+        @param opacity: The opacity with which to plot the point.
+        @type opacity: C{float}
         """
         if not VIS:
             raise NotImplementedError( "visual module not loaded" )
         self.vis_point = visual.sphere( radius = radius,
                                         pos = ( self.x, self.y, self.z ),
-                                        color = color )
+                                        color = color, opacity = opacity )
 
 
 class DirectionalPoint( Point ):
@@ -443,7 +445,7 @@ class DirectionalPoint( Point ):
         return Point( sin( self.rho ) * cos( self.eta ),
                       sin( self.rho ) * sin( self.eta ), cos( self.rho ) )
 
-    def visualize( self, radius = 0.1, color = visual.color.white ):
+    def visualize( self, radius = 0.1, color = ( 1, 1, 1 ), opacity = 1.0 ):
         """\
         Plot the directional point in a 3D visual model.
 
@@ -451,12 +453,14 @@ class DirectionalPoint( Point ):
         @type radius: C{float}
         @param color: The color in which to plot the point.
         @type color: C{tuple}
+        @param opacity: The opacity with which to plot the point.
+        @type opacity: C{float}
         """
         Point.visualize( self, radius, color )
         unit = self.direction_unit
         self.vis_dir = visual.arrow( pos = ( self.x, self.y, self.z ),
                                      axis = ( unit.x, unit.y, unit.z ),
-                                     color = color )
+                                     color = color, opacity = opacity )
 
 
 class Pose( object ):
