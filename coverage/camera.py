@@ -8,14 +8,14 @@ Coverage model module.
 """
 
 from numpy import arange
-from math import sin, atan, pi
+from math import sqrt, sin, cos, atan, pi
 from itertools import combinations
 from fuzz import IndexedSet, RealRange, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
 
-from geometry import Angle, Point, Pose, rotation_matrix
+from geometry import Angle, Point, DirectionalPoint, Pose, rotation_matrix
 
 
-class SpatialDirectionalRange( object ):
+class DiscreteSpatialDirectionalRange( object ):
     """\
     Discrete spatial-directional range class.
     """
@@ -63,7 +63,7 @@ class Camera( object ):
     Single-camera model, using continous fuzzy sets.
     """
     def __init__( self, name, A, f, su, sv, ou, ov, h, w, zS, gamma,
-                  r1, r2, cmax, delta, pose = Pose( None, None ) ):
+                  r1, r2, cmax, zeta, pose = Pose( None, None ) ):
         """\
         Constructor.
 
@@ -95,8 +95,8 @@ class Camera( object ):
         @type r2: C{float}
         @param cmax: Maximum acceptable circle of confusion (application).
         @type cmax: C{float}
-        @param delta: Fuzzification value for direction (application).
-        @type delta: C{float}
+        @param zeta: Fuzzification value for direction (application).
+        @type zeta: C{float}
         @param pose: Pose of the camera in space.
         @type pose: L{geometry.Pose}
         """
@@ -127,6 +127,9 @@ class Camera( object ):
         zn = ( A * f * zS ) / ( A * f + cmax * ( zS - f ) )
         zf = ( A * f * zS ) / ( A * f - cmax * ( zS - f ) )
         self.Cf = TrapezoidalFuzzyNumber( ( zl, zr ) , ( zn, zf ) )
+
+        # fuzzifier for direction
+        self.zeta = zeta
         
         # pose
         self.pose = pose
@@ -186,7 +189,7 @@ class Camera( object ):
         except ZeroDivisionError:
             termb = pi / 2.0
         mu_d = min( max( ( float( dpoint.rho ) - ( ( pi / 2.0 ) + \
-                         terma * termb ) ) / zeta, 0.0 ), 1.0 )
+                         terma * termb ) ) / self.zeta, 0.0 ), 1.0 )
 
         # return min( mu_v, mu_r, mu_f, mu_d )
         return mu_v * mu_r * mu_f * mu_d
@@ -201,13 +204,14 @@ class MultiCamera( IndexedSet ):
         Constructor.
 
         @param range: The spatial-directional range.
-        @type range: L{SpatialDirectionalRange}
+        @type range: L{DiscreteSpatialDirectionalRange}
         @param cameras: The initial set of cameras.
         @type cameras: C{set}
         """
         if self.__class__ is MultiCamera:
             raise NotImplementedError, ( "please use one of the subclasses" )
         IndexedSet.__init__( self, 'name', cameras )
+        self.range = range
         self.inscene = {}
         for camera in self:
             self._update_inscene( camera.name )
@@ -254,7 +258,7 @@ class MultiCameraSimple( MultiCamera ):
         """
         MultiCamera.__init__( self, range, cameras )
 
-    def mu( point, direction ):
+    def mu( self, point, direction ):
         """\
         TODO
         """
@@ -284,7 +288,7 @@ class MultiCamera3D( MultiCamera ):
         """
         MultiCamera.__init__( self, range, cameras )
 
-    def mu( point, direction ):
+    def mu( self, point, direction ):
         """\
         TODO
         """
