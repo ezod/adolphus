@@ -28,9 +28,9 @@ def dir_mu( p, zeta ):
 
 if __name__ == "__main__":
     visual_axes( 1 )
-    for p in generate_points( Point( 5, 0, 5 ), pi / 8.0 ):
+    for p in generate_points( Point( 5, 0, 5 ), pi / 4.0 ):
         p.visualize( color = color.red, opacity = dir_mu( p, 1.5 ) )
-    for p in generate_points( Point( 0, 5, 5 ), pi / 8.0 ):
+    for p in generate_points( Point( 0, 5, 5 ), pi / 4.0 ):
         p.visualize( color = color.red, opacity = dir_mu( p, 1.5 ) )
-    for p in generate_points( Point( 5, 5, 5 ), pi / 8.0 ):
+    for p in generate_points( Point( 5, 5, 5 ), pi / 4.0 ):
         p.visualize( color = color.red, opacity = dir_mu( p, 1.5 ) )
