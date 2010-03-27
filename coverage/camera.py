@@ -15,9 +15,9 @@ from fuzz import IndexedSet, RealRange, TrapezoidalFuzzyNumber, FuzzySet, FuzzyE
 from geometry import Angle, Point, DirectionalPoint, Pose, rotation_matrix
 
 
-class DiscreteSpatialDirectionalRange( object ):
+class Scene( object ):
     """\
-    Discrete spatial-directional range class.
+    Discrete spatial-directional range with occlusion class.
     """
     def __init__( self, x, y, z, pstep, dstep ):
         """\
@@ -39,6 +39,18 @@ class DiscreteSpatialDirectionalRange( object ):
         self.z = RealRange( z )
         self.pstep = pstep
         self.dstep = dstep
+        self.opaque = set()
+
+    def make_opaque( self, p ):
+        """\
+        Add a point to
+
+        @param p: Discrete point to make opaque.
+        @type p: L{geometry.Point}
+        """
+        if p.x % self.pstep or p.y % self.pstep or p.z % self.pstep:
+            raise ValueError( "discrete point must fall on the grid" )
+        self.opaque.add( p )
 
     def generate_points( self ):
         """\
@@ -50,6 +62,8 @@ class DiscreteSpatialDirectionalRange( object ):
         for x in arange( self.x[ 0 ], self.x[ 1 ], self.pstep ):
             for y in arange( self.y[ 0 ], self.y[ 1 ], self.pstep ):
                 for z in arange( self.z[ 0 ], self.z[ 1 ], self.pstep ):
+                    if Point( x, y, z ) in self.opaque:
+                        continue
                     for rho in arange( 0., pi + self.dstep, self.dstep ):
                         if rho in [ 0, pi ]:
                             yield DirectionalPoint( x, y, z, rho, 0 )
@@ -199,19 +213,19 @@ class MultiCamera( IndexedSet ):
     """\
     Abstract base class for multi-camera model.
     """
-    def __init__( self, range, cameras = set() ):
+    def __init__( self, scene, cameras = set() ):
         """\
         Constructor.
 
-        @param range: The spatial-directional range.
-        @type range: L{DiscreteSpatialDirectionalRange}
+        @param scene: The discrete scene model.
+        @type scene: L{Scene}
         @param cameras: The initial set of cameras.
         @type cameras: C{set}
         """
         if self.__class__ is MultiCamera:
             raise NotImplementedError, ( "please use one of the subclasses" )
+        self.scene = scene
         IndexedSet.__init__( self, 'name', cameras )
-        self.range = range
         self.inscene = {}
         for camera in self:
             self._update_inscene( camera.name )
@@ -236,7 +250,7 @@ class MultiCamera( IndexedSet ):
         @type key: C{str}
         """
         dpoints = []
-        for dpoint in self.range.generate_points():
+        for dpoint in self.scene.generate_points():
             mu = self[ key ].mu( dpoint )
             if mu > 0:
                 dpoints.append( FuzzyElement( dpoint, mu ) )
@@ -247,16 +261,16 @@ class MultiCameraSimple( MultiCamera ):
     """\
     Simple (single-camera coverage) multi-camera model.
     """
-    def __init__( self, range, cameras = set() ):
+    def __init__( self, scene, cameras = set() ):
         """\
         Constructor.
 
-        @param range: The spatial-directional range.
-        @type range: L{SpatialDirectionalRange}
+        @param scene: The discrete scene model.
+        @type scene: L{Scene}
         @param cameras: The initial set of cameras.
         @type cameras: C{set}
         """
-        MultiCamera.__init__( self, range, cameras )
+        MultiCamera.__init__( self, scene, cameras )
 
     def mu( self, point, direction ):
         """\
@@ -277,16 +291,16 @@ class MultiCamera3D( MultiCamera ):
     """\
     3D (dual-camera coverage) multi-camera model.
     """
-    def __init__( self, range, cameras = set() ):
+    def __init__( self, scene, cameras = set() ):
         """\
         Constructor.
 
-        @param range: The spatial-directional range.
-        @type range: L{SpatialDirectionalRange}
+        @param scene: The discrete scene model.
+        @type scene: L{Scene}
         @param cameras: The initial set of cameras.
         @type cameras: C{set}
         """
-        MultiCamera.__init__( self, range, cameras )
+        MultiCamera.__init__( self, scene, cameras )
 
     def mu( self, point, direction ):
         """\
