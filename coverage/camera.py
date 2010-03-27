@@ -71,6 +71,22 @@ class Scene( object ):
                         for eta in arange( 0., 2 * pi, self.dstep ):
                             yield DirectionalPoint( x, y, z, rho, eta )
 
+    def occluded( self, p, cam = Point( 0, 0, 0 ) ):
+        """\
+        Find the 6-connectivity voxel traversal of the line segment between the
+        specified point and the principal point of a camera, and return whether
+        the point is occluded from the camera viewpoint by opaque voxels.
+
+        @param p: The point to test.
+        @type p: L{geometry.Point}
+        @param cam: The camera principal point (translation component of pose). 
+        @type cam: L{geometry.Point}
+        @return: True if occluded, false otherwise.
+        @rtype: C{bool}
+        """
+        # TODO: voxel traversal, exit early & return True if any one is opaque
+        return False
+
 
 class Camera( object ):
     """\
