@@ -344,8 +344,9 @@ class MultiCamera( IndexedSet ):
         """
         if self.__class__ is MultiCamera:
             raise NotImplementedError, ( "please use one of the subclasses" )
-        self.scene = scene
         IndexedSet.__init__( self, 'name', cameras )
+        self.model = FuzzySet()
+        self.scene = scene
         self.inscene = {}
         for camera in self:
             self._update_inscene( camera.name )
@@ -392,20 +393,16 @@ class MultiCameraSimple( MultiCamera ):
         """
         MultiCamera.__init__( self, scene, cameras )
 
-    def mu( self, point, direction ):
+    def _update( self ):
         """\
-        TODO
+        Update the simple multi-camera network discrete spatial-directional
+        fuzzy set (coverage model).
         """
-        # this is not very efficient - cache the whole set?
-        mu = 0.
+        self.model = FuzzySet( [ FuzzyElement( dpoint, mu = 0.0 ) \
+                     for dpoint in self.scene.generate_points() ] )
         for camera in self:
-            try:
-                mu = max( mu, 
-                        self.inscene[ camera.name ][ ( point, direction ) ].mu )
-            except KeyError:
-                pass
-        return mu
-                
+            self.model |= self.inscene[ camera.name ]
+
 
 class MultiCamera3D( MultiCamera ):
     """\
@@ -422,14 +419,15 @@ class MultiCamera3D( MultiCamera ):
         """
         MultiCamera.__init__( self, scene, cameras )
 
-    def mu( self, point, direction ):
+    def _update( self ):
         """\
-        TODO
+        Update the 3D multi-camera network discrete spatial-directional fuzzy
+        set (coverage model).
         """
-        pairs = set()
-        for pair in combinations( self, 2 ):
-            # intersection of pair -> set of intersections
-            # need inscene for it? ugh
-        # for intersection in set of intersections:
-            # mu = max( mu, this.mu )
-            pass
+        self.model = FuzzySet( [ FuzzyElement( dpoint, mu = 0.0 ) \
+                     for dpoint in self.scene.generate_points() ] )
+        pairs = set( [ self.inscene[ pair[ 0 ].name ] & \
+                       self.inscene[ pair[ 1 ].name ] \
+                       for pair in combinations( self, 2 ) ] )
+        for pair in pairs:
+            self.model |= pair
