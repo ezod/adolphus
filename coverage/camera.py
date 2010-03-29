@@ -84,7 +84,111 @@ class Scene( object ):
         @return: True if occluded, false otherwise.
         @rtype: C{bool}
         """
-        # TODO: voxel traversal, exit early & return True if any one is opaque
+        # setup
+        d = [ abs( p[ i ] - cam[ i ] ) for i in range( 3 ) ]
+        u = [ cam[ i ] - int( cam[ i ] / self.pstep ) * self.pstep \
+              for i in range( 3 ) ]
+        s = [ 1.0, 1.0, 1.0 ]
+        for i in range( 3 ):
+            try:
+                s[ i ] = ( p[ i ] - cam[ i ] ) / ( d[ i ] )
+            except ZeroDivisionError:
+                s = 1.0
+
+        # driving axis
+        if d[ 0 ] > d[ 1 ] and d[ 0 ] > d[ 2 ]:
+            x, y, z = 0, 1, 2
+        elif d[ 1 ] > d[ 0 ] and d[ 1 ] > d[ 2 ]:
+            x, y, z = 1, 2, 0
+        else:
+            x, y, z = 2, 0, 1
+
+        # voxel traversal
+        P = [ int( cam[ i ] / self.pstep ) for i in range( 3 ) ]
+        if Point( P[ 0 ], P[ 1 ], P[ 2 ] ) in self.opaque:
+            return True
+        P2 = int( p[ x ] / self.pstep )
+        exy = ( u[ y ] - self.pstep ) * d[ x ] + \
+              ( self.pstep - u[ x ] ) * d[ y ]
+        exz = ( u[ z ] - self.pstep ) * d[ x ] + \
+              ( self.pstep - u[ x ] ) * d[ z ]
+        dxy = self.pstep * d[ y ]
+        d1xy = dxy - self.pstep * d[ x ]
+        dxz = self.pstep * d[ z ]
+        d1xz = dxz - self.pstep * d[ x ]
+        while P[ x ] < P2:
+            if exy > 0:
+                if exz > 0:
+                    if exy * d[ z ] > exz * d[ y ]:
+                        if Point( P[ 0 ] + ( y == 0 and s[ 0 ] or 0 ),
+                                  P[ 1 ] + ( y == 1 and s[ 1 ] or 0 ),
+                                  P[ 2 ] + ( y == 2 and s[ 2 ] or 0 ) ) \
+                        in self.opaque:
+                            return True
+                    else:
+                        if Point( P[ 0 ] + ( z == 0 and s[ 0 ] or 0 ),
+                                  P[ 1 ] + ( z == 1 and s[ 1 ] or 0 ),
+                                  P[ 2 ] + ( z == 2 and s[ 2 ] or 0 ) ) \
+                        in self.opaque:
+                            return True
+                    if Point( P[ 0 ] + ( y == 0 and s[ 0 ] or 0 ) \
+                                     + ( z == 0 and s[ 0 ] or 0 ),
+                              P[ 1 ] + ( y == 1 and s[ 0 ] or 0 ) \
+                                     + ( z == 1 and s[ 0 ] or 0 ),
+                              P[ 2 ] + ( y == 2 and s[ 0 ] or 0 ) \
+                                     + ( z == 2 and s[ 0 ] or 0 ) ) \
+                    in self.opaque:
+                        return True
+                    P = [ P[ i ] + s[ i ] for i in range( 3 ) ]
+                    if Point( P[ 0 ], P[ 1 ], P[ 2 ] ) in self.opaque:
+                        return True
+                    exy += d1xy
+                    exz += d1xz
+                else:
+                    if Point( P[ 0 ] + ( y == 0 and s[ 0 ] or 0 ),
+                              P[ 1 ] + ( y == 1 and s[ 1 ] or 0 ),
+                              P[ 2 ] + ( y == 2 and s[ 2 ] or 0 ) ) \
+                    in self.opaque:
+                        return True
+                    if Point( P[ 0 ] + ( x == 0 and s[ 0 ] or 0 ) \
+                                     + ( y == 0 and s[ 0 ] or 0 ),
+                              P[ 1 ] + ( x == 1 and s[ 0 ] or 0 ) \
+                                     + ( y == 1 and s[ 0 ] or 0 ),
+                              P[ 2 ] + ( x == 2 and s[ 0 ] or 0 ) \
+                                     + ( y == 2 and s[ 0 ] or 0 ) ) \
+                    in self.opaque:
+                        return True
+                    P[ x ] += s[ x ]
+                    P[ y ] += s[ y ]
+                    exy = exy + d1xy
+                    exz = exz + dxz
+            elif exz > 0:
+                if Point( P[ 0 ] + ( z == 0 and s[ 0 ] or 0 ),
+                          P[ 1 ] + ( z == 1 and s[ 1 ] or 0 ),
+                          P[ 2 ] + ( z == 2 and s[ 2 ] or 0 ) ) \
+                in self.opaque:
+                    return True
+                if Point( P[ 0 ] + ( x == 0 and s[ 0 ] or 0 ) \
+                                 + ( z == 0 and s[ 0 ] or 0 ),
+                          P[ 1 ] + ( x == 1 and s[ 0 ] or 0 ) \
+                                 + ( z == 1 and s[ 0 ] or 0 ),
+                          P[ 2 ] + ( x == 2 and s[ 0 ] or 0 ) \
+                                 + ( z == 2 and s[ 0 ] or 0 ) ) \
+                in self.opaque:
+                    return True
+                P[ x ] += s[ x ]
+                P[ z ] += s[ z ]
+                exy += dxy
+                exz += d1xz
+            else:
+                if Point( P[ 0 ] + ( x == 0 and s[ 0 ] or 0 ),
+                          P[ 1 ] + ( x == 1 and s[ 1 ] or 0 ),
+                          P[ 2 ] + ( x == 2 and s[ 2 ] or 0 ) ) \
+                in self.opaque:
+                    return True
+                P[ x ] += s[ x ]
+                exy = exy + dxy
+                exz = exz + dxz
         return False
 
 
