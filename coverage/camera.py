@@ -364,7 +364,7 @@ class MultiCamera( IndexedSet ):
 
     def _update_inscene( self, key ):
         """\
-        Update an individual in-scene camera fuzzy set.
+        Update an individual in-scene camera fuzzy set (with occlusion).
 
         @param key: The name of the camera to update.
         @type key: C{str}
@@ -372,7 +372,7 @@ class MultiCamera( IndexedSet ):
         dpoints = []
         for dpoint in self.scene.generate_points():
             mu = self[ key ].mu( dpoint )
-            if mu > 0:
+            if mu > 0 and not self.scene.occluded( dpoint, self[ key ].pose.T ):
                 dpoints.append( FuzzyElement( dpoint, mu ) )
         self.inscene[ key ] = FuzzySet( dpoints )
 
