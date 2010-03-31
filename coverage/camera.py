@@ -10,9 +10,16 @@ Coverage model module.
 from numpy import arange
 from math import sqrt, sin, cos, atan, pi
 from itertools import combinations
-from fuzz import IndexedSet, RealRange, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
+from fuzz import IndexedSet, RealRange, TrapezoidalFuzzyNumber, FuzzySet, \
+                 FuzzyElement
 
 from geometry import Angle, Point, DirectionalPoint, Pose, rotation_matrix
+
+try:
+    import visual
+    VIS = True
+except ImportError:
+    VIS = False
 
 
 class Scene( object ):
@@ -328,6 +335,19 @@ class Camera( object ):
         # return min( mu_v, mu_r, mu_f, mu_d )
         return mu_v * mu_r * mu_f * mu_d
 
+    def visualize( self, color = ( 1, 1, 1 ) ):
+        """\
+        Plot the camera in a 3D visual model.
+
+        @param color: The color in which to plot the point.
+        @type color: C{tuple}
+        """
+        if not VIS:
+            raise NotImplementedError( "visual module not loaded" )
+        visual.pyramid( pos = self.pose.T.tuple, axis = \
+            self.pose.map_rotate( Point( 0, 0, -50.0 ) ).tuple, \
+            size = ( 50.0, 50.0, 50.0 ), color = color )
+
 
 class MultiCamera( IndexedSet ):
     """\
@@ -376,6 +396,20 @@ class MultiCamera( IndexedSet ):
             if mu > 0 and not self.scene.occluded( dpoint, self[ key ].pose.T ):
                 dpoints.append( FuzzyElement( dpoint, mu ) )
         self.inscene[ key ] = FuzzySet( dpoints )
+
+    def visualize( self ):
+        """\
+        Visualize all cameras and the directional points of the coverage model
+        (with opacity reflecting degree of coverage).
+        """
+        if not VIS:
+            raise NotImplementedError( "visual module not loaded" )
+        for camera in self:
+            camera.visualize()
+        for dpoint in self.scene.generate_points():
+            if dpoint in self.model:
+                dpoint.visualize( color = ( 1, 0, 0 ),
+                                  opacity = self.model[ dpoint ].mu )
 
 
 class MultiCameraSimple( MultiCamera ):
