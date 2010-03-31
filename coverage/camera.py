@@ -335,18 +335,20 @@ class Camera( object ):
         # return min( mu_v, mu_r, mu_f, mu_d )
         return mu_v * mu_r * mu_f * mu_d
 
-    def visualize( self, color = ( 1, 1, 1 ) ):
+    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ) ):
         """\
         Plot the camera in a 3D visual model.
 
+        @param scale: The scale of the camera.
+        @type scale: C{float}
         @param color: The color in which to plot the point.
         @type color: C{tuple}
         """
         if not VIS:
             raise NotImplementedError( "visual module not loaded" )
         visual.pyramid( pos = self.pose.T.tuple, axis = \
-            self.pose.map_rotate( Point( 0, 0, -50.0 ) ).tuple, \
-            size = ( 50.0, 50.0, 50.0 ), color = color )
+            self.pose.map_rotate( Point( 0, 0, -5.0 * scale ) ).tuple, \
+            size = ( 5.0 * scale, 5.0 * scale, 5.0 * scale ), color = color )
 
 
 class MultiCamera( IndexedSet ):
@@ -397,18 +399,21 @@ class MultiCamera( IndexedSet ):
                 dpoints.append( FuzzyElement( dpoint, mu ) )
         self.inscene[ key ] = FuzzySet( dpoints )
 
-    def visualize( self ):
+    def visualize( self, scale = 1.0 ):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
+
+        @param scale: The scale of the individual elements.
+        @type scale: C{float}
         """
         if not VIS:
             raise NotImplementedError( "visual module not loaded" )
         for camera in self:
-            camera.visualize()
+            camera.visualize( scale = scale )
         for dpoint in self.scene.generate_points():
             if dpoint in self.model:
-                dpoint.visualize( color = ( 1, 0, 0 ),
+                dpoint.visualize( scale = scale, color = ( 1, 0, 0 ),
                                   opacity = self.model[ dpoint ].mu )
 
 

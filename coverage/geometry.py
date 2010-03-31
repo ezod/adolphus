@@ -264,12 +264,12 @@ class Point( object ):
         """
         return Angle( acos( p.normal * self.normal ) )
 
-    def visualize( self, radius = 0.1, color = ( 1, 1, 1 ), opacity = 1.0 ):
+    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ), opacity = 1.0 ):
         """\
         Plot the point in a 3D visual model.
 
-        @param radius: The radius of the sphere to plot at the point location.
-        @type radius: C{float}
+        @param scale: The scale of the sphere.
+        @type scale: C{float}
         @param color: The color in which to plot the point.
         @type color: C{tuple}
         @param opacity: The opacity with which to plot the point.
@@ -277,7 +277,7 @@ class Point( object ):
         """
         if not VIS:
             raise NotImplementedError( "visual module not loaded" )
-        self.vis_point = visual.sphere( radius = radius,
+        self.vis_point = visual.sphere( radius = 0.1 * scale,
                                         pos = ( self.x, self.y, self.z ),
                                         color = color, opacity = opacity )
 
@@ -445,19 +445,20 @@ class DirectionalPoint( Point ):
         return Point( sin( self.rho ) * cos( self.eta ),
                       sin( self.rho ) * sin( self.eta ), cos( self.rho ) )
 
-    def visualize( self, radius = 0.1, color = ( 1, 1, 1 ), opacity = 1.0 ):
+    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ), opacity = 1.0 ):
         """\
         Plot the directional point in a 3D visual model.
 
-        @param radius: The radius of the sphere to plot at the point location.
-        @type radius: C{float}
+        @param scale: The scale of the sphere.
+        @type scale: C{float}
         @param color: The color in which to plot the point.
         @type color: C{tuple}
         @param opacity: The opacity with which to plot the point.
         @type opacity: C{float}
         """
-        Point.visualize( self, radius, color )
-        unit = self.direction_unit
+        Point.visualize( self, radius = 0.1 * scale, color = color,
+                         opacity = opacity )
+        unit = scale * self.direction_unit
         self.vis_dir = visual.arrow( pos = ( self.x, self.y, self.z ),
                                      axis = ( unit.x, unit.y, unit.z ),
                                      color = color, opacity = opacity )
@@ -660,7 +661,7 @@ def rotation_matrix( angle ):
     return R
 
 
-def visual_axes( scale ):
+def visual_axes( scale = 1.0 ):
     """\
     Display a set of 3D axes.
 
