@@ -456,7 +456,7 @@ class DirectionalPoint( Point ):
         @param opacity: The opacity with which to plot the point.
         @type opacity: C{float}
         """
-        Point.visualize( self, radius = 0.1 * scale, color = color,
+        Point.visualize( self, scale = scale, color = color,
                          opacity = opacity )
         unit = scale * self.direction_unit
         self.vis_dir = visual.arrow( pos = ( self.x, self.y, self.z ),

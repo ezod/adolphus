@@ -92,7 +92,6 @@ def traverse( pstep, p, cam = Point( 0, 0, 0 ) ):
 
 if __name__ == '__main__':
     visual_axes( 5.0 )
-    traverse( 0.5, ( 5, 6, 7 ) )
-    traverse( 0.5, ( -5, -6, 7 ) )
-    traverse( 0.5, ( 6, -1, 3 ) )
-    traverse( 0.5, ( 2, 7, 1 ) )
+    for p in [ ( 5, 6, 7 ), ( -5, -6, 7 ), ( 6, -1, 3 ), ( 2, 7, 1 ) ]:
+        Point( p[ 0 ], p[ 1 ], p[ 2 ] ).visualize( color = ( 1, 0, 0 ), scale = 5.0 )
+        traverse( 1.0, p )
