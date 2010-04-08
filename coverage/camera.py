@@ -95,12 +95,12 @@ class Scene( object ):
         d = [ abs( p[ i ] - cam[ i ] ) for i in range( 3 ) ]
         u = [ cam[ i ] - int( cam[ i ] / self.pstep ) * self.pstep \
               for i in range( 3 ) ]
-        s = [ 1.0, 1.0, 1.0 ]
+        s = []
         for i in range( 3 ):
             try:
-                s[ i ] = ( p[ i ] - cam[ i ] ) / ( d[ i ] )
+                s.append( self.pstep * ( p[ i ] - cam[ i ] ) / ( d[ i ] ) )
             except ZeroDivisionError:
-                s = 1.0
+                s.append( self.pstep )
 
         # driving axis
         if d[ 0 ] > d[ 1 ] and d[ 0 ] > d[ 2 ]:
@@ -111,10 +111,10 @@ class Scene( object ):
             x, y, z = 2, 0, 1
 
         # voxel traversal
-        P = [ int( cam[ i ] / self.pstep ) for i in range( 3 ) ]
+        P = [ int( cam[ i ] / self.pstep ) * self.pstep for i in range( 3 ) ]
         if Point( P[ 0 ], P[ 1 ], P[ 2 ] ) in self.opaque:
             return True
-        P2 = int( p[ x ] / self.pstep )
+        P2 = int( p[ x ] / self.pstep ) * self.pstep
         exy = ( u[ y ] - self.pstep ) * d[ x ] + \
               ( self.pstep - u[ x ] ) * d[ y ]
         exz = ( u[ z ] - self.pstep ) * d[ x ] + \
@@ -123,7 +123,7 @@ class Scene( object ):
         d1xy = dxy - self.pstep * d[ x ]
         dxz = self.pstep * d[ z ]
         d1xz = dxz - self.pstep * d[ x ]
-        while P[ x ] < P2:
+        while s[ x ] * P[ x ] < s[ x ] * P2:
             if exy > 0:
                 if exz > 0:
                     if exy * d[ z ] > exz * d[ y ]:

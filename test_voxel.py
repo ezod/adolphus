@@ -5,12 +5,12 @@ def traverse( pstep, p, cam = Point( 0, 0, 0 ) ):
     d = [ abs( p[ i ] - cam[ i ] ) for i in range( 3 ) ]
     u = [ cam[ i ] - int( cam[ i ] / pstep ) * pstep \
           for i in range( 3 ) ]
-    s = [ 1.0, 1.0, 1.0 ]
+    s = []
     for i in range( 3 ):
         try:
-            s[ i ] = ( p[ i ] - cam[ i ] ) / ( d[ i ] )
+            s.append( pstep * ( p[ i ] - cam[ i ] ) / ( d[ i ] ) )
         except ZeroDivisionError:
-            s = 1.0
+            s.append( pstep )
 
     # driving axis
     if d[ 0 ] > d[ 1 ] and d[ 0 ] > d[ 2 ]:
@@ -21,9 +21,9 @@ def traverse( pstep, p, cam = Point( 0, 0, 0 ) ):
         x, y, z = 2, 0, 1
 
     # voxel traversal
-    P = [ int( cam[ i ] / pstep ) for i in range( 3 ) ]
+    P = [ int( cam[ i ] / pstep ) * pstep for i in range( 3 ) ]
     Point( P[ 0 ], P[ 1 ], P[ 2 ] ).visualize()
-    P2 = int( p[ x ] / pstep )
+    P2 = int( p[ x ] / pstep ) * pstep
     exy = ( u[ y ] - pstep ) * d[ x ] + \
           ( pstep - u[ x ] ) * d[ y ]
     exz = ( u[ z ] - pstep ) * d[ x ] + \
@@ -32,7 +32,7 @@ def traverse( pstep, p, cam = Point( 0, 0, 0 ) ):
     d1xy = dxy - pstep * d[ x ]
     dxz = pstep * d[ z ]
     d1xz = dxz - pstep * d[ x ]
-    while P[ x ] < P2:
+    while s[ x ] * P[ x ] < s[ x ] * P2:
         if exy > 0:
             if exz > 0:
                 if exy * d[ z ] > exz * d[ y ]:
@@ -94,4 +94,4 @@ if __name__ == '__main__':
     visual_axes( 5.0 )
     for p in [ ( 5, 6, 7 ), ( -5, -6, 7 ), ( 6, -1, 3 ), ( 2, 7, 1 ) ]:
         Point( p[ 0 ], p[ 1 ], p[ 2 ] ).visualize( color = ( 1, 0, 0 ), scale = 5.0 )
-        traverse( 1.0, p )
+        traverse( 0.5, p, ( -9, 0, 9 ) )
