@@ -12,4 +12,4 @@ M = MultiCameraSimple( S, set( [ C ] ) )
 print "Updating in-scene model..."
 M._update()
 print "Visualizing..."
-M.visualize( scale = 10.0 )
+M.visualize( scale = 40.0 )
