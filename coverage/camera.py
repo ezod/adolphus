@@ -219,9 +219,9 @@ class Camera( object ):
         @param sv: Effective pixel height (intrinsic).
         @type sv: C{float}
         @param ou: Pixel u-coordinate of principal point (intrinsic).
-        @type ou: C{int}
+        @type ou: C{float}
         @param ov: Pixel v-coordinate of principal point (intrinsic).
-        @type ov: C{int}
+        @type ov: C{float}
         @param w: Sensor pixel width (intrinsic).
         @type w: C{int}
         @param h: Sensor pixel height (intrinsic).
