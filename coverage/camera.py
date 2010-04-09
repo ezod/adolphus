@@ -325,15 +325,15 @@ class Camera( object ):
         if isinstance( dpoint, DirectionalPoint ):
             r = sqrt( dpoint.x ** 2 + dpoint.y ** 2 )
             try:
-                terma = ( dpoint.y / r ) * sin( dpoint.eta ) + \
-                        ( dpoint.x / r ) * cos( dpoint.eta )
+                terma = ( campoint.y / r ) * sin( campoint.eta ) + \
+                        ( campoint.x / r ) * cos( campoint.eta )
             except ZeroDivisionError:
                 terma = 1.0
             try:
-                termb = atan( r / dpoint.z )
+                termb = atan( r / campoint.z )
             except ZeroDivisionError:
                 termb = pi / 2.0
-            mu_d = min( max( ( float( dpoint.rho ) - ( ( pi / 2.0 ) + \
+            mu_d = min( max( ( float( campoint.rho ) - ( ( pi / 2.0 ) + \
                              terma * termb ) ) / self.zeta, 0.0 ), 1.0 )
         else:
             mu_d = 1.0
@@ -353,8 +353,8 @@ class Camera( object ):
         if not VIS:
             raise NotImplementedError( "visual module not loaded" )
         visual.pyramid( pos = self.pose.T.tuple, axis = \
-            self.pose.map_rotate( Point( 0, 0, -5.0 * scale ) ).tuple, \
-            size = ( 5.0 * scale, 5.0 * scale, 5.0 * scale ), color = color )
+            self.pose.map_rotate( Point( 0, 0, -scale ) ).tuple, \
+            size = ( scale, scale, scale ), color = color )
 
 
 class MultiCamera( IndexedSet ):
@@ -437,7 +437,7 @@ class MultiCameraSimple( MultiCamera ):
         """
         MultiCamera.__init__( self, scene, cameras )
 
-    def _update( self ):
+    def update( self ):
         """\
         Update the simple multi-camera network discrete spatial-directional
         fuzzy set (coverage model).
@@ -462,7 +462,7 @@ class MultiCamera3D( MultiCamera ):
         """
         MultiCamera.__init__( self, scene, cameras )
 
-    def _update( self ):
+    def update( self ):
         """\
         Update the 3D multi-camera network discrete spatial-directional fuzzy
         set (coverage model).
