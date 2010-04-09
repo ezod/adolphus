@@ -239,7 +239,8 @@ class Point( object ):
         @rtype: L{Point}
         """
         m = self.magnitude
-        return Point( self.x / m, self.y / m, self.z / m )
+        return m > 0 and Point( self.x / m, self.y / m, self.z / m ) \
+                     or Point( 0, 0, 0 )
 
     def euclidean( self, p ):
         """\

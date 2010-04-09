@@ -299,18 +299,21 @@ class Camera( object ):
         Return the membership degree (coverage) for a directional point.
     
         @param dpoint: The point location.
-        @type dpoint: L{geometry.DirectionalPoint}
+        @type dpoint: L{geometry.Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        if not isinstance( dpoint, DirectionalPoint ):
-            raise TypeError, ( "invalid directional point" )
+        if not isinstance( dpoint, Point ):
+            raise TypeError, ( "invalid point" )
 
         campoint = ( -self.pose ).map( dpoint )
 
         # visibility
-        mu_v = min( self.Cvh.mu( campoint.x / campoint.z ),
-                    self.Cvv.mu( campoint.y / campoint.z ) )
+        try:
+            mu_v = min( self.Cvh.mu( campoint.x / campoint.z ),
+                        self.Cvv.mu( campoint.y / campoint.z ) )
+        except ZeroDivisionError:
+            mu_v = 0.0
 
         # resolution
         mu_r = self.Cr.mu( campoint.z )
@@ -319,18 +322,21 @@ class Camera( object ):
         mu_f = self.Cf.mu( campoint.z )
 
         # direction
-        r = sqrt( dpoint.x ** 2 + dpoint.y ** 2 )
-        try:
-            terma = ( dpoint.y / r ) * sin( dpoint.eta ) + \
-                    ( dpoint.x / r ) * cos( dpoint.eta )
-        except ZeroDivisionError:
-            terma = 1.0
-        try:
-            termb = atan( r / dpoint.z )
-        except ZeroDivisionError:
-            termb = pi / 2.0
-        mu_d = min( max( ( float( dpoint.rho ) - ( ( pi / 2.0 ) + \
-                         terma * termb ) ) / self.zeta, 0.0 ), 1.0 )
+        if isinstance( dpoint, DirectionalPoint ):
+            r = sqrt( dpoint.x ** 2 + dpoint.y ** 2 )
+            try:
+                terma = ( dpoint.y / r ) * sin( dpoint.eta ) + \
+                        ( dpoint.x / r ) * cos( dpoint.eta )
+            except ZeroDivisionError:
+                terma = 1.0
+            try:
+                termb = atan( r / dpoint.z )
+            except ZeroDivisionError:
+                termb = pi / 2.0
+            mu_d = min( max( ( float( dpoint.rho ) - ( ( pi / 2.0 ) + \
+                             terma * termb ) ) / self.zeta, 0.0 ), 1.0 )
+        else:
+            mu_d = 1.0
 
         # return min( mu_v, mu_r, mu_f, mu_d )
         return mu_v * mu_r * mu_f * mu_d
@@ -411,10 +417,9 @@ class MultiCamera( IndexedSet ):
             raise NotImplementedError( "visual module not loaded" )
         for camera in self:
             camera.visualize( scale = scale )
-        for dpoint in self.scene.generate_points():
-            if dpoint in self.model:
-                dpoint.visualize( scale = scale, color = ( 1, 0, 0 ),
-                                  opacity = self.model[ dpoint ].mu )
+        for dpoint in self.model.keys():
+            dpoint.visualize( scale = scale, color = ( 1, 0, 0 ),
+                              opacity = self.model[ dpoint ].mu )
 
 
 class MultiCameraSimple( MultiCamera ):
@@ -437,8 +442,7 @@ class MultiCameraSimple( MultiCamera ):
         Update the simple multi-camera network discrete spatial-directional
         fuzzy set (coverage model).
         """
-        self.model = FuzzySet( [ FuzzyElement( dpoint, mu = 0.0 ) \
-                     for dpoint in self.scene.generate_points() ] )
+        self.model = FuzzySet()
         for camera in self:
             self.model |= self.inscene[ camera.name ]
 
