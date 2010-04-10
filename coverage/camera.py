@@ -50,7 +50,7 @@ class Scene( object ):
 
     def make_opaque( self, p ):
         """\
-        Add a point to
+        Add a point to the set of opaque voxels.
 
         @param p: Discrete point to make opaque.
         @type p: L{geometry.Point}
