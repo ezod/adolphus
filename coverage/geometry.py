@@ -71,6 +71,30 @@ class Point( object ):
         self.x = float( x )
         self.y = float( y )
         self.z = float( z )
+    
+    def __hash__( self ):
+        """\
+        Hash function.
+        """
+        return self.x + self.y + self.z
+
+    def __eq__( self, p ):
+        """\
+        Equality function.
+
+        @param p: The other point.
+        @type p: L{Point}
+        """
+        return self.x == p.x and self.y == p.y and self.z == p.z
+
+    def __neq__( self, p ):
+        """\
+        Inequality function.
+
+        @param p: The other point.
+        @type p: L{Point}
+        """
+        return not self.__eq__( p )
 
     def __getitem__( self, i ):
         """\
