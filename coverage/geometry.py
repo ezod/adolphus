@@ -8,7 +8,7 @@ geometric descriptor functions for features.
 @license: GPL-3
 """
 
-from math import pi, sqrt, sin, cos, asin, acos, atan
+from math import pi, sqrt, sin, cos, asin, acos, atan, atan2
 import numpy
 
 try:
@@ -331,6 +331,22 @@ class DirectionalPoint( Point ):
         self.eta = Angle( eta )
         self._normalize_direction()
 
+    def __hash__( self ):
+        """\
+        Hash function.
+        """
+        return self.x + self.y + self.z + self.rho + self.eta
+
+    def __eq__( self, p ):
+        """\
+        Equality function.
+
+        @param p: The other point.
+        @type p: L{DirectionalPoint}
+        """
+        return self.x == p.x and self.y == p.y and self.z == p.z \
+               and self.rho == p.rho and self.eta == p.eta
+
     def _normalize_direction( self ):
         """\
         Normalize the inclination angle to within [0,pi), reversing the azimuth
@@ -634,9 +650,8 @@ class Pose( object ):
               self.R[ 2 ][ 2 ] * p.z )
         if isinstance( p, DirectionalPoint ):
             unit = Pose( None, self.R ).map( p.direction_unit )
-            rho = unit.angle( Point( 0, 0, 1 ) )
-            unit.z = 0.0
-            eta = unit.angle( Point( 1, 0, 0 ) )
+            rho = acos( unit.z )
+            eta = atan2( unit.y, unit.x )
             return DirectionalPoint( x, y, z, rho, eta )
         else:
             return Point( x, y, z )
