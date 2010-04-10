@@ -322,8 +322,8 @@ class Camera( object ):
         mu_f = self.Cf.mu( campoint.z )
 
         # direction
-        if isinstance( dpoint, DirectionalPoint ):
-            r = sqrt( dpoint.x ** 2 + dpoint.y ** 2 )
+        if isinstance( campoint, DirectionalPoint ):
+            r = sqrt( campoint.x ** 2 + campoint.y ** 2 )
             try:
                 terma = ( campoint.y / r ) * sin( campoint.eta ) + \
                         ( campoint.x / r ) * cos( campoint.eta )
