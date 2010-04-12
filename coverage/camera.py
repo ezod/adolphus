@@ -366,7 +366,7 @@ class Camera( object ):
         """\
         Return the membership degree (coverage) for a directional point.
     
-        @param dpoint: The point location.
+        @param dpoint: The (directional) point to test.
         @type dpoint: L{geometry.Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
@@ -523,6 +523,19 @@ class MultiCameraSimple( MultiCamera ):
         for camera in self:
             self.model |= self.inscene[ camera.name ]
 
+    def mu( self, dpoint ):
+        """\
+        Return the individual membership degree of a point using the continuous
+        in-scene camera coverage models (so the point does not necessarily need
+        to fall on the discrete grid).
+
+        @param dpoint: The (directional) point to test.
+        @type dpoint: L{geometry.Point}
+        @return: The membership degree (coverage) of the point.
+        @rtype: C{float}
+        """
+        return max( [ camera.mu( dpoint ) for camera in self ] )
+
 
 class MultiCamera3D( MultiCamera ):
     """\
@@ -551,3 +564,17 @@ class MultiCamera3D( MultiCamera ):
                        for pair in combinations( self, 2 ) ] )
         for pair in pairs:
             self.model |= pair
+
+    def mu( self, dpoint ):
+        """\
+        Return the individual membership degree of a point using the continuous
+        in-scene camera coverage models (so the point does not necessarily need
+        to fall on the discrete grid).
+
+        @param dpoint: The (directional) point to test.
+        @type dpoint: L{geometry.Point}
+        @return: The membership degree (coverage) of the point.
+        @rtype: C{float}
+        """
+        return max( [ min( pair[ 0 ].mu( dpoint ), pair[ 1 ].mu( dpoint ) ) \
+                      for pair in combinations( self, 2 ) ] )
