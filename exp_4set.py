@@ -3,10 +3,10 @@ from fuzz import RealRange
 from numpy import array, arange
 from visual import scene
 
-from coverage import Scene, Camera, MultiCameraSimple, Pose, Point, DirectionalPoint, Angle, rotation_matrix, visual_axes
+from coverage import Scene, Camera, MultiCameraSimple, MultiCamera3D, Pose, Point, DirectionalPoint, Angle, rotation_matrix, visual_axes
 
 #scene.background = ( 1, 1, 1 )
-scene.up = ( 0, 0, 1 )
+#scene.up = ( 0, 0, 1 )
 
 print "Creating camera model..."
 P = [ ( 'C1', -Pose( Point( -29.108133, 11.620695, 1201.241337 ), array( [ [ -0.008148, -0.999858, 0.014732 ], [ -0.830673, -0.001434, -0.556758 ], [ 0.556701, -0.016774, -0.830544 ] ] ) ) ),
@@ -19,27 +19,30 @@ C = [ Camera( p[ 0 ], 4.4765, 12.5341, 0.00465, 0.00465, 760.1805, 495.1859, 136
 print "Creating scene..."
 S = Scene( RealRange( ( -400.0, 400.0 ) ), RealRange( ( -400.0, 400.0 ) ), RealRange( ( -200.0, 1000.0 ) ), 50.0, pi / 2.0 )
 S.make_opaque( RealRange( ( -137.0, 131.0 ) ), RealRange( ( -103.0, 100.0 ) ), RealRange( ( -116.0, 0.0 ) ) )
+S.make_desired( RealRange( ( -337.0, 331.0 ) ), RealRange( ( -303.0, 300.0 ) ), RealRange( ( -116.0, 0.0 ) ), d = None )
 print "Creating discrete multi-camera model..."
 M = MultiCameraSimple( S, C )
 print "    %d cameras in model." % len( M )
 print "Updating in-scene model..."
 M.update()
-print "Visualizing..."
+#print "Visualizing..."
 #M.visualize( scale = 30.0, color = ( 0.3, 0.3, 0.3 ) )
 #visual_axes( scale = 30.0, color = ( 0.3, 0.3, 0.3 ) )
-M.visualize( scale = 30.0 )
-visual_axes( scale = 30.0 )
+#M.visualize( scale = 30.0 )
+#visual_axes( scale = 30.0 )
+
+print "Coverage Performance: %f" % M.performance()
 
 #points of interest
-P = [ DirectionalPoint( -153, -58, -90, 0.0, 0.0 ),
-      DirectionalPoint( -183, 72, -90, 0.0, 0.0 ),
-      DirectionalPoint( -60, -140, -90, 0.0, 0.0 ),
-      DirectionalPoint( 117, -228, -90, 0.0, 0.0 ),
-      DirectionalPoint( 190, -25, -90, 0.0, 0.0 ),
-      DirectionalPoint( 154, 17, -90, 0.0, 0.0 ),
-      DirectionalPoint( 110, 146, -90, 0.0, 0.0 ),
-      DirectionalPoint( -110, 255, -90, 0.0, 0.0 ) ]
+P = [ Point( -153, -58, -90 ),
+      Point( -183, 72, -90 ),
+      Point( -60, -140, -90 ),
+      Point( 117, -228, -90 ),
+      Point( 190, -25, -90 ),
+      Point( 154, 17, -90 ),
+      Point( 110, 146, -90 ),
+      Point( -110, 255, -90 ) ]
 
 for p in P:
-    p.visualize( scale = 40.0, color = ( 0, 0, 1 ), opacity = M.mu( p ) )
-    print M.mu( p )
+    #p.visualize( scale = 40.0, color = ( 0, 0, 1 ), opacity = M.mu( p ) )
+    print "Coverage of %s: %f" % ( str( p ), M.mu( p ) )
