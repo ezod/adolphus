@@ -12,7 +12,6 @@ print "Creating camera model..."
 T = Point( -38.956913, 60.127483, 947.731327 )
 R = array( [ [ -0.999847, -0.000850, -0.017475 ], [ 0.000802, 0.995543, -0.094301 ], [ 0.017477, -0.094300, -0.995390 ] ] )
 C = Camera( 'C', 4.3393, 12.15, 0.00465, 0.00465, 718.82325, 422.9936, 1360, 1024, 784.2, 20, 3.0, 0.5, 0.048, 1.3, pose = Pose( T, R ) )
-print Pose( T, R ).om
 print "Creating scene..."
 S = Scene( RealRange( ( -400.0, 400.0 ) ), RealRange( ( -400.0, 400.0 ) ), RealRange( ( 0.0, 1000.0 ) ), 50.0, pi / 2.0 )
 print "Creating discrete multi-camera model..."
