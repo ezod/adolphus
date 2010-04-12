@@ -64,6 +64,10 @@ class Scene( object ):
             for yi in arange( y[ 0 ], y[ 1 ], self.pstep ):
                 for zi in arange( z[ 0 ], z[ 1 ], self.pstep ):
                     self.opaque.add( Point( xi, yi, zi ) )
+                    try:
+                        self.D.remove( Point( xi, yi, zi ) )
+                    except KeyError:
+                        pass
                     for rho in arange( 0., pi + self.dstep, self.dstep ):
                         for eta in arange( 0., 2 * pi, self.dstep ):
                             try:
@@ -126,6 +130,7 @@ class Scene( object ):
                     if d != 'all':
                         yield DirectionalPoint( xi, yi, zi, d[ 0 ], d[ 1 ] )
                         continue
+                    yield Point( xi, yi, zi )
                     for rho in arange( 0., pi + self.dstep, self.dstep ):
                         if rho in [ 0, pi ]:
                             yield DirectionalPoint( xi, yi, zi, rho, 0 )
