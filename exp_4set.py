@@ -8,8 +8,6 @@ from coverage import Scene, Camera, MultiCameraSimple, Pose, Point, DirectionalP
 #scene.background = ( 1, 1, 1 )
 scene.up = ( 0, 0, 1 )
 
-print Pose( None, array( [ [ -0.601332, 0.797152, 0.054306 ], [ 0.674750, 0.543048, -0.499811 ], [ -0.427916, -0.263909, -0.864430 ] ] ) ).map_rotate( Point( -15.476532, -62.178746, 1177.303550 ) )
-
 print "Creating camera model..."
 P = [ ( 'C1', -Pose( Point( -29.108133, 11.620695, 1201.241337 ), array( [ [ -0.008148, -0.999858, 0.014732 ], [ -0.830673, -0.001434, -0.556758 ], [ 0.556701, -0.016774, -0.830544 ] ] ) ) ),
       ( 'C2', -Pose( Point( -3.954594, -40.551369, 1123.177412 ), array( [ [ -0.151428, 0.988033, -0.029328 ], [ 0.873322, 0.119831, -0.472176 ], [ -0.463011, -0.097113, -0.881016 ] ] ) ) ),
@@ -43,6 +41,5 @@ P = [ DirectionalPoint( -153, -58, -90, 0.0, 0.0 ),
       DirectionalPoint( -110, 255, -90, 0.0, 0.0 ) ]
 
 for p in P:
-    p.visualize( scale = 40.0, color = ( 0, 0, 1 ) )
-    #p.visualize( scale = 40.0, color = ( 0, 0, 1 ), opacity = M.mu( p ) )
-    #print M.mu( p )
+    p.visualize( scale = 40.0, color = ( 0, 0, 1 ), opacity = M.mu( p ) )
+    print M.mu( p )
