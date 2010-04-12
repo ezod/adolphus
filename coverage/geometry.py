@@ -701,43 +701,46 @@ def rotation_matrix( angle ):
     return R
 
 
-def visual_axes( scale = 1.0 ):
+def visual_axes( scale = 1.0, color = ( 1, 1, 1 ) ):
     """\
     Display a set of 3D axes.
 
     @param scale: The scale of the axis set.
     @type scale: C{float}
+    @param color: The color of the axes.
+    @type color: C{tuple}
     """
     if not VIS:
         raise NotImplementedError( "visual module not loaded" )
 
     for a in [ tuple( [ i == j and scale * 5 or 0 for i in range( 3 ) ] ) \
                   for j in range( 3 ) ]:
-        visual.arrow( pos = ( 0, 0, 0 ), axis = a, shaftwidth = scale / 10.0 )
+        visual.arrow( pos = ( 0, 0, 0 ), axis = a, shaftwidth = scale / 10.0,
+                      color = color )
 
     visual.cylinder( pos = ( ( scale * 6.0 ), -( scale / 4.0 ), 0 ),
               axis = ( -( scale / 2.0 ), ( scale / 2.0 ), 0 ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
     visual.cylinder( pos = ( scale * 5.5, -( scale / 4.0 ), 0 ),
               axis = ( ( scale / 2.0 ), ( scale / 2.0 ), 0 ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
 
     visual.cylinder( pos = ( 0, ( scale * 5.5 ), 0 ),
               axis = ( 0, ( scale / 4.0 ), 0 ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
     visual.cylinder( pos = ( 0, ( scale * 5.75 ), 0 ),
               axis = ( -( scale * 0.17 ), ( scale / 4.0 ), ( scale * 0.17 ) ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
     visual.cylinder( pos = ( 0, ( scale * 5.75 ), 0 ),
               axis = ( ( scale * 0.17 ), ( scale / 4.0 ), -( scale * 0.17 ) ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
 
     visual.cylinder( pos = ( 0, -( scale / 4.0 ), ( scale * 6.0 ) ),
               axis = ( 0.0, ( scale / 2.0 ), -( scale / 2.0 ) ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
     visual.cylinder( pos = ( 0, -( scale / 4.0 ), ( scale * 6.0 ) ),
               axis = ( 0.0, 0.0, -( scale / 2.0 ) ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
     visual.cylinder( pos = ( 0, ( scale / 4.0 ), ( scale * 6.0 ) ),
               axis = ( 0.0, 0.0, -( scale / 2.0 ) ),
-              radius = scale / 20.0 )
+              radius = scale / 20.0, color = color )
