@@ -203,7 +203,7 @@ class Camera( object ):
     """\
     Single-camera model, using continous fuzzy sets.
     """
-    def __init__( self, name, A, f, su, sv, ou, ov, h, w, zS, gamma,
+    def __init__( self, name, A, f, su, sv, ou, ov, w, h, zS, gamma,
                   r1, r2, cmax, zeta, pose = Pose( None, None ) ):
         """\
         Constructor.
@@ -246,18 +246,20 @@ class Camera( object ):
         # fuzzy sets for visibility
         ahl = 2. * atan( ( ou * su ) / ( 2. * f ) )
         ahr = 2. * atan( ( ( w - ou ) * su ) / ( 2. * f ) )
-        self.Cvh = TrapezoidalFuzzyNumber( \
-                   ( -sin( ahl ) + gamma, sin( ahr ) - gamma ),
-                   ( -sin( ahl ), sin( ahr ) ) )
         avl = 2. * atan( ( ov * sv ) / ( 2. * f ) )
         avr = 2. * atan( ( ( h - ov ) * sv ) / ( 2. * f ) )
+        gamma_h = ( float( gamma ) / float( w ) ) * 2.0 * sin( ( ahl + ahr ) / 2. )
+        gamma_v = ( float( gamma ) / float( h ) ) * 2.0 * sin( ( avl + avr ) / 2. )
+        self.Cvh = TrapezoidalFuzzyNumber( \
+                   ( -sin( ahl ) + gamma_h, sin( ahr ) - gamma_h ),
+                   ( -sin( ahl ), sin( ahr ) ) )
         self.Cvv = TrapezoidalFuzzyNumber( \
-                   ( -sin( avl ) + gamma, sin( avr ) - gamma ),
+                   ( -sin( avl ) + gamma_v, sin( avr ) - gamma_v ),
                    ( -sin( avl ), sin( avr ) ) )
 
         # fuzzy set for resolution
-        mr = min( ( w / ( 2. * sin( ( ahl + ahr ) / 2. ) ) ), 
-                  ( h / ( 2. * sin( ( avl + avr ) / 2. ) ) ) )
+        mr = min( ( float( w ) / ( 2. * sin( ( ahl + ahr ) / 2. ) ) ), 
+                  ( float( h ) / ( 2. * sin( ( avl + avr ) / 2. ) ) ) )
         zr1 = ( 1. / r1 ) * mr
         zr2 = ( 1. / r2 ) * mr
         self.Cr = TrapezoidalFuzzyNumber( ( 0, zr1 ), ( 0, zr2 ) )
@@ -405,18 +407,20 @@ class MultiCamera( IndexedSet ):
                 dpoints.append( FuzzyElement( dpoint, mu ) )
         self.inscene[ key ] = FuzzySet( dpoints )
 
-    def visualize( self, scale = 1.0 ):
+    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ) ):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
 
         @param scale: The scale of the individual elements.
         @type scale: C{float}
+        @param color: The color of cameras.
+        @type color: C{tuple}
         """
         if not VIS:
             raise NotImplementedError( "visual module not loaded" )
         for camera in self:
-            camera.visualize( scale = scale )
+            camera.visualize( scale = scale, color = color )
         for dpoint in self.model.keys():
             dpoint.visualize( scale = scale, color = ( 1, 0, 0 ),
                               opacity = self.model[ dpoint ].mu )
