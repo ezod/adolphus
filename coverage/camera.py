@@ -249,6 +249,19 @@ class Scene( object ):
                 exz = exz + dxz
         return False
 
+    def visualize( self, color = ( 1, 1, 1 ) ):
+        """\
+        Visualize the opaque scene objects.
+
+        @param color: The color of opaque scene objects.
+        @type color: C{tuple}
+        """
+        if not VIS:
+            raise NotImplementedError( "visual module not loaded" )
+        for point in self.opaque:
+            visual.box( pos = point.tuple, color = color, length = self.pstep,
+                        height = self.pstep, width = self.pstep )
+
 
 class Camera( object ):
     """\
@@ -480,6 +493,7 @@ class MultiCamera( IndexedSet ):
             raise NotImplementedError( "visual module not loaded" )
         for camera in self:
             camera.visualize( scale = scale, color = color )
+        self.scene.visualize( color = color )
         for dpoint in self.model.keys():
             dpoint.visualize( scale = scale, color = ( 1, 0, 0 ),
                               opacity = self.model[ dpoint ].mu )
