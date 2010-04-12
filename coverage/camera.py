@@ -72,7 +72,7 @@ class Scene( object ):
                             except KeyError:
                                 pass
 
-    def make_desired( self, x, y, z, d = None, mu = 1.0 ):
+    def make_desired( self, x, y, z, d = 'all', mu = 1.0 ):
         """\
         Add a range to the desired coverage set.
 
@@ -89,7 +89,7 @@ class Scene( object ):
         """
         for dpoint in self._generate_points_specified( x, y, z, d ):
             if not Point( dpoint.x, dpoint.y, dpoint.z ) in self.opaque:
-                self.D.add( dpoint, mu )
+                self.D.add( FuzzyElement( dpoint, mu ) )
 
     def generate_points( self ):
         """\
@@ -100,7 +100,7 @@ class Scene( object ):
         """
         return self._generate_points_specified( self.x, self.y, self.z )
 
-    def _generate_points_specified( self, x, y, z, d = None ):
+    def _generate_points_specified( self, x, y, z, d = 'all' ):
         """\
         General discrete directional point generator.
 
@@ -120,8 +120,12 @@ class Scene( object ):
                 for zi in arange( z[ 0 ], z[ 1 ], self.pstep ):
                     if Point( xi, yi, zi ) in self.opaque:
                         continue
-                    if d is not None:
+                    if not d:
+                        yield Point( xi, yi, zi )
+                        continue
+                    if d != 'all':
                         yield DirectionalPoint( xi, yi, zi, d[ 0 ], d[ 1 ] )
+                        continue
                     for rho in arange( 0., pi + self.dstep, self.dstep ):
                         if rho in [ 0, pi ]:
                             yield DirectionalPoint( xi, yi, zi, rho, 0 )
