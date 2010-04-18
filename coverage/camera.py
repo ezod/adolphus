@@ -21,7 +21,6 @@ try:
 except ImportError:
     VIS = False
 
-
 class Scene( object ):
     """\
     Discrete spatial-directional range with occlusion class.
@@ -95,14 +94,16 @@ class Scene( object ):
             if not Point( dpoint.x, dpoint.y, dpoint.z ) in self.opaque:
                 self.D.add( FuzzyElement( dpoint, mu ) )
 
-    def generate_points( self ):
+    def generate_points( self, d = 'all' ):
         """\
         Discrete directional point generator for the entire scene.
 
         @return: The next directional point in the range.
         @rtype: L{geometry.DirectionalPoint}
+        @param d: Optional direction (will use all dstep otherwise).
+        @type d: C{tuple} of L{geometry.Angle}
         """
-        return self._generate_points_specified( self.x, self.y, self.z )
+        return self._generate_points_specified( self.x, self.y, self.z, d = d )
 
     def _generate_points_specified( self, x, y, z, d = 'all' ):
         """\
@@ -130,7 +131,6 @@ class Scene( object ):
                     if d != 'all':
                         yield DirectionalPoint( xi, yi, zi, d[ 0 ], d[ 1 ] )
                         continue
-                    yield Point( xi, yi, zi )
                     for rho in arange( 0., pi + self.dstep, self.dstep ):
                         if rho in [ 0, pi ]:
                             yield DirectionalPoint( xi, yi, zi, rho, 0 )
@@ -140,7 +140,7 @@ class Scene( object ):
 
     def occluded( self, p, cam = Point( 0, 0, 0 ) ):
         """\
-        Find the 6-connectivity voxel traversal of the line segment between the
+        Find the 3D Bresenham voxel traversal of the line segment between the
         specified point and the principal point of a camera, and return whether
         the point is occluded from the camera viewpoint by opaque voxels.
 
@@ -151,112 +151,45 @@ class Scene( object ):
         @return: True if occluded, false otherwise.
         @rtype: C{bool}
         """
-        # setup
-        d = [ abs( p[ i ] - cam[ i ] ) for i in range( 3 ) ]
-        u = [ cam[ i ] - int( cam[ i ] / self.pstep ) * self.pstep \
-              for i in range( 3 ) ]
-        s = []
-        for i in range( 3 ):
-            try:
-                s.append( self.pstep * ( p[ i ] - cam[ i ] ) / ( d[ i ] ) )
-            except ZeroDivisionError:
-                s.append( self.pstep )
-
-        # driving axis
-        if d[ 0 ] > d[ 1 ] and d[ 0 ] > d[ 2 ]:
+        P1 = Point( round( p.x / self.pstep ), \
+                    round( p.y / self.pstep ), \
+                    round( p.z / self.pstep ) )
+        P2 = Point( round( cam.x / self.pstep ), \
+                    round( cam.y / self.pstep ), \
+                    round( cam.z / self.pstep ) )
+        d = [ P2[ i ] - P1[ i ] for i in range( 3 ) ]
+        a = [ abs( d[ i ] ) * 2 for i in range( 3 ) ]
+        s = [ d[ i ] >= 0 and 1 or -1 for i in range( 3 ) ]
+        P = Point( P1.x, P1.y, P1.z )
+        if( a[ 0 ] >= max( a[ 1 ], a[ 2 ] ) ):
             x, y, z = 0, 1, 2
-        elif d[ 1 ] > d[ 0 ] and d[ 1 ] > d[ 2 ]:
+        elif( a[ 1 ] >= max( a[ 0 ], a[ 2 ] ) ):
             x, y, z = 1, 2, 0
         else:
             x, y, z = 2, 0, 1
-
-        # voxel traversal
-        P = [ int( cam[ i ] / self.pstep ) * self.pstep for i in range( 3 ) ]
-        if Point( P[ 0 ], P[ 1 ], P[ 2 ] ) in self.opaque:
-            return True
-        P2 = int( p[ x ] / self.pstep ) * self.pstep
-        exy = ( u[ y ] - self.pstep ) * d[ x ] + \
-              ( self.pstep - u[ x ] ) * d[ y ]
-        exz = ( u[ z ] - self.pstep ) * d[ x ] + \
-              ( self.pstep - u[ x ] ) * d[ z ]
-        dxy = self.pstep * d[ y ]
-        d1xy = dxy - self.pstep * d[ x ]
-        dxz = self.pstep * d[ z ]
-        d1xz = dxz - self.pstep * d[ x ]
-        while s[ x ] * P[ x ] < s[ x ] * P2:
-            if exy > 0:
-                if exz > 0:
-                    if exy * d[ z ] > exz * d[ y ]:
-                        if Point( P[ 0 ] + ( y == 0 and s[ 0 ] or 0 ),
-                                  P[ 1 ] + ( y == 1 and s[ 1 ] or 0 ),
-                                  P[ 2 ] + ( y == 2 and s[ 2 ] or 0 ) ) \
-                        in self.opaque:
-                            return True
-                    else:
-                        if Point( P[ 0 ] + ( z == 0 and s[ 0 ] or 0 ),
-                                  P[ 1 ] + ( z == 1 and s[ 1 ] or 0 ),
-                                  P[ 2 ] + ( z == 2 and s[ 2 ] or 0 ) ) \
-                        in self.opaque:
-                            return True
-                    if Point( P[ 0 ] + ( y == 0 and s[ 0 ] or 0 ) \
-                                     + ( z == 0 and s[ 0 ] or 0 ),
-                              P[ 1 ] + ( y == 1 and s[ 0 ] or 0 ) \
-                                     + ( z == 1 and s[ 0 ] or 0 ),
-                              P[ 2 ] + ( y == 2 and s[ 0 ] or 0 ) \
-                                     + ( z == 2 and s[ 0 ] or 0 ) ) \
-                    in self.opaque:
-                        return True
-                    P = [ P[ i ] + s[ i ] for i in range( 3 ) ]
-                    if Point( P[ 0 ], P[ 1 ], P[ 2 ] ) in self.opaque:
-                        return True
-                    exy += d1xy
-                    exz += d1xz
-                else:
-                    if Point( P[ 0 ] + ( y == 0 and s[ 0 ] or 0 ),
-                              P[ 1 ] + ( y == 1 and s[ 1 ] or 0 ),
-                              P[ 2 ] + ( y == 2 and s[ 2 ] or 0 ) ) \
-                    in self.opaque:
-                        return True
-                    if Point( P[ 0 ] + ( x == 0 and s[ 0 ] or 0 ) \
-                                     + ( y == 0 and s[ 0 ] or 0 ),
-                              P[ 1 ] + ( x == 1 and s[ 0 ] or 0 ) \
-                                     + ( y == 1 and s[ 0 ] or 0 ),
-                              P[ 2 ] + ( x == 2 and s[ 0 ] or 0 ) \
-                                     + ( y == 2 and s[ 0 ] or 0 ) ) \
-                    in self.opaque:
-                        return True
-                    P[ x ] += s[ x ]
-                    P[ y ] += s[ y ]
-                    exy = exy + d1xy
-                    exz = exz + dxz
-            elif exz > 0:
-                if Point( P[ 0 ] + ( z == 0 and s[ 0 ] or 0 ),
-                          P[ 1 ] + ( z == 1 and s[ 1 ] or 0 ),
-                          P[ 2 ] + ( z == 2 and s[ 2 ] or 0 ) ) \
-                in self.opaque:
-                    return True
-                if Point( P[ 0 ] + ( x == 0 and s[ 0 ] or 0 ) \
-                                 + ( z == 0 and s[ 0 ] or 0 ),
-                          P[ 1 ] + ( x == 1 and s[ 0 ] or 0 ) \
-                                 + ( z == 1 and s[ 0 ] or 0 ),
-                          P[ 2 ] + ( x == 2 and s[ 0 ] or 0 ) \
-                                 + ( z == 2 and s[ 0 ] or 0 ) ) \
-                in self.opaque:
-                    return True
-                P[ x ] += s[ x ]
+        yd = a[ y ] - a[ x ] / 2
+        zd = a[ z ] - a[ x ] / 2
+        while True:
+            if self.voxel( P.x, P.y, P.z ) in self.opaque:
+                return True
+            if( P[ x ] == P2[ x ] ):
+                break
+            if( yd >= 0 ):
+                P[ y ] += s[ y ]
+                yd -= a[ x ]
+            if( zd >= 0 ):
                 P[ z ] += s[ z ]
-                exy += dxy
-                exz += d1xz
-            else:
-                if Point( P[ 0 ] + ( x == 0 and s[ 0 ] or 0 ),
-                          P[ 1 ] + ( x == 1 and s[ 1 ] or 0 ),
-                          P[ 2 ] + ( x == 2 and s[ 2 ] or 0 ) ) \
-                in self.opaque:
-                    return True
-                P[ x ] += s[ x ]
-                exy = exy + dxy
-                exz = exz + dxz
+                zd -= a[ x ]
+            P[ x ] += s[ x ]
+            yd += a[ y ]
+            zd += a[ z ]
         return False
+ 
+    def voxel( self, x, y, z ):
+        """\
+        TODO
+        """
+        return Point( x * self.pstep, y * self.pstep, z * self.pstep )
 
     def visualize( self, color = ( 1, 1, 1 ) ):
         """\
@@ -438,7 +371,7 @@ class MultiCamera( IndexedSet ):
     """\
     Abstract base class for multi-camera model.
     """
-    def __init__( self, scene, cameras = set() ):
+    def __init__( self, scene, cameras = set(), directional = True ):
         """\
         Constructor.
 
@@ -446,15 +379,16 @@ class MultiCamera( IndexedSet ):
         @type scene: L{Scene}
         @param cameras: The initial set of cameras.
         @type cameras: C{set}
+        @param directional: Use directional points if true.
+        @type directional: C{bool}
         """
         if self.__class__ is MultiCamera:
             raise NotImplementedError, ( "please use one of the subclasses" )
-        IndexedSet.__init__( self, 'name', cameras )
+        self.directional = directional
         self.model = FuzzySet()
         self.scene = scene
         self.inscene = {}
-        for camera in self:
-            self._update_inscene( camera.name )
+        IndexedSet.__init__( self, 'name', cameras )
 
     def add( self, item ):
         """\
@@ -476,7 +410,8 @@ class MultiCamera( IndexedSet ):
         @type key: C{str}
         """
         dpoints = []
-        for dpoint in self.scene.generate_points():
+        for dpoint in self.scene.generate_points( d = self.directional \
+                                                  and 'all' or None ):
             mu = self[ key ].mu( dpoint )
             if mu > 0 and not self.scene.occluded( dpoint, self[ key ].pose.T ):
                 dpoints.append( FuzzyElement( dpoint, mu ) )
@@ -512,7 +447,7 @@ class MultiCameraSimple( MultiCamera ):
     """\
     Simple (single-camera coverage) multi-camera model.
     """
-    def __init__( self, scene, cameras = set() ):
+    def __init__( self, scene, cameras = set(), directional = True ):
         """\
         Constructor.
 
@@ -520,8 +455,10 @@ class MultiCameraSimple( MultiCamera ):
         @type scene: L{Scene}
         @param cameras: The initial set of cameras.
         @type cameras: C{set}
+        @param directional: Use directional points if true.
+        @type directional: C{bool}
         """
-        MultiCamera.__init__( self, scene, cameras )
+        MultiCamera.__init__( self, scene, cameras, directional )
 
     def update( self ):
         """\
@@ -543,14 +480,21 @@ class MultiCameraSimple( MultiCamera ):
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        return max( [ camera.mu( dpoint ) for camera in self ] )
+        views = []
+        for camera in self:
+            if not self.scene.occluded( dpoint, camera.pose.T ):
+                views.append( camera )
+        try:
+            return max( [ camera.mu( dpoint ) for camera in views ] )
+        except ValueError:
+            return 0.0
 
 
 class MultiCamera3D( MultiCamera ):
     """\
     3D (dual-camera coverage) multi-camera model.
     """
-    def __init__( self, scene, cameras = set() ):
+    def __init__( self, scene, cameras = set(), directional = True ):
         """\
         Constructor.
 
@@ -558,8 +502,10 @@ class MultiCamera3D( MultiCamera ):
         @type scene: L{Scene}
         @param cameras: The initial set of cameras.
         @type cameras: C{set}
+        @param directional: Use directional points if true.
+        @type directional: C{bool}
         """
-        MultiCamera.__init__( self, scene, cameras )
+        MultiCamera.__init__( self, scene, cameras, directional )
 
     def update( self ):
         """\
@@ -568,9 +514,9 @@ class MultiCamera3D( MultiCamera ):
         """
         self.model = FuzzySet( [ FuzzyElement( dpoint, mu = 0.0 ) \
                      for dpoint in self.scene.generate_points() ] )
-        pairs = set( [ self.inscene[ pair[ 0 ].name ] & \
-                       self.inscene[ pair[ 1 ].name ] \
-                       for pair in combinations( self, 2 ) ] )
+        pairs = set( [ self.inscene[ pair[ 0 ] ] & \
+                       self.inscene[ pair[ 1 ] ] \
+                       for pair in combinations( self.keys(), 2 ) ] )
         for pair in pairs:
             self.model |= pair
 
@@ -585,5 +531,7 @@ class MultiCamera3D( MultiCamera ):
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        return max( [ min( pair[ 0 ].mu( dpoint ), pair[ 1 ].mu( dpoint ) ) \
-                      for pair in combinations( self, 2 ) ] )
+        # TODO: account for occlusion
+        return max( [ min( self[ pair[ 0 ] ].mu( dpoint ), \
+                           self[ pair[ 1 ] ].mu( dpoint ) ) \
+                      for pair in combinations( self.keys(), 2 ) ] )

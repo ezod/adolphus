@@ -85,7 +85,10 @@ class Point( object ):
         @param p: The other point.
         @type p: L{Point}
         """
-        return self.x == p.x and self.y == p.y and self.z == p.z
+        try:
+            return self.x == p.x and self.y == p.y and self.z == p.z
+        except AttributeError:
+            return False
 
     def __neq__( self, p ):
         """\
@@ -344,8 +347,11 @@ class DirectionalPoint( Point ):
         @param p: The other point.
         @type p: L{DirectionalPoint}
         """
-        return self.x == p.x and self.y == p.y and self.z == p.z \
-               and self.rho == p.rho and self.eta == p.eta
+        try:
+            return self.x == p.x and self.y == p.y and self.z == p.z \
+                   and self.rho == p.rho and self.eta == p.eta
+        except AttributeError:
+            return False
 
     def _normalize_direction( self ):
         """\

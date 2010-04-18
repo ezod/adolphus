@@ -15,9 +15,9 @@ C = Camera( 'C', 4.3393, 12.15, 0.00465, 0.00465, 718.82325, 422.9936, 1360, 102
 print "Creating scene..."
 S = Scene( RealRange( ( -400.0, 400.0 ) ), RealRange( ( -400.0, 400.0 ) ), RealRange( ( 0.0, 1000.0 ) ), 50.0, pi / 2.0 )
 #S.make_opaque( RealRange( ( -400.0, 400.0 ) ), RealRange( ( -400.0, 400.0 ) ), RealRange( ( -100.0, 0.0 ) ) )
-#S.make_opaque( RealRange( ( 0.0, 100.0 ) ), RealRange( ( 0.0, 100.0 ) ), RealRange( ( 200.0, 300.0 ) ) )
+S.make_opaque( RealRange( ( 0.0, 100.0 ) ), RealRange( ( 0.0, 100.0 ) ), RealRange( ( 200.0, 300.0 ) ) )
 print "Creating discrete multi-camera model..."
-M = MultiCameraSimple( S, set( [ C ] ) )
+M = MultiCameraSimple( S, set( [ C ] ), directional = False )
 print "Updating in-scene model..."
 M.update()
 print "Visualizing..."
