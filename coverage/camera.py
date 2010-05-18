@@ -389,6 +389,8 @@ class MultiCamera( IndexedSet ):
         self.scene = scene
         self.inscene = {}
         IndexedSet.__init__( self, 'name', cameras )
+        for camera in self:
+            self._update_inscene( camera.name )
 
     def add( self, item ):
         """\
@@ -400,7 +402,7 @@ class MultiCamera( IndexedSet ):
         """
         if isinstance( item, Camera ):
             IndexedSet.add( self, item )
-        self._update_inscene( item.name )
+            self._update_inscene( item.name )
 
     def _update_inscene( self, key ):
         """\
@@ -460,7 +462,7 @@ class MultiCameraSimple( MultiCamera ):
         """
         MultiCamera.__init__( self, scene, cameras, directional )
 
-    def update( self ):
+    def update_model( self ):
         """\
         Update the simple multi-camera network discrete spatial-directional
         fuzzy set (coverage model).
@@ -507,7 +509,7 @@ class MultiCamera3D( MultiCamera ):
         """
         MultiCamera.__init__( self, scene, cameras, directional )
 
-    def update( self ):
+    def update_model( self ):
         """\
         Update the 3D multi-camera network discrete spatial-directional fuzzy
         set (coverage model).
