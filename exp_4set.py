@@ -27,7 +27,7 @@ S.make_desired( RealRange( ( -350.0, 350.0 ) ), RealRange( ( -300.0, 300.0 ) ), 
 print "Creating discrete multi-camera model..."
 M = MultiCameraSimple( S, C, directional = False )
 print "Updating in-scene model..."
-M.update()
+M.update_model()
 #print "Visualizing..."
 M.visualize( scale = 30.0, color = ( 0.3, 0.3, 0.3 ) )
 visual_axes( scale = 30.0, color = ( 0.3, 0.3, 0.3 ) )
