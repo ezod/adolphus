@@ -170,8 +170,6 @@ class Scene( object ):
         yd = a[ y ] - a[ x ] / 2
         zd = a[ z ] - a[ x ] / 2
         while True:
-            if self.voxel( P.x, P.y, P.z ) in self.opaque:
-                return True
             if( P[ x ] == P2[ x ] ):
                 break
             if( yd >= 0 ):
@@ -183,6 +181,8 @@ class Scene( object ):
             P[ x ] += s[ x ]
             yd += a[ y ]
             zd += a[ z ]
+            if self.voxel( P.x, P.y, P.z ) in self.opaque:
+                return True
         return False
  
     def voxel( self, x, y, z ):
@@ -365,13 +365,16 @@ class Camera( object ):
         visual.pyramid( pos = self.pose.T.tuple, axis = \
             self.pose.map_rotate( Point( 0, 0, -scale ) ).tuple, \
             size = ( scale, scale, scale ), color = color )
+        #visual.cylinder( pos = self.pose.T.tuple, axis = \
+        #    self.pose.map_rotate( Point( 0, 0, scale ) ).tuple, \
+        #    length = 2000, radius = scale / 10.0 )
 
 
 class MultiCamera( IndexedSet ):
     """\
     Abstract base class for multi-camera model.
     """
-    def __init__( self, scene, cameras = set(), directional = True ):
+    def __init__( self, scene, cameras = set(), directional = True, dense = True ):
         """\
         Constructor.
 
@@ -385,6 +388,7 @@ class MultiCamera( IndexedSet ):
         if self.__class__ is MultiCamera:
             raise NotImplementedError, ( "please use one of the subclasses" )
         self.directional = directional
+        self.dense = dense
         self.model = FuzzySet()
         self.scene = scene
         self.inscene = {}
@@ -404,6 +408,19 @@ class MultiCamera( IndexedSet ):
             IndexedSet.add( self, item )
             self._update_inscene( item.name )
 
+    def update_point( self, dpoint ):
+        """\
+        Update a single (directional) point in the model, for all cameras, with
+        occlusion.
+
+        @param dpoint: The directional point.
+        @type dpoint: L{DirectionalPoint}
+        """
+        for key in self.keys():
+            mu = self[ key ].mu( dpoint )
+            if mu > 0 and not self.scene.occluded( dpoint, self[ key ].pose.T ):
+                self.inscene[ key ] |= FuzzySet( [ FuzzyElement( dpoint, mu ) ] )
+
     def _update_inscene( self, key ):
         """\
         Update an individual in-scene camera fuzzy set (with occlusion).
@@ -411,6 +428,10 @@ class MultiCamera( IndexedSet ):
         @param key: The name of the camera to update.
         @type key: C{str}
         """
+        if not self.dense:
+            if not self.inscene.has_key( key ):
+                self.inscene[ key ] = FuzzySet()
+            return
         dpoints = []
         for dpoint in self.scene.generate_points( d = self.directional \
                                                   and 'all' or None ):
@@ -425,7 +446,7 @@ class MultiCamera( IndexedSet ):
         """
         return self.model.overlap( self.scene.D )
 
-    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ) ):
+    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ), points = True ):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
@@ -440,16 +461,17 @@ class MultiCamera( IndexedSet ):
         for camera in self:
             camera.visualize( scale = scale, color = color )
         self.scene.visualize( color = color )
-        for dpoint in self.model.keys():
-            dpoint.visualize( scale = scale, color = ( 1, 0, 0 ),
-                              opacity = self.model[ dpoint ].mu )
+        if points:
+            for dpoint in self.model.keys():
+                dpoint.visualize( scale = scale, color = ( 1, 0, 0 ),
+                                  opacity = self.model[ dpoint ].mu )
 
 
 class MultiCameraSimple( MultiCamera ):
     """\
     Simple (single-camera coverage) multi-camera model.
     """
-    def __init__( self, scene, cameras = set(), directional = True ):
+    def __init__( self, scene, cameras = set(), directional = True, dense = True ):
         """\
         Constructor.
 
@@ -460,7 +482,7 @@ class MultiCameraSimple( MultiCamera ):
         @param directional: Use directional points if true.
         @type directional: C{bool}
         """
-        MultiCamera.__init__( self, scene, cameras, directional )
+        MultiCamera.__init__( self, scene, cameras, directional, dense )
 
     def update_model( self ):
         """\
@@ -496,7 +518,7 @@ class MultiCamera3D( MultiCamera ):
     """\
     3D (dual-camera coverage) multi-camera model.
     """
-    def __init__( self, scene, cameras = set(), directional = True ):
+    def __init__( self, scene, cameras = set(), directional = True, dense = True ):
         """\
         Constructor.
 
@@ -507,18 +529,19 @@ class MultiCamera3D( MultiCamera ):
         @param directional: Use directional points if true.
         @type directional: C{bool}
         """
-        MultiCamera.__init__( self, scene, cameras, directional )
+        MultiCamera.__init__( self, scene, cameras, directional, dense )
 
     def update_model( self ):
         """\
         Update the 3D multi-camera network discrete spatial-directional fuzzy
         set (coverage model).
         """
-        self.model = FuzzySet( [ FuzzyElement( dpoint, mu = 0.0 ) \
-                     for dpoint in self.scene.generate_points() ] )
-        pairs = set( [ self.inscene[ pair[ 0 ] ] & \
-                       self.inscene[ pair[ 1 ] ] \
-                       for pair in combinations( self.keys(), 2 ) ] )
+        #self.model = FuzzySet( [ FuzzyElement( dpoint, mu = 0.0 ) \
+        #             for dpoint in self.scene.generate_points() ] )
+        self.model = FuzzySet()
+        pairs = [ self.inscene[ pair[ 0 ] ] & \
+                  self.inscene[ pair[ 1 ] ] \
+                  for pair in combinations( self.keys(), 2 ) ]
         for pair in pairs:
             self.model |= pair
 
