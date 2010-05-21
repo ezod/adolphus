@@ -691,20 +691,43 @@ def rotation_matrix( angle ):
     R = numpy.ndarray( ( 3, 3 ) )
 
     R[ 0 ][ 0 ] = cos( phi ) * cos( psi )
-    R[ 0 ][ 1 ] = sin( theta ) * sin( phi ) * \
+    R[ 1 ][ 0 ] = sin( theta ) * sin( phi ) * \
                   cos( psi ) - cos( theta ) * sin( psi )
-    R[ 0 ][ 2 ] = cos( theta ) * sin( phi ) * \
+    R[ 2 ][ 0 ] = cos( theta ) * sin( phi ) * \
                   cos( psi ) + sin( theta ) * sin( psi )
-    R[ 1 ][ 0 ] = cos( phi ) * sin( psi )
+    R[ 0 ][ 1 ] = cos( phi ) * sin( psi )
     R[ 1 ][ 1 ] = sin( theta ) * sin( phi ) * \
                   sin( psi ) + cos( theta ) * cos( psi )
-    R[ 1 ][ 2 ] = cos( theta ) * sin( phi ) * \
+    R[ 2 ][ 1 ] = cos( theta ) * sin( phi ) * \
                   sin( psi ) - sin( theta ) * cos( psi )
-    R[ 2 ][ 0 ] = -sin( phi )
-    R[ 2 ][ 1 ] = sin( theta ) * cos( phi )
+    R[ 0 ][ 2 ] = -sin( phi )
+    R[ 1 ][ 2 ] = sin( theta ) * cos( phi )
     R[ 2 ][ 2 ] = cos( theta ) * cos( phi )
 
     return R
+
+
+def rodrigues( angle ):
+    """\
+    Generate R given a tuple of 3 fixed-axis rotation angles.
+
+    @param angle: Rotation angles in radians.
+    @type angle: C{tuple} of L{Angle}
+    @return: Rotation matrix.
+    @rtype: L{numpy.ndarray}
+    """
+    eps = 0.0001
+    norm = lambda x: numpy.sqrt(numpy.square(x).sum())
+    theta = norm(numpy.array(angle))
+    if theta < eps:
+        return numpy.diag((1.0, 1.0, 1.0))
+    omega = numpy.array(angle) / theta
+    alpha = cos(theta)
+    beta = sin(theta)
+    gamma = 1.0 - alpha
+    omegav = numpy.array([[0.0, -omega[2], omega[1]], [omega[2], 0.0, -omega[0]], [-omega[1], omega[0], 0.0]])
+    A = omega * numpy.array([[omega[0]], [omega[1]], [omega[2]]])
+    return numpy.diag((1.0, 1.0, 1.0)) * alpha + omegav * beta + A * gamma
 
 
 def visual_axes( scale = 1.0, color = ( 1, 1, 1 ) ):
