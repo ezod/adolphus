@@ -542,7 +542,7 @@ class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
-    def __init__(self, T, R):
+    def __init__(self, T = None, R = None):
         """\
         Constructor.
 

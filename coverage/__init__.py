@@ -12,4 +12,5 @@ __version__ = ( 0, 0, 0 )
 __all__ = [ 'geometry', 'camera' ]
 
 from geometry import *
+from scene import *
 from camera import *
