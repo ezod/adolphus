@@ -315,9 +315,15 @@ class Point(object):
         """
         if not VIS:
             raise NotImplementedError("visual module not loaded")
-        self.vis_point = visual.sphere(radius = 0.1 * scale,
-                                       pos = (self.x, self.y, self.z),
-                                       color = color, opacity = opacity)
+        try:
+            self.vis_point.radius = 0.1 * scale
+            self.vis_point.pos = self.tuple
+            self.vis_point.color = color
+            self.vis_point.opacity = opacity
+        except AttributeError:
+            self.vis_point = visual.sphere(radius = 0.1 * scale,
+                pos = self.tuple, color = color, opacity = opacity)
+
 
 
 class DirectionalPoint(Point):
@@ -520,12 +526,16 @@ class DirectionalPoint(Point):
         @param opacity: The opacity with which to plot the point.
         @type opacity: C{float}
         """
-        Point.visualize(self, scale = scale, color = color,
-                        opacity = opacity)
+        Point.visualize(self, scale = scale, color = color, opacity = opacity)
         unit = scale * self.direction_unit
-        self.vis_dir = visual.arrow(pos = (self.x, self.y, self.z),
-                                    axis = (unit.x, unit.y, unit.z),
-                                    color = color, opacity = opacity)
+        try:
+            self.vis_dir.pos = self.tuple
+            self.vis_dir.axis = unit.tuple
+            self.vis_dir.color = color
+            self.vis_dir.opacity = opacity
+        except AttributeError:
+            self.vis_dir = visual.arrow(pos = self.tuple, axis = unit.tuple,
+                color = color, opacity = opacity)
 
 
 class Pose(object):
@@ -720,7 +730,9 @@ def rodrigues(angle):
     alpha = cos(theta)
     beta = sin(theta)
     gamma = 1.0 - alpha
-    omegav = numpy.array([[0.0, -omega[2], omega[1]], [omega[2], 0.0, -omega[0]], [-omega[1], omega[0], 0.0]])
+    omegav = numpy.array([[0.0, -omega[2], omega[1]],
+                          [omega[2], 0.0, -omega[0]],
+                          [-omega[1], omega[0], 0.0]])
     A = omega * numpy.array([[omega[0]], [omega[1]], [omega[2]]])
     return numpy.diag((1.0, 1.0, 1.0)) * alpha + omegav * beta + A * gamma
 
