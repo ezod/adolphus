@@ -9,6 +9,7 @@ geometric descriptor functions for features.
 """
 
 from math import pi, sqrt, sin, cos, asin, acos, atan, atan2
+from numbers import Number
 import numpy
 
 try:
@@ -18,46 +19,46 @@ except ImportError:
     VIS = False
 
 
-class Angle( float ):
+class Angle(float):
     """\
     Angle class. All operations are modulo 2 * pi.
     """
-    def __new__( cls, arg = 0.0 ):
-        return float.__new__( cls, float( arg ) % ( 2 * pi ) )
+    def __new__(cls, arg = 0.0):
+        return float.__new__(cls, float(arg) % (2 * pi))
 
-    def __eq__( self, other ):
-        return float( self ) == float( other ) % ( 2 * pi )
+    def __eq__(self, other):
+        return float(self) == float(other) % (2 * pi)
 
-    def __ne__( self, other ):
+    def __ne__(self, other):
         return not self == other
 
-    def __gt__( self, other ):
-        return float( self ) > float( other ) % ( 2 * pi )
+    def __gt__(self, other):
+        return float(self) > float(other) % (2 * pi)
 
-    def __lt__( self, other ):
-        return float( self ) < float( other ) % ( 2 * pi )
+    def __lt__(self, other):
+        return float(self) < float(other) % (2 * pi)
 
-    def __ge__( self, other ):
-        return float( self ) >= float( other ) % ( 2 * pi )
+    def __ge__(self, other):
+        return float( self) >= float(other) % (2 * pi)
 
-    def __le__( self, other ):
-        return float( self ) <= float( other ) % ( 2 * pi )
+    def __le__(self, other):
+        return float(self) <= float(other) % (2 * pi)
 
-    def __add__( self, other ):
-        return Angle( float( self ) + float( other ) )
+    def __add__(self, other):
+        return Angle(float(self) + float(other))
 
-    def __sub__( self, other ):
-        return Angle( float( self ) - float( other ) )
+    def __sub__(self, other):
+        return Angle(float(self) - float(other))
 
-    def __neg__( self ):
-        return Angle( -float( self ) )
+    def __neg__(self):
+        return Angle(-float(self))
 
 
-class Point( object ):
+class Point(object):
     """\
     3D point (vector) class.
     """
-    def __init__( self, x, y, z ):
+    def __init__(self, x = 0.0, y = 0.0, z = 0.0):
         """\
         Constructor.
     
@@ -68,17 +69,26 @@ class Point( object ):
         @param z: The z coordinate.
         @type z: C{float}
         """
-        self.x = float( x )
-        self.y = float( y )
-        self.z = float( z )
+        if isinstance(x, tuple):
+            self.x, self.y, self.z = x
+        elif isinstance(x, numpy.ndarray):
+            self.x, self.y, self.z = [x[i][0] for i in range(3)]
+        elif isinstance(x, Number) \
+         and isinstance(y, Number) \
+         and isinstance(z, Number):
+            self.x = float(x)
+            self.y = float(y)
+            self.z = float(z)
+        else:
+            raise TypeError("incompatible type in initializer")
     
-    def __hash__( self ):
+    def __hash__(self):
         """\
         Hash function.
         """
         return self.x + self.y + self.z
 
-    def __eq__( self, p ):
+    def __eq__(self, p):
         """\
         Equality function.
 
@@ -90,16 +100,16 @@ class Point( object ):
         except AttributeError:
             return False
 
-    def __neq__( self, p ):
+    def __neq__(self, p):
         """\
         Inequality function.
 
         @param p: The other point.
         @type p: L{Point}
         """
-        return not self.__eq__( p )
+        return not self.__eq__(p)
 
-    def __getitem__( self, i ):
+    def __getitem__(self, i):
         """\
         Return x, y, and z via numerical indexing.
     
@@ -115,7 +125,7 @@ class Point( object ):
         elif i == 2:
             return self.z
 
-    def __setitem__( self, i, value ):
+    def __setitem__(self, i, value):
         """\
         Set x, y, and z via numerical indexing.
     
@@ -131,7 +141,7 @@ class Point( object ):
         elif i == 2:
             self.z = value
 
-    def __add__( self, p ):
+    def __add__(self, p):
         """\
         Vector addition.
 
@@ -140,9 +150,9 @@ class Point( object ):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point( self.x + p.x, self.y + p.y, self.z + p.z )
+        return Point(self.x + p.x, self.y + p.y, self.z + p.z)
 
-    def __sub__( self, p ):
+    def __sub__(self, p):
         """\
         Vector subtraction.
 
@@ -151,9 +161,9 @@ class Point( object ):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point( self.x - p.x, self.y - p.y, self.z - p.z )
+        return Point(self.x - p.x, self.y - p.y, self.z - p.z)
 
-    def __mul__( self, p ):
+    def __mul__(self, p):
         """\
         Scalar multiplication (if p is a scalar) or dot product (if p is a
         vector).
@@ -163,12 +173,12 @@ class Point( object ):
         @return: Result vector.
         @rtype: L{Point}
         """
-        if isinstance( p, Point ):
-            return ( self.x * p.x + self.y * p.y + self.z * p.z )
+        if isinstance(p, Point):
+            return (self.x * p.x + self.y * p.y + self.z * p.z)
         else:
-            return Point( self.x * p, self.y * p, self.z * p )
+            return Point(self.x * p, self.y * p, self.z * p)
 
-    def __rmul__( self, p ):
+    def __rmul__(self, p):
         """\
         Scalar multiplication (if p is a scalar) or dot product (if p is a
         vector).
@@ -178,9 +188,9 @@ class Point( object ):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return self.__mul__( p )
+        return self.__mul__(p)
 
-    def __div__( self, p ):
+    def __div__(self, p):
         """\
         Scalar division.
 
@@ -189,9 +199,9 @@ class Point( object ):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point( self.x / p, self.y / p, self.z / p )
+        return Point(self.x / p, self.y / p, self.z / p)
 
-    def __pow__( self, p ):
+    def __pow__(self, p):
         """\
         Cross product.
 
@@ -200,76 +210,76 @@ class Point( object ):
         @return: Result vector.
         @rtype: L{Point}
         """
-        if not isinstance( p, Point ):
-            raise TypeError( "cross product operand must be a vector" )
-        return Point( self.y * p.z - self.z * p.y,
-                      self.z * p.x - self.x * p.z,
-                      self.x * p.y - self.y * p.x )
+        if not isinstance(p, Point):
+            raise TypeError("cross product operand must be a vector")
+        return Point(self.y * p.z - self.z * p.y,
+                     self.z * p.x - self.x * p.z,
+                     self.x * p.y - self.y * p.x)
 
-    def __neg__( self ):
+    def __neg__(self):
         """\
         Negation.
 
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point( -self.x, -self.y, -self.z )
+        return Point(-self.x, -self.y, -self.z)
 
-    def __repr__( self ):
+    def __repr__(self):
         """\
         String representation, displays in a tuple format.
 
         @return: Vector string.
         @rtype: C{string}
         """
-        return "(" + str( self.x ) + ", " + str( self.y ) + ", " + \
-        str( self.z ) + ")"
+        return "(" + str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ")"
 
     __str__ = __repr__
 
     @property
-    def tuple( self ):
+    def tuple(self):
         """
         Return a tuple of this vector.
 
         @return: Vector tuple.
         @rtype: C{tuple}
         """
-        return ( self.x, self.y, self.z )
+        return (self.x, self.y, self.z)
 
     @property
-    def array( self ):
+    def array(self):
         """\
         Return a NumPy array of this vector.
 
         @return: Vector array.
-        @rtype: C{numpy.array}
+        @rtype: C{numpy.ndarray}
         """
-        return numpy.array( [ [ self.x ], [ self.y ], [ self.z ] ] )
+        return numpy.array([[self.x], [self.y], [self.z]])
 
     @property
-    def magnitude( self ):
+    def magnitude(self):
         """\
         Return the magnitude of this vector.
 
         @return: Vector magnitude.
         @rtype: C{float}
         """
-        return sqrt( self.x ** 2 + self.y ** 2 + self.z ** 2 )
+        return sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
 
     @property
-    def normal( self ):
+    def normal(self):
         """\
-        Return a unit vector in the direction of this vector.
+        Return a normalized (unit) vector in the direction of this vector.
 
         @return: Unit vector.
         @rtype: L{Point}
         """
         m = self.magnitude
-        return m > 0 and Point( self.x / m, self.y / m, self.z / m ) \
-                     or Point( 0, 0, 0 )
+        if m == 0:
+            raise ValueError("cannot normalize a zero vector")
+        return Point(self.x / m, self.y / m, self.z / m)
 
-    def euclidean( self, p ):
+    def euclidean(self, p):
         """\
         Return the Euclidean distance from this point to another.
 
@@ -278,10 +288,10 @@ class Point( object ):
         @return: Euclidean distance.
         @rtype: C{float}
         """
-        return sqrt( ( self.x - p.x ) ** 2 + ( self.y - p.y ) ** 2 + \
-        ( self.z - p.z ) ** 2 )
+        return sqrt((self.x - p.x) ** 2 + (self.y - p.y) ** 2 + \
+                    (self.z - p.z) ** 2)
 
-    def angle( self, p ):
+    def angle(self, p):
         """\
         Return the angle between this vector and another.
     
@@ -290,9 +300,9 @@ class Point( object ):
         @return: Angle in radians.
         @rtype: L{Angle}
         """
-        return Angle( acos( p.normal * self.normal ) )
+        return Angle(acos(p.normal * self.normal))
 
-    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ), opacity = 1.0 ):
+    def visualize(self, scale = 1.0, color = (1, 1, 1), opacity = 1.0):
         """\
         Plot the point in a 3D visual model.
 
@@ -304,17 +314,17 @@ class Point( object ):
         @type opacity: C{float}
         """
         if not VIS:
-            raise NotImplementedError( "visual module not loaded" )
-        self.vis_point = visual.sphere( radius = 0.1 * scale,
-                                        pos = ( self.x, self.y, self.z ),
-                                        color = color, opacity = opacity )
+            raise NotImplementedError("visual module not loaded")
+        self.vis_point = visual.sphere(radius = 0.1 * scale,
+                                       pos = (self.x, self.y, self.z),
+                                       color = color, opacity = opacity)
 
 
-class DirectionalPoint( Point ):
+class DirectionalPoint(Point):
     """\
     3D directional point (spatial-directional vector) class.
     """
-    def __init__( self, x, y, z, rho, eta ):
+    def __init__(self, x = 0.0, y = 0.0, z = 0.0, rho = 0.0, eta = 0.0):
         """\
         Constructor.
     
@@ -329,18 +339,25 @@ class DirectionalPoint( Point ):
         @param eta: The azimuth angle, right-handed from positive x-axis.
         @type eta: L{Angle}
         """
-        Point.__init__( self, x, y, z )
-        self.rho = Angle( rho )
-        self.eta = Angle( eta )
+        if isinstance(x, tuple) and len(x) == 5:
+            self.rho, self.eta = x[-2:]
+        elif isinstance(x, numpy.ndarray) and len(x) == 5:
+            self.rho, self.eta = [x[i][0] for i in [3, 4]]
+        elif isinstance(rho, Number) and isinstance(eta, Number):
+            self.rho = Angle(rho)
+            self.eta = Angle(eta)
+        else:
+            raise TypeError("incompatible type in initializer")
+        Point.__init__(self, x, y, z)
         self._normalize_direction()
 
-    def __hash__( self ):
+    def __hash__(self):
         """\
         Hash function.
         """
         return self.x + self.y + self.z + self.rho + self.eta
 
-    def __eq__( self, p ):
+    def __eq__(self, p):
         """\
         Equality function.
 
@@ -353,16 +370,16 @@ class DirectionalPoint( Point ):
         except AttributeError:
             return False
 
-    def _normalize_direction( self ):
+    def _normalize_direction(self):
         """\
         Normalize the inclination angle to within [0,pi), reversing the azimuth
         angle as necesary.
         """
         if self.rho > pi:
-            self.rho -= 2. * ( self.rho - pi )
+            self.rho -= 2. * (self.rho - pi)
             self.eta += pi
 
-    def __getitem__( self, i ):
+    def __getitem__(self, i):
         """\
         Return x, y, z, rho, and eta via numerical indexing.
     
@@ -372,13 +389,13 @@ class DirectionalPoint( Point ):
         @rtype: C{float}
         """
         if i < 3:
-            return Point.__getitem__( self, i )
+            return Point.__getitem__(self, i)
         elif i == 3:
             return self.rho
         elif i == 4:
             return self.eta
 
-    def __setitem__( self, i, value ):
+    def __setitem__(self, i, value):
         """\
         Set x, y, z, rho, and eta via numerical indexing.
     
@@ -388,13 +405,13 @@ class DirectionalPoint( Point ):
         @type value: C{float}
         """
         if i < 3:
-            Point.__setitem__( self, i, value )
+            Point.__setitem__(self, i, value)
         elif i == 3:
             self.rho = value
         elif i == 4:
             self.eta = value
 
-    def __add__( self, p ):
+    def __add__(self, p):
         """\
         Vector addition.
 
@@ -403,10 +420,10 @@ class DirectionalPoint( Point ):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint( self.x + p.x, self.y + p.y, self.z + p.z,
-                                 self.rho, self.eta )
+        return DirectionalPoint(self.x + p.x, self.y + p.y, self.z + p.z,
+                                self.rho, self.eta)
 
-    def __sub__( self, p ):
+    def __sub__(self, p):
         """\
         Vector subtraction.
 
@@ -415,10 +432,10 @@ class DirectionalPoint( Point ):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint( self.x - p.x, self.y - p.y, self.z - p.z,
-                                 self.rho, self.eta )
+        return DirectionalPoint(self.x - p.x, self.y - p.y, self.z - p.z,
+                                self.rho, self.eta)
 
-    def __mul__( self, p ):
+    def __mul__(self, p):
         """\
         Scalar multiplication (if p is a scalar) or dot product (if p is a
         vector).
@@ -428,13 +445,13 @@ class DirectionalPoint( Point ):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        if isinstance( p, Point ):
-            return ( self.x * p.x + self.y * p.y + self.z * p.z )
+        if isinstance(p, Point):
+            return (self.x * p.x + self.y * p.y + self.z * p.z)
         else:
-            return DirectionalPoint( self.x * p, self.y * p, self.z * p,
-                                     self.rho, self.eta )
+            return DirectionalPoint(self.x * p, self.y * p, self.z * p,
+                                    self.rho, self.eta)
 
-    def __rmul__( self, p ):
+    def __rmul__(self, p):
         """\
         Scalar multiplication (if p is a scalar) or dot product (if p is a
         vector).
@@ -444,9 +461,9 @@ class DirectionalPoint( Point ):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return self.__mul__( p )
+        return self.__mul__(p)
 
-    def __div__( self, p ):
+    def __div__(self, p):
         """\
         Scalar division.
 
@@ -455,33 +472,33 @@ class DirectionalPoint( Point ):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return DirectionalPoint( self.x / p, self.y / p, self.z / p,
-                                 self.rho, self.eta )
+        return DirectionalPoint(self.x / p, self.y / p, self.z / p,
+                                self.rho, self.eta)
 
-    def __neg__( self ):
+    def __neg__(self):
         """\
         Negation.
 
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint( -self.x, -self.y, -self.z,
-                                 self.rho + pi, self.eta )
+        return DirectionalPoint(-self.x, -self.y, -self.z,
+                                self.rho + pi, self.eta)
 
-    def __repr__( self ):
+    def __repr__(self):
         """\
         String representation, displays in a tuple format.
 
         @return: Spatial-directional vector string.
         @rtype: C{string}
         """
-        return "(" + str( self.x ) + ", " + str( self.y ) + ", " + \
-        str( self.z ) + ", " + str( self.rho ) + ", " + str( self.eta ) + ")"
+        return "(" + str(self.x) + ", " + str(self.y) + ", " + \
+        str(self.z) + ", " + str(self.rho) + ", " + str(self.eta) + ")"
 
     __str__ = __repr__
 
     @property
-    def direction_unit( self ):
+    def direction_unit(self):
         """\
         Return a unit vector representation of the direction of this
         directional point.
@@ -489,10 +506,10 @@ class DirectionalPoint( Point ):
         @return: Unit vector representation of the direction.
         @rtype: L{Point}
         """
-        return Point( sin( self.rho ) * cos( self.eta ),
-                      sin( self.rho ) * sin( self.eta ), cos( self.rho ) )
+        return Point(sin(self.rho) * cos(self.eta),
+                     sin(self.rho) * sin(self.eta), cos(self.rho))
 
-    def visualize( self, scale = 1.0, color = ( 1, 1, 1 ), opacity = 1.0 ):
+    def visualize(self, scale = 1.0, color = (1, 1, 1), opacity = 1.0):
         """\
         Plot the directional point in a 3D visual model.
 
@@ -503,19 +520,19 @@ class DirectionalPoint( Point ):
         @param opacity: The opacity with which to plot the point.
         @type opacity: C{float}
         """
-        Point.visualize( self, scale = scale, color = color,
-                         opacity = opacity )
+        Point.visualize(self, scale = scale, color = color,
+                        opacity = opacity)
         unit = scale * self.direction_unit
-        self.vis_dir = visual.arrow( pos = ( self.x, self.y, self.z ),
-                                     axis = ( unit.x, unit.y, unit.z ),
-                                     color = color, opacity = opacity )
+        self.vis_dir = visual.arrow(pos = (self.x, self.y, self.z),
+                                    axis = (unit.x, unit.y, unit.z),
+                                    color = color, opacity = opacity)
 
 
-class Pose( object ):
+class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
-    def __init__( self, T, R ):
+    def __init__(self, T, R):
         """\
         Constructor.
 
@@ -524,21 +541,20 @@ class Pose( object ):
         @param R: The 3x3 rotation matrix.
         @type R: C{numpy.ndarray}
         """
-        if isinstance( T, Point ):
+        if isinstance(T, Point):
             self.T = T
         elif T is None:
-            self.T = Point( 0, 0, 0 )
+            self.T = Point(0, 0, 0)
         else:
-            raise TypeError( "Translation vector must be a Point or None" )
-        if isinstance( R, numpy.ndarray ):
+            raise TypeError("translation vector must be a Point or None")
+        if isinstance(R, numpy.ndarray):
             self.R = R
         elif R is None:
-            self.R = numpy.array( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ], \
-            [ 0.0, 0.0, 1.0 ] ] )
+            self.R = numpy.diag((1.0, 1.0, 1.0))
         else:
-            raise TypeError( "Rotation matrix must be a NumPy array or None" )
+            raise TypeError("rotation matrix must be a NumPy array or None")
 
-    def __add__( self, other ):
+    def __add__(self, other):
         """\
         Pose composition: PB(PA(x)) = (PA + PB)(x).
 
@@ -547,18 +563,13 @@ class Pose( object ):
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        if not isinstance( other, Pose ):
-            raise TypeError( "Argument must be a pose" )
-        Tnew = Point( ( other.R[ 0 ][ 0 ] * self.T.x + other.R[ 0 ][ 1 ] * \
-                      self.T.y + other.R[ 0 ][ 2 ] * self.T.z ),
-                      ( other.R[ 1 ][ 0 ] * self.T.x + other.R[ 1 ][ 1 ] * \
-                      self.T.y + other.R[ 1 ][ 2 ] * self.T.z ),
-                      ( other.R[ 2 ][ 0 ] * self.T.x + other.R[ 2 ][ 1 ] * \
-                      self.T.y + other.R[ 2 ][ 2 ] * self.T.z ) ) + other.T
-        Rnew = numpy.dot( other.R, self.R )
-        return Pose( Tnew, Rnew )
+        if not isinstance(other, Pose):
+            raise TypeError("argument must be a Pose")
+        Tnew = Point(numpy.dot(other.R, self.T.array)) + other.T
+        Rnew = numpy.dot(other.R, self.R)
+        return Pose(Tnew, Rnew)
 
-    def __sub__( self, other ):
+    def __sub__(self, other):
         """\
         Pose composition with the inverse.
     
@@ -567,9 +578,9 @@ class Pose( object ):
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        return self.__add__( -other )
+        return self.__add__(-other)
 
-    def __neg__( self ):
+    def __neg__(self):
         """\
         Pose inversion.
 
@@ -577,55 +588,51 @@ class Pose( object ):
         @rtype: L{Pose}
         """
         Rinv = self.R.transpose()
-        Tinv = Point( 0, 0, 0 )
-        for i in range( 3 ):
-            Tinv[ i ] = -( Rinv[ i ][ 0 ] * self.T.x + \
-                           Rinv[ i ][ 1 ] * self.T.y + \
-                           Rinv[ i ][ 2 ] * self.T.z )
-        return Pose( Tinv, Rinv )
+        Tinv = -Point(numpy.dot(Rinv, self.T.array))
+        return Pose(Tinv, Rinv)
 
-    def __repr__( self ):
+    def __repr__(self):
         """\
         String representation, display T and R.
 
         @return: String representations of T and R.
         @rtype: C{string}
         """
-        return str( self.T ) + "\n" + str( self.R )
+        return str(self.T) + "\n" + str(self.R)
 
     @property
-    def om( self ):
+    def om(self):
         """\
         Return the fixed-axis rotation angles from R.
 
         @return: Tuple containing roll, pitch, and yaw angles.
         @rtype: C{tuple}
         """
-        phi = Angle( asin( -1.0 * self.R[ 2 ][ 0 ] ) )
-        sign = cos( phi ) / abs( cos( phi ) )
-        theta = Angle( atan( self.R[ 2 ][ 1 ] / self.R[ 2 ][ 2 ] ) )
-        if sign * self.R[ 2 ][ 2 ] < 0:
+        phi = Angle(asin(-1.0 * self.R[0][2]))
+        sign = cos(phi) / abs(cos(phi))
+        theta = Angle(atan(self.R[1][2] / self.R[2][2]))
+        if sign * self.R[2][2] < 0:
             theta += pi
-        psi = Angle( atan( self.R[ 1 ][ 0 ] / self.R[ 0 ][ 0 ] ) )
-        if sign * self.R[ 0 ][ 0 ] < 0:
+        psi = Angle(atan(self.R[0][1] / self.R[0][0]))
+        if sign * self.R[0][0] < 0:
             psi += pi
-        return ( theta, phi, psi )
+        return (theta, phi, psi)
 
     @property
-    def nonzero( self ):
+    def nonzero(self):
         """\
         Check if this pose transformation has any effect.
 
         @return: True if this is a nontrivial mapping.
         @rtype: C{bool}
         """
-        if self.T.x == 0 and self.T.y == 0 and self.T.z == 0 \
-        and ( self.R - numpy.diag( numpy.array( [ 1, 1, 1 ] ) ) ).any() == 0:
+        if sum(self.T.tuple) == 0 \
+        and (self.R - numpy.diag((1.0, 1.0, 1.0))).any() == 0:
             return False
         else:
             return True
 
-    def map( self, p ):
+    def map(self, p):
         """\
         Map a point/vector through this pose.
 
@@ -634,9 +641,9 @@ class Pose( object ):
         @return: The mapped point/vector.
         @rtype: L{Point}
         """
-        return self.map_translate( self.map_rotate( p ) )
+        return self.map_translate(self.map_rotate(p))
 
-    def map_rotate( self, p ):
+    def map_rotate(self, p):
         """\
         Rotation component of point/vector mapping.
 
@@ -645,24 +652,16 @@ class Pose( object ):
         @return: The rotated point/vector.
         @rtype: L{Point}
         """
-        x = ( self.R[ 0 ][ 0 ] * p.x + \
-              self.R[ 0 ][ 1 ] * p.y + \
-              self.R[ 0 ][ 2 ] * p.z )
-        y = ( self.R[ 1 ][ 0 ] * p.x + \
-              self.R[ 1 ][ 1 ] * p.y + \
-              self.R[ 1 ][ 2 ] * p.z )
-        z = ( self.R[ 2 ][ 0 ] * p.x + \
-              self.R[ 2 ][ 1 ] * p.y + \
-              self.R[ 2 ][ 2 ] * p.z )
-        if isinstance( p, DirectionalPoint ):
-            unit = Pose( None, self.R ).map( p.direction_unit )
-            rho = acos( unit.z )
-            eta = atan2( unit.y, unit.x )
-            return DirectionalPoint( x, y, z, rho, eta )
+        q = numpy.dot(self.R, p.array)
+        if isinstance(p, DirectionalPoint):
+            unit = Pose(None, self.R).map(p.direction_unit)
+            rho = acos(unit.z)
+            eta = atan2(unit.y, unit.x)
+            return DirectionalPoint(q, rho = rho, eta = eta)
         else:
-            return Point( x, y, z )
+            return Point(q)
 
-    def map_translate( self, p ):
+    def map_translate(self, p):
         """\
         Translation component of point/vector mapping.
 
@@ -675,39 +674,35 @@ class Pose( object ):
         return q
 
 
-def rotation_matrix( angle ):
+def rotation_matrix(angle):
     """\
-    Generate R given a tuple of 3 fixed-axis rotation angles.
+            Generate R given a tuple o 3 fixed-axis rotation angles.
 
     @param angle: Rotation angles in radians.
     @type angle: C{tuple} of L{Angle}
     @return: Rotation matrix.
     @rtype: L{numpy.ndarray}
     """
-    theta = Angle( angle[ 0 ] )
-    phi = Angle( angle[ 1 ] )
-    psi = Angle( angle[ 2 ] )
+    theta = Angle(angle[0])
+    phi = Angle(angle[1])
+    psi = Angle(angle[2])
 
-    R = numpy.ndarray( ( 3, 3 ) )
+    R = numpy.ndarray((3, 3))
 
-    R[ 0 ][ 0 ] = cos( phi ) * cos( psi )
-    R[ 1 ][ 0 ] = sin( theta ) * sin( phi ) * \
-                  cos( psi ) - cos( theta ) * sin( psi )
-    R[ 2 ][ 0 ] = cos( theta ) * sin( phi ) * \
-                  cos( psi ) + sin( theta ) * sin( psi )
-    R[ 0 ][ 1 ] = cos( phi ) * sin( psi )
-    R[ 1 ][ 1 ] = sin( theta ) * sin( phi ) * \
-                  sin( psi ) + cos( theta ) * cos( psi )
-    R[ 2 ][ 1 ] = cos( theta ) * sin( phi ) * \
-                  sin( psi ) - sin( theta ) * cos( psi )
-    R[ 0 ][ 2 ] = -sin( phi )
-    R[ 1 ][ 2 ] = sin( theta ) * cos( phi )
-    R[ 2 ][ 2 ] = cos( theta ) * cos( phi )
+    R[0][0] = cos(phi) * cos(psi)
+    R[1][0] = sin(theta) * sin(phi) * cos(psi) - cos(theta) * sin(psi)
+    R[2][0] = cos(theta) * sin(phi) * cos(psi) + sin(theta) * sin(psi)
+    R[0][1] = cos(phi) * sin(psi)
+    R[1][1] = sin(theta) * sin(phi) * sin(psi) + cos(theta) * cos(psi)
+    R[2][1] = cos(theta) * sin(phi) * sin(psi) - sin(theta) * cos(psi)
+    R[0][2] = -sin(phi)
+    R[1][2] = sin(theta) * cos(phi)
+    R[2][2] = cos(theta) * cos(phi)
 
     return R
 
 
-def rodrigues( angle ):
+def rodrigues(angle):
     """\
     Generate R given a tuple of 3 fixed-axis rotation angles.
 
@@ -730,7 +725,7 @@ def rodrigues( angle ):
     return numpy.diag((1.0, 1.0, 1.0)) * alpha + omegav * beta + A * gamma
 
 
-def visual_axes( scale = 1.0, color = ( 1, 1, 1 ) ):
+def visual_axes(scale = 1.0, color = (1, 1, 1)):
     """\
     Display a set of 3D axes.
 
@@ -740,36 +735,34 @@ def visual_axes( scale = 1.0, color = ( 1, 1, 1 ) ):
     @type color: C{tuple}
     """
     if not VIS:
-        raise NotImplementedError( "visual module not loaded" )
+        raise NotImplementedError("visual module not loaded")
 
-    for a in [ tuple( [ i == j and scale * 5 or 0 for i in range( 3 ) ] ) \
-                  for j in range( 3 ) ]:
-        visual.arrow( pos = ( 0, 0, 0 ), axis = a, shaftwidth = scale / 10.0,
-                      color = color )
+    # axes
+    for a in [tuple([i == j and scale * 5 or 0 for i in range(3)]) \
+              for j in range(3)]:
+        visual.arrow(pos = (0, 0, 0), axis = a, shaftwidth = scale / 10.0,
+                     color = color)
 
-    visual.cylinder( pos = ( ( scale * 6.0 ), -( scale / 4.0 ), 0 ),
-              axis = ( -( scale / 2.0 ), ( scale / 2.0 ), 0 ),
-              radius = scale / 20.0, color = color )
-    visual.cylinder( pos = ( scale * 5.5, -( scale / 4.0 ), 0 ),
-              axis = ( ( scale / 2.0 ), ( scale / 2.0 ), 0 ),
-              radius = scale / 20.0, color = color )
+    # X
+    visual.cylinder(pos = ((scale * 6.0), -(scale / 4.0), 0),
+        axis = (-(scale / 2.0), (scale / 2.0), 0), radius = scale / 20.0,
+        color = color)
+    visual.cylinder(pos = (scale * 5.5, -(scale / 4.0), 0),
+        axis = ((scale / 2.0), (scale / 2.0), 0), radius = scale / 20.0,
+        color = color)
 
-    visual.cylinder( pos = ( 0, ( scale * 5.5 ), 0 ),
-              axis = ( 0, ( scale / 4.0 ), 0 ),
-              radius = scale / 20.0, color = color )
-    visual.cylinder( pos = ( 0, ( scale * 5.75 ), 0 ),
-              axis = ( -( scale * 0.17 ), ( scale / 4.0 ), ( scale * 0.17 ) ),
-              radius = scale / 20.0, color = color )
-    visual.cylinder( pos = ( 0, ( scale * 5.75 ), 0 ),
-              axis = ( ( scale * 0.17 ), ( scale / 4.0 ), -( scale * 0.17 ) ),
-              radius = scale / 20.0, color = color )
+    # Y
+    visual.cylinder(pos = (0, (scale * 5.5), 0), axis = (0, (scale / 4.0), 0),
+        radius = scale / 20.0, color = color)
+    visual.cylinder(pos = (0, (scale * 5.75), 0), axis = (-(scale * 0.17),
+        (scale / 4.0), (scale * 0.17)), radius = scale / 20.0, color = color)
+    visual.cylinder(pos = (0, (scale * 5.75), 0), axis = ((scale * 0.17),
+        (scale / 4.0), -(scale * 0.17)), radius = scale / 20.0, color = color)
 
-    visual.cylinder( pos = ( 0, -( scale / 4.0 ), ( scale * 6.0 ) ),
-              axis = ( 0.0, ( scale / 2.0 ), -( scale / 2.0 ) ),
-              radius = scale / 20.0, color = color )
-    visual.cylinder( pos = ( 0, -( scale / 4.0 ), ( scale * 6.0 ) ),
-              axis = ( 0.0, 0.0, -( scale / 2.0 ) ),
-              radius = scale / 20.0, color = color )
-    visual.cylinder( pos = ( 0, ( scale / 4.0 ), ( scale * 6.0 ) ),
-              axis = ( 0.0, 0.0, -( scale / 2.0 ) ),
-              radius = scale / 20.0, color = color )
+    # Z
+    visual.cylinder(pos = (0, -(scale / 4.0), (scale * 6.0)), axis = (0.0,
+        (scale / 2.0), -(scale / 2.0)), radius = scale / 20.0, color = color)
+    visual.cylinder(pos = (0, -(scale / 4.0), (scale * 6.0)), axis = (0.0, 0.0,
+        -(scale / 2.0)), radius = scale / 20.0, color = color)
+    visual.cylinder(pos = (0, (scale / 4.0), (scale * 6.0)), axis = (0.0, 0.0,
+        -(scale / 2.0)), radius = scale / 20.0, color = color)
