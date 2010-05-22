@@ -54,7 +54,7 @@ S.make_opaque(RealRange((140.0, 310.0)), RealRange((30.0, 120.0)), RealRange((0.
 # E
 S.make_opaque(RealRange((60.0, 180.0)), RealRange((290.0, 370.0)), RealRange((0.0, 100.0)))
 print "Creating discrete multi-camera model..."
-M = MultiCamera3D( S, C, dense = False )
+M = MultiCamera3D(S, C, dense = False)
 print "Updating in-scene model..."
 # building poses
 PA = Pose(Point(60, 160, 0), rotation_matrix((0, 0, 0)))
