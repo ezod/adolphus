@@ -226,7 +226,7 @@ class MultiCamera(IndexedSet):
         """
         for key in self.keys():
             mu = self[key].mu(dpoint)
-            if mu > 0 and not self.scene.occluded(dpoint, self[key].pose.T):
+            if not self.scene.occluded(dpoint, self[key].pose.T):
                 self.inscene[key] |= FuzzySet([FuzzyElement(dpoint, mu)])
 
     def _update_inscene(self, key):
