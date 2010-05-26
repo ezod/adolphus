@@ -166,7 +166,7 @@ class Camera( object ):
         @type color: C{tuple}
         """
         if not VIS:
-            raise NotImplementedError("visual module not loaded")
+            raise ImportError("visual module not loaded")
         visual.pyramid(pos = self.pose.T.tuple, axis = \
             self.pose.map_rotate(Point(0, 0, -scale)).tuple, \
             size = (scale, scale, scale), color = color)
@@ -265,7 +265,7 @@ class MultiCamera(IndexedSet):
         @type color: C{tuple}
         """
         if not VIS:
-            raise NotImplementedError("visual module not loaded")
+            raise ImportError("visual module not loaded")
         for camera in self:
             camera.visualize(scale = scale, color = color)
         self.scene.visualize(color = color)
