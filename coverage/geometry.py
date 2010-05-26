@@ -314,7 +314,7 @@ class Point(object):
         @type opacity: C{float}
         """
         if not VIS:
-            raise NotImplementedError("visual module not loaded")
+            raise ImportError("visual module not loaded")
         try:
             self.vis_point.radius = 0.1 * scale
             self.vis_point.pos = self.tuple
@@ -538,6 +538,86 @@ class DirectionalPoint(Point):
                 color = color, opacity = opacity)
 
 
+class Plane(object):
+    """\
+    Plane segment (2D subspace of 3D space) class.
+    """
+    def __init__(self, pose, x = None, y = None):
+        """\
+        Constructor.
+
+        @param pose: The pose of the plane normal (from z-hat).
+        @type pose: L{Pose}
+        @param x: The x-range before transformation (optional).
+        @type x: C{tuple} of C{float}
+        @param y: The y-range before transformation (optional).
+        @type y: C{tuple} of C{float}
+        """
+        if x is not None or y is not None:
+            if not len(x) == 2 or not len(y) == 2:
+                raise ValueError("boundaries must consist of two values")
+            self.x = (float(min(x)), float(max(x)))
+            self.y = (float(min(y)), float(max(y)))
+        else:
+            self.x, self.y = None, None
+        self.pose = pose
+
+    @property
+    def center(self):
+        """\
+        Return the 3D point at the center of this plane segment.
+        """
+        if self.x is None or self.y is None:
+            return None
+        return self.pose.map(Point((self.x[1] - self.x[0]) / 2.0,
+                (self.y[1] - self.y[0]) / 2.0, 0))
+
+    def intersection(self, pa, pb):
+        """\
+        Return the 3D point of intersection (if any) of the line segment
+        between the two specified points and this plane.
+
+        @param pa: The first vertex of the line segment.
+        @type pa: L{Point}
+        @param pb: The second vertex of the line segment.
+        @type pb: L{Point}
+        @return: The point of intersection with the plane.
+        @rtype: L{Point}
+        """
+        pa = (-self.pose).map(pa)
+        pb = (-self.pose).map(pb)
+        M = numpy.array([[pa.x - pb.x, 1.0, 0.0],
+                         [pa.y - pb.y, 0.0, 1.0],
+                         [pa.z - pb.z, 0.0, 0.0]])
+        t = numpy.dot(numpy.linalg.inv(M), pa.array)[0][0]
+        if t < 0 or t > 1:
+            return None
+        pr = pa + t * (pb - pa)
+        if pr.x < self.x[0] or pr.x > self.x[1] \
+        or pr.y < self.y[0] or pr.y > self.y[1]:
+            return None
+        return self.pose.map(pr)
+
+    def visualize(self, color = (1, 1, 1), opacity = 1.0):
+        """\
+        Plot the directional point in a 3D visual model.
+
+        @param color: The color in which to plot the plane segment.
+        @type color: C{tuple}
+        @param opacity: The opacity with which to plot the plane segment.
+        @type opacity: C{float}
+        """
+        if not VIS:
+            raise ImportError("visual module not loaded")
+        try:
+            visual.box(pos = self.center.tuple,
+                axis = self.pose.map_rotate(Point(0, 0, 1)).tuple,
+                length = self.x[1] - self.x[0],
+                height = self.y[1] - self.y[0], width = 0, color = color)
+        except AttributeError:
+            raise ValueError("cannot plot an infinite plane")
+
+
 class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
@@ -747,7 +827,7 @@ def visual_axes(scale = 1.0, color = (1, 1, 1)):
     @type color: C{tuple}
     """
     if not VIS:
-        raise NotImplementedError("visual module not loaded")
+        raise ImportError("visual module not loaded")
 
     # axes
     for a in [tuple([i == j and scale * 5 or 0 for i in range(3)]) \
