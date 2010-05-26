@@ -12,7 +12,7 @@ from numbers import Number
 from itertools import combinations
 from fuzz import IndexedSet, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
 
-from coverage.geometry import Point, DirectionalPoint, Pose
+from geometry import Point, DirectionalPoint, Pose
 
 try:
     import visual
@@ -110,19 +110,19 @@ class Camera( object ):
             return False
         return self.name == other.name
 
-    def mu(self, dpoint):
+    def mu(self, point):
         """\
         Return the membership degree (coverage) for a directional point.
     
-        @param dpoint: The (directional) point to test.
-        @type dpoint: L{geometry.Point}
+        @param point: The (directional) point to test.
+        @type point: L{geometry.Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        if not isinstance(dpoint, Point):
+        if not isinstance(point, Point):
             raise TypeError("invalid point")
 
-        campoint = (-self.pose).map(dpoint)
+        campoint = (-self.pose).map(point)
 
         # visibility
         try:
@@ -180,26 +180,23 @@ class MultiCamera(IndexedSet):
     """\
     Abstract base class for multi-camera model.
     """
-    def __init__(self, scene, cameras = set(), directional = True, dense = True):
+    def __init__(self, scene, cameras = set(), points = set()):
         """\
         Constructor.
 
         @param scene: The discrete scene model.
         @type scene: L{Scene}
         @param cameras: The initial set of cameras.
-        @type cameras: C{set}
-        @param directional: Use directional points if true.
-        @type directional: C{bool}
-        @param dense: Evaluate at every discrete point in the scene.
-        @type dense: C{bool}
+        @type cameras: C{set} of L{Camera}
+        @param points: The initial set of points.
+        @type points: C{set} of L{geometry.Point}
         """
         if self.__class__ is MultiCamera:
             raise NotImplementedError("please use one of the subclasses")
-        self.directional = directional
-        self.dense = dense
         self.model = FuzzySet()
         self.scene = scene
         self.inscene = {}
+        self.points = points
         IndexedSet.__init__(self, 'name', cameras)
         for camera in self:
             self._update_inscene(camera.name)
@@ -216,18 +213,19 @@ class MultiCamera(IndexedSet):
             IndexedSet.add(self, item)
             self._update_inscene(item.name)
 
-    def update_point(self, dpoint):
+    def add_point(self, point):
         """\
         Update a single (directional) point in the model, for all cameras, with
         occlusion.
 
-        @param dpoint: The directional point.
-        @type dpoint: L{DirectionalPoint}
+        @param point: The directional point.
+        @type point: L{geometry.Point}
         """
+        self.points.add(point)
         for key in self.keys():
-            mu = self[key].mu(dpoint)
-            if not self.scene.occluded(dpoint, self[key].pose.T):
-                self.inscene[key] |= FuzzySet([FuzzyElement(dpoint, mu)])
+            mu = self[key].mu(point)
+            if mu > 0 and not self.scene.occluded(point, self[key].pose.T):
+                self.inscene[key] |= FuzzySet([FuzzyElement(point, mu)])
 
     def _update_inscene(self, key):
         """\
@@ -236,25 +234,21 @@ class MultiCamera(IndexedSet):
         @param key: The name of the camera to update.
         @type key: C{str}
         """
-        if not self.dense:
-            if not self.inscene.has_key(key):
-                self.inscene[key] = FuzzySet()
-            return
-        dpoints = []
-        for dpoint in self.scene.generate_points(d = self.directional \
-                                                 and 'all' or None):
-            mu = self[key].mu(dpoint)
-            if mu > 0 and not self.scene.occluded(dpoint, self[key].pose.T):
-                dpoints.append(FuzzyElement(dpoint, mu))
-        self.inscene[key] = FuzzySet(dpoints)
+        mpoints = []
+        for point in self.points:
+            mu = self[key].mu(point)
+            if mu > 0 and not self.scene.occluded(point, self[key].pose.T):
+                mpoints.append(FuzzyElement(point, mu))
+        self.inscene[key] = FuzzySet(mpoints)
 
     def performance(self):
         """\
         Return the coverage performance of this multi-camera network.
         """
-        return self.model.overlap(self.scene.D)
+        #return self.model.overlap(self.D)
+        raise NotImplementedError("temporarily disabled pending new D style")
 
-    def visualize(self, scale = 1.0, color = (1, 1, 1), points = True):
+    def visualize(self, scale = 1.0, color = (1, 1, 1)):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
@@ -269,10 +263,15 @@ class MultiCamera(IndexedSet):
         for camera in self:
             camera.visualize(scale = scale, color = color)
         self.scene.visualize(color = color)
-        if points:
-            for dpoint in self.model.keys():
-                dpoint.visualize(scale = scale, color = (1, 0, 0),
-                                 opacity = self.model[dpoint].mu)
+        for point in self.model.keys():
+            point.visualize(scale = scale, color = (1, 0, 0),
+                            opacity = self.model[point].mu)
+
+    def update_model(self):
+        raise NotImplementedError
+
+    def mu(self, point):
+        raise NotImplementedError
 
 
 class MultiCameraSimple(MultiCamera):
@@ -303,23 +302,23 @@ class MultiCameraSimple(MultiCamera):
         for camera in self:
             self.model |= self.inscene[camera.name]
 
-    def mu(self, dpoint):
+    def mu(self, point):
         """\
         Return the individual membership degree of a point using the continuous
         in-scene camera coverage models (so the point does not necessarily need
         to fall on the discrete grid).
 
-        @param dpoint: The (directional) point to test.
-        @type dpoint: L{geometry.Point}
+        @param point: The (directional) point to test.
+        @type point: L{geometry.Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
         views = []
         for camera in self:
-            if not self.scene.occluded(dpoint, camera.pose.T):
+            if not self.scene.occluded(point, camera.pose.T):
                 views.append(camera)
         try:
-            return max([camera.mu(dpoint) for camera in views])
+            return max([camera.mu(point) for camera in views])
         except ValueError:
             return 0.0
 
@@ -355,18 +354,18 @@ class MultiCamera3D(MultiCamera):
         for pair in pairs:
             self.model |= pair
 
-    def mu(self, dpoint):
+    def mu(self, point):
         """\
         Return the individual membership degree of a point using the continuous
         in-scene camera coverage models (so the point does not necessarily need
         to fall on the discrete grid).
 
-        @param dpoint: The (directional) point to test.
-        @type dpoint: L{geometry.Point}
+        @param point: The (directional) point to test.
+        @type point: L{geometry.Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
         # TODO: account for occlusion
-        return max([min(self[pair[0]].mu(dpoint), \
-                        self[pair[1]].mu(dpoint)) \
+        return max([min(self[pair[0]].mu(point), \
+                        self[pair[1]].mu(point)) \
                     for pair in combinations(self.keys(), 2)])

@@ -325,7 +325,6 @@ class Point(object):
                 pos = self.tuple, color = color, opacity = opacity)
 
 
-
 class DirectionalPoint(Point):
     """\
     3D directional point (spatial-directional vector) class.
