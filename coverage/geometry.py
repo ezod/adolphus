@@ -568,8 +568,8 @@ class Plane(object):
         """
         if self.x is None or self.y is None:
             return None
-        return self.pose.map(Point((self.x[1] - self.x[0]) / 2.0,
-                (self.y[1] - self.y[0]) / 2.0, 0))
+        return self.pose.map(Point((self.x[1] - self.x[0]) / 2.0 + self.x[0],
+                (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0))
 
     def intersection(self, pa, pb):
         """\
@@ -611,8 +611,8 @@ class Plane(object):
         try:
             visual.box(pos = self.center.tuple,
                 axis = self.pose.map_rotate(Point(0, 0, 1)).tuple,
-                length = self.x[1] - self.x[0],
-                height = self.y[1] - self.y[0], width = 0, color = color)
+                width = self.x[1] - self.x[0],
+                height = self.y[1] - self.y[0], length = 1, color = color)
         except AttributeError:
             raise ValueError("cannot plot an infinite plane")
 

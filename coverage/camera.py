@@ -278,20 +278,18 @@ class MultiCameraSimple(MultiCamera):
     """\
     Simple (single-camera coverage) multi-camera model.
     """
-    def __init__(self, scene, cameras = set(), directional = True, dense = True):
+    def __init__(self, scene, cameras = set(), points = set()):
         """\
         Constructor.
 
         @param scene: The discrete scene model.
         @type scene: L{Scene}
         @param cameras: The initial set of cameras.
-        @type cameras: C{set}
-        @param directional: Use directional points if true.
-        @type directional: C{bool}
-        @param dense: Evaluate at every discrete point in the scene.
-        @type dense: C{bool}
+        @type cameras: C{set} of L{Camera}
+        @param points: The initial set of points.
+        @type points: C{set} of L{geometry.Point}
         """
-        MultiCamera.__init__(self, scene, cameras, directional, dense)
+        MultiCamera.__init__(self, scene, cameras, points)
 
     def update_model(self):
         """\
@@ -327,20 +325,18 @@ class MultiCamera3D(MultiCamera):
     """\
     3D (dual-camera coverage) multi-camera model.
     """
-    def __init__(self, scene, cameras = set(), directional = True, dense = True):
+    def __init__(self, scene, cameras = set(), points = set()):
         """\
         Constructor.
 
         @param scene: The discrete scene model.
         @type scene: L{Scene}
         @param cameras: The initial set of cameras.
-        @type cameras: C{set}
-        @param directional: Use directional points if true.
-        @type directional: C{bool}
-        @param dense: Evaluate at every discrete point in the scene.
-        @type dense: C{bool}
+        @type cameras: C{set} of L{Camera}
+        @param points: The initial set of points.
+        @type points: C{set} of L{geometry.Point}
         """
-        MultiCamera.__init__(self, scene, cameras, directional, dense)
+        MultiCamera.__init__(self, scene, cameras, points)
 
     def update_model(self):
         """\

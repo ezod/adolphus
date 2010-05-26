@@ -52,7 +52,8 @@ class Scene(set):
         viewpoint (by opaque scene planes).
         """
         for plane in self:
-            if plane.intersection(p, cam) is not None:
+            pr = plane.intersection(p, cam)
+            if pr is not None and pr.euclidean(p) > 0.0001:
                 return True
         return False
 
