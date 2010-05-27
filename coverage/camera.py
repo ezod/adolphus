@@ -241,12 +241,16 @@ class MultiCamera(IndexedSet):
                 mpoints.append(FuzzyElement(point, mu))
         self.inscene[key] = FuzzySet(mpoints)
 
-    def performance(self):
+    def performance(self, desired):
         """\
         Return the coverage performance of this multi-camera network.
+
+        @param desired: The D model of desired coverage.
+        @type desired: L{fuzz.FuzzySet}
+        @return: Performance metric in [0, 1].
+        @rtype: C{float}
         """
-        #return self.model.overlap(self.D)
-        raise NotImplementedError("temporarily disabled pending new D style")
+        return self.model.overlap(desired)
 
     def visualize(self, scale = 1.0, color = (1, 1, 1)):
         """\
@@ -268,9 +272,17 @@ class MultiCamera(IndexedSet):
                             opacity = self.model[point].mu)
 
     def update_model(self):
+        """\
+        Update the multi-camera network discrete spatial-directional fuzzy set
+        (coverage model).
+        """
         raise NotImplementedError
 
     def mu(self, point):
+        """\
+        Return the individual membership degree of a point in the fuzzy
+        coverage model.
+        """
         raise NotImplementedError
 
 
@@ -302,9 +314,8 @@ class MultiCameraSimple(MultiCamera):
 
     def mu(self, point):
         """\
-        Return the individual membership degree of a point using the continuous
-        in-scene camera coverage models (so the point does not necessarily need
-        to fall on the discrete grid).
+        Return the individual membership degree of a point in the fuzzy
+        coverage model.
 
         @param point: The (directional) point to test.
         @type point: L{geometry.Point}
@@ -352,16 +363,14 @@ class MultiCamera3D(MultiCamera):
 
     def mu(self, point):
         """\
-        Return the individual membership degree of a point using the continuous
-        in-scene camera coverage models (so the point does not necessarily need
-        to fall on the discrete grid).
+        Return the individual membership degree of a point in the fuzzy
+        coverage model.
 
         @param point: The (directional) point to test.
         @type point: L{geometry.Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        # TODO: account for occlusion
         return max([min(self[pair[0]].mu(point), \
                         self[pair[1]].mu(point)) \
                     for pair in combinations(self.keys(), 2)])
