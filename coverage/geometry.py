@@ -243,7 +243,6 @@ class Point(object):
         """
         Return a tuple of this vector.
 
-        @return: Vector tuple.
         @rtype: C{tuple}
         """
         return (self.x, self.y, self.z)
@@ -253,7 +252,6 @@ class Point(object):
         """\
         Return a NumPy array of this vector.
 
-        @return: Vector array.
         @rtype: C{numpy.ndarray}
         """
         return numpy.array([[self.x], [self.y], [self.z]])
@@ -263,7 +261,6 @@ class Point(object):
         """\
         Return the magnitude of this vector.
 
-        @return: Vector magnitude.
         @rtype: C{float}
         """
         return sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
@@ -273,7 +270,6 @@ class Point(object):
         """\
         Return a normalized (unit) vector in the direction of this vector.
 
-        @return: Unit vector.
         @rtype: L{Point}
         """
         m = self.magnitude
@@ -512,7 +508,6 @@ class DirectionalPoint(Point):
         Return a unit vector representation of the direction of this
         directional point.
 
-        @return: Unit vector representation of the direction.
         @rtype: L{Point}
         """
         return Point(sin(self.rho) * cos(self.eta),
@@ -571,6 +566,8 @@ class Plane(object):
     def center(self):
         """\
         Return the 3D point at the center of this plane segment.
+
+        @rtype: L{Point}
         """
         if self.x is None or self.y is None:
             return None
@@ -707,7 +704,6 @@ class Pose(object):
         """\
         Return the fixed-axis rotation angles from R.
 
-        @return: Tuple containing roll, pitch, and yaw angles.
         @rtype: C{tuple}
         """
         phi = Angle(asin(-1.0 * self.R[0][2]))
@@ -725,7 +721,6 @@ class Pose(object):
         """\
         Check if this pose transformation has any effect.
 
-        @return: True if this is a nontrivial mapping.
         @rtype: C{bool}
         """
         if sum(self.T.tuple) == 0 \
@@ -783,7 +778,7 @@ def rotation_matrix(angle):
     @param angle: Rotation angles in radians.
     @type angle: C{tuple} of L{Angle}
     @return: Rotation matrix.
-    @rtype: L{numpy.ndarray}
+    @rtype: C{numpy.ndarray}
     """
     theta = Angle(angle[0])
     phi = Angle(angle[1])
@@ -811,7 +806,7 @@ def rodrigues(angle):
     @param angle: Rotation angles in radians.
     @type angle: C{tuple} of L{Angle}
     @return: Rotation matrix.
-    @rtype: L{numpy.ndarray}
+    @rtype: C{numpy.ndarray}
     """
     eps = 0.0001
     norm = lambda x: numpy.sqrt(numpy.square(x).sum())
