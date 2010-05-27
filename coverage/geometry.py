@@ -81,6 +81,8 @@ class Point(object):
             self.z = float(z)
         else:
             raise TypeError("incompatible type in initializer")
+        if VIS:
+            self.vis_point = None
     
     def __hash__(self):
         """\
@@ -354,6 +356,8 @@ class DirectionalPoint(Point):
         else:
             raise TypeError("incompatible type in initializer")
         Point.__init__(self, x, y, z)
+        if VIS:
+            self.vis_dir = None
         self._normalize_direction()
 
     def __hash__(self):
@@ -560,6 +564,8 @@ class Plane(object):
         else:
             self.x, self.y = None, None
         self.pose = pose
+        if VIS:
+            self.vis_plane = None
 
     @property
     def center(self):
@@ -608,13 +614,20 @@ class Plane(object):
         """
         if not VIS:
             raise ImportError("visual module not loaded")
-        try:
-            visual.box(pos = self.center.tuple,
-                axis = self.pose.map_rotate(Point(0, 0, 1)).tuple,
-                width = self.x[1] - self.x[0],
-                height = self.y[1] - self.y[0], length = 1, color = color)
-        except AttributeError:
+        if self.x is None or self.y is None:
             raise ValueError("cannot plot an infinite plane")
+        try:
+            self.vis_plane.pos = self.center.tuple
+            self.vis_plane.axis = self.pose.map_rotate(Point(0, 0, 1)).tuple
+            self.vis_plane.width = self.x[1] - self.x[0]
+            self.vis_plane.height = self.y[1] - self.y[0]
+            self.vis_plane.color = color
+            self.vis_plane.opacity = opacity
+        except AttributeError:
+            self.vis_plane = visual.box(pos = self.center.tuple,
+                axis = self.pose.map_rotate(Point(0, 0, 1)).tuple,
+                width = self.x[1] - self.x[0], height = self.y[1] - self.y[0],
+                length = 1, color = color, opacity = opacity)
 
 
 class Pose(object):
