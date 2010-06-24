@@ -289,6 +289,8 @@ class Point(object):
         return sqrt((self.x - p.x) ** 2 + (self.y - p.y) ** 2 + \
                     (self.z - p.z) ** 2)
 
+    distance = euclidean
+
     def angle(self, p):
         """\
         Return the angle between this vector and another.
