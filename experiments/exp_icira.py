@@ -4,7 +4,7 @@ from numpy import array, arange
 from visual import scene
 
 import common
-from coverage import Scene, Camera, MultiCameraSimple, MultiCamera3D, Pose, Point, DirectionalPoint, Angle, Plane, rotation_matrix, visual_axes
+from coverage import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, Plane, rotation_matrix, visual_axes
 
 scene.background = (1, 1, 1)
 scene.up = (0, 0, 1)
@@ -142,7 +142,7 @@ P.append(PE.map(DirectionalPoint(110, 70, 100, 0, 0)))
 P.append(PE.map(DirectionalPoint(50, 30, 100, 0, 0)))
 
 print "Creating discrete multi-camera model..."
-M = MultiCamera3D(S, C, P)
+M = MultiCamera(2, S, C, P)
 
 print "Updating in-scene model..."
 M.update_model()

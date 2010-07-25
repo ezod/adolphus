@@ -178,12 +178,14 @@ class Camera( object ):
 
 class MultiCamera(IndexedSet):
     """\
-    Abstract base class for multi-camera model.
+    Multi-camera n-ocular fuzzy coverage model.
     """
-    def __init__(self, scene, cameras = set(), points = set()):
+    def __init__(self, n, scene, cameras = set(), points = set()):
         """\
         Constructor.
-
+    
+        @param n: The n in n-ocular (mutual camera coverage size).
+        @type n: C{int}
         @param scene: The discrete scene model.
         @type scene: L{Scene}
         @param cameras: The initial set of cameras.
@@ -191,9 +193,10 @@ class MultiCamera(IndexedSet):
         @param points: The initial set of points.
         @type points: C{set} of L{geometry.Point}
         """
-        if self.__class__ is MultiCamera:
-            raise NotImplementedError("please use one of the subclasses")
+        if n < 1:
+            raise ValueError("n must be at least 1")
         self.model = FuzzySet()
+        self.n = n
         self.scene = scene
         self.inscene = {}
         self.points = points
@@ -273,44 +276,18 @@ class MultiCamera(IndexedSet):
 
     def update_model(self):
         """\
-        Update the multi-camera network discrete spatial-directional fuzzy set
-        (coverage model).
+        Update the n-ocular multi-camera network discrete coverage model.
         """
-        raise NotImplementedError
-
-    def mu(self, point):
-        """\
-        Return the individual membership degree of a point in the fuzzy
-        coverage model.
-        """
-        raise NotImplementedError
-
-
-class MultiCameraSimple(MultiCamera):
-    """\
-    Simple (single-camera coverage) multi-camera model.
-    """
-    def __init__(self, scene, cameras = set(), points = set()):
-        """\
-        Constructor.
-
-        @param scene: The discrete scene model.
-        @type scene: L{Scene}
-        @param cameras: The initial set of cameras.
-        @type cameras: C{set} of L{Camera}
-        @param points: The initial set of points.
-        @type points: C{set} of L{geometry.Point}
-        """
-        MultiCamera.__init__(self, scene, cameras, points)
-
-    def update_model(self):
-        """\
-        Update the simple multi-camera network discrete spatial-directional
-        fuzzy set (coverage model).
-        """
+        if len(self) < self.n:
+            raise ValueError("network has too few cameras")
         self.model = FuzzySet()
-        for camera in self:
-            self.model |= self.inscene[camera.name]
+        submodels = []
+        for combination in combinations(self.keys(), self.n):
+            submodels.append(self.inscene[combination[0]])
+            for i in range(1, self.n):
+                submodels[-1] &= self.inscene[combination[i]]
+        for submodel in submodels:
+            self.model |= submodel
 
     def mu(self, point):
         """\
@@ -322,55 +299,10 @@ class MultiCameraSimple(MultiCamera):
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        views = []
-        for camera in self:
-            if not self.scene.occluded(point, camera.pose.T):
-                views.append(camera)
-        try:
-            return max([camera.mu(point) for camera in views])
-        except ValueError:
-            return 0.0
-
-
-class MultiCamera3D(MultiCamera):
-    """\
-    3D (dual-camera coverage) multi-camera model.
-    """
-    def __init__(self, scene, cameras = set(), points = set()):
-        """\
-        Constructor.
-
-        @param scene: The discrete scene model.
-        @type scene: L{Scene}
-        @param cameras: The initial set of cameras.
-        @type cameras: C{set} of L{Camera}
-        @param points: The initial set of points.
-        @type points: C{set} of L{geometry.Point}
-        """
-        MultiCamera.__init__(self, scene, cameras, points)
-
-    def update_model(self):
-        """\
-        Update the 3D multi-camera network discrete spatial-directional fuzzy
-        set (coverage model).
-        """
-        self.model = FuzzySet()
-        pairs = [self.inscene[pair[0]] & \
-                 self.inscene[pair[1]] \
-                 for pair in combinations(self.keys(), 2)]
-        for pair in pairs:
-            self.model |= pair
-
-    def mu(self, point):
-        """\
-        Return the individual membership degree of a point in the fuzzy
-        coverage model.
-
-        @param point: The (directional) point to test.
-        @type point: L{geometry.Point}
-        @return: The membership degree (coverage) of the point.
-        @rtype: C{float}
-        """
-        return max([min(self[pair[0]].mu(point), \
-                        self[pair[1]].mu(point)) \
-                    for pair in combinations(self.keys(), 2)])
+        if len(self) < self.n:
+            raise ValueError("network has too few cameras")
+        if point in self.model:
+            return self.model.mu(point)
+        else:
+            return max([min([self[camera].mu(point) for camera in combination])
+                        for combination in combinations(self.keys(), n)])

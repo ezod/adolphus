@@ -4,7 +4,7 @@ from numpy import array, arange
 from visual import scene
 
 import common
-from coverage import Scene, Camera, MultiCameraSimple, MultiCamera3D, Pose, Point, DirectionalPoint, Angle, rotation_matrix, visual_axes
+from coverage import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, rotation_matrix, visual_axes
 
 scene.background = (1, 1, 1)
 scene.up = (0, 0, 1)
@@ -24,7 +24,7 @@ S = Scene(RealRange((-400.0, 400.0)), RealRange((-400.0, 400.0)), RealRange((-10
 S.make_opaque(RealRange((-150.0, 150.0)), RealRange((-100.0, 100.0)), RealRange((-100.0, 0.0)))
 S.make_desired(RealRange((-350.0, 350.0)), RealRange((-300.0, 300.0)), RealRange((-100.0, 0.0)), d = None)
 print "Creating discrete multi-camera model..."
-M = MultiCameraSimple(S, C, directional = False)
+M = MultiCamera(1, S, C, directional = False)
 print "Updating in-scene model..."
 M.update_model()
 #print "Visualizing..."
