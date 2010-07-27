@@ -7,9 +7,7 @@ Coverage module.
 @license: GPL-3
 """
 
-__version__ = ( 0, 0, 0 )
-
-__all__ = [ 'geometry', 'camera' ]
+__all__ = ['geometry', 'scene', 'camera']
 
 from geometry import *
 from scene import *
