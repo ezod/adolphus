@@ -4,10 +4,11 @@ from numpy import array, arange
 from visual import scene
 
 import common
-from coverage import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, rotation_matrix, visual_axes
+from adolphus.coverage import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, rotation_matrix, visual_axes
+from adolphus.interface import Display
 
-scene.background = (1, 1, 1)
-scene.up = (0, 0, 1)
+display = Display()
+display.up = (0, 0, 1)
 
 print "Creating camera model..."
 P = [ \
