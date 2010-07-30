@@ -1,5 +1,5 @@
 """\
-Adolphus master module.
+Coverage module.
 
 @author: Aaron Mavrinac
 @organization: University of Windsor
@@ -7,8 +7,9 @@ Adolphus master module.
 @license: GPL-3
 """
 
-__version__ = (0, 1, 0)
+__all__ = ['geometry', 'scene', 'camera', 'display']
 
-__all__ = ['coverage']
-
-import coverage
+from geometry import *
+from scene import *
+from camera import *
+from display import *
