@@ -148,10 +148,6 @@ class Camera(object):
         visual.pyramid(pos = self.pose.T.tuple, axis = \
             self.pose.map_rotate(Point(0, 0, -scale)).tuple, \
             size = (scale, scale, scale), color = color)
-        # project a cylinder for debugging/validation
-        # visual.cylinder( pos = self.pose.T.tuple, axis = \
-        #     self.pose.map_rotate( Point( 0, 0, scale ) ).tuple, \
-        #     length = 2000, radius = scale / 10.0 )
 
 
 class MultiCamera(dict):
@@ -175,6 +171,7 @@ class MultiCamera(dict):
         self.scene = scene
         self.points = points
         self.model = FuzzySet()
+        self.model_updated = False
 
     def __setitem__(self, key, value):
         """\
@@ -217,6 +214,7 @@ class MultiCamera(dict):
             if mu > 0 and not self.scene.occluded(point, self[key].pose.T):
                 mpoints.append(FuzzyElement(point, mu))
         self[key].inscene = FuzzySet(mpoints)
+        self.model_updated = False
 
     def update_model(self):
         """\
@@ -232,6 +230,7 @@ class MultiCamera(dict):
                 submodels[-1] &= self[combination[i]].inscene
         for submodel in submodels:
             self.model |= submodel
+        self.model_updated = True
 
     def mu(self, point):
         """\
