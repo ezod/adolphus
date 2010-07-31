@@ -205,17 +205,27 @@ class MultiCamera(dict):
 
     def __setitem__(self, key, value):
         """\
-        Add a new camera to the network, and update its in-scene model.
+        Assign a camera to a key, and update its in-scene model.
 
-        @param key: The key of the item to assign.
+        @param key: The key to assign.
         @type key: C{object}
-        @param value: The Camera object to assign.
+        @param value: The Camera object to assign to the key.
         @type value: L{Camera}
         """
         if not isinstance(value, Camera):
-            raise ValueError("item to add must be a Camera object")
+            raise ValueError("assigned value must be a Camera object")
         dict.__setitem__(self, key, value)
         self.update_inscene(key)
+    
+    def __delitem__(self, key):
+        """\
+        Remove a camera from the network.
+
+        @param key: The key to remove.
+        @type key: C{object}
+        """
+        dict.__delitem__(self, key)
+        self.model_updated = False
 
     def add_point(self, point):
         """\
