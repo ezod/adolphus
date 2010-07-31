@@ -7,9 +7,9 @@ Coverage module.
 @license: GPL-3
 """
 
-__all__ = ['geometry', 'scene', 'camera', 'display']
+__all__ = ['geometry', 'scene', 'camera', 'interface']
 
 from geometry import *
 from scene import *
 from camera import *
-from display import *
+from interface import *
