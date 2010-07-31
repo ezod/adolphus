@@ -13,6 +13,7 @@ from itertools import combinations
 from fuzz import IndexedSet, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
 
 from geometry import Point, DirectionalPoint, Pose
+from scene import Scene
 
 try:
     import visual
@@ -21,17 +22,15 @@ except ImportError:
     VIS = False
 
 
-class Camera( object ):
+class Camera(object):
     """\
     Single-camera model, using continous fuzzy sets.
     """
-    def __init__(self, name, A, f, s, o, dim, zS, gamma, r1, r2, cmax, zeta,
+    def __init__(self, A, f, s, o, dim, zS, gamma, r1, r2, cmax, zeta,
                  pose = Pose()):
         """\
         Constructor.
 
-        @param name: A name for the camera.
-        @type name: C{str}
         @param A: Aperture size (intrinsic).
         @type A: C{float}
         @param f: Focal length (intrinsic).
@@ -57,8 +56,6 @@ class Camera( object ):
         @param pose: Pose of the camera in space (optional).
         @type pose: L{geometry.Pose}
         """
-        self.name = name
-
         if isinstance(s, Number):
             s = (s, s)
 
@@ -90,25 +87,6 @@ class Camera( object ):
         
         # pose
         self.pose = pose
-
-    def __hash__(self):
-        """\
-        Hash function (based on name).
-        """
-        return hash(self.name)
-
-    def __eq__(self, other):
-        """\
-        Equality function (based on name).
-
-        @param other: The other operand.
-        @type other: L{Camera}
-        @return: True if equal, false otherwise.
-        @rtype: C{bool}
-        """
-        if not isinstance(other, Camera):
-            return False
-        return self.name == other.name
 
     def mu(self, point):
         """\
@@ -176,45 +154,41 @@ class Camera( object ):
         #     length = 2000, radius = scale / 10.0 )
 
 
-class MultiCamera(IndexedSet):
+class MultiCamera(dict):
     """\
     Multi-camera n-ocular fuzzy coverage model.
     """
-    def __init__(self, n, scene, cameras = set(), points = set()):
+    def __init__(self, ocular = 1, scene = Scene(), points = set()):
         """\
         Constructor.
     
-        @param n: The n in n-ocular (mutual camera coverage size).
-        @type n: C{int}
+        @param ocular: Mutual camera coverage degree.
+        @type ocular: C{int}
         @param scene: The discrete scene model.
         @type scene: L{Scene}
-        @param cameras: The initial set of cameras.
-        @type cameras: C{set} of L{Camera}
         @param points: The initial set of points.
         @type points: C{set} of L{geometry.Point}
         """
-        if n < 1:
-            raise ValueError("n must be at least 1")
-        self.model = FuzzySet()
-        self.n = n
+        if ocular < 1:
+            raise ValueError("network must be at least 1-ocular")
+        self.ocular = ocular
         self.scene = scene
-        self.inscene = {}
         self.points = points
-        IndexedSet.__init__(self, 'name', cameras)
-        for camera in self:
-            self._update_inscene(camera.name)
+        self.model = FuzzySet()
 
-    def add(self, item):
+    def __setitem__(self, key, value):
         """\
-        Add a camera to the set. Overrides the base class by verifying that
-        the item to add is a Camera object, and updating the in-scene set.
+        Add a new camera to the network, and update its in-scene model.
 
-        @param item: The item (camera) to add.
-        @type item: L{Camera}
+        @param key: The key of the item to assign.
+        @type key: C{object}
+        @param value: The Camera object to assign.
+        @type value: L{Camera}
         """
-        if isinstance(item, Camera):
-            IndexedSet.add(self, item)
-            self._update_inscene(item.name)
+        if not isinstance(value, Camera):
+            raise ValueError("item to add must be a Camera object")
+        dict.__setitem__(self, key, value)
+        self.update_inscene(key)
 
     def add_point(self, point):
         """\
@@ -228,9 +202,9 @@ class MultiCamera(IndexedSet):
         for key in self.keys():
             mu = self[key].mu(point)
             if mu > 0 and not self.scene.occluded(point, self[key].pose.T):
-                self.inscene[key] |= FuzzySet([FuzzyElement(point, mu)])
+                self[key].inscene |= FuzzySet([FuzzyElement(point, mu)])
 
-    def _update_inscene(self, key):
+    def update_inscene(self, key):
         """\
         Update an individual in-scene camera fuzzy set (with occlusion).
 
@@ -242,7 +216,40 @@ class MultiCamera(IndexedSet):
             mu = self[key].mu(point)
             if mu > 0 and not self.scene.occluded(point, self[key].pose.T):
                 mpoints.append(FuzzyElement(point, mu))
-        self.inscene[key] = FuzzySet(mpoints)
+        self[key].inscene = FuzzySet(mpoints)
+
+    def update_model(self):
+        """\
+        Update the n-ocular multi-camera network discrete coverage model.
+        """
+        if len(self) < self.ocular:
+            raise ValueError("network has too few cameras")
+        self.model = FuzzySet()
+        submodels = []
+        for combination in combinations(self.keys(), self.ocular):
+            submodels.append(self[combination[0]].inscene)
+            for i in range(1, self.ocular):
+                submodels[-1] &= self[combination[i]].inscene
+        for submodel in submodels:
+            self.model |= submodel
+
+    def mu(self, point):
+        """\
+        Return the individual membership degree of a point in the fuzzy
+        coverage model.
+
+        @param point: The (directional) point to test.
+        @type point: L{geometry.Point}
+        @return: The membership degree (coverage) of the point.
+        @rtype: C{float}
+        """
+        if len(self) < self.ocular:
+            raise ValueError("network has too few cameras")
+        if point in self.model:
+            return self.model.mu(point)
+        else:
+            return max([min([self[camera].mu(point) for camera in combination])
+                        for combination in combinations(self.keys(), n)])
 
     def performance(self, desired):
         """\
@@ -268,41 +275,8 @@ class MultiCamera(IndexedSet):
         if not VIS:
             raise ImportError("visual module not loaded")
         for camera in self:
-            camera.visualize(scale = scale, color = color)
+            self[camera].visualize(scale = scale, color = color)
         self.scene.visualize(color = color)
         for point in self.model.keys():
             point.visualize(scale = scale, color = (1, 0, 0),
                             opacity = self.model[point].mu)
-
-    def update_model(self):
-        """\
-        Update the n-ocular multi-camera network discrete coverage model.
-        """
-        if len(self) < self.n:
-            raise ValueError("network has too few cameras")
-        self.model = FuzzySet()
-        submodels = []
-        for combination in combinations(self.keys(), self.n):
-            submodels.append(self.inscene[combination[0]])
-            for i in range(1, self.n):
-                submodels[-1] &= self.inscene[combination[i]]
-        for submodel in submodels:
-            self.model |= submodel
-
-    def mu(self, point):
-        """\
-        Return the individual membership degree of a point in the fuzzy
-        coverage model.
-
-        @param point: The (directional) point to test.
-        @type point: L{geometry.Point}
-        @return: The membership degree (coverage) of the point.
-        @rtype: C{float}
-        """
-        if len(self) < self.n:
-            raise ValueError("network has too few cameras")
-        if point in self.model:
-            return self.model.mu(point)
-        else:
-            return max([min([self[camera].mu(point) for camera in combination])
-                        for combination in combinations(self.keys(), n)])

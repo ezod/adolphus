@@ -3,15 +3,14 @@ from fuzz import RealRange
 from numpy import array, arange
 
 import common
-from adolphus.coverage import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, Plane, rotation_matrix, visual_axes
-from adolphus.interface import Display
+from adolphus import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, Plane, rotation_matrix, visual_axes, Display
 
 display = Display()
 display.up = (0, 0, 1)
 
 print "Creating camera model..."
 # cameras
-P = [ \
+C = [ \
     #('T1', Pose(Point(272.0795, -512.6482, 1111.6311), rotation_matrix((-3.7496, -6.2382, -6.2694)))),
     ('T2', Pose(Point(580.7762, -27.3291, 1097.6489), rotation_matrix((-3.3748, -5.8233, -5.0194)))),
     #('T3', Pose(Point(598.8255, -532.6433, 1134.0327), rotation_matrix((-3.7631, -5.9661, -5.7504)))),
@@ -39,7 +38,6 @@ P = [ \
     #('L7', Pose(Point(034.2871, -994.4367, 134.4528), rotation_matrix((-4.6896, -0.0971, -6.2698)))),
     #('L8', Pose(Point(-286.8135, -838.0852, 135.0429), rotation_matrix((-4.7129, -0.5168, -6.2243)))),
     ]
-C = [Camera(p[0], 4.4765, 12.4922, 0.00465, (691.1516, 500.7902), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 0.3, pose = p[1]) for p in P]
 
 print "Creating scene..."
 # building poses
@@ -142,7 +140,9 @@ P.append(PE.map(DirectionalPoint(110, 70, 100, 0, 0)))
 P.append(PE.map(DirectionalPoint(50, 30, 100, 0, 0)))
 
 print "Creating discrete multi-camera model..."
-M = MultiCamera(2, S, C, P)
+M = MultiCamera(ocular = 2, scene = S, points = P)
+for name, pose in C:
+    M[name] = Camera(4.4765, 12.4922, 0.00465, (691.1516, 500.7902), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 0.3, pose = pose)
 
 print "Updating in-scene model..."
 M.update_model()
