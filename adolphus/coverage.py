@@ -58,7 +58,7 @@ class Camera(object):
         """
         if isinstance(s, Number):
             s = (s, s)
-
+        self.vis = None
         # fuzzy sets for visibility
         self.Cv, al, ar = [], [], []
         for i in range(2):
@@ -67,24 +67,20 @@ class Camera(object):
             g = (gamma / float(dim[i])) * 2.0 * sin((al[i] + ar[i]) / 2.0)
             self.Cv.append(TrapezoidalFuzzyNumber((-sin(al[i]) + g,
                 sin(ar[i]) - g), (-sin(al[i]), sin(ar[i]))))
-
         # fuzzy set for resolution
         mr = min([float(dim[i]) / (2.0 * sin((al[i] + ar[i]) / 2.0)) \
                   for i in range(2)])
         zr1 = (1.0 / r1) * mr
         zr2 = (1.0 / r2) * mr
         self.Cr = TrapezoidalFuzzyNumber((0, zr1), (0, zr2))
-
         # fuzzy set for focus
         zl = (A * f * zS) / (A * f + min(s) * (zS - f))
         zr = (A * f * zS) / (A * f - min(s) * (zS - f))
         zn = (A * f * zS) / (A * f + cmax * (zS - f))
         zf = (A * f * zS) / (A * f - cmax * (zS - f))
         self.Cf = TrapezoidalFuzzyNumber((zl, zr), (zn, zf))
-
         # fuzzifier for direction
         self.zeta = zeta
-        
         # pose
         self.pose = pose
 
@@ -134,20 +130,54 @@ class Camera(object):
         # algebraic product intersection
         return mu_v * mu_r * mu_f * mu_d
 
-    def visualize(self, scale = 1.0, color = (1, 1, 1)):
+    def visualize(self, scale = 1.0, fov = False):
         """\
         Plot the camera in a 3D visual model.
 
         @param scale: The scale of the camera.
         @type scale: C{float}
-        @param color: The color in which to plot the point.
-        @type color: C{tuple}
+        @param fov: Toggle visualization of the field ov view.
+        @type fov: C{bool}
         """
         if not VIS:
             raise ImportError("visual module not loaded")
-        visual.pyramid(pos = self.pose.T.tuple, axis = \
-            self.pose.map_rotate(Point(0, 0, -scale)).tuple, \
-            size = (scale, scale, scale), color = color)
+        if self.vis:
+            self.vis.visible = False
+        self.vis = visual.frame()
+        self.vis.members = []
+        # camera body
+        self.vis.members.append(visual.box(frame = self.vis,
+            size = (scale, scale, scale), color = (0.3, 0.3, 0.3),
+            material = visual.materials.rough))
+        # lens body
+        self.vis.members.append(visual.cylinder(frame = self.vis,
+            pos = (0.8 * scale, 0, 0), axis = (-0.3 * scale, 0, 0),
+            radius = 0.4 * scale, color = (0.3, 0.3, 0.3),
+            material = visual.materials.rough))
+        # lens glass
+        self.vis.members.append(visual.cylinder(frame = self.vis,
+            pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
+            radius = 0.36 * scale, color = (0.3, 0.7, 0.8),
+            material = visual.materials.plastic, opacity = 0.5))
+        # lens ring
+        self.vis.members.append(visual.ring(frame = self.vis,
+            pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
+            radius = 0.38 * scale, color = (0.3, 0.3, 0.3),
+            material = visual.materials.rough))
+        # indicator light
+        self.vis.members.append(visual.sphere(frame = self.vis,
+            pos = (0.5 * scale, 0.4 * scale, 0.4 * scale),
+            radius = 0.05 * scale, color = (0, 1, 0),
+            material = visual.materials.emissive))
+        # field of view
+        if fov:
+            self.vis.members.append(visual.pyramid(frame = self.vis,
+                pos = (50 * scale, 0, 0), axis = (-1, 0, 0),
+                size = (50 * scale, self.Cv[1].support.size * 50 * scale,
+                        self.Cv[0].support.size * 50 * scale),
+                opacity = 0.1, color = (0.3, 0.7, 0.8)))
+        self.vis.pos = self.pose.T.tuple
+        self.vis.axis = self.pose.map_rotate(Point(0, 0, 1)).tuple
 
 
 class MultiCamera(dict):
@@ -261,21 +291,19 @@ class MultiCamera(dict):
         """
         return self.model.overlap(desired)
 
-    def visualize(self, scale = 1.0, color = (1, 1, 1)):
+    def visualize(self, scale = 1.0):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
 
         @param scale: The scale of the individual elements.
         @type scale: C{float}
-        @param color: The color of cameras.
-        @type color: C{tuple}
         """
         if not VIS:
             raise ImportError("visual module not loaded")
         for camera in self:
-            self[camera].visualize(scale = scale, color = color)
-        self.scene.visualize(color = color)
+            self[camera].visualize(scale = scale)
+        self.scene.visualize(color = (0.3, 0.3, 0.3))
         for point in self.model.keys():
             point.visualize(scale = scale, color = (1, 0, 0),
                             opacity = self.model[point].mu)

@@ -148,8 +148,8 @@ print "Updating in-scene model..."
 M.update_model()
 
 print "Visualizing..."
-M.visualize(scale = 30.0, color = (0.3, 0.3, 0.3))
-visual_axes(scale = 30.0, color = (0.3, 0.3, 0.3))
+M.visualize(scale = 30.0)
+visual_axes(scale = 30.0)
 
 #for point in M.model.alpha(0.2):
 #    point.visualize(scale = 30.0, color = (0, 1, 0))
