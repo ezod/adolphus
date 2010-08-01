@@ -144,6 +144,8 @@ class Camera(object):
         if self.vis:
             self.vis.visible = False
         self.vis = visual.frame()
+        self.vis.camera = self
+        self.vis.fov = None
         self.vis.members = []
         # camera body
         self.vis.members.append(visual.box(frame = self.vis,
@@ -171,13 +173,28 @@ class Camera(object):
             material = visual.materials.emissive))
         # field of view
         if fov:
-            self.vis.members.append(visual.pyramid(frame = self.vis,
-                pos = (50 * scale, 0, 0), axis = (-1, 0, 0),
-                size = (50 * scale, self.Cv[1].support.size * 50 * scale,
-                        self.Cv[0].support.size * 50 * scale),
-                opacity = 0.1, color = (0.3, 0.7, 0.8)))
+            self.visualize_fov_toggle(scale = scale)
         self.vis.pos = self.pose.T.tuple
         self.vis.axis = self.pose.map_rotate(Point(0, 0, 1)).tuple
+
+    def visualize_fov_toggle(self, scale = 1.0):
+        """\
+        Visualize the field of view of the camera.
+
+        @param scale: The scale of the field of view.
+        @type scale: C{float}
+        """
+        if self.vis:
+            if self.vis.fov:
+                self.vis.fov.visible = not self.vis.fov.visible
+            else:
+                ax = self.Cv[0].support[1] - (self.Cv[0].support.size / 2.0)
+                ay = self.Cv[1].support[1] - (self.Cv[1].support.size / 2.0)
+                self.vis.fov = visual.pyramid(frame = self.vis, pos = (scale,
+                    scale * ax, scale * ay), axis = (-1, -ax, -ay),
+                    size = (scale, self.Cv[0].support.size * scale,
+                    self.Cv[1].support.size * scale), opacity = 0.1,
+                    color = (0.2, 0.5, 0.6))
 
 
 class MultiCamera(dict):

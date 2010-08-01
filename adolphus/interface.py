@@ -7,10 +7,10 @@ Visual interface module.
 @license: GPL-3
 """
 
-from visual import display
+import visual
 
 
-class Display(display):
+class Display(visual.display):
     """\
     Visual display class.
     """
@@ -23,17 +23,32 @@ class Display(display):
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         """
-        display.__init__(self, title = title, center = center,
+        visual.display.__init__(self, title = title, center = center, up = (0, 0, 1),
                          background = (1, 1, 1), foreground = (0.3, 0.3, 0.3))
-        self.visible = True
+        self.select()
 
 
 class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, cameras = []):
+    def __init__(self, display = Display()):
         """\
         Constructor.
+
+        @param display: The 3D display to use.
+        @type display: L{Display}
         """
-        self.cameras = cameras
+        pass
+
+    def run(self):
+        """\
+        Run this experiment.
+        """
+        self.display.visible = True
+        while True:
+            visual.rate(50)
+            if self.display.mouse.events:
+                m = self.display.mouse.getevent()
+                if m.click == "left" and m.pick in self.cameras:
+                    m.pick.visualize_fov_toggle()

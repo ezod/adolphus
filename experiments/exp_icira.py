@@ -1,12 +1,12 @@
 from math import pi
 from fuzz import RealRange
 from numpy import array, arange
+from visual import rate
 
 import common
 from adolphus import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, Plane, rotation_matrix, visual_axes, Display
 
-display = Display()
-display.up = (0, 0, 1)
+scene = Display()
 
 print "Creating camera model..."
 # cameras
@@ -149,9 +149,17 @@ M.update_model()
 
 print "Visualizing..."
 M.visualize(scale = 30.0)
-visual_axes(scale = 30.0)
 
 #for point in M.model.alpha(0.2):
 #    point.visualize(scale = 30.0, color = (0, 1, 0))
 
 #print "Coverage Performance: %f" % M.performance()
+
+camera_objects = [primitive for objects in [vis.objects for vis in [M[camera].vis for camera in M]] for primitive in objects]
+
+while True:
+    rate(50)
+    if scene.mouse.events:
+        m = scene.mouse.getevent()
+        if m.click == "left" and m.pick in camera_objects:
+            m.pick.frame.camera.visualize_fov_toggle(scale = 1500.0)
