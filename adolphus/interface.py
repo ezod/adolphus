@@ -50,12 +50,16 @@ class Experiment(object):
         """
         self.model.update_model()
         self.model.visualize(scale = 30)
-        camera_objects = [primitive for objects in [vis.objects \
-            for vis in [self.model[camera].vis for camera in self.model]] \
+        cam_vis = [primitive for objects in [vis.objects for vis in \
+            [self.model[camera].vis for camera in self.model]] \
             for primitive in objects]
         while True:
             visual.rate(50)
             if self.display.mouse.events:
                 m = self.display.mouse.getevent()
-                if m.click == "left" and m.pick in camera_objects:
-                    m.pick.frame.camera.visualize_fov_toggle(scale = 1500)
+                if m.click == "left" and m.pick in cam_vis:
+                    if m.ctrl:
+                        m.pick.frame.camera.visualize_fov_toggle(scale = 1500)
+                    else:
+                        m.pick.frame.camera.active = not m.pick.frame.camera.active
+                        m.pick.frame.camera.update_visualization()

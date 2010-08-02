@@ -27,7 +27,7 @@ class Camera(object):
     Single-camera model, using continous fuzzy sets.
     """
     def __init__(self, A, f, s, o, dim, zS, gamma, r1, r2, cmax, zeta,
-                 pose = Pose()):
+                 pose = Pose(), active = True):
         """\
         Constructor.
 
@@ -55,6 +55,8 @@ class Camera(object):
         @type zeta: C{float}
         @param pose: Pose of the camera in space (optional).
         @type pose: L{geometry.Pose}
+        @param active: Initial active state of camera.
+        @type pose: C{bool}
         """
         if isinstance(s, Number):
             s = (s, s)
@@ -83,6 +85,8 @@ class Camera(object):
         self.zeta = zeta
         # pose
         self.pose = pose
+        # active
+        self.active = active
 
     def mu(self, point):
         """\
@@ -142,38 +146,49 @@ class Camera(object):
         if not VIS:
             raise ImportError("visual module not loaded")
         if self.vis:
-            self.vis.visible = False
+            return
         self.vis = visual.frame()
         self.vis.camera = self
         self.vis.fov = None
-        self.vis.members = []
+        self.vis.members = {}
         # camera body
-        self.vis.members.append(visual.box(frame = self.vis,
+        self.vis.members['body'] = (visual.box(frame = self.vis,
             size = (scale, scale, scale), color = (0.3, 0.3, 0.3),
             material = visual.materials.rough))
         # lens body
-        self.vis.members.append(visual.cylinder(frame = self.vis,
+        self.vis.members['lens'] = (visual.cylinder(frame = self.vis,
             pos = (0.8 * scale, 0, 0), axis = (-0.3 * scale, 0, 0),
             radius = 0.4 * scale, color = (0.3, 0.3, 0.3),
             material = visual.materials.rough))
         # lens glass
-        self.vis.members.append(visual.cylinder(frame = self.vis,
+        self.vis.members['glass'] = (visual.cylinder(frame = self.vis,
             pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
             radius = 0.36 * scale, color = (0.3, 0.7, 0.8),
             material = visual.materials.plastic, opacity = 0.5))
         # lens ring
-        self.vis.members.append(visual.ring(frame = self.vis,
+        self.vis.members['ring'] = (visual.ring(frame = self.vis,
             pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
             radius = 0.38 * scale, color = (0.3, 0.3, 0.3),
             material = visual.materials.rough))
         # indicator light
-        self.vis.members.append(visual.sphere(frame = self.vis,
+        self.vis.members['light'] = (visual.sphere(frame = self.vis,
             pos = (0.5 * scale, 0.4 * scale, 0.4 * scale),
-            radius = 0.05 * scale, color = (0, 1, 0),
-            material = visual.materials.emissive))
+            radius = 0.05 * scale, material = visual.materials.emissive))
         # field of view
         if fov:
             self.visualize_fov_toggle(scale = scale)
+        self.update_visualization()
+
+    def update_visualization(self):
+        """\
+        Update the visualization for camera active state and pose.
+        """
+        if not self.vis:
+            raise ValueError("camera not yet visualized")
+        for member in ['body', 'lens', 'ring', 'light']:
+            self.vis.members[member].opacity = self.active and 1.0 or 0.2
+        self.vis.members['glass'].opacity = self.active and 0.5 or 0.1
+        self.vis.members['light'].color = (not self.active, self.active, 0)
         self.vis.pos = self.pose.T.tuple
         self.vis.axis = self.pose.map_rotate(Point(0, 0, 1)).tuple
 
@@ -232,7 +247,6 @@ class MultiCamera(dict):
         if not isinstance(value, Camera):
             raise ValueError("assigned value must be a Camera object")
         dict.__setitem__(self, key, value)
-        self.update_inscene(key)
     
     def update_model(self):
         """\
