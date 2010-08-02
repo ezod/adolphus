@@ -218,7 +218,7 @@ class MultiCamera(dict):
         self.scene = scene
         self.points = points
         self.model = FuzzySet()
-        self.model_updated = False
+        self._updated_state = None
 
     def __setitem__(self, key, value):
         """\
@@ -234,60 +234,26 @@ class MultiCamera(dict):
         dict.__setitem__(self, key, value)
         self.update_inscene(key)
     
-    def __delitem__(self, key):
-        """\
-        Remove a camera from the network.
-
-        @param key: The key to remove.
-        @type key: C{object}
-        """
-        dict.__delitem__(self, key)
-        self.model_updated = False
-
-    def add_point(self, point):
-        """\
-        Update a single (directional) point in the model, for all cameras, with
-        occlusion.
-
-        @param point: The directional point.
-        @type point: L{geometry.Point}
-        """
-        self.points.add(point)
-        for key in self.keys():
-            mu = self[key].mu(point)
-            if mu > 0 and not self.scene.occluded(point, self[key].pose.T):
-                self[key].inscene |= FuzzySet([FuzzyElement(point, mu)])
-
-    def update_inscene(self, key):
-        """\
-        Update an individual in-scene camera fuzzy set (with occlusion).
-
-        @param key: The name of the camera to update.
-        @type key: C{str}
-        """
-        mpoints = []
-        for point in self.points:
-            mu = self[key].mu(point)
-            if mu > 0 and not self.scene.occluded(point, self[key].pose.T):
-                mpoints.append(FuzzyElement(point, mu))
-        self[key].inscene = FuzzySet(mpoints)
-        self.model_updated = False
-
     def update_model(self):
         """\
         Update the n-ocular multi-camera network discrete coverage model.
         """
         if len(self) < self.ocular:
             raise ValueError("network has too few cameras")
-        self.model = FuzzySet()
-        submodels = []
-        for combination in combinations(self.keys(), self.ocular):
-            submodels.append(self[combination[0]].inscene)
-            for i in range(1, self.ocular):
-                submodels[-1] &= self[combination[i]].inscene
-        for submodel in submodels:
-            self.model |= submodel
-        self.model_updated = True
+        self.model = FuzzySet([FuzzyElement(point, self.mu(point)) \
+                               for point in self.points])
+        # TODO: something about self._updated_state
+
+    @property
+    def model_updated(self):
+        """\
+        Return whether the fuzzy coverage model is up to date.
+
+        @rtype: C{bool}
+        """
+        if not self._updated_state:
+            return False
+        return True
 
     def mu(self, point):
         """\
@@ -304,8 +270,10 @@ class MultiCamera(dict):
         if point in self.model:
             return self.model.mu(point)
         else:
-            return max([min([self[camera].mu(point) for camera in combination])
-                        for combination in combinations(self.keys(), n)])
+            return max([min([not self.scene.occluded(point,
+                self[camera].pose.T) and self[camera].mu(point) or 0.0 \
+                for camera in combination]) for combination \
+                in combinations(self.keys(), self.ocular)])
 
     def performance(self, desired):
         """\
