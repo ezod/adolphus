@@ -104,7 +104,7 @@ class Camera(object):
 
         # visibility
         try:
-            mu_v = min([Cv.mu(campoint.x / campoint.z) for Cv in self.Cv])
+            mu_v = min([self.Cv[i].mu(campoint[i] / campoint.z) for i in range(2)])
         except ZeroDivisionError:
             mu_v = 0.0
 
@@ -332,11 +332,11 @@ class MultiCamera(dict):
         for camera in self:
             self[camera].update_visualization()
         for point in self.model.keys():
-            if point.vis_point:
-                point.vis_point.opacity = self.model[point].mu
+            if point.vis:
+                point.vis.members['point'].opacity = self.model[point].mu
                 try:
-                    point.vis_dir.opacity = self.model[point].mu
-                except AttributeError:
+                    point.vis.members['dir'].opacity = self.model[point].mu
+                except KeyError:
                     pass
             else:
                 point.visualize(scale = scale, color = (1, 0, 0),
