@@ -261,7 +261,7 @@ class MultiCamera(dict):
         """\
         Update the n-ocular multi-camera network discrete coverage model.
         """
-        if len(self) < self.ocular:
+        if len(self.active_cameras) < self.ocular:
             raise ValueError("network has too few cameras")
         self.model = FuzzySet([FuzzyElement(point, self.mu(point)) \
                                for point in self.points])
@@ -288,16 +288,13 @@ class MultiCamera(dict):
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        if len(self) < self.ocular:
+        active_cameras = self.active_cameras
+        if len(active_cameras) < self.ocular:
             raise ValueError("network has too few cameras")
-        if point in self.model:
-            return self.model.mu(point)
-        else:
-            active_cameras = self.active_cameras
-            return max([min([not self.scene.occluded(point,
-                self[camera].pose.T) and self[camera].mu(point) or 0.0 \
-                for camera in combination]) for combination \
-                in combinations(active_cameras, self.ocular)])
+        return max([min([not self.scene.occluded(point,
+            self[camera].pose.T) and self[camera].mu(point) or 0.0 \
+            for camera in combination]) for combination \
+            in combinations(active_cameras, self.ocular)])
 
     def performance(self, desired):
         """\
@@ -326,3 +323,20 @@ class MultiCamera(dict):
         for point in self.model.keys():
             point.visualize(scale = scale, color = (1, 0, 0),
                             opacity = self.model[point].mu)
+
+    def update_visualization(self):
+        """\
+        Update the visualization.
+        """
+        for camera in self:
+            self[camera].update_visualization()
+        for point in self.model.keys():
+            if point.vis_point:
+                point.vis_point.opacity = self.model[point].mu
+                try:
+                    point.vis_dir.opacity = self.model[point].mu
+                except AttributeError:
+                    pass
+            else:
+                point.visualize(scale = scale, color = (1, 0, 0),
+                                opacity = self.model[point].mu)

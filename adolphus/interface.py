@@ -8,6 +8,7 @@ Visual interface module.
 """
 
 import visual
+import sys
 
 
 class Display(visual.display):
@@ -63,3 +64,11 @@ class Experiment(object):
                     else:
                         m.pick.frame.camera.active = not m.pick.frame.camera.active
                         m.pick.frame.camera.update_visualization()
+            if self.display.kb.keys:
+                k = self.display.kb.getkey()
+                if k == 'f2':
+                    print "Updating discrete fuzzy coverage model... ",
+                    sys.stdout.flush()
+                    self.model.update_model()
+                    self.model.update_visualization()
+                    print "done."
