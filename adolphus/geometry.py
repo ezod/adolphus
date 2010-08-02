@@ -81,8 +81,6 @@ class Point(object):
             self.z = float(z)
         else:
             raise TypeError("incompatible type in initializer")
-        if VIS:
-            self.vis_point = None
     
     def __hash__(self):
         """\
@@ -324,12 +322,15 @@ class Point(object):
         if not VIS:
             raise ImportError("visual module not loaded")
         try:
-            self.vis_point.radius = 0.1 * scale
-            self.vis_point.pos = self.tuple
-            self.vis_point.color = color
-            self.vis_point.opacity = opacity
+            self.vis.members['point'].radius = 0.1 * scale
+            self.vis.members['point'].pos = self.tuple
+            self.vis.members['point'].color = color
+            self.vis.members['point'].opacity = opacity
         except AttributeError:
-            self.vis_point = visual.sphere(radius = 0.1 * scale,
+            self.vis = visual.frame()
+            self.vis.point = self
+            self.vis.members = {}
+            self.vis.members['point'] = visual.sphere(radius = 0.1 * scale,
                 pos = self.tuple, color = color, opacity = opacity)
 
 
@@ -362,8 +363,6 @@ class DirectionalPoint(Point):
         else:
             raise TypeError("incompatible type in initializer")
         Point.__init__(self, x, y, z)
-        if VIS:
-            self.vis_dir = None
         self._normalize_direction()
 
     def __hash__(self):
@@ -545,13 +544,13 @@ class DirectionalPoint(Point):
         Point.visualize(self, scale = scale, color = color, opacity = opacity)
         unit = scale * self.direction_unit
         try:
-            self.vis_dir.pos = self.tuple
-            self.vis_dir.axis = unit.tuple
-            self.vis_dir.color = color
-            self.vis_dir.opacity = opacity
-        except AttributeError:
-            self.vis_dir = visual.arrow(pos = self.tuple, axis = unit.tuple,
-                color = color, opacity = opacity)
+            self.vis.members['dir'].pos = self.tuple
+            self.vis.members['dir'].axis = unit.tuple
+            self.vis.members['dir'].color = color
+            self.vis.members['dir'].opacity = opacity
+        except KeyError:
+            self.vis.members['dir'] = visual.arrow(pos = self.tuple,
+                axis = unit.tuple, color = color, opacity = opacity)
 
 
 class Plane(object):

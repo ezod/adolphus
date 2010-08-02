@@ -146,34 +146,35 @@ class Camera(object):
         if not VIS:
             raise ImportError("visual module not loaded")
         if self.vis:
+            self.update_visualization()
             return
         self.vis = visual.frame()
         self.vis.camera = self
         self.vis.fov = None
         self.vis.members = {}
         # camera body
-        self.vis.members['body'] = (visual.box(frame = self.vis,
+        self.vis.members['body'] = visual.box(frame = self.vis,
             size = (scale, scale, scale), color = (0.3, 0.3, 0.3),
-            material = visual.materials.rough))
+            material = visual.materials.rough)
         # lens body
-        self.vis.members['lens'] = (visual.cylinder(frame = self.vis,
+        self.vis.members['lens'] = visual.cylinder(frame = self.vis,
             pos = (0.8 * scale, 0, 0), axis = (-0.3 * scale, 0, 0),
             radius = 0.4 * scale, color = (0.3, 0.3, 0.3),
-            material = visual.materials.rough))
+            material = visual.materials.rough)
         # lens glass
-        self.vis.members['glass'] = (visual.cylinder(frame = self.vis,
+        self.vis.members['glass'] = visual.cylinder(frame = self.vis,
             pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
             radius = 0.36 * scale, color = (0.3, 0.7, 0.8),
-            material = visual.materials.plastic, opacity = 0.5))
+            material = visual.materials.plastic, opacity = 0.5)
         # lens ring
-        self.vis.members['ring'] = (visual.ring(frame = self.vis,
+        self.vis.members['ring'] = visual.ring(frame = self.vis,
             pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
             radius = 0.38 * scale, color = (0.3, 0.3, 0.3),
-            material = visual.materials.rough))
+            material = visual.materials.rough)
         # indicator light
-        self.vis.members['light'] = (visual.sphere(frame = self.vis,
+        self.vis.members['light'] = visual.sphere(frame = self.vis,
             pos = (0.5 * scale, 0.4 * scale, 0.4 * scale),
-            radius = 0.05 * scale, material = visual.materials.emissive))
+            radius = 0.05 * scale, material = visual.materials.emissive)
         # field of view
         if fov:
             self.visualize_fov_toggle(scale = scale)
