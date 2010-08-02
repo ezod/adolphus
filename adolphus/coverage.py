@@ -247,6 +247,15 @@ class MultiCamera(dict):
         if not isinstance(value, Camera):
             raise ValueError("assigned value must be a Camera object")
         dict.__setitem__(self, key, value)
+
+    @property
+    def active_cameras(self):
+        """\
+        Return a list of active cameras.
+
+        @rtype: C{list}
+        """
+        return [key for key in self if self[key].active]
     
     def update_model(self):
         """\
@@ -284,10 +293,11 @@ class MultiCamera(dict):
         if point in self.model:
             return self.model.mu(point)
         else:
+            active_cameras = self.active_cameras
             return max([min([not self.scene.occluded(point,
                 self[camera].pose.T) and self[camera].mu(point) or 0.0 \
                 for camera in combination]) for combination \
-                in combinations(self.keys(), self.ocular)])
+                in combinations(active_cameras, self.ocular)])
 
     def performance(self, desired):
         """\
