@@ -56,6 +56,9 @@ class Experiment(object):
         cam_vis = [primitive for objects in [vis.objects for vis in \
             [self.model[camera].vis for camera in self.model]] \
             for primitive in objects]
+        point_vis = [primitive for objects in [vis.objects for vis in \
+            [point.vis for point in self.model.model.keys()]] \
+            for primitive in objects]
         while True:
             visual.rate(50)
             if self.display.mouse.events:
@@ -66,6 +69,9 @@ class Experiment(object):
                     else:
                         m.pick.frame.camera.active = not m.pick.frame.camera.active
                         m.pick.frame.camera.update_visualization()
+                if m.click == "left" and m.pick in point_vis:
+                    print "mu%s = %f" % (m.pick.frame.point,
+                        self.model.model[m.pick.frame.point].mu)
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
                 if k == 'f2':
