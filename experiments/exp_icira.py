@@ -1,40 +1,37 @@
 from math import pi
-from fuzz import RealRange
-from numpy import array, arange
-from visual import rate
 
 import common
-from adolphus import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, Plane, rotation_matrix, visual_axes, Experiment
+from adolphus import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Plane, rotation_matrix, Experiment
 
 print "Creating camera model..."
 # cameras
 C = [ \
-    #('T1', Pose(Point(272.0795, -512.6482, 1111.6311), rotation_matrix((-3.7496, -6.2382, -6.2694)))),
+    ('T1', Pose(Point(272.0795, -512.6482, 1111.6311), rotation_matrix((-3.7496, -6.2382, -6.2694)))),
     ('T2', Pose(Point(580.7762, -27.3291, 1097.6489), rotation_matrix((-3.3748, -5.8233, -5.0194)))),
-    #('T3', Pose(Point(598.8255, -532.6433, 1134.0327), rotation_matrix((-3.7631, -5.9661, -5.7504)))),
-    #('T4', Pose(Point(-196.3809, -563.0857, 1130.9031), rotation_matrix((-3.7343, -0.2529, -0.6602)))),
-    #('T5', Pose(Point(-233.3505, -426.0795, 1172.2064), rotation_matrix((-3.6510, -0.3514, -0.4658)))),
-    #('T6', Pose(Point(126.9092, 068.0062, 1126.9477), rotation_matrix((-3.2937, -6.2415, -1.4784)))),
-    #('T7', Pose(Point(101.0447, 591.6576, 1150.5325), rotation_matrix((-2.6858, -0.0903, -3.1197)))),
-    #('T8', Pose(Point(559.0332, 497.1981, 1099.4856), rotation_matrix((-2.8116, -5.8239, -4.1621)))),
-    #('T9', Pose(Point(-245.7283, 283.8215, 1112.6117), rotation_matrix((-2.9980, -0.3952, -1.9146)))),
-    #('M1', Pose(Point(1074.0579, 169.1403, 482.5471), rotation_matrix((-3.1254, -5.1940, -4.6969)))),
+    ('T3', Pose(Point(598.8255, -532.6433, 1134.0327), rotation_matrix((-3.7631, -5.9661, -5.7504)))),
+    ('T4', Pose(Point(-196.3809, -563.0857, 1130.9031), rotation_matrix((-3.7343, -0.2529, -0.6602)))),
+    ('T5', Pose(Point(-233.3505, -426.0795, 1172.2064), rotation_matrix((-3.6510, -0.3514, -0.4658)))),
+    ('T6', Pose(Point(126.9092, 068.0062, 1126.9477), rotation_matrix((-3.2937, -6.2415, -1.4784)))),
+    ('T7', Pose(Point(101.0447, 591.6576, 1150.5325), rotation_matrix((-2.6858, -0.0903, -3.1197)))),
+    ('T8', Pose(Point(559.0332, 497.1981, 1099.4856), rotation_matrix((-2.8116, -5.8239, -4.1621)))),
+    ('T9', Pose(Point(-245.7283, 283.8215, 1112.6117), rotation_matrix((-2.9980, -0.3952, -1.9146)))),
+    ('M1', Pose(Point(1074.0579, 169.1403, 482.5471), rotation_matrix((-3.1254, -5.1940, -4.6969)))),
     ('M2', Pose(Point(996.4342, -332.1199, 480.3496), rotation_matrix((-4.0061, -5.4570, -5.6315)))),
-    #('M3', Pose(Point(848.4780, -443.7130, 547.6449), rotation_matrix((-4.0329, -5.6826, -5.9226)))),
+    ('M3', Pose(Point(848.4780, -443.7130, 547.6449), rotation_matrix((-4.0329, -5.6826, -5.9226)))),
     ('M4', Pose(Point(586.2451, -625.1676, 591.4391), rotation_matrix((-4.0677, -5.8830, -5.8559)))),
-    #('M5', Pose(Point(954.5638, 488.5257, 495.3477), rotation_matrix((-2.4932, -5.3979, -3.9781)))),
-    #('M6', Pose(Point(-546.4648, 120.0486, 433.7413), rotation_matrix((-3.2878, -0.9860, -1.4580)))),
-    #('M7', Pose(Point(-598.3352, 143.5653, 470.7973), rotation_matrix((-3.2316, -1.0589, -1.4982)))),
-    #('M8', Pose(Point(-327.1471, -248.7190, 481.7829), rotation_matrix((-3.9497, -0.5760, -0.9560)))),
-    #('M9', Pose(Point(-483.0407, 602.5126, 587.3916), rotation_matrix((-2.4994, -0.7493, -2.3178)))),
-    #('L1', Pose(Point(-923.6927, 225.0199, 205.0312), rotation_matrix((-3.1879, -1.4244, -1.5480)))),
-    #('L2', Pose(Point(-617.1199, -250.4866, 095.83130), rotation_matrix((-4.8030, -0.9920, -0.1191)))),
-    #('L3', Pose(Point(107.3623, 1440.9528, 125.8163), rotation_matrix((-1.6521, -6.2309, -3.1478)))),
-    #('L4', Pose(Point(536.1135, 1104.3457, 061.0062), rotation_matrix((-1.5276, -5.8051, -3.0969)))),
-    #('L5', Pose(Point(-290.4745, 752.7439, 024.6231), rotation_matrix((-1.4200, -0.9406, -3.2852)))),
+    ('M5', Pose(Point(954.5638, 488.5257, 495.3477), rotation_matrix((-2.4932, -5.3979, -3.9781)))),
+    ('M6', Pose(Point(-546.4648, 120.0486, 433.7413), rotation_matrix((-3.2878, -0.9860, -1.4580)))),
+    ('M7', Pose(Point(-598.3352, 143.5653, 470.7973), rotation_matrix((-3.2316, -1.0589, -1.4982)))),
+    ('M8', Pose(Point(-327.1471, -248.7190, 481.7829), rotation_matrix((-3.9497, -0.5760, -0.9560)))),
+    ('M9', Pose(Point(-483.0407, 602.5126, 587.3916), rotation_matrix((-2.4994, -0.7493, -2.3178)))),
+    ('L1', Pose(Point(-923.6927, 225.0199, 205.0312), rotation_matrix((-3.1879, -1.4244, -1.5480)))),
+    ('L2', Pose(Point(-617.1199, -250.4866, 095.83130), rotation_matrix((-4.8030, -0.9920, -0.1191)))),
+    ('L3', Pose(Point(107.3623, 1440.9528, 125.8163), rotation_matrix((-1.6521, -6.2309, -3.1478)))),
+    ('L4', Pose(Point(536.1135, 1104.3457, 061.0062), rotation_matrix((-1.5276, -5.8051, -3.0969)))),
+    ('L5', Pose(Point(-290.4745, 752.7439, 024.6231), rotation_matrix((-1.4200, -0.9406, -3.2852)))),
     ('L6', Pose(Point(504.4358, -521.7866, 108.0059), rotation_matrix((-4.7248, -5.6686, -0.0260)))),
-    #('L7', Pose(Point(034.2871, -994.4367, 134.4528), rotation_matrix((-4.6896, -0.0971, -6.2698)))),
-    #('L8', Pose(Point(-286.8135, -838.0852, 135.0429), rotation_matrix((-4.7129, -0.5168, -6.2243)))),
+    ('L7', Pose(Point(034.2871, -994.4367, 134.4528), rotation_matrix((-4.6896, -0.0971, -6.2698)))),
+    ('L8', Pose(Point(-286.8135, -838.0852, 135.0429), rotation_matrix((-4.7129, -0.5168, -6.2243)))),
     ]
 
 print "Creating scene..."

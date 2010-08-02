@@ -1,13 +1,8 @@
 from math import pi
-from fuzz import RealRange
-from numpy import array, arange
-from visual import scene
+from numpy import array
 
 import common
-from adolphus import Scene, Camera, MultiCamera, Pose, Point, DirectionalPoint, Angle, rotation_matrix, visual_axes, Display
-
-display = Display()
-display.up = (0, 0, 1)
+from adolphus import Scene, Camera, MultiCamera, Pose, Point, Plane, Experiment
 
 print "Creating camera model..."
 C = [ \
@@ -20,35 +15,36 @@ C = [ \
     ]
 
 print "Creating scene..."
-S = Scene(RealRange((-400.0, 400.0)), RealRange((-400.0, 400.0)), RealRange((-100.0, 1000.0)), 50.0, pi / 2.0)
-S.make_opaque(RealRange((-150.0, 150.0)), RealRange((-100.0, 100.0)), RealRange((-100.0, 0.0)))
-S.make_desired(RealRange((-350.0, 350.0)), RealRange((-300.0, 300.0)), RealRange((-100.0, 0.0)), d = None)
+S = Scene()
+# floor
+S.add(Plane(Pose(Point(0, 0, -100)), (-400, 400), (-400, 400)))
+# box
+S.add(Plane(Pose(), (-150, 150), (-100, 100)))
 
 print "Creating discrete multi-camera model..."
-M = MultiCamera(ocular = 1, scene = S)
+P = [Point(x, y, z) for x in [i * 100 for i in range(-4, 5)] for y in [i * 100 for i in range(-4, 5)] for z in [i * 100 for i in range(-1, 8)]]
+
+M = MultiCamera(ocular = 1, scene = S, points = P)
 for name, pose in C:
     M[name] = Camera(4.4765, 12.5341, 0.00465, (760.1805, 495.1859), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 1.3, pose = pose)
 
-print "Updating in-scene model..."
-M.update_model()
-#print "Visualizing..."
-M.visualize(scale = 30.0, color = (0.3, 0.3, 0.3))
-visual_axes(scale = 30.0, color = (0.3, 0.3, 0.3))
-#M.visualize(scale = 30.0)
-#visual_axes(scale = 30.0)
+print "Running experiment..."
+E = Experiment(M)
+E.run()
 
-print "Coverage Performance: %f" % M.performance()
+#S.make_desired(RealRange((-350.0, 350.0)), RealRange((-300.0, 300.0)), RealRange((-100.0, 0.0)), d = None)
+#print "Coverage Performance: %f" % M.performance()
 
 #points of interest
-P = [Point(-153, -58, -116),
-     Point(-183, 72, -116),
-     Point(-60, -140, -116),
-     Point(117, -228, -116),
-     Point(190, -25, -116),
-     Point(154, 17, -116),
-     Point(110, 146, -116),
-     Point(-110, 255, -116)]
+#P = [Point(-153, -58, -116),
+#     Point(-183, 72, -116),
+#     Point(-60, -140, -116),
+#     Point(117, -228, -116),
+#     Point(190, -25, -116),
+#     Point(154, 17, -116),
+#     Point(110, 146, -116),
+#     Point(-110, 255, -116)]
 
-for p in P:
-    p.visualize(scale = 40.0, color = (0, 0, 1), opacity = M.mu(p))
-    print "Coverage of %s: %f" % (str(p), M.mu(p))
+#for p in P:
+#    p.visualize(scale = 40.0, color = (0, 0, 1), opacity = M.mu(p))
+#    print "Coverage of %s: %f" % (str(p), M.mu(p))
