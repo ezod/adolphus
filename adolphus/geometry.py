@@ -229,14 +229,22 @@ class Point(object):
 
     def __repr__(self):
         """\
+        Canonical string representation.
+
+        @return: Canonical string representation.
+        @rtype: C{str}
+        """
+        return "%s(%f, %f, %f)" % (self.__class__.__name__,
+            self.x, self.y, self.z)
+
+    def __str__(self):
+        """\
         String representation, displays in a tuple format.
 
         @return: Vector string.
-        @rtype: C{string}
+        @rtype: C{str}
         """
-        return "(" + str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ")"
-
-    __str__ = __repr__
+        return "(%f, %f, %f)" % (self.x, self.y, self.z)
 
     @property
     def tuple(self):
@@ -494,15 +502,23 @@ class DirectionalPoint(Point):
 
     def __repr__(self):
         """\
+        Canonical string representation.
+
+        @return: Spatial-directional vector string.
+        @rtype: C{str}
+        """
+        return "%s(%f, %f, %f, %f, %f)" % (self.__class__.__name__,
+            self.x, self.y, self.z, self.rho, self.eta)
+
+    def __str__(self):
+        """\
         String representation, displays in a tuple format.
 
         @return: Spatial-directional vector string.
-        @rtype: C{string}
+        @rtype: C{str}
         """
-        return "(" + str(self.x) + ", " + str(self.y) + ", " + \
-        str(self.z) + ", " + str(self.rho) + ", " + str(self.eta) + ")"
-
-    __str__ = __repr__
+        return "(%f, %f, %f, %f, %f)" \
+            % (self.x, self.y, self.z, self.rho, self.eta)
 
     @property
     def direction_unit(self):
@@ -697,7 +713,7 @@ class Pose(object):
         String representation, display T and R.
 
         @return: String representations of T and R.
-        @rtype: C{string}
+        @rtype: C{str}
         """
         return str(self.T) + "\n" + str(self.R)
 
