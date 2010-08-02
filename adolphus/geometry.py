@@ -323,15 +323,15 @@ class Point(object):
             raise ImportError("visual module not loaded")
         try:
             self.vis.members['point'].radius = 0.1 * scale
-            self.vis.members['point'].pos = self.tuple
             self.vis.members['point'].color = color
             self.vis.members['point'].opacity = opacity
         except AttributeError:
             self.vis = visual.frame()
             self.vis.point = self
             self.vis.members = {}
-            self.vis.members['point'] = visual.sphere(radius = 0.1 * scale,
-                pos = self.tuple, color = color, opacity = opacity)
+            self.vis.members['point'] = visual.sphere(frame = self.vis, 
+                radius = 0.1 * scale, color = color, opacity = opacity)
+        self.vis.pos = self.tuple
 
 
 class DirectionalPoint(Point):
@@ -544,12 +544,11 @@ class DirectionalPoint(Point):
         Point.visualize(self, scale = scale, color = color, opacity = opacity)
         unit = scale * self.direction_unit
         try:
-            self.vis.members['dir'].pos = self.tuple
             self.vis.members['dir'].axis = unit.tuple
             self.vis.members['dir'].color = color
             self.vis.members['dir'].opacity = opacity
         except KeyError:
-            self.vis.members['dir'] = visual.arrow(pos = self.tuple,
+            self.vis.members['dir'] = visual.arrow(frame = self.vis, 
                 axis = unit.tuple, color = color, opacity = opacity)
 
 
