@@ -51,8 +51,9 @@ class Experiment(object):
         """
         self.model.update_model()
         self.model.visualize(scale = 30)
-        self.center_vis = visual.sphere(pos = self.display.center, radius = 5,
-            color = (0, 0, 1), material = visual.materials.emissive)
+        self.cdot = visual.sphere(pos = self.display.center, radius = 5,
+            color = (0, 0, 1), material = visual.materials.emissive,
+            visible = False)
         cam_vis = [primitive for objects in [vis.objects for vis in \
             [self.model[camera].vis for camera in self.model]] \
             for primitive in objects]
@@ -80,8 +81,10 @@ class Experiment(object):
                     self.model.update_model()
                     self.model.update_visualization()
                     print "done."
+                elif k == 'f7':
+                    self.model.visualize_name_toggle()
                 elif k == 'f8':
-                    self.center_vis.visible = not self.center_vis.visible
+                    self.cdot.visible = not self.cdot.visible
                 elif k == 'left':
                     self.display.center = (self.display.center[0] - 30,
                         self.display.center[1], self.display.center[2])
@@ -100,4 +103,4 @@ class Experiment(object):
                 elif k == 'page up':
                     self.display.center = (self.display.center[0],
                         self.display.center[1], self.display.center[2] + 30)
-                self.center_vis.pos = self.display.center
+                self.cdot.pos = self.display.center

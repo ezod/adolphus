@@ -320,10 +320,21 @@ class MultiCamera(dict):
             raise ImportError("visual module not loaded")
         for camera in self:
             self[camera].visualize(scale = scale)
+            self[camera].vis.members['name'] = visual.label(frame = \
+                self[camera].vis, pos = (0, scale, 0), height = 6,
+                color = (1, 1, 1), text = camera, visible = False)
         self.scene.visualize(color = (0.3, 0.3, 0.3))
         for point in self.model.keys():
             point.visualize(scale = scale, color = (1, 0, 0),
                             opacity = self.model[point].mu)
+
+    def visualize_name_toggle(self):
+        """\
+        Toggle visibility of the camera name tags.
+        """
+        for camera in self:
+            self[camera].vis.members['name'].visible = \
+                not self[camera].vis.members['name'].visible
 
     def update_visualization(self):
         """\
