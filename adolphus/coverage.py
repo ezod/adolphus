@@ -173,7 +173,7 @@ class Camera(object):
             material = visual.materials.rough)
         # indicator light
         self.vis.members['light'] = visual.sphere(frame = self.vis,
-            pos = (0.5 * scale, 0.4 * scale, 0.4 * scale),
+            pos = (0.5 * scale, 0, 0.45 * scale),
             radius = 0.05 * scale, material = visual.materials.emissive)
         # field of view
         if fov:
@@ -191,6 +191,7 @@ class Camera(object):
         self.vis.members['glass'].opacity = self.active and 0.5 or 0.1
         self.vis.members['light'].color = (not self.active, self.active, 0)
         self.vis.pos = self.pose.T.tuple
+        # FIXME: this doesn't account for about-axis rotation!
         self.vis.axis = self.pose.map_rotate(Point(0, 0, 1)).tuple
 
     def visualize_fov_toggle(self, scale = 1.0):
@@ -207,7 +208,7 @@ class Camera(object):
                 ax = self.Cv[0].support[1] - (self.Cv[0].support.size / 2.0)
                 ay = self.Cv[1].support[1] - (self.Cv[1].support.size / 2.0)
                 self.vis.fov = visual.pyramid(frame = self.vis, pos = (scale,
-                    scale * ax, scale * ay), axis = (-1, -ax, -ay),
+                    scale * ay, -scale * ax), axis = (-1, -ay, ax),
                     size = (scale, self.Cv[0].support.size * scale,
                     self.Cv[1].support.size * scale), opacity = 0.1,
                     color = (0.2, 0.5, 0.6))
