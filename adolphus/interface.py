@@ -51,6 +51,8 @@ class Experiment(object):
         """
         self.model.update_model()
         self.model.visualize(scale = 30)
+        self.axes = visual_axes(scale = 30, color = (0, 0, 1))
+        self.axes.visible = False
         self.cdot = visual.sphere(pos = self.display.center, radius = 5,
             color = (0, 0, 1), material = visual.materials.emissive,
             visible = False)
@@ -81,8 +83,10 @@ class Experiment(object):
                     self.model.update_model()
                     self.model.update_visualization()
                     print "done."
-                elif k == 'f7':
+                elif k == 'f6':
                     self.model.visualize_name_toggle()
+                elif k == 'f7':
+                    self.axes.visible = not self.axes.visible
                 elif k == 'f8':
                     self.cdot.visible = not self.cdot.visible
                 elif k == 'left':
@@ -104,3 +108,45 @@ class Experiment(object):
                     self.display.center = (self.display.center[0],
                         self.display.center[1], self.display.center[2] + 30)
                 self.cdot.pos = self.display.center
+
+
+def visual_axes(scale = 1.0, color = (1, 1, 1)):
+    """\
+    Display a set of 3D axes.
+
+    @param scale: The scale of the axis set.
+    @type scale: C{float}
+    @param color: The color of the axes.
+    @type color: C{tuple}
+    """
+    frame = visual.frame()
+    # axes
+    for a in [tuple([i == j and scale * 5 or 0 for i in range(3)]) \
+              for j in range(3)]:
+        visual.arrow(pos = (0, 0, 0), axis = a, shaftwidth = scale / 10.0,
+                     color = color, frame = frame)
+    # X
+    visual.cylinder(pos = ((scale * 6.0), -(scale / 4.0), 0),
+        axis = (-(scale / 2.0), (scale / 2.0), 0), radius = scale / 20.0,
+        color = color, frame = frame)
+    visual.cylinder(pos = (scale * 5.5, -(scale / 4.0), 0),
+        axis = ((scale / 2.0), (scale / 2.0), 0), radius = scale / 20.0,
+        color = color, frame = frame)
+    # Y
+    visual.cylinder(pos = (0, (scale * 5.5), 0), axis = (0, (scale / 4.0), 0),
+        radius = scale / 20.0, color = color, frame = frame)
+    visual.cylinder(pos = (0, (scale * 5.75), 0), axis = (-(scale * 0.17),
+        (scale / 4.0), (scale * 0.17)), radius = scale / 20.0, color = color,
+        frame = frame)
+    visual.cylinder(pos = (0, (scale * 5.75), 0), axis = ((scale * 0.17),
+        (scale / 4.0), -(scale * 0.17)), radius = scale / 20.0, color = color,
+        frame = frame)
+    # Z
+    visual.cylinder(pos = (0, -(scale / 4.0), (scale * 6.0)), axis = (0.0,
+        (scale / 2.0), -(scale / 2.0)), radius = scale / 20.0, color = color,
+        frame = frame)
+    visual.cylinder(pos = (0, -(scale / 4.0), (scale * 6.0)), axis = (0.0, 0.0,
+        -(scale / 2.0)), radius = scale / 20.0, color = color, frame = frame)
+    visual.cylinder(pos = (0, (scale / 4.0), (scale * 6.0)), axis = (0.0, 0.0,
+        -(scale / 2.0)), radius = scale / 20.0, color = color, frame = frame)
+    return frame
