@@ -1,13 +1,13 @@
 from math import pi
 
 import common
-from adolphus import Scene, Camera, MultiCamera, Pose, Point, rotation_matrix, Experiment
+from adolphus import Scene, Camera, MultiCamera, Pose, Point, Rotation, Experiment
 
 print "Creating discrete multi-camera model..."
 P = [Point(x, y, z) for x in [i * 200 for i in range(-6, 7)] for y in [i * 200 for i in range(-6, 7)] for z in [i * 100 for i in range(16)]]
 
 M = MultiCamera(ocular = 1, points = P)
-M['A'] = Camera(4.4765, 12.5341, 0.00465, (760.1805, 495.1859), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 1.3, pose = Pose(Point(100, 0, 0), rotation_matrix((0, pi / 4.0, 0))))
+M['A'] = Camera(4.4765, 12.5341, 0.00465, (760.1805, 495.1859), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 1.3, pose = Pose(Point(100, 0, 0), Rotation(0, pi / 4.0, 0)))
 
 print "Running experiment..."
 E = Experiment(M)
