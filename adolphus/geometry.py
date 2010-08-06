@@ -643,6 +643,101 @@ class Plane(object):
                 length = 1, color = color, opacity = opacity)
 
 
+class Rotation(object):
+    """\
+    3D Euclidean rotation class. Handles multiple representations of SO(3).
+    """
+    def __init__(self, *args):
+        """\
+        Constructor.
+        """
+        if not args or len(args) == 1 and args[0] is None:
+            self.R = numpy.diag([1, 1, 1])
+        elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
+            self.R = args[0]
+        elif len(args) == 2:
+            self.R = self.from_axis_angle(Point(args[0]), Angle(args[1]))
+        elif len(args) == 3:
+            self.R = self.from_euler_xyz(Angle(args[0]), Angle(args[1]),
+                Angle(args[2]))
+        else:
+            raise TypeError("unrecognized initial value format")
+
+    @staticmethod
+    def from_axis_angle(axis, theta):
+        """\
+        Generate the internal rotation matrix representation from an axis and
+        angle representation (Rodrigues' formula).
+
+        @param axis: The axis of rotation.
+        @type axis: L{Point}
+        @param theta: The angle of rotation.
+        @type theta: L{Angle}
+        """
+        axis = axis.normal
+        R = numpy.diag([1, 1, 1])
+        Ax = numpy.ndarray([0, -axis.z, axis.y],
+                           [axis.z, 0, -axis.x],
+                           [-axis.y, axis.x, 0])
+        R += Ax * sin(theta) + Ax * Ax * (1 - cos(theta))
+        return R
+
+    @staticmethod
+    def from_euler_xyz(theta, phi, psi):
+        """\
+        Generate the internal rotation matrix representation from three fixed-
+        axis (Euler xyz) rotation angles.
+
+        @param vector: The rotation angle vector.
+        @type vector: C{tuple} of L{Angle}
+        @return: Rotation matrix.
+        @rtype: L{numpy.ndarray}
+        """
+        R = numpy.ndarray((3, 3))
+        R[0][0] = cos(phi) * cos(psi)
+        R[1][0] = sin(theta) * sin(phi) * cos(psi) - cos(theta) * sin(psi)
+        R[2][0] = cos(theta) * sin(phi) * cos(psi) + sin(theta) * sin(psi)
+        R[0][1] = cos(phi) * sin(psi)
+        R[1][1] = sin(theta) * sin(phi) * sin(psi) + cos(theta) * cos(psi)
+        R[2][1] = cos(theta) * sin(phi) * sin(psi) - sin(theta) * cos(psi)
+        R[0][2] = -sin(phi)
+        R[1][2] = sin(theta) * cos(phi)
+        R[2][2] = cos(theta) * cos(phi)
+        return R
+
+    def to_axis_angle(self):
+        """\
+        Return the axis and angle representation from the internal rotation
+        matrix representation.
+
+        @return: Axis and angle rotation form.
+        @rtype: C{tuple} of L{Point} and L{Angle}
+        """
+        theta = acos((self.R.trace() - 1.0) / 2.0)
+        axis = Point(tuple([(1.0 / 2.0 * sin(theta)) * Ri for Ri in \
+            [self.R[pair[0]][pair[1]] - self.R[pair[1]][pair[0]] for pair in \
+            [((i + 2) % 3, (i + 1) % 3) for i in range(3)]]]))
+        return (axis, theta)
+
+    def to_euler_xyz(self):
+        """\
+        Return three fixed-axis (Euler xyz) rotation angles from the internal
+        rotation matrix representation.
+
+        @return Three fixed-axis (Euler xyz) angle rotation form.
+        @rtype: C{tuple} of L{Angle}
+        """
+        phi = Angle(asin(-1.0 * self.R[0][2]))
+        sign = cos(phi) / abs(cos(phi))
+        theta = Angle(atan(self.R[1][2] / self.R[2][2]))
+        if sign * self.R[2][2] < 0:
+            theta += pi
+        psi = Angle(atan(self.R[0][1] / self.R[0][0]))
+        if sign * self.R[0][0] < 0:
+            psi += pi
+        return (theta, phi, psi)
+
+
 class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
@@ -662,12 +757,7 @@ class Pose(object):
             self.T = Point(0, 0, 0)
         else:
             raise TypeError("translation vector must be a Point or None")
-        if isinstance(R, numpy.ndarray):
-            self.R = R
-        elif R is None:
-            self.R = numpy.diag((1.0, 1.0, 1.0))
-        else:
-            raise TypeError("rotation matrix must be a NumPy array or None")
+        self.R = Rotation(R)
 
     def __add__(self, other):
         """\
@@ -680,8 +770,8 @@ class Pose(object):
         """
         if not isinstance(other, Pose):
             raise TypeError("argument must be a Pose")
-        Tnew = Point(numpy.dot(other.R, self.T.array)) + other.T
-        Rnew = numpy.dot(other.R, self.R)
+        Tnew = Point(numpy.dot(other.R.R, self.T.array)) + other.T
+        Rnew = numpy.dot(other.R.R, self.R.R)
         return Pose(Tnew, Rnew)
 
     def __sub__(self, other):
@@ -702,11 +792,11 @@ class Pose(object):
         @return: Inverted pose.
         @rtype: L{Pose}
         """
-        Rinv = self.R.transpose()
+        Rinv = self.R.R.transpose()
         Tinv = -Point(numpy.dot(Rinv, self.T.array))
         return Pose(Tinv, Rinv)
 
-    def __repr__(self):
+    def __str__(self):
         """\
         String representation, display T and R.
 
@@ -716,23 +806,6 @@ class Pose(object):
         return str(self.T) + "\n" + str(self.R)
 
     @property
-    def om(self):
-        """\
-        Return the fixed-axis rotation angles from R.
-
-        @rtype: C{tuple}
-        """
-        phi = Angle(asin(-1.0 * self.R[0][2]))
-        sign = cos(phi) / abs(cos(phi))
-        theta = Angle(atan(self.R[1][2] / self.R[2][2]))
-        if sign * self.R[2][2] < 0:
-            theta += pi
-        psi = Angle(atan(self.R[0][1] / self.R[0][0]))
-        if sign * self.R[0][0] < 0:
-            psi += pi
-        return (theta, phi, psi)
-
-    @property
     def nonzero(self):
         """\
         Check if this pose transformation has any effect.
@@ -740,7 +813,7 @@ class Pose(object):
         @rtype: C{bool}
         """
         if sum(self.T.tuple) == 0 \
-        and (self.R - numpy.diag((1.0, 1.0, 1.0))).any() == 0:
+        and (self.R.R - numpy.diag((1.0, 1.0, 1.0))).any() == 0:
             return False
         else:
             return True
@@ -765,9 +838,9 @@ class Pose(object):
         @return: The rotated point/vector.
         @rtype: L{Point}
         """
-        q = numpy.dot(self.R, p.array)
+        q = numpy.dot(self.R.R, p.array)
         if isinstance(p, DirectionalPoint):
-            unit = Pose(None, self.R).map(p.direction_unit)
+            unit = Pose(None, self.R.R).map(p.direction_unit)
             rho = acos(unit.z)
             eta = atan2(unit.y, unit.x)
             return DirectionalPoint(q, rho = rho, eta = eta)
@@ -785,56 +858,3 @@ class Pose(object):
         """
         q = p + self.T
         return q
-
-
-def rotation_matrix(angle):
-    """\
-            Generate R given a tuple o 3 fixed-axis rotation angles.
-
-    @param angle: Rotation angles in radians.
-    @type angle: C{tuple} of L{Angle}
-    @return: Rotation matrix.
-    @rtype: C{numpy.ndarray}
-    """
-    theta = Angle(angle[0])
-    phi = Angle(angle[1])
-    psi = Angle(angle[2])
-
-    R = numpy.ndarray((3, 3))
-
-    R[0][0] = cos(phi) * cos(psi)
-    R[1][0] = sin(theta) * sin(phi) * cos(psi) - cos(theta) * sin(psi)
-    R[2][0] = cos(theta) * sin(phi) * cos(psi) + sin(theta) * sin(psi)
-    R[0][1] = cos(phi) * sin(psi)
-    R[1][1] = sin(theta) * sin(phi) * sin(psi) + cos(theta) * cos(psi)
-    R[2][1] = cos(theta) * sin(phi) * sin(psi) - sin(theta) * cos(psi)
-    R[0][2] = -sin(phi)
-    R[1][2] = sin(theta) * cos(phi)
-    R[2][2] = cos(theta) * cos(phi)
-
-    return R
-
-
-def rodrigues(angle):
-    """\
-    Generate R given a tuple of 3 fixed-axis rotation angles.
-
-    @param angle: Rotation angles in radians.
-    @type angle: C{tuple} of L{Angle}
-    @return: Rotation matrix.
-    @rtype: C{numpy.ndarray}
-    """
-    eps = 0.0001
-    norm = lambda x: numpy.sqrt(numpy.square(x).sum())
-    theta = norm(numpy.array(angle))
-    if theta < eps:
-        return numpy.diag((1.0, 1.0, 1.0))
-    omega = numpy.array(angle) / theta
-    alpha = cos(theta)
-    beta = sin(theta)
-    gamma = 1.0 - alpha
-    omegav = numpy.array([[0.0, -omega[2], omega[1]],
-                          [omega[2], 0.0, -omega[0]],
-                          [-omega[1], omega[0], 0.0]])
-    A = omega * numpy.array([[omega[0]], [omega[1]], [omega[2]]])
-    return numpy.diag((1.0, 1.0, 1.0)) * alpha + omegav * beta + A * gamma
