@@ -63,14 +63,14 @@ class Point(object):
         Constructor.
         """
         if not args or len(args) == 1 and args[0] is None:
-            self.x, self.y, self.z = 0.0, 0.0, 0.0
+            self.x, self.y, self.z = [0.0] * 3
         elif len(args) == 1 and isinstance(args[0], Point):
-            self.x, self.y, self.z = args[0].tuple
+            self.x, self.y, self.z = args[0].tuple[:3]
         elif len(args) == 1 and isinstance(args[0], tuple):
-            self.x, self.y, self.z = args[0]
+            self.x, self.y, self.z = args[0][:3]
         elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
             self.x, self.y, self.z = [args[0][i][0] for i in range(3)]
-        elif len(args) == 3 and isinstance(args[0], Number) \
+        elif len(args) >= 3 and isinstance(args[0], Number) \
         and isinstance(args[1], Number) and isinstance(args[2], Number):
             self.x, self.y, self.z = [float(args[i]) for i in range(3)]
         else:
@@ -332,31 +332,26 @@ class DirectionalPoint(Point):
     """\
     3D directional point (spatial-directional vector) class.
     """
-    def __init__(self, x = 0.0, y = 0.0, z = 0.0, rho = 0.0, eta = 0.0):
+    def __init__(self, *args):
         """\
         Constructor.
-    
-        @param x: The x coordinate.
-        @type x: C{float}
-        @param y: The y coordinate.
-        @type y: C{float}
-        @param z: The z coordinate.
-        @type z: C{float}
-        @param rho: The inclination angle, from positive z-axis.
-        @type rho: L{Angle}
-        @param eta: The azimuth angle, right-handed from positive x-axis.
-        @type eta: L{Angle}
         """
-        if isinstance(x, tuple) and len(x) == 5:
-            self.rho, self.eta = x[-2:]
-        elif isinstance(x, numpy.ndarray) and len(x) == 5:
-            self.rho, self.eta = [x[i][0] for i in [3, 4]]
-        elif isinstance(rho, Number) and isinstance(eta, Number):
-            self.rho = Angle(rho)
-            self.eta = Angle(eta)
+        Point.__init__(self, *args)
+        if not args or len(args) == 1 and args[0] is None:
+            self.rho, self.eta = [0.0] * 2
+        elif len(args) == 1 and isinstance(args[0], DirectionalPoint):
+            self.rho, self.eta = args[0].tuple[-2:]
+        elif len(args) == 1 and isinstance(args[0], tuple):
+            self.rho, self.eta = args[0][-2:]
+        elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
+            self.rho, self.eta = [args[0][i][0] for i in [3, 4]]
+        elif len(args) >= 5 and isinstance(args[3], Number) \
+        and isinstance(args[4], Number):
+            self.rho, self.eta = [args[i] for i in [3, 4]]
         else:
             raise TypeError("incompatible type in initializer")
-        Point.__init__(self, x, y, z)
+        self.rho = Angle(self.rho)
+        self.eta = Angle(self.eta)
         self._normalize_direction()
 
     def __hash__(self):
@@ -851,7 +846,8 @@ class Pose(object):
             unit = Pose(None, self.R.R).map(p.direction_unit)
             rho = acos(unit.z)
             eta = atan2(unit.y, unit.x)
-            return DirectionalPoint(q, rho = rho, eta = eta)
+            return DirectionalPoint(tuple([q[i][0] for i in range(3)]) \
+                + (rho, eta))
         else:
             return Point(q)
 
