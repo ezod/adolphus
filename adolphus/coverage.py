@@ -191,8 +191,11 @@ class Camera(object):
         self.vis.members['glass'].opacity = self.active and 0.5 or 0.1
         self.vis.members['light'].color = (not self.active, self.active, 0)
         self.vis.pos = self.pose.T.tuple
-        # FIXME: this doesn't account for about-axis rotation!
-        self.vis.axis = self.pose.map_rotate(Point(0, 0, 1)).tuple
+        # FIXME: no idea why up = (-1, 0, 0) or why (-axis) is necessary
+        self.vis.axis = (0, 0, 1)
+        self.vis.up = (-1, 0, 0)
+        axis, angle = self.pose.R.to_axis_angle()
+        self.vis.rotate(axis = (-axis).tuple, angle = angle)
 
     def visualize_fov_toggle(self, scale = 1.0):
         """\

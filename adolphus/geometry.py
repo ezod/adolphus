@@ -58,27 +58,21 @@ class Point(object):
     """\
     3D point (vector) class.
     """
-    def __init__(self, x = 0.0, y = 0.0, z = 0.0):
+    def __init__(self, *args):
         """\
         Constructor.
-    
-        @param x: The x coordinate.
-        @type x: C{float}
-        @param y: The y coordinate.
-        @type y: C{float}
-        @param z: The z coordinate.
-        @type z: C{float}
         """
-        if isinstance(x, tuple):
-            self.x, self.y, self.z = x
-        elif isinstance(x, numpy.ndarray):
-            self.x, self.y, self.z = [x[i][0] for i in range(3)]
-        elif isinstance(x, Number) \
-         and isinstance(y, Number) \
-         and isinstance(z, Number):
-            self.x = float(x)
-            self.y = float(y)
-            self.z = float(z)
+        if not args or len(args) == 1 and args[0] is None:
+            self.x, self.y, self.z = 0.0, 0.0, 0.0
+        elif len(args) == 1 and isinstance(args[0], Point):
+            self.x, self.y, self.z = args[0].tuple
+        elif len(args) == 1 and isinstance(args[0], tuple):
+            self.x, self.y, self.z = args[0]
+        elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
+            self.x, self.y, self.z = [args[0][i][0] for i in range(3)]
+        elif len(args) == 3 and isinstance(args[0], Number) \
+        and isinstance(args[1], Number) and isinstance(args[2], Number):
+            self.x, self.y, self.z = [float(args[i]) for i in range(3)]
         else:
             raise TypeError("incompatible type in initializer")
     
@@ -663,6 +657,15 @@ class Rotation(object):
         else:
             raise TypeError("unrecognized initial value format")
 
+    def __str__(self):
+        """\
+        String representation.
+
+        @return: String representation.
+        @rtype: C{str}
+        """
+        return str(self.R)
+
     @staticmethod
     def from_axis_angle(axis, theta):
         """\
@@ -675,12 +678,12 @@ class Rotation(object):
         @type theta: L{Angle}
         """
         axis = axis.normal
-        R = numpy.diag([1, 1, 1])
-        Ax = numpy.ndarray([0, -axis.z, axis.y],
-                           [axis.z, 0, -axis.x],
-                           [-axis.y, axis.x, 0])
-        R += Ax * sin(theta) + Ax * Ax * (1 - cos(theta))
-        return R
+        Ax = numpy.array([[0.0, -(axis.z), axis.y],
+                          [axis.z, 0.0, -(axis.x)],
+                          [-(axis.y), axis.x, 0.0]])
+        R = numpy.diag([1.0, 1.0, 1.0]) + sin(theta) * Ax + (1 - cos(theta)) * \
+            (axis.array * axis.array.transpose() - numpy.diag([1.0, 1.0, 1.0]))
+        return R.transpose()
 
     @staticmethod
     def from_euler_xyz(theta, phi, psi):
@@ -714,7 +717,9 @@ class Rotation(object):
         @rtype: C{tuple} of L{Point} and L{Angle}
         """
         theta = acos((self.R.trace() - 1.0) / 2.0)
-        axis = Point(tuple([(1.0 / 2.0 * sin(theta)) * Ri for Ri in \
+        if theta == 0.0:
+            return (Point(1, 0, 0), theta)
+        axis = -Point(tuple([(1.0 / 2.0 * sin(theta)) * Ri for Ri in \
             [self.R[pair[0]][pair[1]] - self.R[pair[1]][pair[0]] for pair in \
             [((i + 2) % 3, (i + 1) % 3) for i in range(3)]]]))
         return (axis, theta)
@@ -757,7 +762,10 @@ class Pose(object):
             self.T = Point(0, 0, 0)
         else:
             raise TypeError("translation vector must be a Point or None")
-        self.R = Rotation(R)
+        if isinstance(R, Rotation):
+            self.R = R
+        else:
+            self.R = Rotation(R)
 
     def __add__(self, other):
         """\
