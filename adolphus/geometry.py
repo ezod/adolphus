@@ -23,7 +23,7 @@ class Angle(float):
     """\
     Angle class. All operations are modulo 2 * pi.
     """
-    def __new__(cls, arg = 0.0):
+    def __new__(cls, arg=0.0):
         return float.__new__(cls, float(arg) % (2 * pi))
 
     def __eq__(self, other):
@@ -302,7 +302,7 @@ class Point(object):
         """
         return Angle(acos(p.normal * self.normal))
 
-    def visualize(self, scale = 1.0, color = (1, 1, 1), opacity = 1.0):
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
         Plot the point in a 3D visual model.
 
@@ -323,8 +323,8 @@ class Point(object):
             self.vis = visual.frame()
             self.vis.point = self
             self.vis.members = {}
-            self.vis.members['point'] = visual.sphere(frame = self.vis, 
-                radius = 0.1 * scale, color = color, opacity = opacity)
+            self.vis.members['point'] = visual.sphere(frame=self.vis, 
+                radius=(0.1 * scale), color=color, opacity=opacity)
         self.vis.pos = self.tuple
 
 
@@ -519,7 +519,7 @@ class DirectionalPoint(Point):
         return Point(sin(self.rho) * cos(self.eta),
                      sin(self.rho) * sin(self.eta), cos(self.rho))
 
-    def visualize(self, scale = 1.0, color = (1, 1, 1), opacity = 1.0):
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
         Plot the directional point in a 3D visual model.
 
@@ -537,15 +537,15 @@ class DirectionalPoint(Point):
             self.vis.members['dir'].color = color
             self.vis.members['dir'].opacity = opacity
         except KeyError:
-            self.vis.members['dir'] = visual.arrow(frame = self.vis, 
-                axis = unit.tuple, color = color, opacity = opacity)
+            self.vis.members['dir'] = visual.arrow(frame=self.vis, 
+                axis=unit.tuple, color=color, opacity=opacity)
 
 
 class Plane(object):
     """\
     Plane segment (2D subspace of 3D space) class.
     """
-    def __init__(self, pose, x = None, y = None):
+    def __init__(self, pose, x=None, y=None):
         """\
         Constructor.
 
@@ -605,7 +605,7 @@ class Plane(object):
             return None
         return self.pose.map(pr)
 
-    def visualize(self, color = (1, 1, 1), opacity = 1.0):
+    def visualize(self, color=(1, 1, 1), opacity=1.0):
         """\
         Plot the directional point in a 3D visual model.
 
@@ -626,10 +626,10 @@ class Plane(object):
             self.vis_plane.color = color
             self.vis_plane.opacity = opacity
         except AttributeError:
-            self.vis_plane = visual.box(pos = self.center.tuple,
-                axis = self.pose.map_rotate(Point(0, 0, 1)).tuple,
-                width = self.x[1] - self.x[0], height = self.y[1] - self.y[0],
-                length = 1, color = color, opacity = opacity)
+            self.vis_plane = visual.box(pos=self.center.tuple,
+                axis=self.pose.map_rotate(Point(0, 0, 1)).tuple,
+                width=(self.x[1] - self.x[0]), height=(self.y[1] - self.y[0]),
+                length=1, color=color, opacity=opacity)
 
 
 class Rotation(object):
@@ -742,7 +742,7 @@ class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
-    def __init__(self, T = None, R = None):
+    def __init__(self, T=None, R=None):
         """\
         Constructor.
 

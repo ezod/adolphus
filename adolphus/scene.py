@@ -23,7 +23,7 @@ class Scene(set):
     """\
     Discrete spatial-directional range with occlusion class.
     """
-    def __init__(self, iterable = set()):
+    def __init__(self, iterable=set()):
         """\
         Constructor.
 
@@ -46,7 +46,7 @@ class Scene(set):
             raise TypeError("only planes can be added")
         set.add(self, plane)
 
-    def occluded(self, p, cam = Point()):
+    def occluded(self, p, cam=Point()):
         """\
         Return whether the specified point is occluded from the camera
         viewpoint (by opaque scene planes).
@@ -57,7 +57,7 @@ class Scene(set):
                 return True
         return False
 
-    def visualize(self, color = (1, 1, 1)):
+    def visualize(self, color=(1, 1, 1)):
         """\
         Visualize the opaque scene objects.
 
@@ -67,4 +67,4 @@ class Scene(set):
         if not VIS:
             raise ImportError("visual module not loaded")
         for plane in self:
-            plane.visualize(color = color)
+            plane.visualize(color=color)

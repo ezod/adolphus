@@ -27,7 +27,7 @@ class Camera(object):
     Single-camera model, using continous fuzzy sets.
     """
     def __init__(self, A, f, s, o, dim, zS, gamma, r1, r2, cmax, zeta,
-                 pose = Pose(), active = True):
+                 pose=Pose(), active=True):
         """\
         Constructor.
 
@@ -134,7 +134,7 @@ class Camera(object):
         # algebraic product intersection
         return mu_v * mu_r * mu_f * mu_d
 
-    def visualize(self, scale = 1.0, fov = False):
+    def visualize(self, scale=1.0, fov=False):
         """\
         Plot the camera in a 3D visual model.
 
@@ -153,31 +153,31 @@ class Camera(object):
         self.vis.fov = None
         self.vis.members = {}
         # camera body
-        self.vis.members['body'] = visual.box(frame = self.vis,
-            size = (scale, scale, scale), color = (0.3, 0.3, 0.3),
-            material = visual.materials.rough)
+        self.vis.members['body'] = visual.box(frame=self.vis,
+            size=(scale, scale, scale), color=(0.3, 0.3, 0.3),
+            material=visual.materials.rough)
         # lens body
-        self.vis.members['lens'] = visual.cylinder(frame = self.vis,
-            pos = (0.8 * scale, 0, 0), axis = (-0.3 * scale, 0, 0),
-            radius = 0.4 * scale, color = (0.3, 0.3, 0.3),
-            material = visual.materials.rough)
+        self.vis.members['lens'] = visual.cylinder(frame=self.vis,
+            pos=(0.8 * scale, 0, 0), axis=(-0.3 * scale, 0, 0),
+            radius=(0.4 * scale), color=(0.3, 0.3, 0.3),
+            material=visual.materials.rough)
         # lens glass
-        self.vis.members['glass'] = visual.cylinder(frame = self.vis,
-            pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
-            radius = 0.36 * scale, color = (0.3, 0.7, 0.8),
-            material = visual.materials.plastic, opacity = 0.5)
+        self.vis.members['glass'] = visual.cylinder(frame=self.vis,
+            pos=(0.82 * scale, 0, 0), axis=(-0.02 * scale, 0, 0),
+            radius=(0.36 * scale), color=(0.3, 0.7, 0.8), opacity=0.5,
+            material=visual.materials.plastic)
         # lens ring
-        self.vis.members['ring'] = visual.ring(frame = self.vis,
-            pos = (0.82 * scale, 0, 0), axis = (-0.02 * scale, 0, 0),
-            radius = 0.38 * scale, color = (0.3, 0.3, 0.3),
-            material = visual.materials.rough)
+        self.vis.members['ring'] = visual.ring(frame=self.vis,
+            pos=(0.82 * scale, 0, 0), axis=(-0.02 * scale, 0, 0),
+            radius=(0.38 * scale), color=(0.3, 0.3, 0.3),
+            material=visual.materials.rough)
         # indicator light
-        self.vis.members['light'] = visual.sphere(frame = self.vis,
-            pos = (0.5 * scale, 0, 0.45 * scale),
-            radius = 0.05 * scale, material = visual.materials.emissive)
+        self.vis.members['light'] = visual.sphere(frame=self.vis,
+            pos=(0.5 * scale, 0, 0.45 * scale), radius=(0.05 * scale),
+            material=visual.materials.emissive)
         # field of view
         if fov:
-            self.visualize_fov_toggle(scale = scale)
+            self.visualize_fov_toggle(scale=scale)
         self.update_visualization()
 
     def update_visualization(self):
@@ -195,9 +195,9 @@ class Camera(object):
         self.vis.axis = (0, 0, 1)
         self.vis.up = (-1, 0, 0)
         axis, angle = self.pose.R.to_axis_angle()
-        self.vis.rotate(axis = (-axis).tuple, angle = angle)
+        self.vis.rotate(axis=(-axis).tuple, angle=angle)
 
-    def visualize_fov_toggle(self, scale = 1.0):
+    def visualize_fov_toggle(self, scale=1.0):
         """\
         Visualize the field of view of the camera.
 
@@ -210,18 +210,18 @@ class Camera(object):
             else:
                 ax = self.Cv[0].support[1] - (self.Cv[0].support.size / 2.0)
                 ay = self.Cv[1].support[1] - (self.Cv[1].support.size / 2.0)
-                self.vis.fov = visual.pyramid(frame = self.vis, pos = (scale,
-                    scale * ay, -scale * ax), axis = (-1, -ay, ax),
-                    size = (scale, self.Cv[0].support.size * scale,
-                    self.Cv[1].support.size * scale), opacity = 0.1,
-                    color = (0.2, 0.5, 0.6))
+                self.vis.fov = visual.pyramid(frame=self.vis, pos=(scale,
+                    scale * ay, -scale * ax), axis=(-1, -ay, ax),
+                    size=(scale, self.Cv[0].support.size * scale,
+                    self.Cv[1].support.size * scale), opacity=0.1,
+                    color=(0.2, 0.5, 0.6))
 
 
 class MultiCamera(dict):
     """\
     Multi-camera n-ocular fuzzy coverage model.
     """
-    def __init__(self, ocular = 1, scene = Scene(), points = set()):
+    def __init__(self, ocular=1, scene=Scene(), points=set()):
         """\
         Constructor.
     
@@ -312,7 +312,7 @@ class MultiCamera(dict):
         """
         return self.model.overlap(desired)
 
-    def visualize(self, scale = 1.0):
+    def visualize(self, scale=1.0):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
@@ -323,14 +323,14 @@ class MultiCamera(dict):
         if not VIS:
             raise ImportError("visual module not loaded")
         for camera in self:
-            self[camera].visualize(scale = scale)
-            self[camera].vis.members['name'] = visual.label(frame = \
-                self[camera].vis, pos = (0, scale, 0), height = 6,
-                color = (1, 1, 1), text = camera, visible = False)
-        self.scene.visualize(color = (0.3, 0.3, 0.3))
+            self[camera].visualize(scale=scale)
+            self[camera].vis.members['name'] = visual.label(frame=\
+                self[camera].vis, pos=(0, scale, 0), height=6,
+                color=(1, 1, 1), text=camera, visible=False)
+        self.scene.visualize(color=(0.3, 0.3, 0.3))
         for point in self.model.keys():
-            point.visualize(scale = scale, color = (1, 0, 0),
-                            opacity = self.model[point].mu)
+            point.visualize(scale=scale, color=(1, 0, 0),
+                            opacity=self.model[point].mu)
 
     def visualize_name_toggle(self):
         """\
@@ -354,5 +354,5 @@ class MultiCamera(dict):
                 except KeyError:
                     pass
             else:
-                point.visualize(scale = scale, color = (1, 0, 0),
-                                opacity = self.model[point].mu)
+                point.visualize(scale=scale, color=(1, 0, 0),
+                                opacity=self.model[point].mu)

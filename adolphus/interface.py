@@ -15,7 +15,7 @@ class Display(visual.display):
     """\
     Visual display class.
     """
-    def __init__(self, title = 'Adolphus', center = (0, 0, 0)):
+    def __init__(self, title='Adolphus', center=(0, 0, 0)):
         """\
         Contstructor.
 
@@ -24,15 +24,15 @@ class Display(visual.display):
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         """
-        visual.display.__init__(self, title = title, center = center, up = (0,
-            0, 1), background = (1, 1, 1), foreground = (0.3, 0.3, 0.3))
+        visual.display.__init__(self, title=title, center=center, up=(0, 0, 1),
+            background=(1, 1, 1), foreground=(0.3, 0.3, 0.3))
 
 
 class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model, display = Display()):
+    def __init__(self, model, display=Display()):
         """\
         Constructor.
 
@@ -56,12 +56,11 @@ class Experiment(object):
         names, F7 - show/hide axes, F8 - show/hide display center.
         """
         self.model.update_model()
-        self.model.visualize(scale = 30)
-        self.axes = visual_axes(scale = 30, color = (0, 0, 1))
+        self.model.visualize(scale=30)
+        self.axes = visual_axes(scale=30, color=(0, 0, 1))
         self.axes.visible = False
-        self.cdot = visual.sphere(pos = self.display.center, radius = 5,
-            color = (0, 0, 1), material = visual.materials.emissive,
-            visible = False)
+        self.cdot = visual.sphere(pos=self.display.center, radius=5,
+            color=(0, 0, 1), material=visual.materials.emissive, visible=False)
         cam_vis = [primitive for objects in [vis.objects for vis in \
             [self.model[camera].vis for camera in self.model]] \
             for primitive in objects]
@@ -75,7 +74,7 @@ class Experiment(object):
                 m = self.display.mouse.getevent()
                 if m.click == "left" and m.pick in cam_vis:
                     if m.ctrl:
-                        m.pick.frame.camera.visualize_fov_toggle(scale = 1500)
+                        m.pick.frame.camera.visualize_fov_toggle(scale=1500)
                     else:
                         m.pick.frame.camera.active = not m.pick.frame.camera.active
                         m.pick.frame.camera.update_visualization()
@@ -117,7 +116,7 @@ class Experiment(object):
                 self.cdot.pos = self.display.center
 
 
-def visual_axes(scale = 1.0, color = (1, 1, 1)):
+def visual_axes(scale=1.0, color=(1, 1, 1)):
     """\
     Display a set of 3D axes.
 
@@ -130,30 +129,30 @@ def visual_axes(scale = 1.0, color = (1, 1, 1)):
     # axes
     for a in [tuple([i == j and scale * 5 or 0 for i in range(3)]) \
               for j in range(3)]:
-        visual.arrow(pos = (0, 0, 0), axis = a, shaftwidth = scale / 10.0,
-                     color = color, frame = frame)
+        visual.arrow(pos=(0, 0, 0), axis=a, shaftwidth=(scale / 10.0),
+                     color=color, frame=frame)
     # X
-    visual.cylinder(pos = ((scale * 6.0), -(scale / 4.0), 0),
-        axis = (-(scale / 2.0), (scale / 2.0), 0), radius = scale / 20.0,
-        color = color, frame = frame)
-    visual.cylinder(pos = (scale * 5.5, -(scale / 4.0), 0),
-        axis = ((scale / 2.0), (scale / 2.0), 0), radius = scale / 20.0,
-        color = color, frame = frame)
+    visual.cylinder(pos=((scale * 6.0), -(scale / 4.0), 0),
+        axis=(-(scale / 2.0), (scale / 2.0), 0), radius=(scale / 20.0),
+        color=color, frame=frame)
+    visual.cylinder(pos=(scale * 5.5, -(scale / 4.0), 0),
+        axis=((scale / 2.0), (scale / 2.0), 0), radius=(scale / 20.0),
+        color=color, frame=frame)
     # Y
-    visual.cylinder(pos = (0, (scale * 5.5), 0), axis = (0, (scale / 4.0), 0),
-        radius = scale / 20.0, color = color, frame = frame)
-    visual.cylinder(pos = (0, (scale * 5.75), 0), axis = (-(scale * 0.17),
-        (scale / 4.0), (scale * 0.17)), radius = scale / 20.0, color = color,
-        frame = frame)
-    visual.cylinder(pos = (0, (scale * 5.75), 0), axis = ((scale * 0.17),
-        (scale / 4.0), -(scale * 0.17)), radius = scale / 20.0, color = color,
-        frame = frame)
+    visual.cylinder(pos=(0, (scale * 5.5), 0), axis=(0, (scale / 4.0), 0),
+        radius=(scale / 20.0), color=color, frame=frame)
+    visual.cylinder(pos=(0, (scale * 5.75), 0), axis=(-(scale * 0.17),
+        (scale / 4.0), (scale * 0.17)), radius=(scale / 20.0), color=color,
+        frame=frame)
+    visual.cylinder(pos=(0, (scale * 5.75), 0), axis=((scale * 0.17),
+        (scale / 4.0), -(scale * 0.17)), radius=(scale / 20.0), color=color,
+        frame=frame)
     # Z
-    visual.cylinder(pos = (0, -(scale / 4.0), (scale * 6.0)), axis = (0.0,
-        (scale / 2.0), -(scale / 2.0)), radius = scale / 20.0, color = color,
-        frame = frame)
-    visual.cylinder(pos = (0, -(scale / 4.0), (scale * 6.0)), axis = (0.0, 0.0,
-        -(scale / 2.0)), radius = scale / 20.0, color = color, frame = frame)
-    visual.cylinder(pos = (0, (scale / 4.0), (scale * 6.0)), axis = (0.0, 0.0,
-        -(scale / 2.0)), radius = scale / 20.0, color = color, frame = frame)
+    visual.cylinder(pos=(0, -(scale / 4.0), (scale * 6.0)), axis=(0.0,
+        (scale / 2.0), -(scale / 2.0)), radius=(scale / 20.0), color=color,
+        frame=frame)
+    visual.cylinder(pos=(0, -(scale / 4.0), (scale * 6.0)), axis=(0.0, 0.0,
+        -(scale / 2.0)), radius=(scale / 20.0), color=color, frame=frame)
+    visual.cylinder(pos=(0, (scale / 4.0), (scale * 6.0)), axis=(0.0, 0.0,
+        -(scale / 2.0)), radius=(scale / 20.0), color=color, frame=frame)
     return frame
