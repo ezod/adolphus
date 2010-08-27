@@ -12,6 +12,7 @@ import sys
 import epydoc.cli
 
 NAME = 'adolphus'
+URL = 'http://github.com/ezod/adolphus'
 PACKAGE = 'adolphus'
 
 class GenerateDoc(Command):
@@ -26,7 +27,7 @@ class GenerateDoc(Command):
     def run(self):
         rmtree('doc', ignore_errors=True)
         os.mkdir('doc')
-        sys.argv = ['epydoc', '-v', '--name', NAME, '-o', 'doc', PACKAGE]
+        sys.argv = ['epydoc', '-v', '--name', NAME, '--url', URL, '-o', 'doc', PACKAGE]
         options, names = epydoc.cli.parse_arguments()
         epydoc.cli.main(options, names)
 
@@ -34,9 +35,10 @@ setup(
     name = NAME,
     version = VERSION,
     license = "GPL",
-    description = "Fuzzy coverage model software.",
+    description = "Multi-camera network coverage modeling suite.",
     author = "Aaron Mavrinac",
     author_email = "mavrin1@uwindsor.ca",
+    url = URL,
     keywords = "fuzzy vision multicamera model",
     packages = [PACKAGE],
     #test_suite = "test",
