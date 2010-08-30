@@ -43,21 +43,21 @@ PD = Pose(Point(310, 30, 0), Rotation(0, 0, 3.0 * pi / 2.0))
 PE = Pose(Point(60, 290, 0), Rotation(0, 0, 0))
 S = Scene()
 # Floor
-S.add(Plane(Pose(), (-10, 420), (-10, 380)))
+S.add(Plane(Pose(), x=(-10, 420), y=(-10, 380)))
 
 def add_building_one(scene, pose, x, y, z):
-    scene.add(Plane(Pose(Point(0, 0, z), None) + pose, (0, x), (0, y)))
-    scene.add(Plane(Pose(None, Rotation(pi / 2.0, 0, pi / 2.0)) + pose, (0, z), (0, x)))
-    scene.add(Plane(Pose(Point(0, y, 0), Rotation(pi / 2.0, 0, pi / 2.0)) + pose, (0, z), (0, x)))
-    scene.add(Plane(Pose(None, Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, (0, z), (0, y)))
-    scene.add(Plane(Pose(Point(x, 0, 0), Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, (0, z), (0, y)))
+    scene.add(Plane(Pose(Point(0, 0, z), None) + pose, x=(0, x), y=(0, y)))
+    scene.add(Plane(Pose(None, Rotation(pi / 2.0, 0, pi / 2.0)) + pose, x=(0, z), y=(0, x)))
+    scene.add(Plane(Pose(Point(0, y, 0), Rotation(pi / 2.0, 0, pi / 2.0)) + pose, x=(0, z), y=(0, x)))
+    scene.add(Plane(Pose(None, Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, x=(0, z), y=(0, y)))
+    scene.add(Plane(Pose(Point(x, 0, 0), Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, x=(0, z), y=(0, y)))
 
 def add_building_two(scene, pose, x, y, z):
-    scene.add(Plane(Pose(Point(0, 0, z) + pose.T, None), (-x, 0), (0, y)))
-    scene.add(Plane(Pose(None, Rotation(pi / 2.0, 0, pi / 2.0)) + pose, (0, z), (0, y)))
-    scene.add(Plane(Pose(Point(0, x, 0), Rotation(pi / 2.0, 0, pi / 2.0)) + pose, (0, z), (0, y)))
-    scene.add(Plane(Pose(None, Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, (0, z), (0, x)))
-    scene.add(Plane(Pose(Point(y, 0, 0), Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, (0, z), (0, x)))
+    scene.add(Plane(Pose(Point(0, 0, z) + pose.T, None), x=(-x, 0), y=(0, y)))
+    scene.add(Plane(Pose(None, Rotation(pi / 2.0, 0, pi / 2.0)) + pose, x=(0, z), y=(0, y)))
+    scene.add(Plane(Pose(Point(0, x, 0), Rotation(pi / 2.0, 0, pi / 2.0)) + pose, x=(0, z), y=(0, y)))
+    scene.add(Plane(Pose(None, Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, x=(0, z), y=(0, x)))
+    scene.add(Plane(Pose(Point(y, 0, 0), Rotation(pi / 2.0, pi / 2.0, pi / 2.0)) + pose, x=(0, z), y=(0, x)))
 
 # A
 add_building_one(S, PA, 100, 100, 200)
