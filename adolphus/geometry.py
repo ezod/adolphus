@@ -713,7 +713,7 @@ class Pose(object):
         @return: Inverted pose.
         @rtype: L{Pose}
         """
-        return Pose(-Point(numpy.dot(-R, self.T.array)), -R)
+        return Pose(-Point(numpy.dot(-self.R, self.T.array)), -self.R)
 
     def __str__(self):
         """\
