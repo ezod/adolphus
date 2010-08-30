@@ -7,7 +7,10 @@ Coverage module.
 @license: GPL-3
 """
 
+__version__ = (0, 0, 0)
+
 __all__ = ['geometry', 'scene', 'coverage', 'interface']
+__name__ = 'adolphus'
 
 from geometry import *
 from scene import *

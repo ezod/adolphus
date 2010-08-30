@@ -575,7 +575,7 @@ class Rotation(object):
         Negation.
 
         @return: The inverse rotation.
-        @rtype: L{numpy.ndarray}
+        @rtype: C{numpy.ndarray}
         """
         return self.R.transpose()
 
@@ -604,10 +604,14 @@ class Rotation(object):
         Generate the internal rotation matrix representation from three fixed-
         axis (Euler xyz) rotation angles.
 
-        @param vector: The rotation angle vector.
-        @type vector: C{tuple} of L{Angle}
+        @param theta: Rotation angle about x-axis.
+        @type theta: L{Angle}
+        @param phi: Rotation angle about y-axis.
+        @type phi: L{Angle}
+        @param psi: Rotation angle about z-axis.
+        @type psi: L{Angle}
         @return: Rotation matrix.
-        @rtype: L{numpy.ndarray}
+        @rtype: C{numpy.ndarray}
         """
         R = numpy.ndarray((3, 3))
         R[0][0] = cos(phi) * cos(psi)
@@ -642,7 +646,7 @@ class Rotation(object):
         Return three fixed-axis (Euler xyz) rotation angles from the internal
         rotation matrix representation.
 
-        @return Three fixed-axis (Euler xyz) angle rotation form.
+        @return: Three fixed-axis (Euler xyz) angle rotation form.
         @rtype: C{tuple} of L{Angle}
         """
         phi = Angle(asin(-1.0 * self.R[0][2]))

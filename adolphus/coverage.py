@@ -56,7 +56,7 @@ class Camera(object):
         @param pose: Pose of the camera in space (optional).
         @type pose: L{geometry.Pose}
         @param active: Initial active state of camera.
-        @type pose: C{bool}
+        @type active: C{bool}
         """
         if isinstance(s, Number):
             s = (s, s)
@@ -306,7 +306,7 @@ class MultiCamera(dict):
         Return the coverage performance of this multi-camera network.
 
         @param desired: The D model of desired coverage.
-        @type desired: L{fuzz.FuzzySet}
+        @type desired: L{FuzzySet}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
