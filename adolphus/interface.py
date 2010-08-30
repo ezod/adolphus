@@ -95,6 +95,9 @@ class Experiment(object):
                     self.axes.visible = not self.axes.visible
                 elif k == 'f8':
                     self.cdot.visible = not self.cdot.visible
+                elif k == 'f12':
+                    print "Closing interactive event loop."
+                    break
                 elif k == 'left':
                     self.display.center = (self.display.center[0] - 30,
                         self.display.center[1], self.display.center[2])
