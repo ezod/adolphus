@@ -17,9 +17,13 @@ C = [ \
 print "Creating scene..."
 S = Scene()
 # floor
-S.add(Plane(Pose(Point(0, 0, -100)), (-400, 400), (-400, 400)))
+S.add(Plane(x=(-400, 400), y=(-400, 400), z=-100))
 # box
-S.add(Plane(Pose(), (-150, 150), (-100, 100)))
+S.add(Plane(x=(-150, 150), y=(-100, 100), z=0))
+S.add(Plane(x=-150, y=(-100, 100), z=(-100, 0)))
+S.add(Plane(x=150, y=(-100, 100), z=(-100, 0)))
+S.add(Plane(x=(-150, 150), y=-100, z=(-100, 0)))
+S.add(Plane(x=(-150, 150), y=100, z=(-100, 0)))
 
 print "Creating discrete multi-camera model..."
 P = [Point(x, y, z) for x in [i * 100 for i in range(-4, 5)] for y in [i * 100 for i in range(-4, 5)] for z in [i * 100 for i in range(-1, 8)]]
