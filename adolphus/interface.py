@@ -126,33 +126,10 @@ def visual_axes(scale=1.0, color=(1, 1, 1)):
     @type color: C{tuple}
     """
     frame = visual.frame()
-    # axes
-    for a in [tuple([i == j and scale * 5 or 0 for i in range(3)]) \
-              for j in range(3)]:
-        visual.arrow(pos=(0, 0, 0), axis=a, shaftwidth=(scale / 10.0),
-                     color=color, frame=frame)
-    # X
-    visual.cylinder(pos=((scale * 6.0), -(scale / 4.0), 0),
-        axis=(-(scale / 2.0), (scale / 2.0), 0), radius=(scale / 20.0),
-        color=color, frame=frame)
-    visual.cylinder(pos=(scale * 5.5, -(scale / 4.0), 0),
-        axis=((scale / 2.0), (scale / 2.0), 0), radius=(scale / 20.0),
-        color=color, frame=frame)
-    # Y
-    visual.cylinder(pos=(0, (scale * 5.5), 0), axis=(0, (scale / 4.0), 0),
-        radius=(scale / 20.0), color=color, frame=frame)
-    visual.cylinder(pos=(0, (scale * 5.75), 0), axis=(-(scale * 0.17),
-        (scale / 4.0), (scale * 0.17)), radius=(scale / 20.0), color=color,
-        frame=frame)
-    visual.cylinder(pos=(0, (scale * 5.75), 0), axis=((scale * 0.17),
-        (scale / 4.0), -(scale * 0.17)), radius=(scale / 20.0), color=color,
-        frame=frame)
-    # Z
-    visual.cylinder(pos=(0, -(scale / 4.0), (scale * 6.0)), axis=(0.0,
-        (scale / 2.0), -(scale / 2.0)), radius=(scale / 20.0), color=color,
-        frame=frame)
-    visual.cylinder(pos=(0, -(scale / 4.0), (scale * 6.0)), axis=(0.0, 0.0,
-        -(scale / 2.0)), radius=(scale / 20.0), color=color, frame=frame)
-    visual.cylinder(pos=(0, (scale / 4.0), (scale * 6.0)), axis=(0.0, 0.0,
-        -(scale / 2.0)), radius=(scale / 20.0), color=color, frame=frame)
+    axes = ['X', 'Y', 'Z']
+    for axis in range(3):
+        visual.arrow(frame=frame, shaftwidth=(scale / 10.0), color=color,
+            axis=tuple([i == axis and scale * 5 or 0 for i in range(3)]))
+        visual.label(frame=frame, height=6, color=(1, 1, 1), text=axes[axis],
+            pos=tuple([i == axis and scale * 5.5 or 0 for i in range(3)]))
     return frame
