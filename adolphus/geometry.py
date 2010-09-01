@@ -12,12 +12,7 @@ from math import pi, sqrt, sin, cos, asin, acos, atan, atan2
 from numbers import Number
 import numpy
 
-try:
-    import visual
-    VIS = True
-except ImportError:
-    VIS = False
-
+from visualization import VisualizationError, visual
 
 class Angle(float):
     """\
@@ -313,8 +308,8 @@ class Point(object):
         @param opacity: The opacity with which to plot the point.
         @type opacity: C{float}
         """
-        if not VIS:
-            raise ImportError("visual module not loaded")
+        if not visual:
+            raise VisualizationError("visual module not loaded")
         try:
             self.vis.members['point'].radius = 0.1 * scale
             self.vis.members['point'].color = color
@@ -823,7 +818,7 @@ class Plane(object):
                 self.h = (float(min(kwargs['y'])), float(max(kwargs['y'])))
             except KeyError:
                 self.w, self.h = None, None
-        if VIS:
+        if visual:
             self.vis_plane = None
 
     @property
@@ -873,8 +868,8 @@ class Plane(object):
         @param opacity: The opacity with which to plot the plane segment.
         @type opacity: C{float}
         """
-        if not VIS:
-            raise ImportError("visual module not loaded")
+        if not visual:
+            raise VisualizationError("visual module not loaded")
         if self.w is None or self.h is None:
             raise ValueError("cannot plot an infinite plane")
         try:

@@ -14,12 +14,7 @@ from fuzz import IndexedSet, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
 
 from geometry import Point, DirectionalPoint, Pose
 from scene import Scene
-
-try:
-    import visual
-    VIS = True
-except ImportError:
-    VIS = False
+from visualization import VisualizationError, visual
 
 
 class Camera(object):
@@ -143,8 +138,8 @@ class Camera(object):
         @param fov: Toggle visualization of the field ov view.
         @type fov: C{bool}
         """
-        if not VIS:
-            raise ImportError("visual module not loaded")
+        if not visual:
+            raise VisualizationError("visual module not loaded")
         if self.vis:
             self.update_visualization()
             return
@@ -185,7 +180,7 @@ class Camera(object):
         Update the visualization for camera active state and pose.
         """
         if not self.vis:
-            raise ValueError("camera not yet visualized")
+            raise VisualizationError("visualization not yet initialized")
         for member in ['body', 'lens', 'ring', 'light']:
             self.vis.members[member].opacity = self.active and 1.0 or 0.2
         self.vis.members['glass'].opacity = self.active and 0.5 or 0.1
@@ -320,8 +315,9 @@ class MultiCamera(dict):
         @param scale: The scale of the individual elements.
         @type scale: C{float}
         """
-        if not VIS:
-            raise ImportError("visual module not loaded")
+        if not visual:
+            raise VisualizationError("visual module not loaded")
+        self._vis_scale = scale
         for camera in self:
             self[camera].visualize(scale=scale)
             self[camera].vis.members['name'] = visual.label(frame=\
@@ -344,6 +340,8 @@ class MultiCamera(dict):
         """\
         Update the visualization.
         """
+        if not self._vis_scale:
+            raise VisualizationError("visualization not yet initialized")
         for camera in self:
             self[camera].update_visualization()
         for point in self.model.keys():
@@ -354,5 +352,5 @@ class MultiCamera(dict):
                 except KeyError:
                     pass
             else:
-                point.visualize(scale=scale, color=(1, 0, 0),
+                point.visualize(scale=self._vis_scale, color=(1, 0, 0),
                                 opacity=self.model[point].mu)
