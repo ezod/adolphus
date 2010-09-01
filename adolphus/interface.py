@@ -24,8 +24,10 @@ class Display(visual.display):
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         """
-        visual.display.__init__(self, title=title, center=center, up=(0, 0, 1),
+        visual.display.__init__(self, title=title, center=center,
             background=(1, 1, 1), foreground=(0.3, 0.3, 0.3))
+        self.forward = (-1, -1, -1)
+        self.up = (0, 0, 1)
 
 
 class Experiment(object):
