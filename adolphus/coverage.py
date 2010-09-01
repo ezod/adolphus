@@ -14,7 +14,7 @@ from fuzz import IndexedSet, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
 
 from geometry import Point, DirectionalPoint, Pose
 from scene import Scene
-from visualization import VisualizationError, visual
+from visualization import VisualizationError, visual, transform
 
 
 class Camera(object):
@@ -185,12 +185,8 @@ class Camera(object):
             self.vis.members[member].opacity = self.active and 1.0 or 0.2
         self.vis.members['glass'].opacity = self.active and 0.5 or 0.1
         self.vis.members['light'].color = (not self.active, self.active, 0)
-        self.vis.pos = self.pose.T.tuple
-        # FIXME: no idea why up = (-1, 0, 0) or why (-axis) is necessary
-        self.vis.axis = (0, 0, 1)
-        self.vis.up = (-1, 0, 0)
         axis, angle = self.pose.R.to_axis_angle()
-        self.vis.rotate(axis=(-axis).tuple, angle=angle)
+        transform(self.vis, self.pose.T.tuple, axis, angle)
 
     def visualize_fov_toggle(self, scale=1.0):
         """\

@@ -10,8 +10,16 @@ Visualization helper module.
 try:
     import visual
 except ImportError:
-    visual = False
+    visual = None
 
 
 class VisualizationError(Exception):
     pass
+
+
+def transform(entity, pos, axis, angle):
+    entity.pos = pos
+    # FIXME: no idea why up = (-1, 0, 0) or why (-axis) is necessary
+    entity.axis = (0, 0, 1)
+    entity.up = (-1, 0, 0)
+    entity.rotate(axis=(-axis).tuple, angle=angle)

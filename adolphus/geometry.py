@@ -12,7 +12,7 @@ from math import pi, sqrt, sin, cos, asin, acos, atan, atan2
 from numbers import Number
 import numpy
 
-from visualization import VisualizationError, visual
+from visualization import VisualizationError, visual, transform
 
 class Angle(float):
     """\
@@ -873,20 +873,15 @@ class Plane(object):
         if self.w is None or self.h is None:
             raise ValueError("cannot plot an infinite plane")
         try:
-            self.vis_plane.pos = self.center.tuple
-            # FIXME: no idea why up = (-1, 0, 0) or why (-axis) is necessary
-            self.vis_plane.axis = (0, 0, 1)
-            self.vis_plane.up = (-1, 0, 0)
             axis, angle = self.pose.R.to_axis_angle()
-            self.vis_plane.rotate(axis=(-axis).tuple, angle=angle)
+            transform(self.vis_plane, self.center.tuple, axis, angle)
             self.vis_plane.width = self.w[1] - self.w[0]
             self.vis_plane.height = self.h[1] - self.h[0]
             self.vis_plane.color = color
             self.vis_plane.opacity = opacity
         except AttributeError:
             self.vis_plane = visual.box(pos=self.center.tuple,
-                axis=(0, 0, 1), up=(-1, 0, 0), width=(self.h[1] - self.h[0]),
-                height=(self.w[1] - self.w[0]), length=1, color=color,
-                opacity=opacity)
+                width=(self.h[1] - self.h[0]), height=(self.w[1] - self.w[0]),
+                length=1, color=color, opacity=opacity)
             axis, angle = self.pose.R.to_axis_angle()
-            self.vis_plane.rotate(axis=(-axis).tuple, angle=angle)
+            transform(self.vis_plane, self.center.tuple, axis, angle)
