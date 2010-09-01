@@ -28,9 +28,9 @@ S.add(Plane(x=(-150, 150), y=100, z=(-100, 0)))
 print "Creating discrete multi-camera model..."
 P = [Point(x, y, z) for x in [i * 100 for i in range(-4, 5)] for y in [i * 100 for i in range(-4, 5)] for z in [i * 100 for i in range(-1, 8)]]
 
-M = MultiCamera(ocular = 1, scene = S, points = P)
+M = MultiCamera(ocular=1, scene=S, points=P)
 for name, pose in C:
-    M[name] = Camera(4.4765, 12.5341, 0.00465, (760.1805, 495.1859), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 1.3, pose = pose)
+    M[name] = Camera({'A': 4.4765, 'f': 12.5341, 's': 0.00465, 'o': (760.1805, 495.1859), 'dim': (1360, 1024), 'zS': 1216.1, 'gamma': 20, 'r1': 3.0, 'r2': 0.5, 'cmax': 0.036, 'zeta': 1.3}, pose=pose)
 
 print "Running experiment..."
 E = Experiment(M)

@@ -6,8 +6,8 @@ from adolphus import Scene, Camera, MultiCamera, Pose, Point, Rotation, Experime
 print "Creating discrete multi-camera model..."
 P = [Point(x, y, z) for x in [i * 200 for i in range(-6, 7)] for y in [i * 200 for i in range(-6, 7)] for z in [i * 100 for i in range(16)]]
 
-M = MultiCamera(ocular = 1, points = P)
-M['A'] = Camera(4.4765, 12.5341, 0.00465, (760.1805, 495.1859), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 1.3, pose = Pose(Point(100, 0, 0), Rotation(0, pi / 4.0, 0)))
+M = MultiCamera(ocular=1, points=P)
+M['A'] = Camera({'A': 4.4765, 'f': 12.5341, 's': 0.00465, 'o': (760.1805, 495.1859), 'dim': (1360, 1024), 'zS': 1216.1, 'gamma': 20, 'r1': 3.0, 'r2': 0.5, 'cmax': 0.036, 'zeta': 1.3}, pose=Pose(Point(100, 0, 0), Rotation(0, pi / 4.0, 0)))
 
 print "Running experiment..."
 E = Experiment(M)

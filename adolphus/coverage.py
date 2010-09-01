@@ -21,67 +21,63 @@ class Camera(object):
     """\
     Single-camera model, using continous fuzzy sets.
     """
-    def __init__(self, A, f, s, o, dim, zS, gamma, r1, r2, cmax, zeta,
-                 pose=Pose(), active=True):
+    def __init__(self, params, pose=Pose(), active=True):
         """\
         Constructor.
 
-        @param A: Aperture size (intrinsic).
-        @type A: C{float}
-        @param f: Focal length (intrinsic).
-        @type f: C{float}
-        @param s: Effective pixel size (intrinsic).
-        @type s: C{tuple} of C{float}
-        @param o: Pixel coordinates of principal point (intrinsic).
-        @type o: C{tuple} of C{float}
-        @param dim: Sensor pixel dimensions (intrinsic).
-        @type dim: C{int}
-        @param zS: Subject distance (intrinsic).
-        @type zS: C{float}
-        @param gamma: Fuzzification value for visibility (application).
-        @type gamma: C{float}
-        @param r1: Fully acceptable resolution (application).
-        @type r1: C{float}
-        @param r2: Acceptable resolution (application).
-        @type r2: C{float}
-        @param cmax: Maximum acceptable circle of confusion (application).
-        @type cmax: C{float}
-        @param zeta: Fuzzification value for direction (application).
-        @type zeta: C{float}
+        @param params: Dictionary of application parameters.
+        @type params: C{dict}
         @param pose: Pose of the camera in space (optional).
         @type pose: L{geometry.Pose}
         @param active: Initial active state of camera.
         @type active: C{bool}
         """
-        if isinstance(s, Number):
-            s = (s, s)
+        if isinstance(params['s'], Number):
+            params['s'] = (params['s'], params['s'])
         self.vis = None
+        self.params = params
         # fuzzy sets for visibility
         self.Cv, al, ar = [], [], []
         for i in range(2):
-            al.append(2.0 * atan((o[i] * s[i]) / (2.0 * f)))
-            ar.append(2.0 * atan(((dim[i] - o[i]) * s[i]) / (2.0 * f)))
-            g = (gamma / float(dim[i])) * 2.0 * sin((al[i] + ar[i]) / 2.0)
+            al.append(2.0 * atan((params['o'][i] * params['s'][i]) \
+                / (2.0 * params['f'])))
+            ar.append(2.0 * atan(((params['dim'][i] - params['o'][i]) \
+                * params['s'][i]) / (2.0 * params['f'])))
+            g = (params['gamma'] / float(params['dim'][i])) * 2.0 \
+                * sin((al[i] + ar[i]) / 2.0)
             self.Cv.append(TrapezoidalFuzzyNumber((-sin(al[i]) + g,
                 sin(ar[i]) - g), (-sin(al[i]), sin(ar[i]))))
         # fuzzy set for resolution
-        mr = min([float(dim[i]) / (2.0 * sin((al[i] + ar[i]) / 2.0)) \
+        mr = min([float(params['dim'][i]) / (2.0 * sin((al[i] + ar[i]) / 2.0)) \
                   for i in range(2)])
-        zr1 = (1.0 / r1) * mr
-        zr2 = (1.0 / r2) * mr
+        zr1 = (1.0 / params['r1']) * mr
+        zr2 = (1.0 / params['r2']) * mr
         self.Cr = TrapezoidalFuzzyNumber((0, zr1), (0, zr2))
         # fuzzy set for focus
-        zl = (A * f * zS) / (A * f + min(s) * (zS - f))
-        zr = (A * f * zS) / (A * f - min(s) * (zS - f))
-        zn = (A * f * zS) / (A * f + cmax * (zS - f))
-        zf = (A * f * zS) / (A * f - cmax * (zS - f))
+        zl, zr = self.zc(min(params['s']))
+        zn, zf = self.zc(params['cmax'])
         self.Cf = TrapezoidalFuzzyNumber((zl, zr), (zn, zf))
-        # fuzzifier for direction
-        self.zeta = zeta
         # pose
         self.pose = pose
         # active
         self.active = active
+
+    def zc(self, c):
+        """\
+        Return the depth values at which a circle of confusion of a given size
+        occurs.
+
+        @param c: The diameter of the circle of confusion.
+        @type c: C{float}
+        @return: Two depth values.
+        @rtype: C{tuple} of C{float}
+        """
+        r = []
+        for s in [1, -1]:
+            r.append((self.params['A'] * self.params['f'] * self.params['zS']) / (self.params['A'] * self.params['f'] + s * c * self.params['zS'] - self.params['f']))
+        if r[1] < 0:
+            r[1] = float('inf')
+        return tuple(r)
 
     def mu(self, point):
         """\
@@ -122,7 +118,7 @@ class Camera(object):
             except ZeroDivisionError:
                 termb = pi / 2.0
             mu_d = min(max((float(campoint.rho) - ((pi / 2.0) + terma \
-                * termb)) / self.zeta, 0.0), 1.0)
+                * termb)) / self.params['zeta'], 0.0), 1.0)
         else:
             mu_d = 1.0
 

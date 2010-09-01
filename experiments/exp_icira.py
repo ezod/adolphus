@@ -136,9 +136,9 @@ P.append(PE.map(DirectionalPoint(110, 70, 100, 0, 0)))
 P.append(PE.map(DirectionalPoint(50, 30, 100, 0, 0)))
 
 print "Creating discrete multi-camera model..."
-M = MultiCamera(ocular = 2, scene = S, points = P)
+M = MultiCamera(ocular=2, scene=S, points=P)
 for name, pose in C:
-    M[name] = Camera(4.4765, 12.5011, 0.00465, (598.1816, 372.4812), (1360, 1024), 1216.1, 20, 3.0, 0.5, 0.036, 0.3, pose = pose, active = False)
+    M[name] = Camera({'A': 4.4765, 'f': 12.5011, 's': 0.00465, 'o': (598.1816, 372.4812), 'dim': (1360, 1024), 'zS': 1216.1, 'gamma': 20, 'r1': 3.0, 'r2': 0.5, 'cmax': 0.036, 'zeta': 0.3}, pose=pose, active=False)
 M['T1'].active = False
 M['T8'].active = True
 M['M4'].active = False
