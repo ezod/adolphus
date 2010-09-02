@@ -37,18 +37,14 @@ class Camera(object):
         self.vis = None
         self.params = params
         # fuzzy sets for visibility
-        self.Cv, al, ar = [], [], []
+        self.Cv = []
         for i in range(2):
-            al.append(2.0 * atan((params['o'][i] * params['s'][i]) \
-                / (2.0 * params['f'])))
-            ar.append(2.0 * atan(((params['dim'][i] - params['o'][i]) \
-                * params['s'][i]) / (2.0 * params['f'])))
             g = (params['gamma'] / float(params['dim'][i])) * 2.0 \
-                * sin((al[i] + ar[i]) / 2.0)
-            self.Cv.append(TrapezoidalFuzzyNumber((-sin(al[i]) + g,
-                sin(ar[i]) - g), (-sin(al[i]), sin(ar[i]))))
+                * sin(self.fov['a'][i] / 2.0)
+            self.Cv.append(TrapezoidalFuzzyNumber((self.fov['sl'][i] + g,
+                self.fov['sr'][i] - g), (self.fov['sl'][i], self.fov['sr'][i])))
         # fuzzy set for resolution
-        mr = min([float(params['dim'][i]) / (2.0 * sin((al[i] + ar[i]) / 2.0)) \
+        mr = min([float(params['dim'][i]) / (2 * sin(self.fov['a'][i] / 2.0)) \
                   for i in range(2)])
         zr1 = (1.0 / params['r1']) * mr
         zr2 = (1.0 / params['r2']) * mr
@@ -61,6 +57,30 @@ class Camera(object):
         self.pose = pose
         # active
         self.active = active
+
+    @property
+    def fov(self):
+        """\
+        Pre-computed angles of view and the size of the field of view at z = 1.
+
+        @rtype: C{dict}
+        """
+        try:
+            return self._fov
+        except AttributeError:
+            self._fov = {'a': [], 'al': [], 'ar': [],
+                         's': [], 'sl': [], 'sr': []}
+            for i in range(2):
+                self._fov['al'].append(2.0 * atan((self.params['o'][i] \
+                    * self.params['s'][i]) / (2.0 * self.params['f'])))
+                self._fov['ar'].append(2.0 * atan(((self.params['dim'][i] \
+                    - self.params['o'][i]) * self.params['s'][i]) \
+                    / (2.0 * self.params['f'])))
+                self._fov['a'].append(self._fov['al'][i] + self._fov['ar'][i])
+                self._fov['sl'].append(-sin(self._fov['al'][i]))
+                self._fov['sr'].append(sin(self._fov['ar'][i]))
+                self._fov['s'].append(self._fov['sr'][i] - self._fov['sl'][i])
+            return self._fov
 
     def zc(self, c):
         """\
@@ -195,10 +215,10 @@ class Camera(object):
             if self.vis.fov:
                 self.vis.fov.visible = not self.vis.fov.visible
             else:
-                ax = self.Cv[0].support[1] - (self.Cv[0].support.size / 2.0)
-                ay = self.Cv[1].support[1] - (self.Cv[1].support.size / 2.0)
+                a = [self.fov['sr'][i] - (self.fov['s'][i] / 2.0) \
+                     for i in range(2)]
                 self.vis.fov = visual.pyramid(frame=self.vis, pos=(scale,
-                    scale * ay, -scale * ax), axis=(-1, -ay, ax),
+                    scale * a[1], -scale * a[0]), axis=(-1, -a[1], a[0]),
                     size=(scale, self.Cv[0].support.size * scale,
                     self.Cv[1].support.size * scale), opacity=0.1,
                     color=(0.2, 0.5, 0.6))

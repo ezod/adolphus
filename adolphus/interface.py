@@ -7,8 +7,9 @@ Visual interface module.
 @license: GPL-3
 """
 
-import visual
 import sys
+
+from visualization import VisualizationError, visual
 
 
 class Display(visual.display):
@@ -28,6 +29,44 @@ class Display(visual.display):
             background=(1, 1, 1), foreground=(0.3, 0.3, 0.3))
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
+        self._stored_view = None
+        print self.autoscale
+
+    def camera_view(self, camera=None):
+        """\
+        Toggle camera view, displaying the scene from the point of view of a
+        specific camera.
+
+        @param camera: The camera object.
+        @type: L{coverage.Camera}
+        """
+        if camera:
+            if self._stored_view:
+                raise VisualizationError("already in a camera view")
+            #self.autoscale, self.userzoom, self.userspin = [False] * 3
+            self.autoscale, self.userspin = [False] * 2
+            self._stored_view = {'forward': tuple(self.forward),
+                                 'center': tuple(self.center),
+                                 'fov': self.fov}
+            a = [camera.fov['sr'][i] - (camera.fov['s'][i] / 2.0) \
+                 for i in range(2)]
+            self.forward = camera.pose.map_rotate((0, 0, 1)).tuple
+            self.up = camera.pose.map_rotate((0, -1, 0)).tuple
+            self.center = camera.pose.map((0, 0, camera.params['zS'])).tuple
+            self.fov = max(camera.fov['a'])
+            # FIXME: manual zoom for now - this range stuff isn't working
+            #extent = [camera.params['zS'] * max(-camera.fov['sl'][i], 
+            #          camera.fov['sr'][i]) for i in range(2)]
+            #self.range = camera.pose.map((extent[0], extent[1], 0)).tuple
+        else:
+            if not self._stored_view:
+                return
+            for key in self._stored_view:
+                self.__setattr__(key, self._stored_view[key])
+            self.up = (0, 0, 1)
+            self._stored_view = None
+            #self.autoscale, self.userzoom, self.userspin = [True] * 3
+            self.autoscale, self.userspin = [True] * 2
 
 
 class Experiment(object):
@@ -77,6 +116,12 @@ class Experiment(object):
                 if m.click == "left" and m.pick in cam_vis:
                     if m.ctrl:
                         m.pick.frame.camera.visualize_fov_toggle(scale=1500)
+                    elif m.alt:
+                        try:
+                            self.display.camera_view(m.pick.frame.camera)
+                            print "In camera view, F11 to exit."
+                        except VisualizationError:
+                            pass
                     else:
                         m.pick.frame.camera.active = not m.pick.frame.camera.active
                         m.pick.frame.camera.update_visualization()
@@ -97,9 +142,13 @@ class Experiment(object):
                     self.axes.visible = not self.axes.visible
                 elif k == 'f8':
                     self.cdot.visible = not self.cdot.visible
+                elif k == 'f11':
+                    self.display.camera_view()
+                    print "Exited camera view."
                 elif k == 'f12':
                     print "Closing interactive event loop."
                     break
+                # TODO: don't allow the rest in camera view
                 elif k == 'left':
                     self.display.center = (self.display.center[0] - 30,
                         self.display.center[1], self.display.center[2])

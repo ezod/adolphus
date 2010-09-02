@@ -756,6 +756,8 @@ class Pose(object):
         @return: The rotated point/vector.
         @rtype: L{Point}
         """
+        if not isinstance(p, Point):
+            p = Point(p)
         q = numpy.dot(self.R.R, p.array)
         if isinstance(p, DirectionalPoint):
             unit = Pose(None, self.R.R).map(p.direction_unit)
@@ -775,6 +777,8 @@ class Pose(object):
         @return: The translated point/vector.
         @rtype: L{Point}
         """
+        if not isinstance(p, Point):
+            p = Point(p)
         q = p + self.T
         return q
 
