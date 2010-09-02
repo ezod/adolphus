@@ -30,7 +30,6 @@ class Display(visual.display):
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self._stored_view = None
-        print self.autoscale
 
     def camera_view(self, camera=None):
         """\
