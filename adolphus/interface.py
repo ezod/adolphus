@@ -135,6 +135,8 @@ class Experiment(object):
                     self.model.update_model()
                     self.model.update_visualization()
                     print "done."
+                elif k == 'f5':
+                    self.model.visualize_ptmu_toggle()
                 elif k == 'f6':
                     self.model.visualize_name_toggle()
                 elif k == 'f7':

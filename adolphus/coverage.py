@@ -246,6 +246,8 @@ class MultiCamera(dict):
         self.points = points
         self.model = FuzzySet()
         self._updated_state = None
+        if visual:
+            self._vis_ptmu = False
 
     def __setitem__(self, key, value):
         """\
@@ -338,7 +340,19 @@ class MultiCamera(dict):
         self.scene.visualize(color=(0.3, 0.3, 0.3))
         for point in self.model.keys():
             point.visualize(scale=scale, color=(1, 0, 0),
-                            opacity=self.model[point].mu)
+                            opacity=self.model.mu(point))
+            point.vis.members['mu'] = visual.label(frame=point.vis,
+                pos=(0, 0, 0), height=6, color=(1, 1, 1), visible=False,
+                text=("%1.4f" % self.model.mu(point)))
+
+    def visualize_ptmu_toggle(self):
+        """\
+        Toggle visibility of mu values over points.
+        """
+        self._vis_ptmu = not self._vis_ptmu
+        for point in self.model.keys():
+            point.vis.members['mu'].visible = self.model.mu(point) \
+                and self._vis_ptmu or False
 
     def visualize_name_toggle(self):
         """\
