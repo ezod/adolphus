@@ -139,9 +139,9 @@ print "Creating discrete multi-camera model..."
 M = MultiCamera(ocular=2, scene=S, points=P)
 for name, pose in C:
     M[name] = Camera({'A': 4.4765, 'f': 12.5011, 's': 0.00465, 'o': (598.1816, 372.4812), 'dim': (1360, 1024), 'zS': 1216.1, 'gamma': 20, 'r1': 3.0, 'r2': 0.5, 'cmax': 0.036, 'zeta': 0.3}, pose=pose, active=False)
-M['T1'].active = False
+M['T1'].active = True
 M['T8'].active = True
-M['M4'].active = False
+M['M4'].active = True
 M['L7'].active = True
 
 print "Running experiment..."
