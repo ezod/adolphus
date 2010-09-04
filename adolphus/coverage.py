@@ -28,7 +28,7 @@ class Camera(object):
         @param params: Dictionary of application parameters.
         @type params: C{dict}
         @param pose: Pose of the camera in space (optional).
-        @type pose: L{geometry.Pose}
+        @type pose: L{Pose}
         @param active: Initial active state of camera.
         @type active: C{bool}
         """
@@ -104,7 +104,7 @@ class Camera(object):
         Return the membership degree (coverage) for a directional point.
     
         @param point: The (directional) point to test.
-        @type point: L{geometry.Point}
+        @type point: L{Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
@@ -237,7 +237,7 @@ class MultiCamera(dict):
         @param scene: The discrete scene model.
         @type scene: L{Scene}
         @param points: The initial set of points.
-        @type points: C{set} of L{geometry.Point}
+        @type points: C{set} of L{Point}
         """
         if ocular < 1:
             raise ValueError("network must be at least 1-ocular")
@@ -296,7 +296,7 @@ class MultiCamera(dict):
         coverage model.
 
         @param point: The (directional) point to test.
-        @type point: L{geometry.Point}
+        @type point: L{Point}
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """

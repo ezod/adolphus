@@ -37,7 +37,7 @@ class Display(visual.display):
         specific camera.
 
         @param camera: The camera object.
-        @type: L{coverage.Camera}
+        @type camera: L{coverage.Camera}
         """
         if camera:
             if self._stored_view:
