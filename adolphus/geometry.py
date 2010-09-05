@@ -548,6 +548,10 @@ class Rotation(object):
             self.R = numpy.diag([1, 1, 1])
         elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
             self.R = args[0]
+        elif len(args) == 1 and len(args[0]) == 3 \
+        and isinstance(args[0][0], Number):
+            self.R = self.from_euler_xyz(Angle(args[0][0]), Angle(args[0][1]),
+                Angle(args[0][2]))
         elif len(args) == 1 and len(args[0]) == 3 and len(args[0][0]) == 3:
             self.R = numpy.array(args[0])
         elif len(args) == 2:
@@ -891,3 +895,41 @@ class Plane(object):
                 length=1, color=color, opacity=opacity)
             axis, angle = self.pose.R.to_axis_angle()
             transform(self.vis_plane, self.center.tuple, axis, angle)
+
+
+def pointrange(xrange, yrange, zrange, step, ddiv=None):
+    """\
+    Generate discrete (directional) points in a range.
+
+    @param xrange: The range in the x direction.
+    @type xrange: C{tuple} of C{float}
+    @param yrange: The range in the y direction.
+    @type yrange: C{tuple} of C{float}
+    @param zrange: The range in the z direction.
+    @type zrange: C{tuple} of C{float}
+    @param step: The resolution of the discrete point set.
+    @type step: C{float}
+    @param ddiv: The fraction of pi for discrete direction angles.
+    @type ddiv: C{int}
+    """
+    x, y, z = xrange[0], yrange[0], zrange[0]
+    while x <= xrange[1]:
+        while y <= yrange[1]:
+            while z <= zrange[1]:
+                if ddiv:
+                    rho, eta = 0.0, 0.0
+                    while rho <= pi:
+                        if rho == 0.0 or rho == pi:
+                            yield DirectionalPoint(x, y, z, rho, 0.0)
+                        else:
+                            while eta < 2 * pi:
+                                yield DirectionalPoint(x, y, z, rho, eta)
+                                eta += pi / ddiv
+                        rho += pi / ddiv
+                else:
+                    yield Point(x, y, z)
+                z += step
+            z = zrange[0]
+            y += step
+        y = yrange[0]
+        x += step

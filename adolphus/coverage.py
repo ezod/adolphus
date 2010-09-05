@@ -17,7 +17,7 @@ try:
 except ImportError:
     yaml = None
 
-from geometry import Point, DirectionalPoint, Pose, Rotation, Plane
+from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
 from scene import Scene
 from visualization import VisualizationError, visual, transform
 
@@ -327,7 +327,10 @@ class MultiCamera(dict):
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
-        return self.model.overlap(desired)
+        actual = FuzzySet()
+        for point in desired:
+            actual.add(point, self.mu(point))
+        return actual.overlap(desired)
 
     def visualize(self, scale=1.0):
         """\
@@ -405,32 +408,39 @@ def load_model_from_yaml(filename):
 
     # scene
     scene = Scene()
-    for plane in params['scene']:
-        if plane.has_key('z'):
-            scene.add(Plane(x=plane['x'], y=plane['y'], z=plane['z']))
-        else:
-            scene.add(Plane(x=plane['x'], y=plane['y'],
-                pose=Pose(T=Point(tuple(plane['T'])), R=Rotation(plane['R']))))
+    try:
+        for plane in params['scene']:
+            if plane.has_key('z'):
+                scene.add(Plane(x=plane['x'], y=plane['y'], z=plane['z']))
+            else:
+                scene.add(Plane(x=plane['x'], y=plane['y'],
+                    pose=Pose(T=Point(tuple(plane['T'])),
+                              R=Rotation(plane['R']))))
+    except KeyError:
+        pass
 
-    #points
+    # points
     points = set()
-    for point in params['points']:
-        if point.has_key('step'):
-            points.update([Point(x, y, z) \
-                for x in [i * point['step'] for i in range(point['x'][0] \
-                    / point['step'], point['x'][1] / point['step'] + 1)] \
-                for y in [i * point['step'] for i in range(point['y'][0] \
-                    / point['step'], point['y'][1] / point['step'] + 1)] \
-                for z in [i * point['step'] for i in range(point['z'][0] \
-                    / point['step'], point['z'][1] / point['step'] + 1)]])
-        else:
-            points.add(Point(point['point']))
+    try:
+        for point in params['points']:
+            if point.has_key('step'):
+                if not point.has_key('ddiv'):
+                    point['ddiv'] = None
+                for p in pointrange(point['x'], point['y'], point['z'],
+                                    point['step'], ddiv=point['ddiv']):
+                       points.add(p)
+            else:
+                points.add(Point(point['point']))
+    except KeyError:
+        pass
 
     model = MultiCamera(name=params['name'], ocular=params['ocular'],
                         scene=scene, points=points)
 
     # cameras
     for camera in params['cameras']:
+        for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
+            camera[ap] = params[ap]
         model[camera['name']] = Camera(camera,
             pose=Pose(T=Point(tuple(camera['T'])), R=Rotation(camera['R'])))
 
