@@ -548,6 +548,8 @@ class Rotation(object):
             self.R = numpy.diag([1, 1, 1])
         elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
             self.R = args[0]
+        elif len(args) == 1 and len(args[0]) == 3 and len(args[0][0]) == 3:
+            self.R = numpy.array(args[0])
         elif len(args) == 2:
             self.R = self.from_axis_angle(Point(args[0]), Angle(args[1]))
         elif len(args) == 3:

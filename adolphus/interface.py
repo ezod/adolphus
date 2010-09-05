@@ -16,7 +16,8 @@ class Display(visual.display):
     """\
     Visual display class.
     """
-    def __init__(self, title='Adolphus', center=(0, 0, 0)):
+    def __init__(self, name="Untitled Model", center=(0, 0, 0),
+                 background=(1, 1, 1), foreground=(0.3, 0.3, 0.3)):
         """\
         Contstructor.
 
@@ -25,8 +26,8 @@ class Display(visual.display):
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         """
-        visual.display.__init__(self, title=title, center=center,
-            background=(1, 1, 1), foreground=(0.3, 0.3, 0.3))
+        visual.display.__init__(self, title="Adolphus - %s" % name,
+            center=center, background=background, foreground=foreground)
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self._stored_view = None
@@ -72,17 +73,15 @@ class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model, display=Display()):
+    def __init__(self, model):
         """\
         Constructor.
 
         @param model: The multi-camera model to use.
         @type model: L{coverage.MultiCamera}
-        @param display: The 3D display to use.
-        @type display: L{Display}
         """
         self.model = model
-        self.display = display
+        self.display = Display(name=model.name)
         self.display.select()
 
     def run(self):
@@ -95,7 +94,6 @@ class Experiment(object):
         are F2 - update discrete fuzzy coverage model, F6 - show/hide camera
         names, F7 - show/hide axes, F8 - show/hide display center.
         """
-        self.model.update_model()
         self.model.visualize(scale=30)
         self.axes = visual_axes(scale=30, color=(0, 0, 1))
         self.axes.visible = False
@@ -130,7 +128,7 @@ class Experiment(object):
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
                 if k == 'f2':
-                    print "Updating discrete fuzzy coverage model... ",
+                    print "Updating discrete fuzzy coverage model...",
                     sys.stdout.flush()
                     self.model.update_model()
                     self.model.update_visualization()

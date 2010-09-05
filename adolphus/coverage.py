@@ -12,7 +12,12 @@ from numbers import Number
 from itertools import combinations
 from fuzz import IndexedSet, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
 
-from geometry import Point, DirectionalPoint, Pose
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+from geometry import Point, DirectionalPoint, Pose, Rotation, Plane
 from scene import Scene
 from visualization import VisualizationError, visual, transform
 
@@ -228,10 +233,12 @@ class MultiCamera(dict):
     """\
     Multi-camera n-ocular fuzzy coverage model.
     """
-    def __init__(self, ocular=1, scene=Scene(), points=set()):
+    def __init__(self, name="Untitled", ocular=1, scene=Scene(), points=set()):
         """\
         Constructor.
-    
+   
+        @param name: The name of this model.
+        @type name: C{str}
         @param ocular: Mutual camera coverage degree.
         @type ocular: C{int}
         @param scene: The discrete scene model.
@@ -239,6 +246,7 @@ class MultiCamera(dict):
         @param points: The initial set of points.
         @type points: C{set} of L{Point}
         """
+        self.name = name
         if ocular < 1:
             raise ValueError("network must be at least 1-ocular")
         self.ocular = ocular
@@ -371,12 +379,59 @@ class MultiCamera(dict):
         for camera in self:
             self[camera].update_visualization()
         for point in self.model.keys():
-            if point.vis:
+            try:
                 point.vis.members['point'].opacity = self.model[point].mu
                 try:
                     point.vis.members['dir'].opacity = self.model[point].mu
                 except KeyError:
                     pass
-            else:
+            except AttributeError:
                 point.visualize(scale=self._vis_scale, color=(1, 0, 0),
                                 opacity=self.model[point].mu)
+
+
+def load_model_from_yaml(filename):
+    """\
+    Load parameters for a multi-camera fuzzy coverage model from a YAML file.
+
+    @param filename: The YAML file to load from.
+    @type filename: C{str}
+    @return: The multi-camera fuzzy coverage model.
+    @rtype: L{MultiCamera}
+    """
+    if not yaml:
+        raise ImportError("YAML module could not be loaded")
+    params = yaml.load(open(filename))
+
+    # scene
+    scene = Scene()
+    for plane in params['scene']:
+        if plane.has_key('z'):
+            scene.add(Plane(x=plane['x'], y=plane['y'], z=plane['z']))
+        else:
+            scene.add(Plane(x=plane['x'], y=plane['y'],
+                pose=Pose(T=Point(tuple(plane['T'])), R=Rotation(plane['R']))))
+
+    #points
+    points = set()
+    for point in params['points']:
+        if point.has_key('step'):
+            points.update([Point(x, y, z) \
+                for x in [i * point['step'] for i in range(point['x'][0] \
+                    / point['step'], point['x'][1] / point['step'] + 1)] \
+                for y in [i * point['step'] for i in range(point['y'][0] \
+                    / point['step'], point['y'][1] / point['step'] + 1)] \
+                for z in [i * point['step'] for i in range(point['z'][0] \
+                    / point['step'], point['z'][1] / point['step'] + 1)]])
+        else:
+            points.add(Point(point['point']))
+
+    model = MultiCamera(name=params['name'], ocular=params['ocular'],
+                        scene=scene, points=points)
+
+    # cameras
+    for camera in params['cameras']:
+        model[camera['name']] = Camera(camera,
+            pose=Pose(T=Point(tuple(camera['T'])), R=Rotation(camera['R'])))
+
+    return model
