@@ -430,7 +430,10 @@ def load_model_from_yaml(filename):
                                     point['step'], ddiv=point['ddiv']):
                        points.add(p)
             else:
-                points.add(Point(point['point']))
+                if len(point['point']) == 3:
+                    points.add(Point(tuple(point['point'])))
+                elif len(point['point']) == 5:
+                    points.add(DirectionalPoint(tuple(point['point'])))
     except KeyError:
         pass
 
