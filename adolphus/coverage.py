@@ -1,5 +1,7 @@
 """\
-Coverage model module.
+Coverage model module. Contains the fuzzy coverage model classes for single
+cameras and multi-camera networks, as well as the scene and relevance map
+classes.
 
 @author: Aaron Mavrinac
 @organization: University of Windsor
@@ -18,8 +20,58 @@ except ImportError:
     yaml = None
 
 from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
-from scene import Scene
 from visualization import VisualizationError, visual, transform
+
+
+class Scene(set):
+    """\
+    Discrete spatial-directional range with occlusion class.
+    """
+    def __init__(self, iterable=set()):
+        """\
+        Constructor.
+
+        @param iterable: The initial set of opaque scene planes.
+        @type iterable: C{iterable}
+        """
+        for plane in iterable:
+            if not isinstance(plane, Plane):
+                raise TypeError("only planes can be added")
+        set.__init__(self, iterable)
+
+    def add(self, plane):
+        """\
+        Add an opaque plane to the scene.
+
+        @param plane: The item to add.
+        @type plane: C{object}
+        """
+        if not isinstance(plane, Plane):
+            raise TypeError("only planes can be added")
+        set.add(self, plane)
+
+    def occluded(self, p, cam=Point()):
+        """\
+        Return whether the specified point is occluded from the camera
+        viewpoint (by opaque scene planes).
+        """
+        for plane in self:
+            pr = plane.intersection(p, cam)
+            if pr is not None and pr.euclidean(p) > 0.0001:
+                return True
+        return False
+
+    def visualize(self, color=(1, 1, 1)):
+        """\
+        Visualize the opaque scene objects.
+
+        @param color: The color of opaque scene objects.
+        @type color: C{tuple}
+        """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
+        for plane in self:
+            plane.visualize(color=color)
 
 
 class Camera(object):
