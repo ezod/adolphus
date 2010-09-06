@@ -445,12 +445,14 @@ class MultiCamera(dict):
                                 opacity=self.model[point].mu)
 
 
-def load_model_from_yaml(filename):
+def load_model_from_yaml(filename, active=True):
     """\
     Load parameters for a multi-camera fuzzy coverage model from a YAML file.
 
     @param filename: The YAML file to load from.
     @type filename: C{str}
+    @param active: The default active state of cameras (default True).
+    @type active: C{bool}
     @return: The multi-camera fuzzy coverage model.
     @rtype: L{MultiCamera}
     """
@@ -496,7 +498,7 @@ def load_model_from_yaml(filename):
     for camera in params['cameras']:
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]
-        model[camera['name']] = Camera(camera,
+        model[camera['name']] = Camera(camera, active=active,
             pose=Pose(T=Point(tuple(camera['T'])), R=Rotation(camera['R'])))
 
     return model
