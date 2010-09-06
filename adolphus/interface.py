@@ -73,7 +73,7 @@ class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model):
+    def __init__(self, model, relevance_maps=[]):
         """\
         Constructor.
 
@@ -81,6 +81,7 @@ class Experiment(object):
         @type model: L{coverage.MultiCamera}
         """
         self.model = model
+        self.relevance_maps = relevance_maps
         self.display = Display(name=model.name)
         self.display.select()
 
@@ -94,6 +95,8 @@ class Experiment(object):
         are F2 - update discrete fuzzy coverage model, F6 - show/hide camera
         names, F7 - show/hide axes, F8 - show/hide display center.
         """
+        for relevance_map in self.relevance_maps:
+            print "Performance:", self.model.performance(relevance_map)
         self.model.visualize(scale=30)
         self.axes = visual_axes(scale=30, color=(0, 0, 1))
         self.axes.visible = False

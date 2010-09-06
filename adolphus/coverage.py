@@ -12,7 +12,8 @@ classes.
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
-from fuzz import IndexedSet, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement
+from fuzz import IndexedSet, TrapezoidalFuzzyNumber, PolygonalFuzzyNumber, \
+                 FuzzySet, FuzzyElement
 
 try:
     import yaml
@@ -368,8 +369,8 @@ class MultiCamera(dict):
         @rtype: C{float}
         """
         actual = FuzzySet()
-        for point in relevance:
-            actual.add(point, self.mu(point))
+        for point in relevance.keys():
+            actual.add(point, mu=self.mu(point))
         return actual.overlap(relevance)
 
     def visualize(self, scale=1.0):
@@ -505,5 +506,24 @@ def load_model_from_yaml(filename, active=True):
 
 def generate_relevance_model(params):
     """\
+    Generate a relevance model from a set of x-y-z polygonal fuzzy sets.
+
+    @param params: The parameters (from YAML) for the polygonal fuzzy sets.
+    @type params: C{dict}
+    @return: The relevance model.
+    @rtype: L{FuzzySet}
     """
-    return FuzzySet()
+    whole_model = FuzzySet()
+    ranges, extent = {}, {}
+    for range in params['ranges']:
+        for axis in ['x', 'y', 'z']:
+            ranges[axis] = PolygonalFuzzyNumber(range[axis])
+            extent[axis] = (ranges[axis].support[0][0],
+                            ranges[axis].support[-1][1])
+        part_model = FuzzySet()
+        for point in pointrange(extent['x'], extent['y'], extent['z'],
+                                params['step']):
+            part_model.add(point, mu=min([ranges[axis].mu(getattr(point,
+                axis)) for axis in ['x', 'y', 'z']]))
+        whole_model |= part_model
+    return whole_model
