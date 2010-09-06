@@ -73,7 +73,7 @@ class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model, relevance_maps=[]):
+    def __init__(self, model, relevance_models=[]):
         """\
         Constructor.
 
@@ -81,7 +81,7 @@ class Experiment(object):
         @type model: L{coverage.MultiCamera}
         """
         self.model = model
-        self.relevance_maps = relevance_maps
+        self.relevance_models = relevance_models
         self.display = Display(name=model.name)
         self.display.select()
 
@@ -95,8 +95,6 @@ class Experiment(object):
         are F2 - update discrete fuzzy coverage model, F6 - show/hide camera
         names, F7 - show/hide axes, F8 - show/hide display center.
         """
-        for relevance_map in self.relevance_maps:
-            print "Performance:", self.model.performance(relevance_map)
         self.model.visualize(scale=30)
         self.axes = visual_axes(scale=30, color=(0, 0, 1))
         self.axes.visible = False
@@ -136,6 +134,14 @@ class Experiment(object):
                     self.model.update_model()
                     self.model.update_visualization()
                     print "done."
+                elif k == 'f3':
+                    if len(self.relevance_models):
+                        print "Computing coverage performance (%d)..." \
+                            % len(self.relevance_models)
+                        for map in self.relevance_models:
+                            print "Performance:", self.model.performance(map)
+                    else:
+                        print "No relevance models."
                 elif k == 'f5':
                     self.model.visualize_ptmu_toggle()
                 elif k == 'f6':
