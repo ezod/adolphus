@@ -305,7 +305,6 @@ class MultiCamera(dict):
         self.scene = scene
         self.points = points
         self.model = FuzzySet()
-        self._updated_state = None
         if visual:
             self._vis_ptmu = False
 
@@ -339,18 +338,6 @@ class MultiCamera(dict):
             raise ValueError("network has too few cameras")
         self.model = FuzzySet([FuzzyElement(point, self.mu(point)) \
                                for point in self.points])
-        # TODO: something about self._updated_state
-
-    @property
-    def model_updated(self):
-        """\
-        Return whether the fuzzy coverage model is up to date.
-
-        @rtype: C{bool}
-        """
-        if not self._updated_state:
-            return False
-        return True
 
     def mu(self, point):
         """\
@@ -370,19 +357,20 @@ class MultiCamera(dict):
             for camera in combination]) for combination \
             in combinations(active_cameras, self.ocular)])
 
-    def performance(self, desired):
+    def performance(self, relevance):
         """\
-        Return the coverage performance of this multi-camera network.
+        Return the coverage performance of this multi-camera network with
+        respect to a given relevance model.
 
-        @param desired: The D model of desired coverage.
+        @param desired: The relevance model.
         @type desired: L{FuzzySet}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
         actual = FuzzySet()
-        for point in desired:
+        for point in relevance:
             actual.add(point, self.mu(point))
-        return actual.overlap(desired)
+        return actual.overlap(relevance)
 
     def visualize(self, scale=1.0):
         """\
@@ -440,9 +428,13 @@ class MultiCamera(dict):
                     point.vis.members['dir'].opacity = self.model[point].mu
                 except KeyError:
                     pass
+                point.vis.members['mu'].text = "%1.4f" % self.model.mu(point)
             except AttributeError:
                 point.visualize(scale=self._vis_scale, color=(1, 0, 0),
-                                opacity=self.model[point].mu)
+                                opacity=self.model.mu(point))
+                point.vis.members['mu'] = visual.label(frame=point.vis,
+                    pos=(0, 0, 0), height=6, color=(1, 1, 1), visible=False,
+                    text=("%1.4f" % self.model.mu(point)))
 
 
 def load_model_from_yaml(filename, active=True):
@@ -501,4 +493,17 @@ def load_model_from_yaml(filename, active=True):
         model[camera['name']] = Camera(camera, active=active,
             pose=Pose(T=Point(tuple(camera['T'])), R=Rotation(camera['R'])))
 
-    return model
+    # relevance models
+    try:
+        relevance_models = [generate_relevance_model(params['relevance'][i]) \
+                            for i in range(len(params['relevance']))]
+    except KeyError:
+        relevance_models = []
+
+    return model, relevance_models
+
+
+def generate_relevance_model(params):
+    """\
+    """
+    return FuzzySet()
