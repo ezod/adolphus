@@ -26,6 +26,8 @@ class Display(visual.display):
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
         visual.display.__init__(self, title="Adolphus - %s" % name,
             center=center, background=background, foreground=foreground)
         self.forward = (-1, -1, -1)
@@ -80,6 +82,8 @@ class Experiment(object):
         @param model: The multi-camera model to use.
         @type model: L{coverage.MultiCamera}
         """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
         self.model = model
         self.relevance_models = relevance_models
         self.display = Display(name=model.name)
