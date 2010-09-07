@@ -286,7 +286,8 @@ class MultiCamera(dict):
     """\
     Multi-camera n-ocular fuzzy coverage model.
     """
-    def __init__(self, name="Untitled", ocular=1, scene=Scene(), points=set()):
+    def __init__(self, name="Untitled", ocular=1, scene=Scene(), points=set(),
+                 scale=1.0):
         """\
         Constructor.
    
@@ -298,6 +299,8 @@ class MultiCamera(dict):
         @type scene: L{Scene}
         @param points: The initial set of points.
         @type points: C{set} of L{Point}
+        @param scale: The scale of the model (for visualization).
+        @type scale: C{float}
         """
         self.name = name
         if ocular < 1:
@@ -307,7 +310,9 @@ class MultiCamera(dict):
         self.points = points
         self.model = FuzzySet()
         if visual:
+            self._vis = False
             self._vis_ptmu = False
+        self.scale = scale
 
     def __setitem__(self, key, value):
         """\
@@ -373,29 +378,26 @@ class MultiCamera(dict):
             actual.add(point, mu=self.mu(point))
         return actual.overlap(relevance)
 
-    def visualize(self, scale=1.0):
+    def visualize(self):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
-
-        @param scale: The scale of the individual elements.
-        @type scale: C{float}
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
-        self._vis_scale = scale
         for camera in self:
-            self[camera].visualize(scale=scale)
+            self[camera].visualize(scale=self.scale)
             self[camera].vis.members['name'] = visual.label(frame=\
-                self[camera].vis, pos=(0, scale, 0), height=6,
+                self[camera].vis, pos=(0, self.scale, 0), height=6,
                 color=(1, 1, 1), text=camera, visible=False)
         self.scene.visualize(color=(0.3, 0.3, 0.3))
         for point in self.model.keys():
-            point.visualize(scale=scale, color=(1, 0, 0),
+            point.visualize(scale=self.scale, color=(1, 0, 0),
                             opacity=self.model.mu(point))
             point.vis.members['mu'] = visual.label(frame=point.vis,
                 pos=(0, 0, 0), height=6, color=(1, 1, 1), visible=False,
                 text=("%1.4f" % self.model.mu(point)))
+        self._vis = True
 
     def visualize_ptmu_toggle(self):
         """\
@@ -418,7 +420,7 @@ class MultiCamera(dict):
         """\
         Update the visualization.
         """
-        if not self._vis_scale:
+        if not self._vis:
             raise VisualizationError("visualization not yet initialized")
         for camera in self:
             self[camera].update_visualization()
@@ -431,7 +433,7 @@ class MultiCamera(dict):
                     pass
                 point.vis.members['mu'].text = "%1.4f" % self.model.mu(point)
             except AttributeError:
-                point.visualize(scale=self._vis_scale, color=(1, 0, 0),
+                point.visualize(scale=self.scale, color=(1, 0, 0),
                                 opacity=self.model.mu(point))
                 point.vis.members['mu'] = visual.label(frame=point.vis,
                     pos=(0, 0, 0), height=6, color=(1, 1, 1), visible=False,
@@ -485,7 +487,7 @@ def load_model_from_yaml(filename, active=True):
         pass
 
     model = MultiCamera(name=params['name'], ocular=params['ocular'],
-                        scene=scene, points=points)
+                        scene=scene, points=points, scale=params['scale'])
 
     # cameras
     for camera in params['cameras']:

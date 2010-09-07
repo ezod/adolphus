@@ -1,5 +1,6 @@
 name:           ICIRA Experiment
 ocular:         2
+scale:          30
 
 # Application Parameters
 gamma:          20

@@ -81,6 +81,8 @@ class Experiment(object):
 
         @param model: The multi-camera model to use.
         @type model: L{coverage.MultiCamera}
+        @param relevance_models: The list of relevance models for performance.
+        @type relevance_models: C{list} of L{fuzz.FuzzySet}
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
@@ -99,8 +101,8 @@ class Experiment(object):
         are F2 - update discrete fuzzy coverage model, F6 - show/hide camera
         names, F7 - show/hide axes, F8 - show/hide display center.
         """
-        self.model.visualize(scale=30)
-        self.axes = visual_axes(scale=30, color=(0, 0, 1))
+        self.model.visualize()
+        self.axes = visual_axes(scale=self.model.scale, color=(0, 0, 1))
         self.axes.visible = False
         self.cdot = visual.sphere(pos=self.display.center, radius=5,
             color=(0, 0, 1), material=visual.materials.emissive, visible=False)
@@ -117,7 +119,8 @@ class Experiment(object):
                 m = self.display.mouse.getevent()
                 if m.click == "left" and m.pick in cam_vis:
                     if m.ctrl:
-                        m.pick.frame.camera.visualize_fov_toggle(scale=1500)
+                        m.pick.frame.camera.visualize_fov_toggle(scale=\
+                            (self.model.scale * 50))
                     elif m.alt:
                         try:
                             self.display.camera_view(m.pick.frame.camera)
@@ -162,23 +165,29 @@ class Experiment(object):
                     break
                 # TODO: don't allow the rest in camera view
                 elif k == 'left':
-                    self.display.center = (self.display.center[0] - 30,
-                        self.display.center[1], self.display.center[2])
+                    self.display.center = (self.display.center[0] \
+                        - self.model.scale, self.display.center[1],
+                        self.display.center[2])
                 elif k == 'right':
-                    self.display.center = (self.display.center[0] + 30,
-                        self.display.center[1], self.display.center[2])
+                    self.display.center = (self.display.center[0] \
+                        + self.model.scale, self.display.center[1],
+                        self.display.center[2])
                 elif k == 'down':
                     self.display.center = (self.display.center[0],
-                        self.display.center[1] - 30, self.display.center[2])
+                        self.display.center[1] - self.model.scale,
+                        self.display.center[2])
                 elif k == 'up':
                     self.display.center = (self.display.center[0],
-                        self.display.center[1] + 30, self.display.center[2])
+                        self.display.center[1] + self.model.scale,
+                        self.display.center[2])
                 elif k == 'page down':
                     self.display.center = (self.display.center[0],
-                        self.display.center[1], self.display.center[2] - 30)
+                        self.display.center[1], self.display.center[2] \
+                        - self.model.scale)
                 elif k == 'page up':
                     self.display.center = (self.display.center[0],
-                        self.display.center[1], self.display.center[2] + 30)
+                        self.display.center[1], self.display.center[2] \
+                        + self.model.scale)
                 self.cdot.pos = self.display.center
 
 

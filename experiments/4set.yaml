@@ -1,5 +1,6 @@
 name:           Monocular Set 4
 ocular:         1
+scale:          30
 
 # Application Parameters
 gamma:          20
