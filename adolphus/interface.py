@@ -95,6 +95,8 @@ class Experiment(object):
         are F2 - update discrete fuzzy coverage model, F6 - show/hide camera
         names, F7 - show/hide axes, F8 - show/hide display center.
         """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
         self.model.visualize(scale=30)
         self.axes = visual_axes(scale=30, color=(0, 0, 1))
         self.axes.visible = False
