@@ -8,7 +8,10 @@ Visual interface module.
 """
 
 import sys
+from math import tan
+from time import sleep
 
+from geometry import Point
 from visualization import VisualizationError, visual
 
 
@@ -45,30 +48,28 @@ class Display(visual.display):
         if camera:
             if self._stored_view:
                 raise VisualizationError("already in a camera view")
-            #self.autoscale, self.userzoom, self.userspin = [False] * 3
-            self.autoscale, self.userspin = [False] * 2
-            self._stored_view = {'forward': tuple(self.forward),
+            self.autoscale, self.userzoom, self.userspin = [False] * 3
+            camera.vis.visible = False
+            self._stored_view = {'camera': camera,
+                                 'forward': tuple(self.forward),
                                  'center': tuple(self.center),
                                  'fov': self.fov}
-            a = [camera.fov['sr'][i] - (camera.fov['s'][i] / 2.0) \
-                 for i in range(2)]
-            self.forward = camera.pose.map_rotate((0, 0, 1)).tuple
-            self.up = camera.pose.map_rotate((0, -1, 0)).tuple
             self.center = camera.pose.map((0, 0, camera.params['zS'])).tuple
+            self.forward = camera.pose.map_rotate((0, 0, camera.params['zS'])).tuple
+            self.up = camera.pose.map_rotate((0, -1, 0)).tuple
             self.fov = max(camera.fov['a'])
-            # FIXME: manual zoom for now - this range stuff isn't working
-            #extent = [camera.params['zS'] * max(-camera.fov['sl'][i], 
-            #          camera.fov['sr'][i]) for i in range(2)]
-            #self.range = camera.pose.map((extent[0], extent[1], 0)).tuple
+            # FIXME: allow user zoom and show camera because visual is broken
+            self.userzoom = True
+            camera.vis.visible = True
         else:
             if not self._stored_view:
                 return
             for key in self._stored_view:
                 self.__setattr__(key, self._stored_view[key])
             self.up = (0, 0, 1)
+            self._stored_view['camera'].vis.visible = True
             self._stored_view = None
-            #self.autoscale, self.userzoom, self.userspin = [True] * 3
-            self.autoscale, self.userspin = [True] * 2
+            self.autoscale, self.userzoom, self.userspin = [True] * 3
 
 
 class Experiment(object):
