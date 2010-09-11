@@ -1,4 +1,5 @@
-from adolphus import Point, Pose, Plane, VisualizationError, visual, transform
+from adolphus import Point, Pose, Plane, \
+                     visual, VisualizationObject, VisualizationError
 
 
 class CheckerCalibrationBoard(Plane):
@@ -49,22 +50,21 @@ class CheckerCalibrationBoard(Plane):
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
-        self.vis = visual.frame()
-        self.vis.members = {}
-        self.vis.members['bm'] = visual.box(pos=(0, 0, 0), width=2,
-            height=226, length=276, color=(0.74, 0.67, 0.53), opacity=opacity,
-            material=visual.materials.wood)
-        self.vis.members['bl'] = visual.box(pos=(156, -85, 0), width=2,
-            height=56, length=36, color=(0.74, 0.67, 0.53), opacity=opacity,
-            material=visual.materials.wood)
-        self.vis.members['br'] = visual.box(pos=(156, 84, 0), width=2,
-            height=58, length=36, color=(0.74, 0.67, 0.53), opacity=opacity,
-            material=visual.materials.wood)
+        self.vis = VisualizationObject(self)
+        self.vis.add('bm', visual.box(frame=self.vis, pos=(0, 0, 2),
+            length=2, width=226, height=276, color=(0.74, 0.67, 0.53),
+            opacity=opacity, material=visual.materials.wood))
+        self.vis.add('bl', visual.box(frame=self.vis, pos=(0, 156, -83),
+            length=2, width=56, height=36, color=(0.74, 0.67, 0.53),
+            opacity=opacity, material=visual.materials.wood))
+        self.vis.add('br', visual.box(frame=self.vis, pos=(0, 156, 86),
+            length=2, width=58, height=36, color=(0.74, 0.67, 0.53),
+            opacity=opacity, material=visual.materials.wood))
         for x in range(-7, 7):
             for y in range(-5, 5):
-                self.vis.members['c%d%d' % (x, y)] = visual.box(pos=(9.5 + 19 \
-                    * x, 9.5 + 19 * y, 1), width=1.2, height=19, length=19,
-                    color=((x + y) % 2, (x + y) % 2, (x + y) % 2),
-                    opacity=opacity)
+                self.vis.add('c%d%d' % (x, y), visual.box(frame=self.vis,
+                    pos=(1, 9.5 + 19 * x, 9.5 + 19 * y), length=1.2, width=19,
+                    height=19, color=((x + y) % 2, (x + y) % 2, (x + y) % 2),
+                    opacity=opacity))
         axis, angle = self.pose.R.to_axis_angle()
-        transform(self.vis, (0, 0, 0), axis, angle)
+        self.vis.transform(self.pose.T.tuple, axis, angle)

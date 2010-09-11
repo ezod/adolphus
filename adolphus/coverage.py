@@ -23,7 +23,7 @@ except ImportError:
     yaml = None
 
 from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
-from visualization import VisualizationError, visual, transform
+from visualization import visual, VisualizationError, VisualizationObject
 
 
 class Scene(set):
@@ -219,33 +219,27 @@ class Camera(object):
         if self.vis:
             self.update_visualization()
             return
-        self.vis = visual.frame()
-        self.vis.camera = self
-        self.vis.fov = None
-        self.vis.members = {}
+        self.vis = VisualizationObject(self)
         # camera body
-        self.vis.members['body'] = visual.box(frame=self.vis,
-            size=(scale, scale, scale), color=(0.3, 0.3, 0.3),
-            material=visual.materials.rough)
+        self.vis.add('body', visual.box(frame=self.vis, size=(scale, scale,
+            scale), color=(0.3, 0.3, 0.3), material=visual.materials.rough))
         # lens body
-        self.vis.members['lens'] = visual.cylinder(frame=self.vis,
-            pos=(0.8 * scale, 0, 0), axis=(-0.3 * scale, 0, 0),
-            radius=(0.4 * scale), color=(0.3, 0.3, 0.3),
-            material=visual.materials.rough)
+        self.vis.add('lens', visual.cylinder(frame=self.vis, pos=(0.8 * scale,
+            0, 0), axis=(-0.3 * scale, 0, 0), radius=(0.4 * scale),
+            color=(0.3, 0.3, 0.3), material=visual.materials.rough))
         # lens glass
-        self.vis.members['glass'] = visual.cylinder(frame=self.vis,
-            pos=(0.82 * scale, 0, 0), axis=(-0.02 * scale, 0, 0),
-            radius=(0.36 * scale), color=(0.3, 0.7, 0.8), opacity=0.5,
-            material=visual.materials.plastic)
+        self.vis.add('glass', visual.cylinder(frame=self.vis, pos=(0.82 * scale,
+            0, 0), axis=(-0.02 * scale, 0, 0), radius=(0.36 * scale),
+            color=(0.3, 0.7, 0.8), opacity=0.5,
+            material=visual.materials.plastic))
         # lens ring
-        self.vis.members['ring'] = visual.ring(frame=self.vis,
-            pos=(0.82 * scale, 0, 0), axis=(-0.02 * scale, 0, 0),
-            radius=(0.38 * scale), color=(0.3, 0.3, 0.3),
-            material=visual.materials.rough)
+        self.vis.add('ring', visual.ring(frame=self.vis, pos=(0.82 * scale,
+            0, 0), axis=(-0.02 * scale, 0, 0), radius=(0.38 * scale),
+            color=(0.3, 0.3, 0.3), material=visual.materials.rough))
         # indicator light
-        self.vis.members['light'] = visual.sphere(frame=self.vis,
+        self.vis.add('light', visual.sphere(frame=self.vis,
             pos=(0.5 * scale, 0, 0.45 * scale), radius=(0.05 * scale),
-            material=visual.materials.emissive)
+            material=visual.materials.emissive))
         # field of view
         if fov:
             self.visualize_fov_toggle(scale=scale)
@@ -261,8 +255,9 @@ class Camera(object):
             self.vis.members[member].opacity = self.active and 1.0 or 0.2
         self.vis.members['glass'].opacity = self.active and 0.5 or 0.1
         self.vis.members['light'].color = (not self.active, self.active, 0)
+        # TODO: update fov
         axis, angle = self.pose.R.to_axis_angle()
-        transform(self.vis, self.pose.T.tuple, axis, angle)
+        self.vis.transform(self.pose.T.tuple, axis, angle)
 
     def visualize_fov_toggle(self, scale=1.0):
         """\
@@ -272,16 +267,17 @@ class Camera(object):
         @type scale: C{float}
         """
         if self.vis:
-            if self.vis.fov:
-                self.vis.fov.visible = not self.vis.fov.visible
+            if self.vis.members.has_key('fov'):
+                self.vis.members['fov'].visible = \
+                    not self.vis.members['fov'].visible
             else:
                 a = [self.fov['sr'][i] - (self.fov['s'][i] / 2.0) \
                      for i in range(2)]
-                self.vis.fov = visual.pyramid(frame=self.vis, pos=(scale,
+                self.vis.add('fov', visual.pyramid(frame=self.vis, pos=(scale,
                     scale * a[1], -scale * a[0]), axis=(-1, -a[1], a[0]),
                     size=(scale, self.Cv[0].support.size * scale,
                     self.Cv[1].support.size * scale), opacity=0.1,
-                    color=(0.2, 0.5, 0.6))
+                    color=(0.2, 0.5, 0.6)))
 
 
 class MultiCamera(dict):
@@ -387,24 +383,29 @@ class MultiCamera(dict):
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
+        if self._vis:
+            self.update_visualization()
+            return
         for camera in self:
             self[camera].visualize(scale=self.scale)
-            self[camera].vis.members['name'] = visual.label(frame=\
-                self[camera].vis, pos=(0, self.scale, 0), height=6,
-                color=(1, 1, 1), text=camera, visible=False)
+            self[camera].vis.add('name', visual.label(frame=self[camera].vis,
+                pos=(0, self.scale, 0), height=6, color=(1, 1, 1), text=camera,
+                visible=False))
         self.scene.visualize(scale=self.scale, color=(0.3, 0.3, 0.3))
         for point in self.model.keys():
             point.visualize(scale=self.scale, color=(1, 0, 0),
                             opacity=self.model.mu(point))
-            point.vis.members['mu'] = visual.label(frame=point.vis,
-                pos=(0, 0, 0), height=6, color=(1, 1, 1), visible=False,
-                text=("%1.4f" % self.model.mu(point)))
+            point.vis.add('mu', visual.label(frame=point.vis, pos=(0, 0, 0),
+                height=6, color=(1, 1, 1), visible=False,
+                text=("%1.4f" % self.model.mu(point))))
         self._vis = True
 
     def visualize_ptmu_toggle(self):
         """\
         Toggle visibility of mu values over points.
         """
+        if not self._vis:
+            raise VisualizationError("visualization not yet initialized")
         self._vis_ptmu = not self._vis_ptmu
         for point in self.model.keys():
             point.vis.members['mu'].visible = self.model.mu(point) \
@@ -414,6 +415,8 @@ class MultiCamera(dict):
         """\
         Toggle visibility of the camera name tags.
         """
+        if not self._vis:
+            raise VisualizationError("visualization not yet initialized")
         for camera in self:
             self[camera].vis.members['name'].visible = \
                 not self[camera].vis.members['name'].visible

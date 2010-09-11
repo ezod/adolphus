@@ -120,20 +120,20 @@ class Experiment(object):
                 m = self.display.mouse.getevent()
                 if m.click == "left" and m.pick in cam_vis:
                     if m.ctrl:
-                        m.pick.frame.camera.visualize_fov_toggle(scale=\
+                        m.pick.frame.parent.visualize_fov_toggle(scale=\
                             (self.model.scale * 50))
                     elif m.alt:
                         try:
-                            self.display.camera_view(m.pick.frame.camera)
+                            self.display.camera_view(m.pick.frame.parent)
                             print "In camera view, F11 to exit."
                         except VisualizationError:
                             pass
                     else:
-                        m.pick.frame.camera.active = not m.pick.frame.camera.active
-                        m.pick.frame.camera.update_visualization()
+                        m.pick.frame.parent.active = not m.pick.frame.parent.active
+                        m.pick.frame.parent.update_visualization()
                 if m.click == "left" and m.pick in point_vis:
-                    print "mu%s = %f" % (m.pick.frame.point,
-                        self.model.model[m.pick.frame.point].mu)
+                    print "mu%s = %f" % (m.pick.frame.parent,
+                        self.model.model[m.pick.frame.parent].mu)
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
                 if k == 'f2':

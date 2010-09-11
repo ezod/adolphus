@@ -12,7 +12,7 @@ from math import pi, sqrt, sin, cos, asin, acos, atan, atan2
 from numbers import Number
 import numpy
 
-from visualization import VisualizationError, visual, transform
+from visualization import visual, VisualizationError, VisualizationObject
 
 class Angle(float):
     """\
@@ -315,11 +315,9 @@ class Point(object):
             self.vis.members['point'].color = color
             self.vis.members['point'].opacity = opacity
         except AttributeError:
-            self.vis = visual.frame()
-            self.vis.point = self
-            self.vis.members = {}
-            self.vis.members['point'] = visual.sphere(frame=self.vis, 
-                radius=(0.1 * scale), color=color, opacity=opacity)
+            self.vis = VisualizationObject(self)
+            self.vis.add('point', visual.sphere(frame=self.vis,
+                radius=(0.1 * scale), color=color, opacity=opacity))
         self.vis.pos = self.tuple
 
 
@@ -525,15 +523,15 @@ class DirectionalPoint(Point):
         @param opacity: The opacity with which to plot the point.
         @type opacity: C{float}
         """
-        Point.visualize(self, scale = scale, color = color, opacity = opacity)
+        Point.visualize(self, scale=scale, color=color, opacity=opacity)
         unit = scale * self.direction_unit
         try:
             self.vis.members['dir'].axis = unit.tuple
             self.vis.members['dir'].color = color
             self.vis.members['dir'].opacity = opacity
         except KeyError:
-            self.vis.members['dir'] = visual.arrow(frame=self.vis, 
-                axis=unit.tuple, color=color, opacity=opacity)
+            self.vis.add('dir', visual.arrow(frame=self.vis, axis=unit.tuple,
+                color=color, opacity=opacity))
 
 
 class Rotation(object):
@@ -819,29 +817,27 @@ class Plane(object):
             elif dims == ['y', 'z']:
                 self.pose = Pose(T=Point(kwargs['x'], 0, 0),
                                  R=Rotation(0, -pi / 2.0, -pi / 2.0))
-            self.w = (float(min(kwargs[dims[0]])), float(max(kwargs[dims[0]])))
-            self.h = (float(min(kwargs[dims[1]])), float(max(kwargs[dims[1]])))
+            self.x = (float(min(kwargs[dims[0]])), float(max(kwargs[dims[0]])))
+            self.y = (float(min(kwargs[dims[1]])), float(max(kwargs[dims[1]])))
         else:
             self.pose = pose
             try:
-                self.w = (float(min(kwargs['x'])), float(max(kwargs['x'])))
-                self.h = (float(min(kwargs['y'])), float(max(kwargs['y'])))
+                self.x = (float(min(kwargs['x'])), float(max(kwargs['x'])))
+                self.y = (float(min(kwargs['y'])), float(max(kwargs['y'])))
             except KeyError:
-                self.w, self.h = None, None
-        if visual:
-            self.vis_plane = None
+                self.x, self.y = None, None
 
     @property
     def center(self):
         """\
-        Return the 3D point at the center of this plane segment.
+        Return the absolute 3D point at the center of this plane segment.
 
         @rtype: L{Point}
         """
-        if self.w is None or self.h is None:
+        if self.x is None or self.y is None:
             return None
-        return self.pose.map(Point((self.w[1] - self.w[0]) / 2.0 + self.w[0],
-                (self.h[1] - self.h[0]) / 2.0 + self.h[0], 0))
+        return self.pose.map(Point((self.x[1] - self.x[0]) / 2.0 + self.x[0],
+            (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0))
 
     def intersection(self, pa, pb):
         """\
@@ -864,8 +860,8 @@ class Plane(object):
         if t < 0 or t > 1:
             return None
         pr = pa + t * (pb - pa)
-        if pr.x < self.w[0] or pr.x > self.w[1] \
-        or pr.y < self.h[0] or pr.y > self.h[1]:
+        if pr.x < self.x[0] or pr.x > self.x[1] \
+        or pr.y < self.y[0] or pr.y > self.y[1]:
             return None
         return self.pose.map(pr)
 
@@ -882,22 +878,23 @@ class Plane(object):
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
-        if self.w is None or self.h is None:
+        if self.x is None or self.y is None:
             raise ValueError("cannot plot an infinite plane")
         try:
+            self.vis['plane'].width = self.y[1] - self.y[0]
+            self.vis['plane'].height = self.x[1] - self.x[0]
+            self.vis['plane'].color = color
+            self.vis['plane'].opacity = opacity
             axis, angle = self.pose.R.to_axis_angle()
-            transform(self.vis_plane, self.center.tuple, axis, angle)
-            self.vis_plane.width = self.w[1] - self.w[0]
-            self.vis_plane.height = self.h[1] - self.h[0]
-            self.vis_plane.color = color
-            self.vis_plane.opacity = opacity
+            self.vis.transform(self.center.tuple, axis, angle)
         except AttributeError:
-            self.vis_plane = visual.box(pos=self.center.tuple,
-                width=(self.h[1] - self.h[0]), height=(self.w[1] - self.w[0]),
-                length=(scale / 30.0), color=color, opacity=opacity,
-                material=visual.materials.wood)
+            self.vis = VisualizationObject(self)
+            self.vis.add('plane', visual.box(frame=self.vis,
+                pos=(0, 0, 0), height=(self.x[1] - self.x[0]),
+                width=(self.y[1] - self.y[0]), length=(scale / 30.0),
+                color=color, opacity=opacity, material=visual.materials.wood))
             axis, angle = self.pose.R.to_axis_angle()
-            transform(self.vis_plane, self.center.tuple, axis, angle)
+            self.vis.transform(self.center.tuple, axis, angle)
 
 
 def pointrange(xrange, yrange, zrange, step, ddiv=None):
