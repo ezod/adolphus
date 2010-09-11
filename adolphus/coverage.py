@@ -62,7 +62,7 @@ class Scene(set):
                 return True
         return False
 
-    def visualize(self, color=(1, 1, 1)):
+    def visualize(self, scale=1.0, color=(1, 1, 1)):
         """\
         Visualize the opaque scene objects.
 
@@ -72,7 +72,7 @@ class Scene(set):
         if not visual:
             raise VisualizationError("visual module not loaded")
         for plane in self:
-            plane.visualize(color=color)
+            plane.visualize(scale=scale, color=color)
 
 
 class Camera(object):
@@ -390,7 +390,7 @@ class MultiCamera(dict):
             self[camera].vis.members['name'] = visual.label(frame=\
                 self[camera].vis, pos=(0, self.scale, 0), height=6,
                 color=(1, 1, 1), text=camera, visible=False)
-        self.scene.visualize(color=(0.3, 0.3, 0.3))
+        self.scene.visualize(scale=self.scale, color=(0.3, 0.3, 0.3))
         for point in self.model.keys():
             point.visualize(scale=self.scale, color=(1, 0, 0),
                             opacity=self.model.mu(point))

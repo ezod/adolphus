@@ -869,7 +869,7 @@ class Plane(object):
             return None
         return self.pose.map(pr)
 
-    def visualize(self, color=(1, 1, 1), opacity=1.0):
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
         Plot the directional point in a 3D visual model.
 
@@ -892,7 +892,7 @@ class Plane(object):
         except AttributeError:
             self.vis_plane = visual.box(pos=self.center.tuple,
                 width=(self.h[1] - self.h[0]), height=(self.w[1] - self.w[0]),
-                length=1, color=color, opacity=opacity,
+                length=(scale / 30.0), color=color, opacity=opacity,
                 material=visual.materials.wood)
             axis, angle = self.pose.R.to_axis_angle()
             transform(self.vis_plane, self.center.tuple, axis, angle)
