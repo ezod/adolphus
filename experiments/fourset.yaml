@@ -1,4 +1,5 @@
 name:           Monocular Set 4
+import:         fourset
 ocular:         1
 scale:          30
 
@@ -81,22 +82,23 @@ scene:
     - x:            [-150, 150]
       y:            [-100, 100]
       z:            0
-
     - x:            -150
       y:            [-100, 100]
       z:            [-100, 0]
-
     - x:            150
       y:            [-100, 100]
       z:            [-100, 0]
-
     - x:            [-150, 150]
       y:            -100
       z:            [-100, 0]
-
     - x:            [-150, 150]
       y:            100
       z:            [-100, 0]
+
+    # checkerboard calibration target
+    - model:        CheckerCalibrationBoard
+      T:            [0, 0, 0]
+      R:            [0, 0, 0]
 
 points:
     - x:            [-400, 400]

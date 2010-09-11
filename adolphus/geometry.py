@@ -871,8 +871,10 @@ class Plane(object):
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
-        Plot the directional point in a 3D visual model.
+        Plot the plane in a 3D visual model.
 
+        @param scale: The scale to which to plot the plane (thickness).
+        @type scale: C{float}
         @param color: The color in which to plot the plane segment.
         @type color: C{tuple}
         @param opacity: The opacity with which to plot the plane segment.

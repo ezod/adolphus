@@ -9,6 +9,8 @@ classes.
 @license: GPL-3
 """
 
+import os
+import imp
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
@@ -455,11 +457,23 @@ def load_model_from_yaml(filename, active=True):
         raise ImportError("YAML module could not be loaded")
     params = yaml.load(open(filename))
 
+    # custom import
+    if params.has_key('import'):
+        try:
+            external = imp.load_source(params['import'],
+                os.path.join(os.path.split(filename)[0],
+                params['import'] + '.py'))
+        except ImportError:
+            raise ImportError("could not load custom module")
+
     # scene
     scene = Scene()
     try:
         for plane in params['scene']:
-            if plane.has_key('z'):
+            if plane.has_key('model'):
+                scene.add(getattr(external, plane['model'])(pose=\
+                    Pose(T=Point(tuple(plane['T'])), R=Rotation(plane['R']))))
+            elif plane.has_key('z'):
                 scene.add(Plane(x=plane['x'], y=plane['y'], z=plane['z']))
             else:
                 scene.add(Plane(x=plane['x'], y=plane['y'],
