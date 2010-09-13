@@ -98,7 +98,7 @@ scene:
     # checkerboard calibration target
     - model:        CheckerCalibrationBoard
       T:            [0, 0, 0]
-      R:            [0, 0, 0]
+      R:            [0, 0, 3.14159265]
 
 points:
     - x:            [-400, 400]
