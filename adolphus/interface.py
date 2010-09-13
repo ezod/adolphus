@@ -46,7 +46,7 @@ class Display(visual.display):
         self.rmin = mscale
         self.rmax = mscale * 300
         self._stored_view = None
-        self._messagebox = visual.label(pos=(0, 0, 0), height=12,
+        self._messagebox = visual.label(pos=center, height=12,
             color=(1, 1, 1), visible=False)
 
     def camera_view(self, camera=None):
@@ -278,6 +278,7 @@ class Experiment(object):
                         self.display.center[1], self.display.center[2] \
                         + self.model.scale)
                 self.cdot.pos = self.display.center
+                self.display._messagebox.pos = self.display.center
 
 
 def visual_axes(scale=1.0, color=(1, 1, 1)):
