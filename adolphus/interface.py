@@ -46,6 +46,8 @@ class Display(visual.display):
         self.rmin = mscale
         self.rmax = mscale * 300
         self._stored_view = None
+        self._messagebox = visual.label(pos=(0, 0, 0), height=12,
+            color=(1, 1, 1), visible=False)
 
     def camera_view(self, camera=None):
         """\
@@ -84,9 +86,53 @@ class Display(visual.display):
 
     @property
     def in_camera_view(self):
+        """\
+        Return whether the display is in camera view.
+
+        rtype: C{bool}
+        """
         if self._stored_view:
             return True
         return False
+
+    def message(self, text=None):
+        """\
+        Display a message on the screen.
+
+        @param text: The message to display.
+        @type text: C{str}
+        """
+        if not text:
+            self._messagebox.visible = False
+        else:
+            self._messagebox.text = text
+            self._messagebox.visible = True
+
+    def prompt(self):
+        """\
+        Display a prompt and process the command entered by the user.
+        """
+        self.userspin = False
+        self.message(" ")
+        cmd = ""
+        while True:
+            visual.rate(100)
+            if self.kb.keys:
+                k = self.kb.getkey()
+                if k == '\n':
+                    # TODO: process command
+                    self.message()
+                    break
+                elif k == 'backspace':
+                    if len(cmd) > 0:
+                        cmd = cmd[:-1]
+                    else:
+                        self.message()
+                        break
+                elif k.isalnum() or k == ' ':
+                    cmd += k
+            self.message(cmd + " ")
+        self.userspin = True
 
 
 class Experiment(object):
@@ -177,12 +223,14 @@ class Experiment(object):
                         lastpos = scaling * newpos
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
-                if k == 'f2':
-                    print "Updating discrete fuzzy coverage model...",
+                if k == '\n':
+                    self.display.prompt()
+                elif k == 'f2':
+                    self.display.message("Updating discrete coverage model...")
                     sys.stdout.flush()
                     self.model.update_model()
                     self.model.update_visualization()
-                    print "done."
+                    self.display.message()
                 elif k == 'f3':
                     if len(self.relevance_models):
                         print "Computing coverage performance (%d)..." \
