@@ -111,16 +111,20 @@ class Display(visual.display):
     def prompt(self):
         """\
         Display a prompt and process the command entered by the user.
+
+        @return: The command string to be processed by the parent object.
+        @rtype: C{str}
         """
         self.userspin = False
         self.message(" ")
         cmd = ""
+        process_cmd = False
         while True:
             visual.rate(100)
             if self.kb.keys:
                 k = self.kb.getkey()
                 if k == '\n':
-                    # TODO: process command
+                    process_cmd = True
                     self.message()
                     break
                 elif k == 'backspace':
@@ -129,10 +133,11 @@ class Display(visual.display):
                     else:
                         self.message()
                         break
-                elif k.isalnum() or k == ' ':
+                elif k.isalnum() or k in ' -_':
                     cmd += k
             self.message(cmd + " ")
         self.userspin = True
+        return process_cmd and cmd or None
 
 
 class Experiment(object):
@@ -224,7 +229,10 @@ class Experiment(object):
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
                 if k == '\n':
-                    self.display.prompt()
+                    cmd = self.display.prompt()
+                    if cmd:
+                        # TODO: execute the command
+                        pass
                 elif k == 'f2':
                     self.display.message("Updating discrete coverage model...")
                     sys.stdout.flush()
