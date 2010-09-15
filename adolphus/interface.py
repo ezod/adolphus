@@ -42,12 +42,39 @@ class Display(visual.display):
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self.userzoom = False
+        self.mscale = mscale
         self.range = mscale * 50
         self.rmin = mscale
         self.rmax = mscale * 300
         self._stored_view = None
+
+        # center marker
+        self.cdot = visual.sphere(pos=self.center, radius=5, color=(0, 0, 1),
+            material=visual.materials.emissive, visible=False)
+
+        # axes
+        self.axes = visual.frame(visible=False)
+        axes = ['X', 'Y', 'Z']
+        for axis in range(3):
+            visual.arrow(frame=self.axes, shaftwidth=(mscale / 10.0),
+                color=(0, 0, 1), axis=tuple([i == axis and mscale * 5 or 0 \
+                for i in range(3)]))
+            visual.label(frame=self.axes, height=6, color=(1, 1, 1),
+                text=axes[axis], pos=tuple([i == axis and mscale * 5.5 or 0 \
+                for i in range(3)]))
+
+        # command/message box
         self._messagebox = visual.label(pos=center, height=12,
             color=(1, 1, 1), visible=False)
+
+    def shift_center(self, direction=None):
+        """\
+        """
+        if direction is None:
+            direction = -(self.center / self.mscale)
+        self.center += self.mscale * visual.vector(direction)
+        self.cdot.pos = self.center
+        self._messagebox.pos = self.center
 
     def camera_view(self, camera=None):
         """\
@@ -172,10 +199,6 @@ class Experiment(object):
         names, F7 - show/hide axes, F8 - show/hide display center.
         """
         self.model.visualize()
-        self.axes = visual_axes(scale=self.model.scale, color=(0, 0, 1))
-        self.axes.visible = False
-        self.cdot = visual.sphere(pos=self.display.center, radius=5,
-            color=(0, 0, 1), material=visual.materials.emissive, visible=False)
         cam_vis = [primitive for objects in [vis.objects for vis in \
             [self.model[camera].vis for camera in self.model]] \
             for primitive in objects]
@@ -252,9 +275,9 @@ class Experiment(object):
                 elif k == 'f6':
                     self.model.visualize_name_toggle()
                 elif k == 'f7':
-                    self.axes.visible = not self.axes.visible
+                    self.display.axes.visible = not self.display.axes.visible
                 elif k == 'f8':
-                    self.cdot.visible = not self.cdot.visible
+                    self.display.cdot.visible = not self.display.cdot.visible
                 elif k == 'f11':
                     self.display.camera_view()
                     print "Exited camera view."
@@ -262,47 +285,14 @@ class Experiment(object):
                     print "Closing interactive event loop."
                     break
                 elif k == 'left' and not self.display.in_camera_view:
-                    self.display.center = (self.display.center[0] \
-                        - self.model.scale, self.display.center[1],
-                        self.display.center[2])
+                    self.display.shift_center((-1, 0, 0))
                 elif k == 'right' and not self.display.in_camera_view:
-                    self.display.center = (self.display.center[0] \
-                        + self.model.scale, self.display.center[1],
-                        self.display.center[2])
+                    self.display.shift_center((1, 0, 0))
                 elif k == 'down' and not self.display.in_camera_view:
-                    self.display.center = (self.display.center[0],
-                        self.display.center[1] - self.model.scale,
-                        self.display.center[2])
+                    self.display.shift_center((0, -1, 0))
                 elif k == 'up' and not self.display.in_camera_view:
-                    self.display.center = (self.display.center[0],
-                        self.display.center[1] + self.model.scale,
-                        self.display.center[2])
+                    self.display.shift_center((0, 1, 0))
                 elif k == 'page down' and not self.display.in_camera_view:
-                    self.display.center = (self.display.center[0],
-                        self.display.center[1], self.display.center[2] \
-                        - self.model.scale)
+                    self.display.shift_center((0, 0, -1))
                 elif k == 'page up' and not self.display.in_camera_view:
-                    self.display.center = (self.display.center[0],
-                        self.display.center[1], self.display.center[2] \
-                        + self.model.scale)
-                self.cdot.pos = self.display.center
-                self.display._messagebox.pos = self.display.center
-
-
-def visual_axes(scale=1.0, color=(1, 1, 1)):
-    """\
-    Display a set of 3D axes.
-
-    @param scale: The scale of the axis set.
-    @type scale: C{float}
-    @param color: The color of the axes.
-    @type color: C{tuple}
-    """
-    frame = visual.frame()
-    axes = ['X', 'Y', 'Z']
-    for axis in range(3):
-        visual.arrow(frame=frame, shaftwidth=(scale / 10.0), color=color,
-            axis=tuple([i == axis and scale * 5 or 0 for i in range(3)]))
-        visual.label(frame=frame, height=6, color=(1, 1, 1), text=axes[axis],
-            pos=tuple([i == axis and scale * 5.5 or 0 for i in range(3)]))
-    return frame
+                    self.display.shift_center((0, 0, 1))
