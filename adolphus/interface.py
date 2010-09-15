@@ -160,7 +160,7 @@ class Display(visual.display):
                     else:
                         self.message()
                         break
-                elif k.isalnum() or k in ' -_':
+                elif k.isalnum() or k in ' -_(),':
                     cmd += k
             self.message(cmd + " ")
         self.userspin = True
@@ -188,6 +188,45 @@ class Experiment(object):
         self.display.select()
         self.rate = 50
 
+        # interface commands
+        def cmd_sc(args):
+            """x y z"""
+            self.display.shift_center((float(args[0]), float(args[1]),
+                float(args[2])))
+
+        def cmd_axes(args):
+            self.display.axes.visible = not self.display.axes.visible
+
+        def cmd_cdot(args):
+            self.display.cdot.visible = not self.display.cdot.visible
+
+        def cmd_name(args):
+            self.model.visualize_name_toggle()
+
+        def cmd_ptmu(args):
+            self.model.visualize_ptmu_toggle()
+
+        self.commands = {}
+        for function in dir():
+            if function.startswith('cmd_'):
+                self.commands[function[4:]] = locals()[function]
+
+    def execute(self, cmd):
+        """\
+        Execute an interface command.
+
+        @param cmd: The command string to execute.
+        @type cmd: C{str}
+        """
+        cmd, args = cmd.split()[0], cmd.split()[1:]
+        try:
+            self.commands[cmd](args)
+        except KeyError:
+            self.display.message("Invalid command.")
+        except:
+            self.display.message("Usage: %s %s" \
+                % (cmd, self.commands[cmd].__doc__))
+
     def run(self):
         """\
         Run this experiment.
@@ -207,9 +246,17 @@ class Experiment(object):
             for primitive in objects]
         zoom = False
         spin = False
+        msgctr = 0
         # event loop
         while True:
             visual.rate(self.rate)
+            # clear mesages after a while
+            if self.display._messagebox.visible:
+                msgctr += 1
+            if msgctr > 100:
+                self.display.message()
+                msgctr = 0
+            # process mouse events
             if self.display.mouse.events:
                 m = self.display.mouse.getevent()
                 if m.drag == "middle" and not self.display.in_camera_view:
@@ -254,8 +301,7 @@ class Experiment(object):
                 if k == '\n':
                     cmd = self.display.prompt()
                     if cmd:
-                        # TODO: execute the command
-                        pass
+                        self.execute(cmd)
                 elif k == 'f2':
                     self.display.message("Updating discrete coverage model...")
                     sys.stdout.flush()
@@ -271,13 +317,13 @@ class Experiment(object):
                     else:
                         print "No relevance models."
                 elif k == 'f5':
-                    self.model.visualize_ptmu_toggle()
+                    self.execute("ptmu")
                 elif k == 'f6':
-                    self.model.visualize_name_toggle()
+                    self.execute("name")
                 elif k == 'f7':
-                    self.display.axes.visible = not self.display.axes.visible
+                    self.execute("axes")
                 elif k == 'f8':
-                    self.display.cdot.visible = not self.display.cdot.visible
+                    self.execute("cdot")
                 elif k == 'f11':
                     self.display.camera_view()
                     print "Exited camera view."
