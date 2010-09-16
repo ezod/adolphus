@@ -42,7 +42,6 @@ class Display(visual.display):
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self.userzoom = False
-        self.mscale = mscale
         self.range = mscale * 50
         self.rmin = mscale
         self.rmax = mscale * 300
@@ -71,8 +70,8 @@ class Display(visual.display):
         """\
         """
         if direction is None:
-            direction = -(self.center / self.mscale)
-        self.center += self.mscale * visual.vector(direction)
+            direction = -self.center
+        self.center += visual.vector(direction)
         self.cdot.pos = self.center
         self._messagebox.pos = self.center
 
@@ -227,6 +226,12 @@ class Experiment(object):
             else:
                 self.display.camera_view()
 
+        def cmd_update(args):
+            self.display.message("Updating discrete coverage model...")
+            self.model.update_model()
+            self.model.update_visualization()
+            self.display.message()
+
         self.commands = {}
         for function in dir():
             if function.startswith('cmd_'):
@@ -324,11 +329,7 @@ class Experiment(object):
                     if cmd:
                         self.execute(cmd)
                 elif k == 'f2':
-                    self.display.message("Updating discrete coverage model...")
-                    sys.stdout.flush()
-                    self.model.update_model()
-                    self.model.update_visualization()
-                    self.display.message()
+                    self.execute("update")
                 elif k == 'f3':
                     if len(self.relevance_models):
                         print "Computing coverage performance (%d)..." \
@@ -352,14 +353,14 @@ class Experiment(object):
                     print "Closing interactive event loop."
                     break
                 elif k == 'left' and not self.display.in_camera_view:
-                    self.display.shift_center((-1, 0, 0))
+                    self.execute("sc %f 0 0" % -self.model.scale)
                 elif k == 'right' and not self.display.in_camera_view:
-                    self.display.shift_center((1, 0, 0))
+                    self.execute("sc %f 0 0" % self.model.scale)
                 elif k == 'down' and not self.display.in_camera_view:
-                    self.display.shift_center((0, -1, 0))
+                    self.execute("sc 0 %f 0" % -self.model.scale)
                 elif k == 'up' and not self.display.in_camera_view:
-                    self.display.shift_center((0, 1, 0))
+                    self.execute("sc 0 %f 0" % self.model.scale)
                 elif k == 'page down' and not self.display.in_camera_view:
-                    self.display.shift_center((0, 0, -1))
+                    self.execute("sc 0 0 %f" % -self.model.scale)
                 elif k == 'page up' and not self.display.in_camera_view:
-                    self.display.shift_center((0, 0, 1))
+                    self.execute("sc 0 0 %f" % self.model.scale)
