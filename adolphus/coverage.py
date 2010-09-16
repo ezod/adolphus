@@ -259,18 +259,17 @@ class Camera(object):
         axis, angle = self.pose.R.to_axis_angle()
         self.vis.transform(self.pose.T.tuple, axis, angle)
 
-    def visualize_fov_toggle(self, scale=1.0):
+    def visualize_fov_toggle(self):
         """\
         Visualize the field of view of the camera.
-
-        @param scale: The scale of the field of view.
-        @type scale: C{float}
         """
         if self.vis:
             if self.vis.members.has_key('fov'):
                 self.vis.members['fov'].visible = \
                     not self.vis.members['fov'].visible
             else:
+                # TODO: verify if this is a good value for the depth
+                scale = self.Cf.kernel[1]
                 a = [self.fov['sr'][i] - (self.fov['s'][i] / 2.0) \
                      for i in range(2)]
                 self.vis.add('fov', visual.pyramid(frame=self.vis, pos=(scale,

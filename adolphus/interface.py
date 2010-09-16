@@ -226,6 +226,21 @@ class Experiment(object):
             else:
                 self.display.camera_view()
 
+        def cmd_fov(args):
+            """name"""
+            try:
+                self.model[args[0]].visualize_fov_toggle()
+            except KeyError:
+                self.display.message("Invalid camera name.")
+
+        def cmd_active(args):
+            """name"""
+            try:
+                self.model[args[0]].active = not self.model[args[0]].active
+                self.model[args[0]].update_visualization()
+            except KeyError:
+                self.display.message("Invalid camera name.")
+
         def cmd_update(args):
             self.display.message("Updating discrete coverage model...")
             self.model.update_model()
@@ -292,8 +307,7 @@ class Experiment(object):
                     zoom = False
                 elif m.click == "left" and m.pick in cam_vis:
                     if m.ctrl:
-                        m.pick.frame.parent.visualize_fov_toggle(scale=\
-                            (self.model.scale * 50))
+                        m.pick.frame.parent.visualize_fov_toggle()
                     elif m.alt:
                         try:
                             self.display.camera_view(m.pick.frame.parent)
