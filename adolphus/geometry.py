@@ -231,7 +231,7 @@ class Point(object):
         @return: Vector string.
         @rtype: C{str}
         """
-        return "(%f, %f, %f)" % (self.x, self.y, self.z)
+        return "(%.2f, %.2f, %.2f)" % (self.x, self.y, self.z)
 
     @property
     def tuple(self):
@@ -498,7 +498,7 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return "(%f, %f, %f, %f, %f)" \
+        return "(%.2f, %.2f, %.2f, %.2f, %.2f)" \
             % (self.x, self.y, self.z, self.rho, self.eta)
 
     @property

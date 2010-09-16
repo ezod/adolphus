@@ -11,7 +11,7 @@ import sys
 from math import tan
 from time import sleep
 
-from geometry import Point
+from geometry import Point, DirectionalPoint
 from visualization import VisualizationError, visual
 
 
@@ -160,7 +160,7 @@ class Display(visual.display):
                     else:
                         self.message()
                         break
-                elif k.isalnum() or k in ' -_(),':
+                elif k.isalnum() or k in ' -_(),.':
                     cmd += k
             self.message(cmd + " ")
         self.userspin = True
@@ -189,10 +189,21 @@ class Experiment(object):
         self.rate = 50
 
         # interface commands
+        # these should not raise KeyErrors
         def cmd_sc(args):
             """x y z"""
             self.display.shift_center((float(args[0]), float(args[1]),
                 float(args[2])))
+
+        def cmd_mu(args):
+            """x y z [rho eta]"""
+            if len(args) == 3:
+                p = Point(tuple([float(args[i]) for i in range(3)]))
+            elif len(args) == 5:
+                p = DirectionalPoint(tuple([float(args[i]) for i in range(5)]))
+            else:
+                raise ValueError
+            self.display.message(u'\u03bc%s = %.4f' % (p, self.model.mu(p)))
 
         def cmd_axes(args):
             self.display.axes.visible = not self.display.axes.visible
@@ -205,6 +216,16 @@ class Experiment(object):
 
         def cmd_ptmu(args):
             self.model.visualize_ptmu_toggle()
+
+        def cmd_camview(args):
+            """name"""
+            if len(args):
+                try:
+                    self.display.camera_view(self.model[args[0]])
+                except KeyError:
+                    self.display.message("Invalid camera name.")
+            else:
+                self.display.camera_view()
 
         self.commands = {}
         for function in dir():
