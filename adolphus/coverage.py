@@ -11,16 +11,12 @@ classes.
 
 import os
 import imp
+import yaml
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
 from fuzz import IndexedSet, TrapezoidalFuzzyNumber, PolygonalFuzzyNumber, \
                  FuzzySet, FuzzyElement
-
-try:
-    import yaml
-except ImportError:
-    yaml = None
 
 from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
 from visualization import visual, VisualizationError, VisualizationObject
@@ -455,8 +451,6 @@ def load_model_from_yaml(filename, active=True):
     @return: The multi-camera fuzzy coverage model.
     @rtype: L{MultiCamera}
     """
-    if not yaml:
-        raise ImportError("YAML module could not be loaded")
     params = yaml.load(open(filename))
 
     # custom import

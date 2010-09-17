@@ -7,10 +7,12 @@ from adolphus import Experiment, load_model_from_yaml
 
 if __name__ == '__main__':
     parser = OptionParser()
+    parser.add_option("-c", "--conf", dest="conf", default=None, 
+        help="custom configuration file to load")
     parser.add_option("-i", "--inactive", dest="active", default=True,
         action="store_false", help="cameras are inactive by default")
 
     (options, args) = parser.parse_args()
 
     model, rmodels = load_model_from_yaml(args[0], active=options.active)
-    Experiment(model, relevance_models=rmodels).run()
+    Experiment(model, relevance_models=rmodels, config_file=options.conf).run()

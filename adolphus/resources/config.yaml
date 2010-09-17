@@ -1,0 +1,7 @@
+keybindings:
+    f2:           update
+    f5:           ptmu
+    f6:           name
+    f7:           axes
+    f8:           cdot
+    f11:          camview

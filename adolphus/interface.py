@@ -8,6 +8,7 @@ Visual interface module.
 """
 
 import sys
+import yaml
 from math import tan
 from time import sleep
 
@@ -170,7 +171,7 @@ class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model, relevance_models=[]):
+    def __init__(self, model, relevance_models=[], config_file=None):
         """\
         Constructor.
 
@@ -186,6 +187,18 @@ class Experiment(object):
         self.display = Display(name=model.name, mscale=model.scale)
         self.display.select()
         self.rate = 50
+
+        # load and parse config file
+        if config_file:
+            config = yaml.load(open(config_file))
+        else:
+            import pkg_resources
+            config = yaml.load(pkg_resources.resource_string(__name__,
+                "resources/config.yaml"))
+        try:
+            self.keybindings = config['keybindings']
+        except KeyError:
+            self.keybindings = {}
 
         # interface commands
         # these should not raise KeyErrors
@@ -342,30 +355,6 @@ class Experiment(object):
                     cmd = self.display.prompt()
                     if cmd:
                         self.execute(cmd)
-                elif k == 'f2':
-                    self.execute("update")
-                elif k == 'f3':
-                    if len(self.relevance_models):
-                        print "Computing coverage performance (%d)..." \
-                            % len(self.relevance_models)
-                        for map in self.relevance_models:
-                            print "Performance:", self.model.performance(map)
-                    else:
-                        print "No relevance models."
-                elif k == 'f5':
-                    self.execute("ptmu")
-                elif k == 'f6':
-                    self.execute("name")
-                elif k == 'f7':
-                    self.execute("axes")
-                elif k == 'f8':
-                    self.execute("cdot")
-                elif k == 'f11':
-                    self.display.camera_view()
-                    print "Exited camera view."
-                elif k == 'f12':
-                    print "Closing interactive event loop."
-                    break
                 elif k == 'left' and not self.display.in_camera_view:
                     self.execute("sc %f 0 0" % -self.model.scale)
                 elif k == 'right' and not self.display.in_camera_view:
@@ -378,3 +367,5 @@ class Experiment(object):
                     self.execute("sc 0 0 %f" % -self.model.scale)
                 elif k == 'page up' and not self.display.in_camera_view:
                     self.execute("sc 0 0 %f" % self.model.scale)
+                elif self.keybindings.has_key(k):
+                    self.execute(self.keybindings[k])
