@@ -2,7 +2,7 @@ from ..geometry import Point, Pose, Plane
 from ..visualization import  visual, VisualizationObject, VisualizationError
 
 
-class CheckerCalibrationBoard(Plane):
+class CheckerCalibrationBoard(object):
     """\
     Scene object for the checkerboard pattern calibration target.
     """
