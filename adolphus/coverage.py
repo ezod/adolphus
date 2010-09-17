@@ -38,16 +38,16 @@ class Scene(set):
                 raise TypeError("only planes can be added")
         set.__init__(self, iterable)
 
-    def add(self, plane):
+    def add(self, element):
         """\
-        Add an opaque plane to the scene.
+        Add an opaque element to the scene.
 
-        @param plane: The item to add.
-        @type plane: C{object}
+        @param element: The element to add.
+        @type element: C{object}
         """
-        if not isinstance(plane, Plane):
-            raise TypeError("only planes can be added")
-        set.add(self, plane)
+        if not hasattr(element, "intersection"):
+            raise TypeError("element must have intersection method")
+        set.add(self, element)
 
     def occluded(self, p, cam=Point()):
         """\
@@ -69,8 +69,8 @@ class Scene(set):
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
-        for plane in self:
-            plane.visualize(scale=scale, color=color)
+        for element in self:
+            element.visualize(scale=scale, color=color)
 
 
 class Camera(object):
