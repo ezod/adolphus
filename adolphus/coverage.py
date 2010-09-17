@@ -77,7 +77,7 @@ class Camera(object):
     """\
     Single-camera model, using continous fuzzy sets.
     """
-    def __init__(self, params, pose=Pose(), active=True):
+    def __init__(self, params, pose=Pose(), active=True, models=None):
         """\
         Constructor.
 
@@ -90,6 +90,7 @@ class Camera(object):
         """
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
+        self.models = models
         self.vis = None
         self.params = params
         # fuzzy sets for visibility
@@ -210,36 +211,15 @@ class Camera(object):
         @param fov: Toggle visualization of the field ov view.
         @type fov: C{bool}
         """
-        if not visual:
-            raise VisualizationError("visual module not loaded")
-        if self.vis:
+        if not self.models:
+            raise VisualizationError("no models to visualize")
+        try:
             self.update_visualization()
-            return
-        self.vis = VisualizationObject(self)
-        # camera body
-        self.vis.add('body', visual.box(frame=self.vis, size=(scale, scale,
-            scale), color=(0.3, 0.3, 0.3), material=visual.materials.rough))
-        # lens body
-        self.vis.add('lens', visual.cylinder(frame=self.vis, pos=(0.8 * scale,
-            0, 0), axis=(-0.3 * scale, 0, 0), radius=(0.4 * scale),
-            color=(0.3, 0.3, 0.3), material=visual.materials.rough))
-        # lens glass
-        self.vis.add('glass', visual.cylinder(frame=self.vis, pos=(0.82 * scale,
-            0, 0), axis=(-0.02 * scale, 0, 0), radius=(0.36 * scale),
-            color=(0.3, 0.7, 0.8), opacity=0.5,
-            material=visual.materials.plastic))
-        # lens ring
-        self.vis.add('ring', visual.ring(frame=self.vis, pos=(0.82 * scale,
-            0, 0), axis=(-0.02 * scale, 0, 0), radius=(0.38 * scale),
-            color=(0.3, 0.3, 0.3), material=visual.materials.rough))
-        # indicator light
-        self.vis.add('light', visual.sphere(frame=self.vis,
-            pos=(0.5 * scale, 0, 0.45 * scale), radius=(0.05 * scale),
-            material=visual.materials.emissive))
-        # field of view
-        if fov:
-            self.visualize_fov_toggle(scale=scale)
-        self.update_visualization()
+        except VisualizationError:
+            self.vis = VisualizationObject(self)
+            for model in self.models:
+                self.vis.add(model.__name__, model(self, frame=self.vis))
+            self.update_visualization()
 
     def update_visualization(self):
         """\
@@ -247,10 +227,7 @@ class Camera(object):
         """
         if not self.vis:
             raise VisualizationError("visualization not yet initialized")
-        for member in ['body', 'lens', 'ring', 'light']:
-            self.vis.members[member].opacity = self.active and 1.0 or 0.2
-        self.vis.members['glass'].opacity = self.active and 0.5 or 0.1
-        self.vis.members['light'].color = (not self.active, self.active, 0)
+        self.vis.fade(not self.active)
         # TODO: update fov
         axis, angle = self.pose.R.to_axis_angle()
         self.vis.transform(self.pose.T.tuple, axis, angle)
@@ -454,13 +431,14 @@ def load_model_from_yaml(filename, active=True):
     params = yaml.load(open(filename))
 
     # custom import
-    if params.has_key('import'):
-        try:
-            external = imp.load_source(params['import'],
-                os.path.join(os.path.split(filename)[0],
-                params['import'] + '.py'))
-        except ImportError:
-            raise ImportError("could not load custom module")
+    try:
+        external = imp.load_source(params['import'],
+            os.path.join(os.path.split(filename)[0],
+            params['import'] + '.py'))
+    except ImportError:
+        raise ImportError("could not load custom module")
+    except KeyError:
+        pass
 
     # scene
     scene = Scene()
@@ -504,7 +482,8 @@ def load_model_from_yaml(filename, active=True):
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]
         model[camera['name']] = Camera(camera, active=active,
-            pose=Pose(T=Point(tuple(camera['T'])), R=Rotation(camera['R'])))
+            pose=Pose(T=Point(tuple(camera['T'])), R=Rotation(camera['R'])),
+            models=[getattr(external, mdl) for mdl in camera['models']])
 
     # relevance models
     try:

@@ -20,7 +20,7 @@ class VisualizationError(Exception):
 class VisualizationObject(visual.frame):
     """\
     """
-    def __init__(self, parent):
+    def __init__(self, parent, frame=None):
         """\
         Constructor.
 
@@ -29,7 +29,17 @@ class VisualizationObject(visual.frame):
         """
         self.parent = parent
         self.members = {}
-        visual.frame.__init__(self)
+        visual.frame.__init__(self, frame=frame)
+
+    @property
+    def primitives(self):
+        primitives = []
+        for object in self.objects:
+            if isinstance(object, VisualizationObject):
+                primitives += object.primitives
+            else:
+                primitives.append(object)
+        return primitives
 
     def add(self, name, entity):
         """\
@@ -60,3 +70,16 @@ class VisualizationObject(visual.frame):
         self.axis = (0, 0, 1)
         self.up = (-1, 0, 0)
         self.rotate(axis=(-axis).tuple, angle=angle)
+
+    def fade(self, on):
+        """\
+        Reduce the opacity of the visualization object.
+
+        @param on: Turn fade on or off.
+        @type on: C{bool}
+        """
+        for member in self.members.keys():
+            if isinstance(self.members[member], VisualizationObject):
+                self.members[member].fade(on)
+            else:
+                self.members[member].opacity = on and 0.2 or 1.0

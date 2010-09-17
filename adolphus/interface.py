@@ -287,14 +287,11 @@ class Experiment(object):
 
         Clicking a camera toggles its active state. CTRL + clicking a camera
         shows/hides its (approximate) field of view. Clicking a point prints
-        its membership degree in the fuzzy coverage model. Other keybindings
-        are F2 - update discrete fuzzy coverage model, F6 - show/hide camera
-        names, F7 - show/hide axes, F8 - show/hide display center.
+        its membership degree in the fuzzy coverage model.
         """
         self.model.visualize()
-        cam_vis = [primitive for objects in [vis.objects for vis in \
-            [self.model[camera].vis for camera in self.model]] \
-            for primitive in objects]
+        cam_vis = [primitive for objects in [self.model[camera].vis.primitives \
+            for camera in self.model] for primitive in objects]
         point_vis = [primitive for objects in [vis.objects for vis in \
             [point.vis for point in self.model.model.keys()]] \
             for primitive in objects]
