@@ -9,9 +9,10 @@ Coverage module.
 
 __version__ = (0, 0, 0)
 
-__all__ = ['geometry', 'coverage', 'interface']
+__all__ = ['geometry', 'coverage', 'interface', 'visualization']
 __name__ = 'adolphus'
 
 from geometry import *
 from coverage import *
 from interface import *
+from visualization import *
