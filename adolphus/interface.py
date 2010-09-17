@@ -101,6 +101,8 @@ class Display(visual.display):
             # FIXME: zoom still isn't exactly right
             self.range = max(max(camera.fov['sl']), max(camera.fov['sr'])) \
                 * camera.params['zS'] * 1.5
+            self.cdot.pos = self.center
+            self._messagebox.pos = self.center
         else:
             if not self._stored_view:
                 return
@@ -109,6 +111,8 @@ class Display(visual.display):
             self.up = (0, 0, 1)
             self._stored_view['camera'].vis.visible = True
             self.userspin = True
+            self.cdot.pos = self.center
+            self._messagebox.pos = self.center
             self._stored_view = None
 
     @property
@@ -204,6 +208,9 @@ class Experiment(object):
         # these should not raise KeyErrors
         def cmd_sc(args):
             """x y z"""
+            if self.display.in_camera_view:
+                self.display.message("Cannot shift center in camera view.")
+                return
             self.display.shift_center((float(args[0]), float(args[1]),
                 float(args[2])))
 
@@ -352,17 +359,17 @@ class Experiment(object):
                     cmd = self.display.prompt()
                     if cmd:
                         self.execute(cmd)
-                elif k == 'left' and not self.display.in_camera_view:
+                elif k == 'left':
                     self.execute("sc %f 0 0" % -self.model.scale)
-                elif k == 'right' and not self.display.in_camera_view:
+                elif k == 'right':
                     self.execute("sc %f 0 0" % self.model.scale)
-                elif k == 'down' and not self.display.in_camera_view:
+                elif k == 'down':
                     self.execute("sc 0 %f 0" % -self.model.scale)
-                elif k == 'up' and not self.display.in_camera_view:
+                elif k == 'up':
                     self.execute("sc 0 %f 0" % self.model.scale)
-                elif k == 'page down' and not self.display.in_camera_view:
+                elif k == 'page down':
                     self.execute("sc 0 0 %f" % -self.model.scale)
-                elif k == 'page up' and not self.display.in_camera_view:
+                elif k == 'page up':
                     self.execute("sc 0 0 %f" % self.model.scale)
                 elif self.keybindings.has_key(k):
                     self.execute(self.keybindings[k])
