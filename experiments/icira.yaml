@@ -1,4 +1,5 @@
 name:           ICIRA Experiment
+import:         icira
 ocular:         2
 scale:          30
 
@@ -11,6 +12,7 @@ zeta:           0.3
 
 cameras:
     - name:         T1
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -21,6 +23,7 @@ cameras:
       R:            [-3.7916, -6.2119, -6.2780]
 
     - name:         T2
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -31,6 +34,7 @@ cameras:
       R:            [-3.3748, -5.8233, -5.0194]
 
     - name:         T3
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -41,6 +45,7 @@ cameras:
       R:            [-3.7631, -5.9661, -5.7504]
 
     - name:         T4
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -51,6 +56,7 @@ cameras:
       R:            [-3.7343, -0.2529, -0.6602]
 
     - name:         T5
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -61,6 +67,7 @@ cameras:
       R:            [-3.6510, -0.3514, -0.4658]
 
     - name:         T6
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -71,6 +78,7 @@ cameras:
       R:            [-3.2937, -6.2415, -1.4784]
 
     - name:         T7
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -81,6 +89,7 @@ cameras:
       R:            [-2.6858, -0.0903, -3.1197]
 
     - name:         T8
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -91,6 +100,7 @@ cameras:
       R:            [-2.7711, -5.8090, -4.1339]
 
     - name:         T9
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -101,6 +111,7 @@ cameras:
       R:            [-2.9980, -0.3952, -1.9146]
 
     - name:         M1
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -111,6 +122,7 @@ cameras:
       R:            [-3.1254, -5.1940, -4.6969]
 
     - name:         M2
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -121,6 +133,7 @@ cameras:
       R:            [-4.0061, -5.4570, -5.6315]
 
     - name:         M3
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -131,6 +144,7 @@ cameras:
       R:            [-4.0329, -5.6826, -5.9226]
 
     - name:         M4
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -141,6 +155,7 @@ cameras:
       R:            [-4.0522, -5.8522, -5.8702]
 
     - name:         M5
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -151,6 +166,7 @@ cameras:
       R:            [-2.4932, -5.3979, -3.9781]
 
     - name:         M6
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -161,6 +177,7 @@ cameras:
       R:            [-3.2878, -0.9860, -1.4580]
 
     - name:         M7
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -171,6 +188,7 @@ cameras:
       R:            [-3.2316, -1.0589, -1.4982]
 
     - name:         M8
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -181,6 +199,7 @@ cameras:
       R:            [-3.9497, -0.5760, -0.9560]
 
     - name:         M9
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -191,6 +210,7 @@ cameras:
       R:            [-2.4994, -0.7493, -2.3178]
 
     - name:         L1
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -201,6 +221,7 @@ cameras:
       R:            [-3.1879, -1.4244, -1.5480]
 
     - name:         L2
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -211,6 +232,7 @@ cameras:
       R:            [-4.8030, -0.9920, -0.1191]
 
     - name:         L3
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -221,6 +243,7 @@ cameras:
       R:            [-1.6521, -6.2309, -3.1478]
 
     - name:         L4
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -231,6 +254,7 @@ cameras:
       R:            [-1.5276, -5.8051, -3.0969]
 
     - name:         L5
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -241,6 +265,7 @@ cameras:
       R:            [-1.4200, -0.9406, -3.2852]
 
     - name:         L6
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -251,6 +276,7 @@ cameras:
       R:            [-4.7248, -5.6686, -0.0260]
 
     - name:         L7
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465
@@ -261,6 +287,7 @@ cameras:
       R:            [-4.7105, -0.0196, -6.2763]
 
     - name:         L8
+      models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.5011
       s:            0.00465

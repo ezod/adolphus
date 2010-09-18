@@ -1,9 +1,9 @@
 from ..visualization import  visual, VisualizationObject, VisualizationError
 
 
-class ComputarMP(VisualizationObject):
+class ComputarM3Z1228CMP(VisualizationObject):
     """\
-    Computar MP lens model.
+    Computar M3Z1228C-MP lens model.
     """
     def __init__(self, parent, frame=None):
         if not visual:
