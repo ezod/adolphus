@@ -262,8 +262,9 @@ class Experiment(object):
                 self.display.message("Invalid camera name.")
 
         def cmd_update(args):
-            self.display.message("Updating discrete coverage model...")
+            self.display.message("Updating model...")
             self.model.update_model()
+            self.model.update_fvg()
             self.model.update_visualization()
             self.display.message()
 

@@ -16,7 +16,7 @@ from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
 from fuzz import IndexedSet, TrapezoidalFuzzyNumber, PolygonalFuzzyNumber, \
-                 FuzzySet, FuzzyElement
+                 FuzzySet, FuzzyElement, FuzzyGraph
 
 from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
 from visualization import visual, VisualizationError, VisualizationObject
@@ -211,6 +211,8 @@ class Camera(object):
         @param fov: Toggle visualization of the field ov view.
         @type fov: C{bool}
         """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
         if not self.models:
             raise VisualizationError("no models to visualize")
         try:
@@ -279,9 +281,9 @@ class MultiCamera(dict):
         self.scene = scene
         self.points = points
         self.model = FuzzySet()
-        if visual:
-            self._vis = False
-            self._vis_ptmu = False
+        self.fvg = FuzzyGraph(directed=False)
+        self.vis = None
+        self._vis_ptmu = False
         self.scale = scale
 
     def __setitem__(self, key, value):
@@ -304,7 +306,7 @@ class MultiCamera(dict):
 
         @rtype: C{list}
         """
-        return [key for key in self if self[key].active]
+        return [key for key in self.keys() if self[key].active]
     
     def update_model(self):
         """\
@@ -314,6 +316,13 @@ class MultiCamera(dict):
             raise ValueError("network has too few cameras")
         self.model = FuzzySet([FuzzyElement(point, self.mu(point)) \
                                for point in self.points])
+
+    def update_fvg(self):
+        """\
+        Update the fuzzy vision graph.
+        """
+        self.fvg = FuzzyGraph(viter=self.keys(), directed=False)
+        # TODO: update edges
 
     def mu(self, point):
         """\
@@ -355,28 +364,45 @@ class MultiCamera(dict):
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
-        if self._vis:
+        try:
             self.update_visualization()
-            return
-        for camera in self:
-            self[camera].visualize(scale=self.scale)
-            self[camera].vis.add('name', visual.label(frame=self[camera].vis,
-                pos=(0, self.scale, 0), height=6, color=(1, 1, 1), text=camera,
-                visible=False))
-        self.scene.visualize(scale=self.scale, color=(0.3, 0.3, 0.3))
-        for point in self.model.keys():
-            point.visualize(scale=self.scale, color=(1, 0, 0),
-                            opacity=self.model.mu(point))
-            point.vis.add('mu', visual.label(frame=point.vis, pos=(0, 0, 0),
-                height=6, color=(1, 1, 1), visible=False,
-                text=("%1.4f" % self.model.mu(point))))
-        self._vis = True
+        except VisualizationError:
+            # scene
+            self.scene.visualize(scale=self.scale, color=(0.3, 0.3, 0.3))
+            # cameras
+            for camera in self.keys():
+                self[camera].visualize(scale=self.scale)
+                self[camera].vis.add('name', visual.label(color=(1, 1, 1),
+                    frame=self[camera].vis, pos=(0, self.scale, 0), height=6,
+                    text=camera, visible=False))
+            # points
+            for point in self.model.keys():
+                point.visualize(scale=self.scale, color=(1, 0, 0),
+                                opacity=self.model.mu(point))
+                point.vis.add('mu', visual.label(frame=point.vis, pos=(0, 0, 0),
+                    height=6, color=(1, 1, 1), visible=False,
+                    text=("%1.4f" % self.model.mu(point))))
+            # graph edges
+            self.vis = VisualizationObject(self)
+            for pair in combinations(self.keys(), 2):
+                edge = 'e-%s-%s' % tuple(pair)
+                self.vis.add(edge, visual.cylinder(frame=self.vis,
+                    pos=self[pair[0]].pose.T.tuple, visible=False,
+                    axis=(self[pair[1]].pose.T - self[pair[0]].pose.T).tuple,
+                    radius=(self.scale / 10.0), color=(1, 0, 0)))
+                try:
+                    if len(self.fvg.edges(tail=pair[0], head=pair[1])):
+                        self.vis.members[edge].visible = True
+                        self.vis.members[edge].opacity = \
+                            self.fvg.mu(tail=pair[0], head=pair[1])
+                except KeyError:
+                    pass
 
     def visualize_ptmu_toggle(self):
         """\
         Toggle visibility of mu values over points.
         """
-        if not self._vis:
+        if not self.vis:
             raise VisualizationError("visualization not yet initialized")
         self._vis_ptmu = not self._vis_ptmu
         for point in self.model.keys():
@@ -387,7 +413,7 @@ class MultiCamera(dict):
         """\
         Toggle visibility of the camera name tags.
         """
-        if not self._vis:
+        if not self.vis:
             raise VisualizationError("visualization not yet initialized")
         for camera in self:
             self[camera].vis.members['name'].visible = \
@@ -397,10 +423,12 @@ class MultiCamera(dict):
         """\
         Update the visualization.
         """
-        if not self._vis:
+        if not self.vis:
             raise VisualizationError("visualization not yet initialized")
+        # cameras
         for camera in self:
             self[camera].update_visualization()
+        # points
         for point in self.model.keys():
             try:
                 point.vis.members['point'].opacity = self.model[point].mu
@@ -415,6 +443,19 @@ class MultiCamera(dict):
                 point.vis.members['mu'] = visual.label(frame=point.vis,
                     pos=(0, 0, 0), height=6, color=(1, 1, 1), visible=False,
                     text=("%1.4f" % self.model.mu(point)))
+        # graph edges
+        for pair in combinations(self.keys(), 2):
+            edge = 'e-%s-%s' % tuple(pair)
+            self.vis.members[edge].pos = self[pair[0]].pose.T.tuple
+            self.vis.members[edge].axis = \
+                (self[pair[1]].pose.T - self[pair[0]].pose.T).tuple
+            try:
+                if len(self.fvg.edges(tail=pair[0], head=pair[1])):
+                    self.vis.members[edge].visible = True
+                    self.vis.members[edge].opacity = \
+                        self.fvg.mu(tail=pair[0], head=pair[1])
+            except KeyError:
+                pass
 
 
 def load_model_from_yaml(filename, active=True):
