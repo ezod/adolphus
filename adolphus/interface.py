@@ -249,6 +249,9 @@ class Experiment(object):
         def cmd_name(args):
             self.model.visualize_name_toggle()
 
+        def cmd_clearpoints(args):
+            self.model.visualize_clear_points()
+
         def cmd_pose(args):
             """name"""
             try:
@@ -324,9 +327,12 @@ class Experiment(object):
             self.commands[cmd](args)
         except KeyError:
             self.display.message("Invalid command.")
-        except:
-            self.display.message("Usage: %s %s" \
-                % (cmd, self.commands[cmd].__doc__))
+        except Exception, e:
+            if self.commands[cmd].__doc__:
+                self.display.message("Usage: %s %s" \
+                    % (cmd, self.commands[cmd].__doc__))
+            else:
+                raise e
 
     def run(self):
         """\
@@ -427,7 +433,7 @@ class Experiment(object):
                         self.modifier.parent.pose.T.z += newpos.z \
                             - self.modifier.pos.z
                     self.modifier.pos = self.modifier.parent.pose.T.tuple
-                    self.model.update_visualization()
+                    self.modifier.parent.update_visualization()
             elif rotating:
                 axes = {'x': (1, 0, 0),
                         'y': (0, 1, 0),
@@ -437,7 +443,7 @@ class Experiment(object):
                 if newpos != lastpos:
                     self.modifier.parent.pose.R \
                         += Rotation(axes[rotating], 0.02)
-                    self.model.update_visualization()
+                    self.modifier.parent.update_visualization()
             elif zoom:
                 newpos = self.display.mouse.pos
                 if newpos != lastpos:

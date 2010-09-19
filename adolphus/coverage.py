@@ -380,9 +380,9 @@ class MultiCamera(dict):
                     frame=self[camera].vis, pos=(0, self.scale, 0), height=6,
                     text=camera, visible=False))
             # points
-            for point in self.model.keys():
+            for point in self.model.support:
                 point.visualize(scale=self.scale, color=(1, 0, 0),
-                                opacity=self.model.mu(point))
+                    opacity=self.model.mu(point))
                 point.vis.add('mu', visual.label(frame=point.vis, pos=(0, 0, 0),
                     height=6, color=(1, 1, 1), visible=False,
                     text=("%1.4f" % self.model.mu(point))))
@@ -410,8 +410,12 @@ class MultiCamera(dict):
             raise VisualizationError("visualization not yet initialized")
         self._vis_ptmu = not self._vis_ptmu
         for point in self.model.keys():
-            point.vis.members['mu'].visible = self.model.mu(point) \
-                and self._vis_ptmu or False
+            try:
+                point.vis.members['mu'].visible = self.model.mu(point) \
+                    and self._vis_ptmu or False
+            except AttributeError:
+                pass
+
 
     def visualize_name_toggle(self):
         """\
@@ -422,6 +426,20 @@ class MultiCamera(dict):
         for camera in self:
             self[camera].vis.members['name'].visible = \
                 not self[camera].vis.members['name'].visible
+
+    def visualize_clear_points(self):
+        """\
+        Clear all visualized points.
+        """
+        for point in self.model.keys():
+            try:
+                for member in point.vis.members.keys():
+                    point.vis.members[member].visible = False
+                    del point.vis.members[member]
+                point.vis.visible = False
+                del point.vis
+            except AttributeError:
+                pass
 
     def update_visualization(self):
         """\
@@ -434,10 +452,20 @@ class MultiCamera(dict):
             self[camera].update_visualization()
         # points
         for point in self.model.keys():
-            try:
-                point.vis.members['point'].opacity = self.model[point].mu
+            if not self.model.mu(point):
                 try:
-                    point.vis.members['dir'].opacity = self.model[point].mu
+                    for member in point.vis.members.keys():
+                        point.vis.members[member].visible = False
+                        del point.vis.members[member]
+                    point.vis.visible = False
+                    del point.vis
+                except AttributeError:
+                    pass
+                continue
+            try:
+                point.vis.members['point'].opacity = self.model.mu(point)
+                try:
+                    point.vis.members['dir'].opacity = self.model.mu(point)
                 except KeyError:
                     pass
                 point.vis.members['mu'].text = "%1.4f" % self.model.mu(point)
