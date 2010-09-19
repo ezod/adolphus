@@ -243,12 +243,12 @@ class Experiment(object):
         def cmd_cdot(args):
             self.display.cdot.visible = not self.display.cdot.visible
 
-        def cmd_name(args):
-            self.model.visualize_name_toggle()
-
         def cmd_ptmu(args):
             self.model.visualize_ptmu_toggle()
         
+        def cmd_name(args):
+            self.model.visualize_name_toggle()
+
         def cmd_pose(args):
             """name"""
             try:
@@ -265,10 +265,12 @@ class Experiment(object):
                     self.display.camera_view(self.model[args[0]])
                     self.modifier.visible = False
                     self.modifier.parent = None
+                    self.display.message("Camera view %s." % args[0])
                 except KeyError:
                     self.display.message("Invalid camera name.")
             else:
                 self.display.camera_view()
+                self.display.message()
 
         def cmd_modify(args):
             """name"""
@@ -367,8 +369,9 @@ class Experiment(object):
                         m.pick.frame.parent.visualize_fov_toggle()
                     elif m.alt:
                         try:
-                            self.display.camera_view(m.pick.frame.parent)
-                            print "In camera view, F11 to exit."
+                            for camera in self.model.keys():
+                                if m.pick.frame.parent == self.model[camera]:
+                                    self.execute("camview %s" % camera)
                         except VisualizationError:
                             pass
                     elif m.shift:
