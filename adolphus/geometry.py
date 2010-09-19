@@ -569,6 +569,29 @@ class Rotation(object):
         """
         return str(self.R)
 
+    def __add__(self, other):
+        """\
+        Rotation composition.
+
+        @param other: The other rotation.
+        @type other: L{Rotation}
+        @return: The composed rotation.
+        @rtype: L{Rotation}
+        """
+        Rnew = numpy.dot(other.R, self.R)
+        return Rotation(Rnew)
+
+    def __sub__(self, other):
+        """\
+        Rotation composition with the inverse.
+
+        @param other: The other rotation.
+        @type other: L{Rotation}
+        @return: The composed rotation.
+        @rtype: L{Rotation}
+        """
+        return self.__add__(-other)
+
     def __neg__(self):
         """\
         Negation.
@@ -577,7 +600,7 @@ class Rotation(object):
         @rtype: C{numpy.ndarray}
         """
         return self.R.transpose()
-
+    
     @staticmethod
     def from_axis_angle(axis, theta):
         """\
@@ -695,7 +718,7 @@ class Pose(object):
         if not isinstance(other, Pose):
             raise TypeError("argument must be a Pose")
         Tnew = Point(numpy.dot(other.R.R, self.T.array)) + other.T
-        Rnew = numpy.dot(other.R.R, self.R.R)
+        Rnew = self.R + other.R
         return Pose(Tnew, Rnew)
 
     def __sub__(self, other):

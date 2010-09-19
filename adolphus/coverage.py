@@ -230,7 +230,11 @@ class Camera(object):
         if not self.vis:
             raise VisualizationError("visualization not yet initialized")
         self.vis.fade(not self.active)
-        # TODO: update fov
+        try:
+            self.vis.members['fov'].opacity = 0.1
+            # TODO: any other updates?
+        except KeyError:
+            pass
         axis, angle = self.pose.R.to_axis_angle()
         self.vis.transform(self.pose.T.tuple, axis, angle)
 

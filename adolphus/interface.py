@@ -12,8 +12,8 @@ import yaml
 from math import tan
 from time import sleep
 
-from geometry import Point, DirectionalPoint
-from visualization import VisualizationError, visual
+from geometry import Point, DirectionalPoint, Rotation
+from visualization import visual, VisualizationObject, VisualizationError
 
 
 class Display(visual.display):
@@ -192,6 +192,19 @@ class Experiment(object):
         self.display.select()
         self.rate = 50
 
+        # camera modifier
+        self.modifier = VisualizationObject(None)
+        for arrow in [['xp', (model.scale * 3, 0, 0)],
+                      ['xn', (-model.scale * 3, 0, 0)],
+                      ['yp', (0, model.scale * 3, 0)],
+                      ['yn', (0, -model.scale * 3, 0)],
+                      ['zp', (0, 0, model.scale * 3)],
+                      ['zn', (0, 0, -model.scale * 3)]]:
+            self.modifier.add(arrow[0], visual.arrow(frame=self.modifier,
+                pos=arrow[1], axis=arrow[1], shaftwidth=(model.scale / 3.0),
+                color=(0, 0.25, 0.75)))
+        self.modifier.visible = False
+
         # load and parse config file
         if config_file:
             config = yaml.load(open(config_file))
@@ -235,16 +248,40 @@ class Experiment(object):
 
         def cmd_ptmu(args):
             self.model.visualize_ptmu_toggle()
+        
+        def cmd_pose(args):
+            """name"""
+            try:
+                self.display.message('T: %s\n' % self.model[args[0]].pose.T + \
+                    u'R: \u03d1 = %0.2f, \u03d5 = %0.2f, \u0471 = %0.2f' \
+                    % self.model[args[0]].pose.R.to_euler_xyz())
+            except KeyError:
+                self.display.message("Invalid camera name.")
 
         def cmd_camview(args):
             """name"""
             if len(args):
                 try:
                     self.display.camera_view(self.model[args[0]])
+                    self.modifier.visible = False
+                    self.modifier.parent = None
                 except KeyError:
                     self.display.message("Invalid camera name.")
             else:
                 self.display.camera_view()
+
+        def cmd_modify(args):
+            """name"""
+            if len(args):
+                try:
+                    self.modifier.pos = self.model[args[0]].pose.T.tuple
+                    self.modifier.visible = True
+                    self.modifier.parent = self.model[args[0]]
+                except KeyError:
+                    self.display.message("Invalid camera name.")
+            else:
+                self.modifier.visible = False
+                self.modifier.parent = None
 
         def cmd_fov(args):
             """name"""
@@ -305,6 +342,8 @@ class Experiment(object):
             for primitive in objects]
         zoom = False
         spin = False
+        moving = None
+        rotating = None
         msgctr = 0
         # event loop
         while True:
@@ -312,7 +351,7 @@ class Experiment(object):
             # clear mesages after a while
             if self.display._messagebox.visible:
                 msgctr += 1
-            if msgctr > 100:
+            if msgctr > 10 * len(self.display._messagebox.text):
                 self.display.message()
                 msgctr = 0
             # process mouse events
@@ -332,6 +371,13 @@ class Experiment(object):
                             print "In camera view, F11 to exit."
                         except VisualizationError:
                             pass
+                    elif m.shift:
+                        if self.modifier.parent == m.pick.frame.parent:
+                            self.execute("modify")
+                        else:
+                            for camera in self.model.keys():
+                                if m.pick.frame.parent == self.model[camera]:
+                                    self.execute("modify %s" % camera)
                     else:
                         m.pick.frame.parent.active = \
                             not m.pick.frame.parent.active
@@ -339,6 +385,56 @@ class Experiment(object):
                 elif m.click == "left" and m.pick in point_vis:
                     print "mu%s = %f" % (m.pick.frame.parent,
                         self.model.model[m.pick.frame.parent].mu)
+                elif m.drag == "left" and m.pick in self.modifier.primitives:
+                    for name in self.modifier.members.keys():
+                        if m.pick == self.modifier.members[name]:
+                            if m.shift:
+                                rotating = name[0]
+                                axes = {'x': (1, 0, 0),
+                                        'y': (0, 1, 0),
+                                        'z': (0, 0, 1)}
+                                lastpos = self.display.mouse.project(normal=\
+                                    axes[rotating], point=self.modifier.pos)
+                            else:
+                                moving = name[0]
+                                lastpos = self.display.mouse.project(normal=\
+                                    self.display.forward,
+                                    point=self.modifier.pos)
+                    for name in self.modifier.members.keys():
+                        if moving and name.startswith(moving):
+                            self.modifier.members[name].color = (0, 1, 0)
+                        elif rotating and name.startswith(rotating):
+                            self.modifier.members[name].color = (1, 0.5, 0)
+                elif m.drop == "left" and (moving or rotating):
+                    for name in self.modifier.members.keys():
+                        self.modifier.members[name].color = (0, 0.25, 0.75)
+                    moving = None
+                    rotating = None
+            elif moving:
+                newpos = self.display.mouse.project(normal=self.display.forward,
+                    point=self.modifier.pos)
+                if newpos != lastpos:
+                    if moving == 'x':
+                        self.modifier.parent.pose.T.x += newpos.x \
+                            - self.modifier.pos.x
+                    elif moving == 'y':
+                        self.modifier.parent.pose.T.y += newpos.y \
+                            - self.modifier.pos.y
+                    elif moving == 'z':
+                        self.modifier.parent.pose.T.z += newpos.z \
+                            - self.modifier.pos.z
+                    self.modifier.pos = self.modifier.parent.pose.T.tuple
+                    self.model.update_visualization()
+            elif rotating:
+                axes = {'x': (1, 0, 0),
+                        'y': (0, 1, 0),
+                        'z': (0, 0, 1)}
+                newpos = self.display.mouse.project(normal=axes[rotating],
+                    point=self.modifier.pos)
+                if newpos != lastpos:
+                    self.modifier.parent.pose.R \
+                        += Rotation(axes[rotating], 0.02)
+                    self.model.update_visualization()
             elif zoom:
                 newpos = self.display.mouse.pos
                 if newpos != lastpos:
@@ -349,7 +445,8 @@ class Experiment(object):
                     zdiff = (lastpos - newpos).proj(planey)
                     if zdiff.mag < self.display.rmin / 10.0:
                         continue
-                    scaling = 10 ** ((zdiff.z / abs(zdiff.z)) * zdiff.mag / distance)
+                    scaling = 10 ** ((zdiff.z / abs(zdiff.z)) * zdiff.mag \
+                        / distance)
                     newrange = scaling * self.display.range.y
                     if self.display.rmin < newrange < self.display.rmax:
                         self.display.range = newrange
