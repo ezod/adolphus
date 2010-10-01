@@ -571,6 +571,17 @@ class Quaternion(object):
         """
         return Quaternion(self.a + q.a, self.v + q.v)
 
+    def __sub__(self, q):
+        """\
+        Quaternion subtraction.
+
+        @param q: The operand quaternion.
+        @type q: L{Quaternion}
+        @return: Result quaternion.
+        @rtype: L{Quaternion}
+        """
+        return Quaternion(self.a - q.a, self.v - q.v)
+
     def __mul__(self, q):
         """\
         Scalar multiplication (if q is a scalar) or quaternion multiplication
@@ -586,6 +597,26 @@ class Quaternion(object):
                 (self.a * q.v + q.a * self.v + self.v ** q.v))
         else:
             return Quaternion(self.a * q, self.v * q)
+
+    def __div__(self, q):
+        """\
+        Scalar division.
+
+        @param q: The scalar divisor.
+        @type q: C{float}
+        @return: Result quaternion.
+        @rtype: L{Quaternion}
+        """
+        return Quaternion(self.a / q, self.v / q)
+
+    def __neg__(self):
+        """\
+        Negation.
+
+        @return: Result quaternion.
+        @rtype: L{Quaternion}
+        """
+        return Quaternion(-self.a, -self.v)
 
     @property
     def magnitude(self):
@@ -604,6 +635,15 @@ class Quaternion(object):
         @rtype: L{Quaternion}
         """
         return Quaternion(self.a, -self.v)
+
+    @property
+    def inverse(self):
+        """\
+        Return the multiplicative inverse of this quaternion.
+
+        @rtype: L{Quaternion}
+        """
+        return Quaternion(self.a, -self.v) / (self.magnitude ** 2)
 
 
 class Rotation(object):
