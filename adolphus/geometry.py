@@ -545,7 +545,7 @@ class Quaternion(object):
             self.a = float(args[0])
             self.v = Point(args[1])
         elif len(args) >= 4 and min([isinstance(a, Number) for a in args[:4]]):
-            self.a = float(args[i])
+            self.a = float(args[0])
             self.v = Point(args[1:4])
 
     @property
@@ -592,7 +592,7 @@ class Quaternion(object):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        if isinstance(p, Quaternion):
+        if isinstance(q, Quaternion):
             return Quaternion((self.a * q.a - self.v * q.v),
                 (self.a * q.v + q.a * self.v + self.v ** q.v))
         else:
@@ -617,6 +617,24 @@ class Quaternion(object):
         @rtype: L{Quaternion}
         """
         return Quaternion(-self.a, -self.v)
+
+    def __repr__(self):
+        """\
+        Canonical string representation.
+
+        @return: Canonical string representation.
+        @rtype: C{str}
+        """
+        return "%s(%f, %s)" % (self.__class__.__name__, self.a, self.v)
+
+    def __str__(self):
+        """\
+        String representation, displays in a tuple format.
+
+        @return: Vector string.
+        @rtype: C{str}
+        """
+        return "(%.2f, %s)" % (self.a, self.v)
 
     @property
     def magnitude(self):
@@ -644,6 +662,17 @@ class Quaternion(object):
         @rtype: L{Quaternion}
         """
         return Quaternion(self.a, -self.v) / (self.magnitude ** 2)
+
+    def rotate(self, p):
+        """\
+        Rotate (conjugate) the operand point by this quaternion.
+
+        @param p: The operand point.
+        @type p: L{Point}
+        @return: The rotated (conjugated) point.
+        @rtype: L{Point}
+        """
+        return (self * Quaternion(0, p) * self.inverse).v
 
 
 class Rotation(object):
