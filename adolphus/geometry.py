@@ -65,8 +65,7 @@ class Point(object):
             self.x, self.y, self.z = args[0][:3]
         elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
             self.x, self.y, self.z = [args[0][i][0] for i in range(3)]
-        elif len(args) >= 3 and isinstance(args[0], Number) \
-        and isinstance(args[1], Number) and isinstance(args[2], Number):
+        elif len(args) >= 3 and min([isinstance(a, Number) for a in args[:3]]):
             self.x, self.y, self.z = [float(args[i]) for i in range(3)]
         else:
             raise TypeError("incompatible type in initializer")
@@ -75,7 +74,7 @@ class Point(object):
         """\
         Hash function.
         """
-        return self.x + self.y + self.z
+        return hash(self.tuple)
 
     def __eq__(self, p):
         """\
@@ -338,8 +337,7 @@ class DirectionalPoint(Point):
             self.rho, self.eta = args[0][-2:]
         elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
             self.rho, self.eta = [args[0][i][0] for i in [3, 4]]
-        elif len(args) >= 5 and isinstance(args[3], Number) \
-        and isinstance(args[4], Number):
+        elif len(args) >= 5 and min([isinstance(a, Number) for a in args[3:5]]):
             self.rho, self.eta = [args[i] for i in [3, 4]]
         else:
             raise TypeError("incompatible type in initializer")
@@ -351,7 +349,7 @@ class DirectionalPoint(Point):
         """\
         Hash function.
         """
-        return self.x + self.y + self.z + self.rho + self.eta
+        return hash((self.x, self.y, self.z, self.rho, self.eta))
 
     def __eq__(self, p):
         """\
@@ -532,6 +530,80 @@ class DirectionalPoint(Point):
         except KeyError:
             self.vis.add('dir', visual.arrow(frame=self.vis, axis=unit.tuple,
                 color=color, opacity=opacity))
+
+
+class Quaternion(object):
+    """\
+    Quaternion class.
+    """
+    def __init__(self, *args):
+        """\
+        Constructor.
+        """
+        if len(args) == 2 and isinstance(args[0], Number) \
+        and (isinstance(args[1], Point) or len(args[1]) >= 3):
+            self.a = float(args[0])
+            self.v = Point(args[1])
+        elif len(args) >= 4 and min([isinstance(a, Number) for a in args[:4]]):
+            self.a = float(args[i])
+            self.v = Point(args[1:4])
+
+    @property
+    def b(self):
+        return self.v.x
+
+    @property
+    def c(self):
+        return self.v.y
+
+    @property
+    def d(self):
+        return self.v.z
+
+    def __add__(self, q):
+        """\
+        Quaternion addition.
+
+        @param q: The operand quaternion.
+        @type q: L{Quaternion}
+        @return: Result quaternion.
+        @rtype: L{Quaternion}
+        """
+        return Quaternion(self.a + q.a, self.v + q.v)
+
+    def __mul__(self, q):
+        """\
+        Scalar multiplication (if q is a scalar) or quaternion multiplication
+        (if q is a quaternion).
+
+        @param p: The operand scalar or quaternion.
+        @type p: C{float} or L{Quaternion}
+        @return: Result quaternion.
+        @rtype: L{Quaternion}
+        """
+        if isinstance(p, Quaternion):
+            return Quaternion((self.a * q.a - self.v * q.v),
+                (self.a * q.v + q.a * self.v + self.v ** q.v))
+        else:
+            return Quaternion(self.a * q, self.v * q)
+
+    @property
+    def magnitude(self):
+        """\
+        Return the magnitude (norm) of this quaternion.
+
+        @rtype: C{float}
+        """
+        return sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2 + self.d ** 2)
+
+    @property
+    def conjugate(self):
+        """\
+        Return the conjugate of this quaternion.
+
+        @rtype: L{Quaternion}
+        """
+        return Quaternion(self.a, -self.v)
 
 
 class Rotation(object):
