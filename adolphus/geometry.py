@@ -83,8 +83,11 @@ class Point(object):
         @param p: The other point.
         @type p: L{Point}
         """
+        epsilon = 1e-4
         try:
-            return self.x == p.x and self.y == p.y and self.z == p.z
+            return abs(self.x - p.x) < epsilon \
+               and abs(self.y - p.y) < epsilon \
+               and abs(self.z - p.z) < epsilon
         except AttributeError:
             return False
 
@@ -358,9 +361,11 @@ class DirectionalPoint(Point):
         @param p: The other point.
         @type p: L{DirectionalPoint}
         """
+        epsilon = 1e-4
         try:
-            return self.x == p.x and self.y == p.y and self.z == p.z \
-                   and self.rho == p.rho and self.eta == p.eta
+            return Point.__eq__(self, p) \
+               and abs(self.rho - p.rho) < epsilon \
+               and abs(self.eta - p.eta) < epsilon
         except AttributeError:
             return False
 
@@ -695,6 +700,8 @@ class Rotation(object):
         and min([isinstance(a, Number) for a in args[0]]):
             self.Q = self.from_euler_xyz(Angle(args[0][0]), Angle(args[0][1]),
                 Angle(args[0][2]))
+        elif len(args) == 1 and len(args[0]) == 2:
+            self.Q = self.from_axis_angle(Point(args[0][0]), Angle(args[0][1]))
         elif len(args) == 1 and min([len(args[0][i]) == 3 for i in range(3)]):
             self.Q = self.from_rotation_matrix(numpy.array(args[0]))
         elif len(args) == 2:
@@ -771,6 +778,8 @@ class Rotation(object):
         u = max([(abs(R[i][i]), i) for i in range(3)])[1]
         v, w = (u + 1) % 3, (u + 2) % 3
         r = sqrt(1.0 + R[u][u] - R[v][v] - R[w][w])
+        if r == 0:
+            return Quaternion(1, (0, 0, 0))
         Qa = (R[w][v] - R[v][w]) / (2.0 * r)
         Qv = Point()
         Qv[u] = r / 2.0
@@ -866,13 +875,13 @@ class Rotation(object):
         """
         # FIXME: go straight from quaternion
         R = self.to_rotation_matrix()
-        phi = Angle(asin(-1.0 * self.R[0][2]))
+        phi = Angle(asin(-1.0 * R[0][2]))
         sign = cos(phi) / abs(cos(phi))
-        theta = Angle(atan(self.R[1][2] / self.R[2][2]))
-        if sign * self.R[2][2] < 0:
+        theta = Angle(atan(R[1][2] / R[2][2]))
+        if sign * R[2][2] < 0:
             theta += pi
-        psi = Angle(atan(self.R[0][1] / self.R[0][0]))
-        if sign * self.R[0][0] < 0:
+        psi = Angle(atan(R[0][1] / R[0][0]))
+        if sign * R[0][0] < 0:
             psi += pi
         return (theta, phi, psi)
 
