@@ -42,6 +42,6 @@ setup(
     keywords = "fuzzy vision multicamera model",
     packages = [PACKAGE, PACKAGE + '.models'],
     package_data = {PACKAGE: ['resources/*']},
-    #test_suite = "test",
+    test_suite = "test",
     cmdclass = {'doc': GenerateDoc},
 )
