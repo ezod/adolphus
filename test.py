@@ -23,6 +23,12 @@ class TestGeometry(unittest.TestCase):
         self.p = A.geometry.Point((3, 4, 5))
         self.q = A.geometry.DirectionalPoint((-7, 1, 9, 1.3, 0.2))
 
+    def test_point_addition(self):
+        r = A.geometry.Point((-4, 5, 14))
+        self.assertEqual(self.p + self.q, r)
+        s = A.geometry.DirectionalPoint((-4, 5, 14, 1.3, 0.2))
+        self.assertEqual(self.q + self.p, s)
+
     def test_rotation_conversions(self):
         rotations = [A.geometry.Rotation(),
                      A.geometry.Rotation([0.3, 1.4, 2.1]),
