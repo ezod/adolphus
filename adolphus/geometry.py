@@ -984,8 +984,7 @@ class Pose(object):
             unit = Pose(None, self.R).map(p.direction_unit)
             rho = acos(unit.z)
             eta = atan2(unit.y, unit.x)
-            return DirectionalPoint(tuple([q[i][0] for i in range(3)]) \
-                + (rho, eta))
+            return DirectionalPoint(q.tuple + (rho, eta))
         else:
             return Point(q)
 
