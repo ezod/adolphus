@@ -8,7 +8,7 @@ geometric descriptor functions for features.
 @license: GPL-3
 """
 
-from math import pi, sqrt, sin, cos, asin, acos, atan, atan2
+from math import pi, sqrt, sin, cos, asin, acos, atan, atan2, copysign
 from numbers import Number
 import numpy
 
@@ -684,31 +684,37 @@ class Rotation(object):
         Constructor.
         """
         if not args or len(args) == 1 and args[0] is None:
-            self.R = numpy.diag([1, 1, 1])
-        elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
-            self.R = args[0]
+            self.Q = Quaternion(1, (0, 0, 0))
+        elif isinstance(args[0], Rotation):
+            self.Q = args[0].Q
+        elif isinstance(args[0], Quaternion):
+            self.Q = args[0]
+        elif isinstance(args[0], numpy.ndarray):
+            self.Q = self.from_rotation_matrix(args[0])
         elif len(args) == 1 and len(args[0]) == 3 \
-        and isinstance(args[0][0], Number):
-            self.R = self.from_euler_xyz(Angle(args[0][0]), Angle(args[0][1]),
+        and min([isinstance(a, Number) for a in args[0]]):
+            self.Q = self.from_euler_xyz(Angle(args[0][0]), Angle(args[0][1]),
                 Angle(args[0][2]))
-        elif len(args) == 1 and len(args[0]) == 3 and len(args[0][0]) == 3:
-            self.R = numpy.array(args[0])
+        elif len(args) == 1 and min([len(args[0][i]) == 3 for i in range(3)]):
+            self.Q = self.from_rotation_matrix(numpy.array(args[0]))
         elif len(args) == 2:
-            self.R = self.from_axis_angle(Point(args[0]), Angle(args[1]))
-        elif len(args) == 3:
-            self.R = self.from_euler_xyz(Angle(args[0]), Angle(args[1]),
+            self.Q = self.from_axis_angle(Point(args[0]), Angle(args[1]))
+        elif len(args) == 3 and isinstance(args[0], Number):
+            self.Q = self.from_euler_xyz(Angle(args[0]), Angle(args[1]),
                 Angle(args[2]))
         else:
             raise TypeError("unrecognized initial value format")
 
-    def __str__(self):
+    def __repr__(self):
         """\
-        String representation.
+        Canonical string representation.
 
-        @return: String representation.
+        @return: Canonical string representation.
         @rtype: C{str}
         """
-        return str(self.R)
+        return "Rotation(%s)" % self.Q
+
+    __str__ = __repr__
 
     def __add__(self, other):
         """\
@@ -719,8 +725,7 @@ class Rotation(object):
         @return: The composed rotation.
         @rtype: L{Rotation}
         """
-        Rnew = numpy.dot(other.R, self.R)
-        return Rotation(Rnew)
+        return Rotation(self.Q * other.Q)
 
     def __sub__(self, other):
         """\
@@ -731,35 +736,62 @@ class Rotation(object):
         @return: The composed rotation.
         @rtype: L{Rotation}
         """
-        return self.__add__(-other)
+        return self.__add__(other.inverse)
 
     def __neg__(self):
         """\
         Negation.
 
         @return: The inverse rotation.
-        @rtype: C{numpy.ndarray}
+        @rtype: L{Rotation}
         """
-        return self.R.transpose()
+        return Rotation(self.Q.inverse)
+
+    def rotate(self, p):
+        """\
+        Rotate a vector.
+
+        @param p: The vector to rotate.
+        @type p: L{Point}
+        @return: The rotated vector.
+        @rtype: L{Point}
+        """
+        return self.Q.rotate(p)
+
+    @staticmethod
+    def from_rotation_matrix(R):
+        """\
+        Generate the internal quaternion representation from a rotation matrix.
+
+        @param R: The rotation matrix.
+        @type R: C{numpy.ndarray}
+        @return: Quaternion representation of the rotation.
+        @rtype: L{Quaternion}
+        """
+        u = max([(abs(R[i][i]), i) for i in range(3)])[1]
+        v, w = (u + 1) % 3, (u + 2) % 3
+        r = sqrt(1.0 + R[u][u] - R[v][v] - R[w][w])
+        Qa = (R[w][v] - R[v][w]) / (2.0 * r)
+        Qv = Point()
+        Qv[u] = r / 2.0
+        Qv[v] = (R[u][v] + R[v][u]) / (2.0 * r)
+        Qv[w] = (R[w][u] + R[u][w]) / (2.0 * r)
+        return Quaternion(Qa, Qv)
     
     @staticmethod
     def from_axis_angle(axis, theta):
         """\
-        Generate the internal rotation matrix representation from an axis and
-        angle representation (Rodrigues' formula).
+        Generate the internal quaternion representation from an axis and
+        angle representation.
 
         @param axis: The axis of rotation.
         @type axis: L{Point}
         @param theta: The angle of rotation.
         @type theta: L{Angle}
+        @return: Quaternion representation of the rotation.
+        @rtype: L{Quaternion}
         """
-        axis = axis.normal
-        Ax = numpy.array([[0.0, -(axis.z), axis.y],
-                          [axis.z, 0.0, -(axis.x)],
-                          [-(axis.y), axis.x, 0.0]])
-        R = numpy.diag([1.0, 1.0, 1.0]) + sin(theta) * Ax + (1 - cos(theta)) * \
-            (axis.array * axis.array.transpose() - numpy.diag([1.0, 1.0, 1.0]))
-        return R.transpose()
+        return Quaternion(cos(theta / 2.0), sin(theta / 2.0) * axis.normal)
 
     @staticmethod
     def from_euler_xyz(theta, phi, psi):
@@ -776,6 +808,7 @@ class Rotation(object):
         @return: Rotation matrix.
         @rtype: C{numpy.ndarray}
         """
+        # FIXME: go straight to quaternion
         R = numpy.ndarray((3, 3))
         R[0][0] = cos(phi) * cos(psi)
         R[1][0] = sin(theta) * sin(phi) * cos(psi) - cos(theta) * sin(psi)
@@ -786,23 +819,42 @@ class Rotation(object):
         R[0][2] = -sin(phi)
         R[1][2] = sin(theta) * cos(phi)
         R[2][2] = cos(theta) * cos(phi)
+        return Rotation.from_rotation_matrix(R)
+
+    def to_rotation_matrix(self):
+        """\
+        Return the rotation matrix representation from the internal quaternion
+        representation.
+
+        @return: Rotation matrix.
+        @rtype: C{numpy.ndarray}
+        """
+        a, b, c, d = self.Q.a, self.Q.b, self.Q.c, self.Q.d
+        R = numpy.ndarray((3, 3))
+        R[0][0] = a ** 2 + b ** 2 - c ** 2 - d ** 2
+        R[0][1] = 2.0 * b * c - 2.0 * a * d
+        R[0][2] = 2.0 * b * d + 2.0 * a * c
+        R[1][0] = 2.0 * b * c + 2.0 * a * d
+        R[1][1] = a ** 2 - b ** 2 + c ** 2 - d ** 2
+        R[1][2] = 2.0 * c * d - 2.0 * a * b
+        R[2][0] = 2.0 * b * d - 2.0 * a * c
+        R[2][1] = 2.0 * c * d + 2.0 * a * b
+        R[2][2] = a ** 2 - b ** 2 - c ** 2 + d ** 2
         return R
 
     def to_axis_angle(self):
         """\
-        Return the axis and angle representation from the internal rotation
-        matrix representation.
+        Return the axis and angle representation from the internal quaternion
+        representation.
 
         @return: Axis and angle rotation form.
         @rtype: C{tuple} of L{Point} and L{Angle}
         """
-        theta = acos((self.R.trace() - 1.0) / 2.0)
-        if theta == 0.0:
+        theta = Angle(copysign(2.0 * acos(self.Q.a), self.Q.v.magnitude))
+        try:
+            return (self.Q.v.normal, theta)
+        except ValueError:
             return (Point(1, 0, 0), theta)
-        axis = -Point(tuple([(1.0 / 2.0 * sin(theta)) * Ri for Ri in \
-            [self.R[pair[0]][pair[1]] - self.R[pair[1]][pair[0]] for pair in \
-            [((i + 2) % 3, (i + 1) % 3) for i in range(3)]]]))
-        return (axis, theta)
 
     def to_euler_xyz(self):
         """\
@@ -812,6 +864,8 @@ class Rotation(object):
         @return: Three fixed-axis (Euler xyz) angle rotation form.
         @rtype: C{tuple} of L{Angle}
         """
+        # FIXME: go straight from quaternion
+        R = self.to_rotation_matrix()
         phi = Angle(asin(-1.0 * self.R[0][2]))
         sign = cos(phi) / abs(cos(phi))
         theta = Angle(atan(self.R[1][2] / self.R[2][2]))
@@ -858,7 +912,7 @@ class Pose(object):
         """
         if not isinstance(other, Pose):
             raise TypeError("argument must be a Pose")
-        Tnew = Point(numpy.dot(other.R.R, self.T.array)) + other.T
+        Tnew = other.R.rotate(self.T) + other.T
         Rnew = self.R + other.R
         return Pose(Tnew, Rnew)
 
@@ -880,7 +934,7 @@ class Pose(object):
         @return: Inverted pose.
         @rtype: L{Pose}
         """
-        return Pose(-Point(numpy.dot(-self.R, self.T.array)), -self.R)
+        return Pose(-(-self.R).rotate(self.T), -self.R)
 
     def __str__(self):
         """\
@@ -898,8 +952,7 @@ class Pose(object):
 
         @rtype: C{bool}
         """
-        if sum(self.T.tuple) == 0 \
-        and (self.R.R - numpy.diag((1.0, 1.0, 1.0))).any() == 0:
+        if sum(self.T.tuple) == 0 and sum(self.R.Q.v.tuple) == 0:
             return False
         else:
             return True
@@ -926,9 +979,9 @@ class Pose(object):
         """
         if not isinstance(p, Point):
             p = Point(p)
-        q = numpy.dot(self.R.R, p.array)
+        q = self.R.rotate(p)
         if isinstance(p, DirectionalPoint):
-            unit = Pose(None, self.R.R).map(p.direction_unit)
+            unit = Pose(None, self.R).map(p.direction_unit)
             rho = acos(unit.z)
             eta = atan2(unit.y, unit.x)
             return DirectionalPoint(tuple([q[i][0] for i in range(3)]) \

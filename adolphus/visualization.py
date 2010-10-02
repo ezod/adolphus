@@ -66,10 +66,9 @@ class VisualizationObject(visual.frame):
         @type angle: C{float}
         """
         self.pos = pos
-        # FIXME: no idea why up = (-1, 0, 0) or why (-axis) is necessary
         self.axis = (0, 0, 1)
-        self.up = (-1, 0, 0)
-        self.rotate(axis=(-axis).tuple, angle=angle)
+        self.up = (1, 0, 0)
+        self.rotate(axis=(axis).tuple, angle=angle)
 
     def fade(self, on):
         """\
