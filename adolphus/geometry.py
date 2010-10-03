@@ -817,18 +817,18 @@ class Rotation(object):
         @return: Rotation matrix.
         @rtype: C{numpy.ndarray}
         """
-        # FIXME: go straight to quaternion
-        R = numpy.ndarray((3, 3))
-        R[0][0] = cos(phi) * cos(psi)
-        R[1][0] = sin(theta) * sin(phi) * cos(psi) - cos(theta) * sin(psi)
-        R[2][0] = cos(theta) * sin(phi) * cos(psi) + sin(theta) * sin(psi)
-        R[0][1] = cos(phi) * sin(psi)
-        R[1][1] = sin(theta) * sin(phi) * sin(psi) + cos(theta) * cos(psi)
-        R[2][1] = cos(theta) * sin(phi) * sin(psi) - sin(theta) * cos(psi)
-        R[0][2] = -sin(phi)
-        R[1][2] = sin(theta) * cos(phi)
-        R[2][2] = cos(theta) * cos(phi)
-        return Rotation.from_rotation_matrix(R)
+        a = cos(theta / 2.0) * cos(phi / 2.0) * cos(psi / 2.0) + \
+            sin(theta / 2.0) * sin(phi / 2.0) * sin(psi / 2.0)
+        b = sin(theta / 2.0) * cos(phi / 2.0) * cos(psi / 2.0) - \
+            cos(theta / 2.0) * sin(phi / 2.0) * sin(psi / 2.0)
+        c = cos(theta / 2.0) * sin(phi / 2.0) * cos(psi / 2.0) + \
+            sin(theta / 2.0) * cos(phi / 2.0) * sin(psi / 2.0)
+        d = cos(theta / 2.0) * cos(phi / 2.0) * sin(psi / 2.0) - \
+            sin(theta / 2.0) * sin(phi / 2.0) * cos(psi / 2.0)
+        if a > 0:
+            return Quaternion(a, -b, -c, -d)
+        else:
+            return Quaternion(-a, b, c, d)
 
     def to_rotation_matrix(self):
         """\
@@ -873,16 +873,10 @@ class Rotation(object):
         @return: Three fixed-axis (Euler xyz) angle rotation form.
         @rtype: C{tuple} of L{Angle}
         """
-        # FIXME: go straight from quaternion
-        R = self.to_rotation_matrix()
-        phi = Angle(asin(-1.0 * R[0][2]))
-        sign = cos(phi) / abs(cos(phi))
-        theta = Angle(atan(R[1][2] / R[2][2]))
-        if sign * R[2][2] < 0:
-            theta += pi
-        psi = Angle(atan(R[0][1] / R[0][0]))
-        if sign * R[0][0] < 0:
-            psi += pi
+        a, b, c, d = self.Q.a, self.Q.b, self.Q.c, self.Q.d
+        theta = atan2(2.0 * (c * d - a * b), 1.0 - 2.0 * (b ** 2 + c ** 2))
+        phi = -asin(2.0 * (a * c + d * b))
+        psi = atan2(2.0 * (b * c - a * d), 1.0 - 2.0 * (c ** 2 + d ** 2))
         return (theta, phi, psi)
 
 

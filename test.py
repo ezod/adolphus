@@ -32,6 +32,7 @@ class TestGeometry(unittest.TestCase):
     def test_rotation_conversions(self):
         rotations = [A.geometry.Rotation(),
                      A.geometry.Rotation([0.3, 1.4, 2.1]),
+                     A.geometry.Rotation([4.7, 0.9, 6.0]),
                      A.geometry.Rotation([[-0.601332, 0.67475, -0.427916],
                                           [0.797152, 0.543048, -0.263909],
                                           [0.054306, -0.499811, -0.86443]])]
