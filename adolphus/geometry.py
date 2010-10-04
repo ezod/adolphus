@@ -65,7 +65,7 @@ class Point(object):
             self.x, self.y, self.z = args[0][:3]
         elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
             self.x, self.y, self.z = [args[0][i][0] for i in range(3)]
-        elif len(args) >= 3 and min([isinstance(a, Number) for a in args[:3]]):
+        elif len(args) >= 3 and all([isinstance(a, Number) for a in args[:3]]):
             self.x, self.y, self.z = [float(args[i]) for i in range(3)]
         else:
             raise TypeError("incompatible type in initializer")
@@ -340,7 +340,7 @@ class DirectionalPoint(Point):
             self.rho, self.eta = args[0][-2:]
         elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
             self.rho, self.eta = [args[0][i][0] for i in [3, 4]]
-        elif len(args) >= 5 and min([isinstance(a, Number) for a in args[3:5]]):
+        elif len(args) >= 5 and all([isinstance(a, Number) for a in args[3:5]]):
             self.rho, self.eta = [args[i] for i in [3, 4]]
         else:
             raise TypeError("incompatible type in initializer")
@@ -549,7 +549,7 @@ class Quaternion(object):
         and (isinstance(args[1], Point) or len(args[1]) >= 3):
             self.a = float(args[0])
             self.v = Point(args[1])
-        elif len(args) >= 4 and min([isinstance(a, Number) for a in args[:4]]):
+        elif len(args) >= 4 and all([isinstance(a, Number) for a in args[:4]]):
             self.a = float(args[0])
             self.v = Point(args[1:4])
 
@@ -557,13 +557,25 @@ class Quaternion(object):
     def b(self):
         return self.v.x
 
+    @b.setter
+    def b(self, value):
+        self.v.x = float(value)
+
     @property
     def c(self):
         return self.v.y
 
+    @c.setter
+    def c(self, value):
+        self.v.y = float(value)
+
     @property
     def d(self):
         return self.v.z
+
+    @d.setter
+    def d(self, value):
+        self.v.z = float(value)
 
     def __add__(self, q):
         """\
@@ -701,14 +713,14 @@ class Rotation(object):
             # from rotation matrix (numpy array)
             self.Q = self.from_rotation_matrix(args[0])
         elif len(args) == 1 and len(args[0]) == 3 \
-        and min([isinstance(a, Number) for a in args[0]]):
+        and all([isinstance(a, Number) for a in args[0]]):
             # from euler xyz (all in one iterable)
             self.Q = self.from_euler_xyz(Angle(args[0][0]), Angle(args[0][1]),
                 Angle(args[0][2]))
         elif len(args) == 1 and len(args[0]) == 2:
             # from axis-angle (all in one iterable)
             self.Q = self.from_axis_angle(Point(args[0][0]), Angle(args[0][1]))
-        elif len(args) == 1 and min([len(args[0][i]) == 3 for i in range(3)]):
+        elif len(args) == 1 and all([len(args[0][i]) == 3 for i in range(3)]):
             # from rotation matrix (iterable of iterables)
             self.Q = self.from_rotation_matrix(numpy.array(args[0]))
         elif len(args) == 2:
