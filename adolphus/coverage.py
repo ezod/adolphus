@@ -501,6 +501,19 @@ def load_model_from_yaml(filename, active=True):
     @return: The multi-camera fuzzy coverage model.
     @rtype: L{MultiCamera}
     """
+    def parse_rotation(R, format):
+        if format == 'quaternion':
+            return Rotation(R)
+        elif format == 'matrix':
+            return Rotation(Rotation.from_rotation_matrix(R))
+        elif format == 'axis-angle':
+            return Rotation(Rotation.from_axis_angle(R[0], R[1]))
+        elif format == 'euler-xyz-rad':
+            return Rotation(Rotation.from_euler_xyz(R[0], R[1], R[2]))
+        elif format == 'euler-xyz-deg':
+            R = [r * pi / 180.0 for r in R]
+            return Rotation(Rotation.from_euler_xyz(R[0], R[1], R[2]))
+
     params = yaml.load(open(filename))
 
     # custom import
@@ -519,13 +532,14 @@ def load_model_from_yaml(filename, active=True):
         for plane in params['scene']:
             if plane.has_key('model'):
                 scene.add(getattr(external, plane['model'])(pose=\
-                    Pose(T=Point(tuple(plane['T'])), R=Rotation(plane['R']))))
+                    Pose(T=Point(tuple(plane['T'])),
+                         R=parse_rotation(plane['R'], plane['Rformat']))))
             elif plane.has_key('z'):
                 scene.add(Plane(x=plane['x'], y=plane['y'], z=plane['z']))
             else:
                 scene.add(Plane(x=plane['x'], y=plane['y'],
                     pose=Pose(T=Point(tuple(plane['T'])),
-                              R=Rotation(plane['R']))))
+                              R=parse_rotation(plane['R'], plane['Rformat']))))
     except KeyError:
         pass
 
@@ -555,7 +569,8 @@ def load_model_from_yaml(filename, active=True):
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]
         model[camera['name']] = Camera(camera, active=active,
-            pose=Pose(T=Point(tuple(camera['T'])), R=Rotation(camera['R'])),
+            pose=Pose(T=Point(tuple(camera['T'])),
+                      R=parse_rotation(camera['R'], camera['Rformat'])),
             models=[getattr(external, mdl) for mdl in camera['models']])
 
     # relevance models

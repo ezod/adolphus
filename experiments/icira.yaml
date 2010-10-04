@@ -21,6 +21,7 @@ cameras:
       zS:           1216.1
       T:            [259.8542, -515.0876, 1131.8818]
       R:            [-3.7916, -6.2119, -6.2780]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T2
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -32,6 +33,7 @@ cameras:
       zS:           1216.1
       T:            [580.7762, -27.3291, 1097.6489]
       R:            [-3.3748, -5.8233, -5.0194]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T3
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -43,6 +45,7 @@ cameras:
       zS:           1216.1
       T:            [598.8255, -532.6433, 1134.0327]
       R:            [-3.7631, -5.9661, -5.7504]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T4
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -54,6 +57,7 @@ cameras:
       zS:           1216.1
       T:            [-196.3809, -563.0857, 1130.9031]
       R:            [-3.7343, -0.2529, -0.6602]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T5
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -65,6 +69,7 @@ cameras:
       zS:           1216.1
       T:            [-233.3505, -426.0795, 1172.2064]
       R:            [-3.6510, -0.3514, -0.4658]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T6
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -76,6 +81,7 @@ cameras:
       zS:           1216.1
       T:            [126.9092, 68.0062, 1126.9477]
       R:            [-3.2937, -6.2415, -1.4784]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T7
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -87,6 +93,7 @@ cameras:
       zS:           1216.1
       T:            [101.0447, 591.6576, 1150.5325]
       R:            [-2.6858, -0.0903, -3.1197]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T8
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -98,6 +105,7 @@ cameras:
       zS:           1216.1
       T:            [540.9184, 494.7230, 1081.383]
       R:            [-2.7711, -5.8090, -4.1339]
+      Rformat:      'euler-xyz-rad'
 
     - name:         T9
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -109,6 +117,7 @@ cameras:
       zS:           1216.1
       T:            [-245.7283, 283.8215, 1112.6117]
       R:            [-2.9980, -0.3952, -1.9146]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M1
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -120,6 +129,7 @@ cameras:
       zS:           1216.1
       T:            [1074.0579, 169.1403, 482.5471]
       R:            [-3.1254, -5.1940, -4.6969]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M2
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -131,6 +141,7 @@ cameras:
       zS:           1216.1
       T:            [996.4342, -332.1199, 480.3496]
       R:            [-4.0061, -5.4570, -5.6315]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M3
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -142,6 +153,7 @@ cameras:
       zS:           1216.1
       T:            [848.4780, -443.7130, 547.6449]
       R:            [-4.0329, -5.6826, -5.9226]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M4
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -153,6 +165,7 @@ cameras:
       zS:           1216.1
       T:            [573.2211, -624.4772, 654.5237]
       R:            [-4.0522, -5.8522, -5.8702]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M5
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -164,6 +177,7 @@ cameras:
       zS:           1216.1
       T:            [954.5638, 488.5257, 495.3477]
       R:            [-2.4932, -5.3979, -3.9781]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M6
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -175,6 +189,7 @@ cameras:
       zS:           1216.1
       T:            [-546.4648, 120.0486, 433.7413]
       R:            [-3.2878, -0.9860, -1.4580]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M7
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -186,6 +201,7 @@ cameras:
       zS:           1216.1
       T:            [-598.3352, 143.5653, 470.7973]
       R:            [-3.2316, -1.0589, -1.4982]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M8
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -197,6 +213,7 @@ cameras:
       zS:           1216.1
       T:            [-327.1471, -248.7190, 481.7829]
       R:            [-3.9497, -0.5760, -0.9560]
+      Rformat:      'euler-xyz-rad'
 
     - name:         M9
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -208,6 +225,7 @@ cameras:
       zS:           1216.1
       T:            [-483.0407, 602.5126, 587.3916]
       R:            [-2.4994, -0.7493, -2.3178]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L1
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -219,6 +237,7 @@ cameras:
       zS:           1216.1
       T:            [-923.6927, 225.0199, 205.0312]
       R:            [-3.1879, -1.4244, -1.5480]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L2
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -230,6 +249,7 @@ cameras:
       zS:           1216.1
       T:            [-617.1199, -250.4866, 095.83130]
       R:            [-4.8030, -0.9920, -0.1191]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L3
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -241,6 +261,7 @@ cameras:
       zS:           1216.1
       T:            [107.3623, 1440.9528, 125.8163]
       R:            [-1.6521, -6.2309, -3.1478]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L4
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -252,6 +273,7 @@ cameras:
       zS:           1216.1
       T:            [536.1135, 1104.3457, 061.0062]
       R:            [-1.5276, -5.8051, -3.0969]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L5
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -263,6 +285,7 @@ cameras:
       zS:           1216.1
       T:            [-290.4745, 752.7439, 024.6231]
       R:            [-1.4200, -0.9406, -3.2852]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L6
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -274,6 +297,7 @@ cameras:
       zS:           1216.1
       T:            [504.4358, -521.7866, 108.0059]
       R:            [-4.7248, -5.6686, -0.0260]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L7
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -285,6 +309,7 @@ cameras:
       zS:           1216.1
       T:            [78.3118, -1003.8083, 161.3032]
       R:            [-4.7105, -0.0196, -6.2763]
+      Rformat:      'euler-xyz-rad'
 
     - name:         L8
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
@@ -296,6 +321,7 @@ cameras:
       zS:           1216.1
       T:            [-286.8135, -838.0852, 135.0429]
       R:            [-4.7129, -0.5168, -6.2243]
+      Rformat:      'euler-xyz-rad'
 
 scene:
     # floor

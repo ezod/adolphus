@@ -545,13 +545,18 @@ class Quaternion(object):
         """\
         Constructor.
         """
-        if len(args) == 2 and isinstance(args[0], Number) \
+        if not args or args[0] is None:
+            self.a = 1.0
+            self.v = Point()
+        elif len(args) == 2 and isinstance(args[0], Number) \
         and (isinstance(args[1], Point) or len(args[1]) >= 3):
             self.a = float(args[0])
             self.v = Point(args[1])
         elif len(args) >= 4 and all([isinstance(a, Number) for a in args[:4]]):
             self.a = float(args[0])
             self.v = Point(args[1:4])
+        else:
+            raise TypeError("unrecognized initial value format")
 
     @property
     def b(self):
@@ -696,42 +701,18 @@ class Rotation(object):
     """\
     3D Euclidean rotation class. Handles multiple representations of SO(3).
     """
-    def __init__(self, *args):
+    def __init__(self, Q=None):
         """\
         Constructor.
         """
-        if not args or args[0] is None:
-            # identity rotation
-            self.Q = Quaternion(1, (0, 0, 0))
-        elif isinstance(args[0], Rotation):
-            # from another Rotation object
-            self.Q = args[0].Q
-        elif isinstance(args[0], Quaternion):
-            # from quaternion
-            self.Q = args[0]
-        elif isinstance(args[0], numpy.ndarray):
-            # from rotation matrix (numpy array)
-            self.Q = self.from_rotation_matrix(args[0])
-        elif len(args) == 1 and len(args[0]) == 3 \
-        and all([isinstance(a, Number) for a in args[0]]):
-            # from euler xyz (all in one iterable)
-            self.Q = self.from_euler_xyz(Angle(args[0][0]), Angle(args[0][1]),
-                Angle(args[0][2]))
-        elif len(args) == 1 and len(args[0]) == 2:
-            # from axis-angle (all in one iterable)
-            self.Q = self.from_axis_angle(Point(args[0][0]), Angle(args[0][1]))
-        elif len(args) == 1 and all([len(args[0][i]) == 3 for i in range(3)]):
-            # from rotation matrix (iterable of iterables)
-            self.Q = self.from_rotation_matrix(numpy.array(args[0]))
-        elif len(args) == 2:
-            # from axis-angle (unpacked)
-            self.Q = self.from_axis_angle(Point(args[0]), Angle(args[1]))
-        elif len(args) == 3 and isinstance(args[0], Number):
-            # from euler xyz (unpacked)
-            self.Q = self.from_euler_xyz(Angle(args[0]), Angle(args[1]),
-                Angle(args[2]))
+        if Q is None:
+            self.Q = Quaternion()
+        elif isinstance(Q, Rotation):
+            self.Q = Q.Q
+        elif isinstance(Q, Quaternion):
+            self.Q = Q
         else:
-            raise TypeError("unrecognized initial value format")
+            self.Q = Quaternion(Q)
 
     def __repr__(self):
         """\
@@ -809,15 +790,15 @@ class Rotation(object):
         return Quaternion(Qa, Qv)
     
     @staticmethod
-    def from_axis_angle(axis, theta):
+    def from_axis_angle(theta, axis):
         """\
         Generate the internal quaternion representation from an axis and
         angle representation.
 
-        @param axis: The axis of rotation.
-        @type axis: L{Point}
         @param theta: The angle of rotation.
         @type theta: L{Angle}
+        @param axis: The axis of rotation.
+        @type axis: L{Point}
         @return: Quaternion representation of the rotation.
         @rtype: L{Quaternion}
         """
@@ -835,8 +816,8 @@ class Rotation(object):
         @type phi: L{Angle}
         @param psi: Rotation angle about z-axis.
         @type psi: L{Angle}
-        @return: Rotation matrix.
-        @rtype: C{numpy.ndarray}
+        @return: Quaternion representation of the rotation.
+        @rtype: L{Quaternion}
         """
         a = cos(theta / 2.0) * cos(phi / 2.0) * cos(psi / 2.0) + \
             sin(theta / 2.0) * sin(phi / 2.0) * sin(psi / 2.0)
@@ -912,7 +893,7 @@ class Pose(object):
         @param T: The 3-element translation vector.
         @type T: L{Point}
         @param R: The 3x3 rotation matrix.
-        @type R: C{numpy.ndarray}
+        @type R: L{Rotation}
         """
         if isinstance(T, Point):
             self.T = T
@@ -1053,10 +1034,12 @@ class Plane(object):
                 self.pose = Pose(T=Point(0, 0, kwargs['z']))
             elif dims == ['x', 'z']:
                 self.pose = Pose(T=Point(0, kwargs['y'], 0),
-                                 R=Rotation(-pi / 2.0, 0, 0))
+                                 R=Rotation(Rotation.from_euler_xyz(\
+                                 -pi / 2.0, 0, 0)))
             elif dims == ['y', 'z']:
                 self.pose = Pose(T=Point(kwargs['x'], 0, 0),
-                                 R=Rotation(0, -pi / 2.0, -pi / 2.0))
+                                 R=Rotation(Rotation.from_euler_xyz(\
+                                 0, -pi / 2.0, -pi / 2.0)))
             self.x = (float(min(kwargs[dims[0]])), float(max(kwargs[dims[0]])))
             self.y = (float(min(kwargs[dims[1]])), float(max(kwargs[dims[1]])))
         else:
