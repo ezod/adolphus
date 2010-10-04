@@ -202,13 +202,14 @@ class Experiment(object):
                       ['zn', (0, 0, -model.scale * 3)]]:
             self.modifier.add(arrow[0], visual.arrow(frame=self.modifier,
                 pos=arrow[1], axis=arrow[1], shaftwidth=(model.scale / 3.0),
-                color=(0, 0.25, 0.75), opacity=0.4))
+                color=(0, 0.25, 0.75), material=visual.materials.emissive))
         for ring in [['rotx', (1, 0, 0)],
                      ['roty', (0, 1, 0)],
                      ['rotz', (0, 0, 1)]]:
             self.modifier.add(ring[0], visual.ring(frame=self.modifier,
                 radius=(model.scale * 3), thickness=(model.scale / 6.0),
-                axis=ring[1], color=(0, 0.25, 0.75), opacity=0.4))
+                axis=ring[1], color=(0, 0.25, 0.75),
+                material=visual.materials.emissive))
         self.modifier.visible = False
 
         # load and parse config file
@@ -311,9 +312,11 @@ class Experiment(object):
 
         def cmd_update(args):
             self.display.message("Updating model...")
+            self.display.userspin = False
             self.model.update_model()
             self.model.update_fvg()
             self.model.update_visualization()
+            self.display.userspin = True
             self.display.message()
 
         self.commands = {}
@@ -445,8 +448,9 @@ class Experiment(object):
                     if zdiff.mag < self.display.rmin / 10.0:
                         continue
                     self.modifier.parent.pose.R += \
-                        Rotation((-self.modifier.parent.pose).map_rotate(\
-                        Point(axes[rotating])), copysign(zdiff.mag, zdiff.z) * 0.01)
+                        Rotation(Rotation.from_axis_angle(copysign(zdiff.mag,
+                        zdiff.z) * 0.01, (-self.modifier.parent.pose\
+                        ).map_rotate(Point(axes[rotating]))))
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif zoom:
