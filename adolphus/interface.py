@@ -100,7 +100,7 @@ class Display(visual.display):
             self.fov = max(camera.fov['a'])
             # FIXME: zoom still isn't exactly right
             self.range = max(max(camera.fov['sl']), max(camera.fov['sr'])) \
-                * camera.params['zS'] * 1.5
+                * camera.params['zS'] * 1.2
             self.cdot.pos = self.center
             self._messagebox.pos = self.center
         else:
