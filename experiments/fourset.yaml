@@ -85,10 +85,11 @@ cameras:
 
 
 scene:
-    # floor
-    - x:            [-400, 400]
-      y:            [-400, 400]
-      z:            -100
+    # vision platform
+    - model:        VisionPlatform
+      T:            [1850, -435, -653]
+      R:            [0, 0, 270]
+      Rformat:      'euler-xyz-deg'
 
     # box
     - x:            [-150, 150]
