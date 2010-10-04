@@ -688,25 +688,34 @@ class Rotation(object):
         """\
         Constructor.
         """
-        if not args or len(args) == 1 and args[0] is None:
+        if not args or args[0] is None:
+            # identity rotation
             self.Q = Quaternion(1, (0, 0, 0))
         elif isinstance(args[0], Rotation):
+            # from another Rotation object
             self.Q = args[0].Q
         elif isinstance(args[0], Quaternion):
+            # from quaternion
             self.Q = args[0]
         elif isinstance(args[0], numpy.ndarray):
+            # from rotation matrix (numpy array)
             self.Q = self.from_rotation_matrix(args[0])
         elif len(args) == 1 and len(args[0]) == 3 \
         and min([isinstance(a, Number) for a in args[0]]):
+            # from euler xyz (all in one iterable)
             self.Q = self.from_euler_xyz(Angle(args[0][0]), Angle(args[0][1]),
                 Angle(args[0][2]))
         elif len(args) == 1 and len(args[0]) == 2:
+            # from axis-angle (all in one iterable)
             self.Q = self.from_axis_angle(Point(args[0][0]), Angle(args[0][1]))
         elif len(args) == 1 and min([len(args[0][i]) == 3 for i in range(3)]):
+            # from rotation matrix (iterable of iterables)
             self.Q = self.from_rotation_matrix(numpy.array(args[0]))
         elif len(args) == 2:
+            # from axis-angle (unpacked)
             self.Q = self.from_axis_angle(Point(args[0]), Angle(args[1]))
         elif len(args) == 3 and isinstance(args[0], Number):
+            # from euler xyz (unpacked)
             self.Q = self.from_euler_xyz(Angle(args[0]), Angle(args[1]),
                 Angle(args[2]))
         else:
