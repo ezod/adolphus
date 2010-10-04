@@ -9,10 +9,10 @@ Visual interface module.
 
 import sys
 import yaml
-from math import tan
+from math import tan, copysign
 from time import sleep
 
-from geometry import Point, DirectionalPoint, Rotation
+from geometry import Point, DirectionalPoint, Rotation, Pose
 from visualization import visual, VisualizationObject, VisualizationError
 
 
@@ -202,7 +202,13 @@ class Experiment(object):
                       ['zn', (0, 0, -model.scale * 3)]]:
             self.modifier.add(arrow[0], visual.arrow(frame=self.modifier,
                 pos=arrow[1], axis=arrow[1], shaftwidth=(model.scale / 3.0),
-                color=(0, 0.25, 0.75)))
+                color=(0, 0.25, 0.75), opacity=0.4))
+        for ring in [['rotx', (1, 0, 0)],
+                     ['roty', (0, 1, 0)],
+                     ['rotz', (0, 0, 1)]]:
+            self.modifier.add(ring[0], visual.ring(frame=self.modifier,
+                radius=(model.scale * 3), thickness=(model.scale / 6.0),
+                axis=ring[1], color=(0, 0.25, 0.75), opacity=0.4))
         self.modifier.visible = False
 
         # load and parse config file
@@ -397,23 +403,22 @@ class Experiment(object):
                 elif m.drag == "left" and m.pick in self.modifier.primitives:
                     for name in self.modifier.members.keys():
                         if m.pick == self.modifier.members[name]:
-                            if m.shift:
-                                rotating = name[0]
+                            if name.startswith('rot'):
+                                rotating = name[3]
                                 axes = {'x': (1, 0, 0),
                                         'y': (0, 1, 0),
                                         'z': (0, 0, 1)}
                                 lastpos = self.display.mouse.project(normal=\
                                     axes[rotating], point=self.modifier.pos)
+                                m.pick.color = (0, 1, 0)
                             else:
                                 moving = name[0]
                                 lastpos = self.display.mouse.project(normal=\
                                     self.display.forward,
                                     point=self.modifier.pos)
-                    for name in self.modifier.members.keys():
-                        if moving and name.startswith(moving):
-                            self.modifier.members[name].color = (0, 1, 0)
-                        elif rotating and name.startswith(rotating):
-                            self.modifier.members[name].color = (1, 0.5, 0)
+                                for name in self.modifier.members.keys():
+                                    if moving and name.startswith(moving):
+                                        self.modifier.members[name].color = (0, 1, 0)
                 elif m.drop == "left" and (moving or rotating):
                     for name in self.modifier.members.keys():
                         self.modifier.members[name].color = (0, 0.25, 0.75)
@@ -423,27 +428,27 @@ class Experiment(object):
                 newpos = self.display.mouse.project(normal=self.display.forward,
                     point=self.modifier.pos)
                 if newpos != lastpos:
-                    if moving == 'x':
-                        self.modifier.parent.pose.T.x += newpos.x \
-                            - self.modifier.pos.x
-                    elif moving == 'y':
-                        self.modifier.parent.pose.T.y += newpos.y \
-                            - self.modifier.pos.y
-                    elif moving == 'z':
-                        self.modifier.parent.pose.T.z += newpos.z \
-                            - self.modifier.pos.z
+                    setattr(self.modifier.parent.pose.T, moving,
+                        getattr(self.modifier.parent.pose.T, moving) + getattr(\
+                        newpos, moving) - getattr(lastpos, moving))
                     self.modifier.pos = self.modifier.parent.pose.T.tuple
                     self.modifier.parent.update_visualization()
+                    lastpos = newpos
             elif rotating:
-                axes = {'x': (1, 0, 0),
-                        'y': (0, 1, 0),
-                        'z': (0, 0, 1)}
+                axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
                 newpos = self.display.mouse.project(normal=axes[rotating],
                     point=self.modifier.pos)
                 if newpos != lastpos:
-                    self.modifier.parent.pose.R \
-                        += Rotation(axes[rotating], 0.02)
+                    planex = -self.display.up.cross(self.display.forward)
+                    planey = planex.cross(self.display.forward)
+                    zdiff = (lastpos - newpos).proj(planey)
+                    if zdiff.mag < self.display.rmin / 10.0:
+                        continue
+                    self.modifier.parent.pose.R += \
+                        Rotation((-self.modifier.parent.pose).map_rotate(\
+                        Point(axes[rotating])), copysign(zdiff.mag, zdiff.z) * 0.01)
                     self.modifier.parent.update_visualization()
+                    lastpos = newpos
             elif zoom:
                 newpos = self.display.mouse.pos
                 if newpos != lastpos:
@@ -454,8 +459,7 @@ class Experiment(object):
                     zdiff = (lastpos - newpos).proj(planey)
                     if zdiff.mag < self.display.rmin / 10.0:
                         continue
-                    scaling = 10 ** ((zdiff.z / abs(zdiff.z)) * zdiff.mag \
-                        / distance)
+                    scaling = 10 ** (copysign(zdiff.mag, zdiff.z) / distance)
                     newrange = scaling * self.display.range.y
                     if self.display.rmin < newrange < self.display.rmax:
                         self.display.range = newrange
