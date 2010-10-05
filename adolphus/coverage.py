@@ -508,11 +508,13 @@ def load_model_from_yaml(filename, active=True):
             return Rotation(Rotation.from_rotation_matrix(R))
         elif format == 'axis-angle':
             return Rotation(Rotation.from_axis_angle(R[0], R[1]))
-        elif format == 'euler-xyz-rad':
-            return Rotation(Rotation.from_euler_xyz(R[0], R[1], R[2]))
-        elif format == 'euler-xyz-deg':
-            R = [r * pi / 180.0 for r in R]
-            return Rotation(Rotation.from_euler_xyz(R[0], R[1], R[2]))
+        elif format.startswith('euler'):
+            convention, unit = format.split('-')[1:]
+            if unit == 'deg':
+                R = [r * pi / 180.0 for r in R]
+            return Rotation(Rotation.from_euler(convention, (R[0], R[1], R[2])))
+        else:
+            raise ValueError("unrecognized rotation format")
 
     params = yaml.load(open(filename))
 

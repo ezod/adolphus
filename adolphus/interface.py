@@ -264,7 +264,7 @@ class Experiment(object):
             try:
                 self.display.message('T: %s\n' % self.model[args[0]].pose.T + \
                     u'R: \u03d1 = %0.2f, \u03d5 = %0.2f, \u0471 = %0.2f' \
-                    % self.model[args[0]].pose.R.to_euler_xyz())
+                    % self.model[args[0]].pose.R.to_euler_zyx())
             except KeyError:
                 self.display.message("Invalid camera name.")
 

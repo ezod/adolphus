@@ -89,7 +89,7 @@ scene:
     - model:        VisionPlatform
       T:            [1850, -435, -640]
       R:            [0, 0, 270]
-      Rformat:      'euler-xyz-deg'
+      Rformat:      'euler-zyx-deg'
 
     # box
     - x:            [-150, 150]
@@ -112,7 +112,7 @@ scene:
     - model:        CheckerCalibrationBoard
       T:            [0, 0, 0]
       R:            [0, 0, 0]
-      Rformat:      'euler-xyz-deg'
+      Rformat:      'euler-zyx-deg'
 
 points:
     - x:            [-400, 400]

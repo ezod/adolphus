@@ -805,28 +805,30 @@ class Rotation(object):
         return Quaternion(cos(theta / 2.0), sin(theta / 2.0) * axis.normal)
 
     @staticmethod
-    def from_euler_xyz(theta, phi, psi):
+    def from_euler(convention, angles):
         """\
-        Generate the internal rotation matrix representation from three fixed-
-        axis (Euler xyz) rotation angles.
-
-        @param theta: Rotation angle about x-axis.
-        @type theta: L{Angle}
-        @param phi: Rotation angle about y-axis.
-        @type phi: L{Angle}
-        @param psi: Rotation angle about z-axis.
-        @type psi: L{Angle}
-        @return: Quaternion representation of the rotation.
-        @rtype: L{Quaternion}
+        TODO
         """
-        a = cos(theta / 2.0) * cos(phi / 2.0) * cos(psi / 2.0) + \
-            sin(theta / 2.0) * sin(phi / 2.0) * sin(psi / 2.0)
-        b = sin(theta / 2.0) * cos(phi / 2.0) * cos(psi / 2.0) - \
-            cos(theta / 2.0) * sin(phi / 2.0) * sin(psi / 2.0)
-        c = cos(theta / 2.0) * sin(phi / 2.0) * cos(psi / 2.0) + \
-            sin(theta / 2.0) * cos(phi / 2.0) * sin(psi / 2.0)
-        d = cos(theta / 2.0) * cos(phi / 2.0) * sin(psi / 2.0) - \
-            sin(theta / 2.0) * sin(phi / 2.0) * cos(psi / 2.0)
+        def qterm(index):
+            bin = lambda x: [(x >> 2) % 2, (x >> 1) % 2, x % 2]
+            return copysign(1, index) * reduce(lambda a, b: a * b,
+                [(bit and sin or cos)(angles[i] / 2.0) \
+                for i, bit in enumerate(bin(abs(index)))])
+        # TODO: can these be generated from the convention?
+        eulerquat = {'xyx': [0, -5, 1, 4, 2, 7, 3, -6],
+                     'xyz': [0, -7, 1, 6, 2, -5, 3, 4],
+                     'xzx': [0, -5, 1, 4, -3, 6, 2, 7],
+                     'xzy': [0, 7, 1, -6, -3, 4, 2, 5],
+                     'yxy': [0, -5, 2, 7, 1, 4, -3, 6],
+                     'yxz': [0, 7, 2, 5, 1, -6, -3, 4],
+                     'yzx': [0, -7, 3, 4, 1, 6, 2, -5],
+                     'yzy': [0, -5, 3, -6, 1, 4, 2, 7],
+                     'zxy': [0, -7, 2, -5, 3, 4, 1, 6],
+                     'zxz': [0, -5, 2, 7, 3, -6, 1, 4],
+                     'zyx': [0, 7, -3, 4, 2, 5, 1, -6],
+                     'zyz': [0, -5, -3, 6, 2, 7, 1, 4]}
+        a, b, c, d = [sum([qterm(eulerquat[convention][i + j * 2]) \
+                      for i in range(2)]) for j in range(4)]
         if a > 0:
             return Quaternion(a, -b, -c, -d)
         else:
@@ -867,12 +869,12 @@ class Rotation(object):
         except ValueError:
             return (Point(1, 0, 0), theta)
 
-    def to_euler_xyz(self):
+    def to_euler_zyx(self):
         """\
-        Return three fixed-axis (Euler xyz) rotation angles from the internal
+        Return three fixed-axis (Euler zyx) rotation angles from the internal
         rotation matrix representation.
 
-        @return: Three fixed-axis (Euler xyz) angle rotation form.
+        @return: Three fixed-axis (Euler zyx) angle rotation form.
         @rtype: C{tuple} of L{Angle}
         """
         a, b, c, d = self.Q.a, self.Q.b, self.Q.c, self.Q.d
@@ -1034,12 +1036,12 @@ class Plane(object):
                 self.pose = Pose(T=Point(0, 0, kwargs['z']))
             elif dims == ['x', 'z']:
                 self.pose = Pose(T=Point(0, kwargs['y'], 0),
-                                 R=Rotation(Rotation.from_euler_xyz(\
-                                 -pi / 2.0, 0, 0)))
+                                 R=Rotation(Rotation.from_euler('zyx',
+                                 (-pi / 2.0, 0, 0))))
             elif dims == ['y', 'z']:
                 self.pose = Pose(T=Point(kwargs['x'], 0, 0),
-                                 R=Rotation(Rotation.from_euler_xyz(\
-                                 0, -pi / 2.0, -pi / 2.0)))
+                                 R=Rotation(Rotation.from_euler('zyx',
+                                 (0, -pi / 2.0, -pi / 2.0))))
             self.x = (float(min(kwargs[dims[0]])), float(max(kwargs[dims[0]])))
             self.y = (float(min(kwargs[dims[1]])), float(max(kwargs[dims[1]])))
         else:
@@ -1061,6 +1063,17 @@ class Plane(object):
             return None
         return self.pose.map(Point((self.x[1] - self.x[0]) / 2.0 + self.x[0],
             (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0))
+
+    def corners(self):
+        """\
+        Return the corners of the plane.
+
+        @return: The corners of the plane.
+        @rtype: C{list} of L{Point}
+        """
+        if self.x is None or self.y is None:
+            raise ValueError("an infinite plane has no corners")
+        return [self.pose.map(Point(x, y, 0)) for x in self.x for y in self.y]
 
     def intersection(self, pa, pb):
         """\

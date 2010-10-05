@@ -25,12 +25,12 @@ cameras:
 
 scene:
     - model:        VisionPlatform
-      T:            [-455, -978, -553]
-      R:            [0, 0, 0]
-      Rformat:      'euler-xyz-deg'
+      T:            [-978, 455, -553]
+      R:            [0, 0, 90]
+      Rformat:      'euler-zyx-deg'
 
     - x:            [-108, 108]
       y:            [-140, 140]
-      T:            [0, 0, 0]
-      R:            [0, 0, 0]
-      Rformat:      'euler-xyz-deg'
+      T:            [414.59, 7.60, 474.38]
+      R:            [67.76, 59.62, 92.52]
+      Rformat:      'euler-zxz-deg'
