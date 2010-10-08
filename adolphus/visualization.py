@@ -54,20 +54,17 @@ class VisualizationObject(visual.frame):
             raise ValueError("must specify this VisualizationObject as frame")
         self.members[name] = entity
 
-    def transform(self, pos, axis, angle):
+    def transform(self, pose):
         """\
         Execute a 3D transformation on this visualization object.
 
-        @param pos: The position.
-        @type pos: C{tuple} of C{float}
-        @param axis: The axis of rotation.
-        @type axis: C{tuple} of C{float}
-        @param angle: The angle of rotation.
-        @type angle: C{float}
+        @param pose: The pose.
+        @type pose: L{geometry.Pose}
         """
-        self.pos = pos
+        self.pos = pose.T.tuple
         self.axis = (0, 0, 1)
         self.up = (1, 0, 0)
+        axis, angle = pose.R.to_axis_angle()
         self.rotate(axis=(axis).tuple, angle=angle)
 
     def fade(self, on):

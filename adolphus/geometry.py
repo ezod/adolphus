@@ -802,6 +802,8 @@ class Rotation(object):
         @return: Quaternion representation of the rotation.
         @rtype: L{Quaternion}
         """
+        if not isinstance(axis, Point):
+            axis = Point(axis)
         return Quaternion(cos(theta / 2.0), sin(theta / 2.0) * axis.normal)
 
     @staticmethod
@@ -1121,16 +1123,13 @@ class Plane(object):
             self.vis['plane'].height = self.x[1] - self.x[0]
             self.vis['plane'].color = color
             self.vis['plane'].opacity = opacity
-            axis, angle = self.pose.R.to_axis_angle()
-            self.vis.transform(self.center.tuple, axis, angle)
         except AttributeError:
             self.vis = VisualizationObject(self)
             self.vis.add('plane', visual.box(frame=self.vis,
                 pos=(0, 0, 0), height=(self.x[1] - self.x[0]),
                 width=(self.y[1] - self.y[0]), length=(scale / 30.0),
                 color=color, opacity=opacity, material=visual.materials.wood))
-            axis, angle = self.pose.R.to_axis_angle()
-            self.vis.transform(self.center.tuple, axis, angle)
+        self.vis.transform(Pose(self.center, self.pose.R))
 
 
 def pointrange(xrange, yrange, zrange, step, ddiv=None):

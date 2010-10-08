@@ -235,8 +235,7 @@ class Camera(object):
             # TODO: any other updates?
         except KeyError:
             pass
-        axis, angle = self.pose.R.to_axis_angle()
-        self.vis.transform(self.pose.T.tuple, axis, angle)
+        self.vis.transform(self.pose)
 
     def visualize_fov_toggle(self):
         """\

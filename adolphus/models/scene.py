@@ -1,5 +1,5 @@
 from ..geometry import Point, Pose, Plane
-from ..visualization import  visual, VisualizationObject, VisualizationError
+from ..visualization import visual, VisualizationObject, VisualizationError
 
 
 class VisionPlatform(object):
@@ -39,7 +39,7 @@ class VisionPlatform(object):
         @type scale: C{object}
         @param color: Not used.
         @type color: C{object}
-        @param opacity: The opacity with which to plot the object.
+        @param opacity: The opacity of the visualization.
         @type opacity: C{float}
         """
         if not visual:
@@ -78,8 +78,7 @@ class VisionPlatform(object):
         self.vis.add('wood', visual.box(frame=self.vis, pos=(49.5, 460, 650),
             length=19, width=1240, height=860, color=(0.91, 0.85, 0.64),
             opacity=opacity, material=visual.materials.wood))
-        axis, angle = self.pose.R.to_axis_angle()
-        self.vis.transform(self.pose.T.tuple, axis, angle)
+        self.vis.transform(self.pose)
 
 
 class CheckerCalibrationBoard(object):
@@ -123,7 +122,7 @@ class CheckerCalibrationBoard(object):
         @type scale: C{object}
         @param color: Not used.
         @type color: C{object}
-        @param opacity: The opacity with which to plot the object.
+        @param opacity: The opacity of the visualization.
         @type opacity: C{float}
         """
         if not visual:
@@ -144,5 +143,4 @@ class CheckerCalibrationBoard(object):
                     pos=(1, 9.5 + 19 * x, 9.5 + 19 * y), length=1.2, width=19,
                     height=19, color=((x + y) % 2, (x + y) % 2, (x + y) % 2),
                     opacity=opacity))
-        axis, angle = self.pose.R.to_axis_angle()
-        self.vis.transform(self.pose.T.tuple, axis, angle)
+        self.vis.transform(self.pose)
