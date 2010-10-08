@@ -9,7 +9,11 @@ from shutil import rmtree
 from glob import glob
 import os
 import sys
-import epydoc.cli
+
+try:
+    import epydoc.cli as doc
+except ImportError:
+    doc = None
 
 NAME = 'adolphus'
 URL = 'http://github.com/ezod/adolphus'
@@ -25,11 +29,13 @@ class GenerateDoc(Command):
         pass
 
     def run(self):
+        if not doc:
+            raise ImportError("Epydoc is not available")
         rmtree('doc', ignore_errors=True)
         os.mkdir('doc')
         sys.argv = ['epydoc', '-v', '--name', NAME, '--url', URL, '-o', 'doc', PACKAGE]
-        options, names = epydoc.cli.parse_arguments()
-        epydoc.cli.main(options, names)
+        options, names = doc.parse_arguments()
+        doc.main(options, names)
 
 setup(
     name = NAME,
