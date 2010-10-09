@@ -1119,15 +1119,15 @@ class Plane(object):
         if self.x is None or self.y is None:
             raise ValueError("cannot plot an infinite plane")
         try:
-            self.vis['plane'].width = self.y[1] - self.y[0]
-            self.vis['plane'].height = self.x[1] - self.x[0]
+            self.vis['plane'].length = self.x[1] - self.x[0]
+            self.vis['plane'].height = self.y[1] - self.y[0]
             self.vis['plane'].color = color
             self.vis['plane'].opacity = opacity
         except AttributeError:
             self.vis = VisualizationObject(self)
             self.vis.add('plane', visual.box(frame=self.vis,
-                pos=(0, 0, 0), height=(self.x[1] - self.x[0]),
-                width=(self.y[1] - self.y[0]), length=(scale / 30.0),
+                pos=(0, 0, 0), length=(self.x[1] - self.x[0]),
+                height=(self.y[1] - self.y[0]), width=(scale / 30.0),
                 color=color, opacity=opacity, material=visual.materials.wood))
         self.vis.transform(Pose(self.center, self.pose.R))
 

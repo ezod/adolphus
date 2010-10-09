@@ -87,8 +87,8 @@ cameras:
 scene:
     # vision platform
     - model:        VisionPlatform
-      T:            [1850, -435, -640]
-      R:            [0, 0, 270]
+      T:            [1850, 435, -640]
+      R:            [0, 0, 180]
       Rformat:      'euler-zyx-deg'
 
     # box

@@ -62,7 +62,7 @@ class VisualizationObject(visual.frame):
         @type pose: L{geometry.Pose}
         """
         self.pos = pose.T.tuple
-        self.axis = (0, 0, 1)
+        self.axis = (1, 0, 0)
         self.up = (1, 0, 0)
         axis, angle = pose.R.to_axis_angle()
         self.rotate(axis=(axis).tuple, angle=angle)
