@@ -261,8 +261,7 @@ class MultiCamera(dict):
     """\
     Multi-camera n-ocular fuzzy coverage model.
     """
-    def __init__(self, name="Untitled", ocular=1, scene=Scene(), points=set(),
-                 scale=1.0):
+    def __init__(self, name="Untitled", ocular=1, scene=Scene(), scale=1.0):
         """\
         Constructor.
    
@@ -272,8 +271,6 @@ class MultiCamera(dict):
         @type ocular: C{int}
         @param scene: The discrete scene model.
         @type scene: L{Scene}
-        @param points: The initial set of points.
-        @type points: C{set} of L{Point}
         @param scale: The scale of the model (for visualization).
         @type scale: C{float}
         """
@@ -282,11 +279,8 @@ class MultiCamera(dict):
             raise ValueError("network must be at least 1-ocular")
         self.ocular = ocular
         self.scene = scene
-        self.points = points
-        self.model = FuzzySet()
         self.fvg = FuzzyGraph(directed=False)
         self.vis = None
-        self._vis_ptmu = False
         self.scale = scale
 
     def __setitem__(self, key, value):
@@ -311,15 +305,6 @@ class MultiCamera(dict):
         """
         return [key for key in self.keys() if self[key].active]
     
-    def update_model(self):
-        """\
-        Update the n-ocular multi-camera network discrete coverage model.
-        """
-        if len(self.active_cameras) < self.ocular:
-            raise ValueError("network has too few cameras")
-        self.model = FuzzySet([FuzzyElement(point, self.mu(point)) \
-                               for point in self.points])
-
     def update_fvg(self):
         """\
         Update the fuzzy vision graph.
@@ -378,13 +363,6 @@ class MultiCamera(dict):
                 self[camera].vis.add('name', visual.label(color=(1, 1, 1),
                     frame=self[camera].vis, pos=(0, self.scale, 0), height=6,
                     text=camera, visible=False))
-            # points
-            for point in self.model.support:
-                point.visualize(scale=self.scale, color=(1, 0, 0),
-                    opacity=self.model.mu(point))
-                point.vis.add('mu', visual.label(frame=point.vis, pos=(0, 0, 0),
-                    height=6, color=(1, 1, 1), visible=False,
-                    text=("%1.4f" % self.model.mu(point))))
             # graph edges
             self.vis = VisualizationObject(self)
             for pair in combinations(self.keys(), 2):
@@ -401,21 +379,6 @@ class MultiCamera(dict):
                 except KeyError:
                     pass
 
-    def visualize_ptmu_toggle(self):
-        """\
-        Toggle visibility of mu values over points.
-        """
-        if not self.vis:
-            raise VisualizationError("visualization not yet initialized")
-        self._vis_ptmu = not self._vis_ptmu
-        for point in self.model.keys():
-            try:
-                point.vis.members['mu'].visible = self.model.mu(point) \
-                    and self._vis_ptmu or False
-            except AttributeError:
-                pass
-
-
     def visualize_name_toggle(self):
         """\
         Toggle visibility of the camera name tags.
@@ -426,20 +389,6 @@ class MultiCamera(dict):
             self[camera].vis.members['name'].visible = \
                 not self[camera].vis.members['name'].visible
 
-    def visualize_clear_points(self):
-        """\
-        Clear all visualized points.
-        """
-        for point in self.model.keys():
-            try:
-                for member in point.vis.members.keys():
-                    point.vis.members[member].visible = False
-                    del point.vis.members[member]
-                point.vis.visible = False
-                del point.vis
-            except AttributeError:
-                pass
-
     def update_visualization(self):
         """\
         Update the visualization.
@@ -449,31 +398,6 @@ class MultiCamera(dict):
         # cameras
         for camera in self:
             self[camera].update_visualization()
-        # points
-        for point in self.model.keys():
-            if not self.model.mu(point):
-                try:
-                    for member in point.vis.members.keys():
-                        point.vis.members[member].visible = False
-                        del point.vis.members[member]
-                    point.vis.visible = False
-                    del point.vis
-                except AttributeError:
-                    pass
-                continue
-            try:
-                point.vis.members['point'].opacity = self.model.mu(point)
-                try:
-                    point.vis.members['dir'].opacity = self.model.mu(point)
-                except KeyError:
-                    pass
-                point.vis.members['mu'].text = "%1.4f" % self.model.mu(point)
-            except AttributeError:
-                point.visualize(scale=self.scale, color=(1, 0, 0),
-                                opacity=self.model.mu(point))
-                point.vis.members['mu'] = visual.label(frame=point.vis,
-                    pos=(0, 0, 0), height=6, color=(1, 1, 1), visible=False,
-                    text=("%1.4f" % self.model.mu(point)))
         # graph edges
         for pair in combinations(self.keys(), 2):
             edge = 'e-%s-%s' % tuple(pair)
@@ -565,27 +489,9 @@ def load_model_from_yaml(filename, active=True):
     except KeyError:
         pass
 
-    # points
-    points = set()
-    try:
-        for point in params['points']:
-            if point.has_key('step'):
-                if not point.has_key('ddiv'):
-                    point['ddiv'] = None
-                for p in pointrange(point['x'], point['y'], point['z'],
-                                    point['step'], ddiv=point['ddiv']):
-                       points.add(p)
-            else:
-                if len(point['point']) == 3:
-                    points.add(Point(tuple(point['point'])))
-                elif len(point['point']) == 5:
-                    points.add(DirectionalPoint(tuple(point['point'])))
-    except KeyError:
-        pass
-
     # cameras
     model = MultiCamera(name=params['name'], ocular=params['ocular'],
-                        scene=scene, points=points, scale=params['scale'])
+                        scene=scene, scale=params['scale'])
     for camera in params['cameras']:
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]

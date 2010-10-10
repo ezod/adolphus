@@ -354,9 +354,6 @@ class Experiment(object):
         self.model.visualize()
         cam_vis = [primitive for objects in [self.model[camera].vis.primitives \
             for camera in self.model] for primitive in objects]
-        point_vis = [primitive for objects in [vis.objects for vis in \
-            [point.vis for point in self.model.model.keys()]] \
-            for primitive in objects]
         zoom = False
         spin = False
         moving = None
@@ -400,9 +397,6 @@ class Experiment(object):
                         m.pick.frame.parent.active = \
                             not m.pick.frame.parent.active
                         m.pick.frame.parent.update_visualization()
-                elif m.click == "left" and m.pick in point_vis:
-                    print "mu%s = %f" % (m.pick.frame.parent,
-                        self.model.model[m.pick.frame.parent].mu)
                 elif m.drag == "left" and m.pick in self.modifier.primitives:
                     for name in self.modifier.members.keys():
                         if m.pick == self.modifier.members[name]:
