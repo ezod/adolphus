@@ -922,7 +922,7 @@ class Pose(object):
         if not isinstance(other, Pose):
             raise TypeError("argument must be a Pose")
         Tnew = other.R.rotate(self.T) + other.T
-        Rnew = self.R + other.R
+        Rnew = other.R + self.R
         return Pose(Tnew, Rnew)
 
     def __sub__(self, other):
