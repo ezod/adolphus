@@ -7,5 +7,5 @@ Visual models for Adolphus.
 @license: GPL-3
 """
 
-__all__ = ['scene', 'cameras', 'lenses']
+__all__ = ['scene', 'cameras', 'lenses', 'robots']
 __name__ = 'adolphus.models'
