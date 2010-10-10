@@ -515,6 +515,16 @@ def load_model_from_yaml(filename, active=True):
         else:
             raise ValueError("unrecognized rotation format")
 
+    def full_pose(item, mounts=None):
+        if item.has_key('pose'):
+            pose = Pose(T=Point(tuple(item['pose']['T'])),
+            R=parse_rotation(item['pose']['R'], item['pose']['Rformat']))
+        else:
+            pose = Pose()
+        if mounts and item.has_key('mount'):
+            pose += mounts[item['mount']].mount_pose()
+        return pose
+
     params = yaml.load(open(filename))
 
     # custom import
@@ -527,20 +537,31 @@ def load_model_from_yaml(filename, active=True):
     except KeyError:
         pass
 
-    # scene
+    # scene and mounts
     scene = Scene()
+    mounts = {}
     try:
-        for plane in params['scene']:
-            if plane.has_key('model'):
-                scene.add(getattr(external, plane['model'])(pose=\
-                    Pose(T=Point(tuple(plane['T'])),
-                         R=parse_rotation(plane['R'], plane['Rformat']))))
-            elif plane.has_key('z'):
-                scene.add(Plane(x=plane['x'], y=plane['y'], z=plane['z']))
+        for mount in params['mounts']:
+            try:
+                position = mount['position']
+            except KeyError:
+                position = None
+            mounts[mount['name']] = getattr(external, mount['model'])(\
+                pose=full_pose(mount), position=position)
+            scene.add(mounts[mount['name']])
+    except KeyError:
+        pass
+    try:
+        for item in params['scene']:
+            if item.has_key('model'):
+                itemobject = getattr(external, item['model'])(\
+                    pose=full_pose(item, mounts))
+            elif item.has_key('z'):
+                itemobject = Plane(x=item['x'], y=item['y'], z=item['z'])
             else:
-                scene.add(Plane(x=plane['x'], y=plane['y'],
-                    pose=Pose(T=Point(tuple(plane['T'])),
-                              R=parse_rotation(plane['R'], plane['Rformat']))))
+                itemobject = Plane(x=item['x'], y=item['y'],
+                    pose=full_pose(item, mounts))
+            scene.add(itemobject)
     except KeyError:
         pass
 
@@ -562,16 +583,14 @@ def load_model_from_yaml(filename, active=True):
     except KeyError:
         pass
 
+    # cameras
     model = MultiCamera(name=params['name'], ocular=params['ocular'],
                         scene=scene, points=points, scale=params['scale'])
-
-    # cameras
     for camera in params['cameras']:
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]
         model[camera['name']] = Camera(camera, active=active,
-            pose=Pose(T=Point(tuple(camera['T'])),
-                      R=parse_rotation(camera['R'], camera['Rformat'])),
+            pose=full_pose(camera, mounts),
             models=[getattr(external, mdl) for mdl in camera['models']])
 
     # relevance models

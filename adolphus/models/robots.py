@@ -64,7 +64,7 @@ class MitsubishiRV1A(object):
                  RealRange((-200, 200))]
         return all([angle in range[i] for i, angle in enumerate(position)])
    
-    def tool_poses(self):
+    def joint_poses(self):
         """\
         Return the 3D transformations for each joint angle.
 
@@ -87,16 +87,31 @@ class MitsubishiRV1A(object):
             R=Rotation(Rotation.from_axis_angle(rpos[0], (0, 0, 1))))
         return (EE, J6, J5, J4, J3, J2, J1)
       
-    def tool_pose(self):
+    def mount_pose(self):
         """\
         Return the overall 3D transformation from base origin to end effector.
 
         @return: The overall pose.
         @rtype: L{Pose}
         """
-        return reduce(lambda a, b: a + b, self.tool_poses())
+        return reduce(lambda a, b: a + b, self.joint_poses())
 
-    def visualize(self):
+    def intersection(self, pa, pb):
+        """\
+        Return the 3D point of intersection (if any) of the line segment
+        between the two specified points and this object.
+
+        @param pa: The first vertex of the line segment.
+        @type pa: L{Point}
+        @param pb: The second vertex of the line segment.
+        @type pb: L{Point}
+        @return: The point of intersection with the object.
+        @rtype: L{Point}
+        """
+        # TODO: intersection for the robot?
+        return None
+
+    def visualize(self, scale=None, color=None, opacity=1.0):
         """\
         Create a 3D visual model of the robot.
 
@@ -109,7 +124,7 @@ class MitsubishiRV1A(object):
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
-        EE, J6, J5, J4, J3, J2, J1 = self.tool_poses()
+        EE, J6, J5, J4, J3, J2, J1 = self.joint_poses()
         self.flange = VisualizationObject(self)
         self.wrist = VisualizationObject(self)
         self.forearm = VisualizationObject(self)
