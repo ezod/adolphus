@@ -250,10 +250,10 @@ class Camera(object):
                 scale = self.Cf.kernel[1]
                 a = [self.fov['sr'][i] - (self.fov['s'][i] / 2.0) \
                      for i in range(2)]
-                self.vis.add('fov', visual.pyramid(frame=self.vis, axis=(-a[1],
-                    a[0], -1), pos=(scale * a[1], -scale * a[0], scale),
-                    size=(scale, self.Cv[0].support.size * scale,
-                    self.Cv[1].support.size * scale), opacity=0.1,
+                self.vis.add('fov', visual.pyramid(frame=self.vis, axis=(-a[0],
+                    a[1], -1), pos=(scale * a[0], -scale * a[1], scale),
+                    size=(scale, self.Cv[1].support.size * scale,
+                    self.Cv[0].support.size * scale), opacity=0.1,
                     color=(0.2, 0.5, 0.6)))
 
 
