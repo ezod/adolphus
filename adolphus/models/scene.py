@@ -28,8 +28,15 @@ class VisionPlatform(object):
         @return: The point of intersection with the object.
         @rtype: L{Point}
         """
-        return None
-        # TODO: intersection
+        planes = set()
+        # top
+        planes.add(Plane(pose=(self.pose + Pose(T=Point(1285, 460, 1775))),
+            x=(-1265, 1265), y=(-430, 430)))
+        # steel
+        planes.add(Plane(pose=(self.pose + Pose(T=Point(1590, 460, 535))),
+            x=(-950, 950), y=(-430, 430)))
+        return reduce(lambda a, b: a or b, [plane.intersection(pa, pb) \
+            for plane in planes])
 
     def visualize(self, scale=None, color=None, opacity=1.0):
         """\
@@ -93,7 +100,6 @@ class CheckerCalibrationBoard(object):
         @type pose: L{Pose}
         """
         self.pose = pose
-        self.plane = Plane(pose=pose, x=(-138, 174), y=(-111, 115))
         self.center = pose.T
     
     def intersection(self, pa, pb):
@@ -108,7 +114,8 @@ class CheckerCalibrationBoard(object):
         @return: The point of intersection with the object.
         @rtype: L{Point}
         """
-        pr = self.plane.intersection(pa, pb)
+        plane = Plane(pose=pose, x=(-138, 174), y=(-111, 115))
+        pr = plane.intersection(pa, pb)
         prlocal = (-self.pose).map(pr)
         if prlocal.x > 276 and prlocal.y > -55 and prlocal.y < 57:
             return None
