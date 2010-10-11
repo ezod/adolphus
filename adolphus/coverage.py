@@ -500,11 +500,12 @@ def load_model_from_yaml(filename, active=True):
             models=[getattr(external, mdl) for mdl in camera['models']])
 
     # relevance models
+    relevance_models = {}
     try:
-        relevance_models = [generate_relevance_model(params['relevance'][i]) \
-                            for i in range(len(params['relevance']))]
+        for rmodel in params['relevance']:
+            relevance_models[rmodel['name']] = generate_relevance_model(rmodel)
     except KeyError:
-        relevance_models = []
+        pass
 
     return model, relevance_models
 
@@ -519,16 +520,34 @@ def generate_relevance_model(params):
     @rtype: L{FuzzySet}
     """
     whole_model = FuzzySet()
-    ranges, extent = {}, {}
-    for range in params['ranges']:
-        for axis in ['x', 'y', 'z']:
-            ranges[axis] = PolygonalFuzzyNumber(range[axis])
-            extent[axis] = (ranges[axis].support[0][0],
-                            ranges[axis].support[-1][1])
+    # ranges
+    try:
+        ranges, extent = {}, {}
+        for range in params['ranges']:
+            for axis in ['x', 'y', 'z']:
+                ranges[axis] = PolygonalFuzzyNumber(range[axis])
+                extent[axis] = (ranges[axis].support[0][0],
+                                ranges[axis].support[-1][1])
+            part_model = FuzzySet()
+            for point in pointrange(extent['x'], extent['y'], extent['z'],
+                                    params['step']):
+                part_model.add(point, mu=min([ranges[axis].mu(getattr(point,
+                    axis)) for axis in ['x', 'y', 'z']]))
+            whole_model |= part_model
+    except KeyError:
+        pass
+    try:
         part_model = FuzzySet()
-        for point in pointrange(extent['x'], extent['y'], extent['z'],
-                                params['step']):
-            part_model.add(point, mu=min([ranges[axis].mu(getattr(point,
-                axis)) for axis in ['x', 'y', 'z']]))
+        for point in params['points']:
+            if len(point['point']) == 3:
+                pointobject = Point(tuple(point['point']))
+            elif len(point['point']) == 5:
+                pointobject = DirectionalPoint(tuple(point['point']))
+            mu = 1.0
+            if point.has_key('mu'):
+                mu = point['mu']
+            part_model.add(pointobject, mu=mu)
         whole_model |= part_model
+    except KeyError:
+        pass
     return whole_model

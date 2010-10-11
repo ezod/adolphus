@@ -175,14 +175,14 @@ class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model, relevance_models=[], config_file=None):
+    def __init__(self, model, relevance_models={}, config_file=None):
         """\
         Constructor.
 
         @param model: The multi-camera model to use.
         @type model: L{coverage.MultiCamera}
-        @param relevance_models: The list of relevance models for performance.
-        @type relevance_models: C{list} of L{fuzz.FuzzySet}
+        @param relevance_models: The relevance models for performance.
+        @type relevance_models: C{dict} of L{fuzz.FuzzySet}
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
