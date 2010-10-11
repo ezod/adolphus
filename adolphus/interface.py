@@ -319,6 +319,8 @@ class Experiment(object):
                 self.model.performance(self.relevance_models[args[0]])))
             except KeyError:
                 self.display.message("Invalid relevance model name.")
+            except ValueError:
+                self.display.message("Too few active cameras.")
             finally:
                 self.display.userspin = True
 
@@ -328,11 +330,13 @@ class Experiment(object):
                 self.display.message("Calculating coverage...")
                 self.display.userspin = False
                 self.model.visualize_coverage(self.relevance_models[args[0]])
+                self.display.message()
             except KeyError:
                 self.display.message("Invalid relevance model name.")
+            except ValueError:
+                self.display.message("Too few active cameras.")
             finally:
                 self.display.userspin = True
-                self.display.message()
 
         self.commands = {}
         for function in dir():
