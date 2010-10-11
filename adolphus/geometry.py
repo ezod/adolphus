@@ -991,7 +991,13 @@ class Pose(object):
         q = self.R.rotate(p)
         if isinstance(p, DirectionalPoint):
             unit = Pose(None, self.R).map(p.direction_unit)
-            rho = acos(unit.z)
+            try:
+                rho = acos(unit.z)
+            except ValueError:
+                if unit.z > 0:
+                    rho = 0.0
+                else:
+                    rho = pi
             eta = atan2(unit.y, unit.x)
             return DirectionalPoint(q.tuple + (rho, eta))
         else:

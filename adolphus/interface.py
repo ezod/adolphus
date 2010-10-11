@@ -332,6 +332,7 @@ class Experiment(object):
                 self.display.message("Invalid relevance model name.")
             finally:
                 self.display.userspin = True
+                self.display.message()
 
         self.commands = {}
         for function in dir():

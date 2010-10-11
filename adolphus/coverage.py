@@ -87,6 +87,20 @@ class PointFuzzySet(FuzzySet):
         FuzzySet.__init__(self, iterable)
         self.vis = False
 
+    def __del__(self):
+        """\
+        Deleter.
+        """
+        for point in self.keys():
+            try:
+                for member in point.vis.members.keys():
+                    point.vis.members[member].visible = False
+                    del point.vis.members[member]
+                point.vis.visible = False
+                del point.vis
+            except AttributeError:
+                pass
+
     def visualize(self, scale=1.0, color=(1, 1, 1)):
         """\
         Visualize the fuzzy set of points.
@@ -498,7 +512,12 @@ class MultiCamera(dict):
         @param relevance: The relevance model.
         @type relevance: L{PointFuzzySet}
         """
-        self.coverage(relevance).visualize(scale=self.scale, color=(1, 0, 0))
+        try:
+            del self._coverage_vis
+        except AttributeError:
+            pass
+        self._coverage_vis = self.coverage(relevance)
+        self._coverage_vis.visualize(scale=self.scale, color=(1, 0, 0))
 
 
 def load_model_from_yaml(filename, active=True):
@@ -512,31 +531,6 @@ def load_model_from_yaml(filename, active=True):
     @return: The multi-camera fuzzy coverage model.
     @rtype: L{MultiCamera}
     """
-    def parse_rotation(R, format):
-        if format == 'quaternion':
-            return Rotation(R)
-        elif format == 'matrix':
-            return Rotation(Rotation.from_rotation_matrix(R))
-        elif format == 'axis-angle':
-            return Rotation(Rotation.from_axis_angle(R[0], R[1]))
-        elif format.startswith('euler'):
-            convention, unit = format.split('-')[1:]
-            if unit == 'deg':
-                R = [r * pi / 180.0 for r in R]
-            return Rotation(Rotation.from_euler(convention, (R[0], R[1], R[2])))
-        else:
-            raise ValueError("unrecognized rotation format")
-
-    def full_pose(item, mounts=None):
-        if item.has_key('pose'):
-            pose = Pose(T=Point(tuple(item['pose']['T'])),
-            R=parse_rotation(item['pose']['R'], item['pose']['Rformat']))
-        else:
-            pose = Pose()
-        if mounts and item.has_key('mount'):
-            pose += mounts[item['mount']].mount_pose()
-        return pose
-
     params = yaml.load(open(filename))
 
     # custom import
@@ -591,14 +585,62 @@ def load_model_from_yaml(filename, active=True):
     relevance_models = {}
     try:
         for rmodel in params['relevance']:
-            relevance_models[rmodel['name']] = generate_relevance_model(rmodel)
+            relevance_models[rmodel['name']] = \
+                generate_relevance_model(rmodel, mounts)
     except KeyError:
         pass
 
     return model, relevance_models
 
 
-def generate_relevance_model(params):
+def parse_rotation(R, format):
+    """\
+    Parse a rotation into a proper rotation object.
+
+    @param R: The rotation to parse.
+    @type R: C{list}
+    @param format: The format of the rotation.
+    @type format: C{str}
+    @return: The rotation object.
+    @rtype: L{Rotation}
+    """
+    if format == 'quaternion':
+        return Rotation(R)
+    elif format == 'matrix':
+        return Rotation(Rotation.from_rotation_matrix(R))
+    elif format == 'axis-angle':
+        return Rotation(Rotation.from_axis_angle(R[0], R[1]))
+    elif format.startswith('euler'):
+        convention, unit = format.split('-')[1:]
+        if unit == 'deg':
+            R = [r * pi / 180.0 for r in R]
+        return Rotation(Rotation.from_euler(convention, (R[0], R[1], R[2])))
+    else:
+        raise ValueError("unrecognized rotation format")
+
+
+def full_pose(item, mounts=None):
+    """\
+    Aggregate the full pose of an object based on pose and mount.
+
+    @param item: The object with pose/mount.
+    @type item: C{dict}
+    @param mounts: A dict populated with mounts.
+    @type mounts: C{dict}
+    @return: The full pose.
+    @rtype: L{Pose}
+    """
+    if item.has_key('pose'):
+        pose = Pose(T=Point(tuple(item['pose']['T'])),
+        R=parse_rotation(item['pose']['R'], item['pose']['Rformat']))
+    else:
+        pose = Pose()
+    if mounts and item.has_key('mount'):
+        pose += mounts[item['mount']].mount_pose()
+    return pose
+
+
+def generate_relevance_model(params, mounts=None):
     """\
     Generate a relevance model from a set of x-y-z polygonal fuzzy sets.
 
@@ -608,9 +650,14 @@ def generate_relevance_model(params):
     @rtype: L{PointFuzzySet}
     """
     whole_model = PointFuzzySet()
+    pose = full_pose(params, mounts)
     # ranges
     try:
         ranges, extent = {}, {}
+        if params.has_key('ddiv'):
+            ddiv = params['ddiv']
+        else:
+            ddiv = None
         for range in params['ranges']:
             for axis in ['x', 'y', 'z']:
                 ranges[axis] = PolygonalFuzzyNumber(range[axis])
@@ -618,12 +665,13 @@ def generate_relevance_model(params):
                                 ranges[axis].support[-1][1])
             part_model = PointFuzzySet()
             for point in pointrange(extent['x'], extent['y'], extent['z'],
-                                    params['step']):
-                part_model.add(point, mu=min([ranges[axis].mu(getattr(point,
-                    axis)) for axis in ['x', 'y', 'z']]))
+                                    params['step'], ddiv=ddiv):
+                part_model.add(pose.map(point), mu=min([ranges[axis].mu(\
+                    getattr(point, axis)) for axis in ['x', 'y', 'z']]))
             whole_model |= part_model
     except KeyError:
         pass
+    # points
     try:
         part_model = PointFuzzySet()
         for point in params['points']:
@@ -634,7 +682,7 @@ def generate_relevance_model(params):
             mu = 1.0
             if point.has_key('mu'):
                 mu = point['mu']
-            part_model.add(pointobject, mu=mu)
+            part_model.add(pose.map(pointobject), mu=mu)
         whole_model |= part_model
     except KeyError:
         pass
