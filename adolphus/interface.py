@@ -310,14 +310,28 @@ class Experiment(object):
             except KeyError:
                 self.display.message("Invalid camera name.")
 
-        def cmd_update(args):
-            self.display.message("Updating model...")
-            self.display.userspin = False
-            self.model.update_model()
-            self.model.update_fvg()
-            self.model.update_visualization()
-            self.display.userspin = True
-            self.display.message()
+        def cmd_performance(args):
+            """name"""
+            try:
+                self.display.message("Calculating performance...")
+                self.display.userspin = False
+                self.display.message("Performance (%s): %.4f" % (args[0],
+                self.model.performance(self.relevance_models[args[0]])))
+            except KeyError:
+                self.display.message("Invalid relevance model name.")
+            finally:
+                self.display.userspin = True
+
+        def cmd_coverage(args):
+            """name"""
+            try:
+                self.display.message("Calculating coverage...")
+                self.display.userspin = False
+                self.model.visualize_coverage(self.relevance_models[args[0]])
+            except KeyError:
+                self.display.message("Invalid relevance model name.")
+            finally:
+                self.display.userspin = True
 
         self.commands = {}
         for function in dir():

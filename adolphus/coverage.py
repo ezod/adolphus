@@ -73,6 +73,70 @@ class Scene(set):
             element.visualize(scale=scale, color=color)
 
 
+class PointFuzzySet(FuzzySet):
+    """\
+    Fuzzy set of points.
+    """
+    def __init__(self, iterable=set()):
+        """\
+        Constructor.
+
+        @param iterable: The iterable to construct from (optional).
+        @type iterable: C{object}
+        """
+        FuzzySet.__init__(self, iterable)
+        self.vis = False
+
+    def visualize(self, scale=1.0, color=(1, 1, 1)):
+        """\
+        Visualize the fuzzy set of points.
+
+        @param scale: The scale of the visualization.
+        @type scale: C{float}
+        @param color: The color of the points.
+        @type color: C{tuple}
+        """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
+        try:
+            self.update_visualization()
+        except VisualizationError:
+            self._scale = scale
+            self._color = color
+            for point in self.keys():
+                if self.mu(point):
+                    point.visualize(scale=scale, color=color,
+                        opacity=self.mu(point))
+            self.vis = True
+
+    def update_visualization(self):
+        """\
+        Update the visualization.
+        """
+        if not self.vis:
+            raise VisualizationError("visualization not yet initialized")
+        for point in self.keys():
+            if not self.mu(point):
+                try:
+                    for member in point.vis.members.keys():
+                        point.vis.members[member].visible = False
+                        del point.vis.members[member]
+                    point.vis.visible = False
+                    del point.vis
+                except AttributeError:
+                    pass
+                continue
+            try:
+                point.vis.members['point'].opacity = self.mu(point)
+                try:
+                    point.vis.members['dir'].opacity = self.mu(point)
+                except KeyError:
+                    pass
+            except AttributeError:
+                point.visualize(scale=self._scale, color=self._color,
+                    opacity=self.mu(point))
+
+
 class Camera(object):
     """\
     Single-camera model, using continous fuzzy sets.
@@ -151,7 +215,9 @@ class Camera(object):
         """
         r = []
         for s in [1, -1]:
-            r.append((self.params['A'] * self.params['f'] * self.params['zS']) / (self.params['A'] * self.params['f'] + s * c * self.params['zS'] - self.params['f']))
+            r.append((self.params['A'] * self.params['f'] * self.params['zS']) \
+                / (self.params['A'] * self.params['f'] + s * c \
+                * self.params['zS'] - self.params['f']))
         if r[1] < 0:
             r[1] = float('inf')
         return tuple(r)
@@ -330,20 +396,32 @@ class MultiCamera(dict):
             for camera in combination]) for combination \
             in combinations(active_cameras, self.ocular)])
 
+    def coverage(self, relevance):
+        """\
+        Return the coverage model of this multi-camera network with respect to
+        the points in a given relevance model.
+
+        @param relevance: The relevance model.
+        @type relevance: L{PointFuzzySet}
+        @return: The coverage model.
+        @rtype: L{PointFuzzySet}
+        """
+        coverage = PointFuzzySet()
+        for point in relevance.keys():
+            coverage.add(point, mu=self.mu(point))
+        return coverage
+
     def performance(self, relevance):
         """\
         Return the coverage performance of this multi-camera network with
         respect to a given relevance model.
 
-        @param desired: The relevance model.
-        @type desired: L{FuzzySet}
+        @param relevance: The relevance model.
+        @type relevance: L{PointFuzzySet}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
-        actual = FuzzySet()
-        for point in relevance.keys():
-            actual.add(point, mu=self.mu(point))
-        return actual.overlap(relevance)
+        return self.coverage(relevance).overlap(relevance)
 
     def visualize(self):
         """\
@@ -411,6 +489,16 @@ class MultiCamera(dict):
                         self.fvg.mu(tail=pair[0], head=pair[1])
             except KeyError:
                 pass
+
+    def visualize_coverage(self, relevance):
+        """\
+        Visualize the discrete coverage model with respect to the points in a
+        given relevance model.
+
+        @param relevance: The relevance model.
+        @type relevance: L{PointFuzzySet}
+        """
+        self.coverage(relevance).visualize(scale=self.scale, color=(1, 0, 0))
 
 
 def load_model_from_yaml(filename, active=True):
@@ -517,9 +605,9 @@ def generate_relevance_model(params):
     @param params: The parameters (from YAML) for the polygonal fuzzy sets.
     @type params: C{dict}
     @return: The relevance model.
-    @rtype: L{FuzzySet}
+    @rtype: L{PointFuzzySet}
     """
-    whole_model = FuzzySet()
+    whole_model = PointFuzzySet()
     # ranges
     try:
         ranges, extent = {}, {}
@@ -528,7 +616,7 @@ def generate_relevance_model(params):
                 ranges[axis] = PolygonalFuzzyNumber(range[axis])
                 extent[axis] = (ranges[axis].support[0][0],
                                 ranges[axis].support[-1][1])
-            part_model = FuzzySet()
+            part_model = PointFuzzySet()
             for point in pointrange(extent['x'], extent['y'], extent['z'],
                                     params['step']):
                 part_model.add(point, mu=min([ranges[axis].mu(getattr(point,
@@ -537,7 +625,7 @@ def generate_relevance_model(params):
     except KeyError:
         pass
     try:
-        part_model = FuzzySet()
+        part_model = PointFuzzySet()
         for point in params['points']:
             if len(point['point']) == 3:
                 pointobject = Point(tuple(point['point']))
