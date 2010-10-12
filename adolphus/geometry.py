@@ -609,8 +609,8 @@ class Quaternion(object):
         Scalar multiplication (if q is a scalar) or quaternion multiplication
         (if q is a quaternion).
 
-        @param p: The operand scalar or quaternion.
-        @type p: C{float} or L{Quaternion}
+        @param q: The operand scalar or quaternion.
+        @type q: C{float} or L{Quaternion}
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """

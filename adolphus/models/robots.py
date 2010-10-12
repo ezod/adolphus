@@ -34,7 +34,7 @@ class MitsubishiRV1A(object):
         """\
         Set the position of the robot.
 
-        @param valiue: The joint position of the robot.
+        @param value: The joint position of the robot.
         @type value: C{tuple} of C{float}
         """
         if not value:

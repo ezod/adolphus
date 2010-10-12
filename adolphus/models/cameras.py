@@ -12,7 +12,7 @@ class ProsilicaEC1350(VisualizationObject):
         @param parent: Reference to the parent object.
         @type parent: C{object}
         @param frame: The parent frame (optional).
-        @type frame: L{visual.primitives.frame}
+        @type frame: L{visual.frame}
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
@@ -48,7 +48,7 @@ class SICKIVPRangerED(VisualizationObject):
         @param parent: Reference to the parent object.
         @type parent: C{object}
         @param frame: The parent frame (optional).
-        @type frame: L{visual.primitives.frame}
+        @type frame: L{visual.frame}
         """
         if not visual:
             raise VisualizationError("visual module not loaded")

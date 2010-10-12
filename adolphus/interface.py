@@ -25,8 +25,8 @@ class Display(visual.display):
         """\
         Contstructor.
 
-        @param title: Title of the window.
-        @type title: C{str}
+        @param name: Title of the window.
+        @type name: C{str}
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         @param mscale: The scale of the model.
@@ -182,7 +182,7 @@ class Experiment(object):
         @param model: The multi-camera model to use.
         @type model: L{coverage.MultiCamera}
         @param relevance_models: The relevance models for performance.
-        @type relevance_models: C{dict} of L{fuzz.FuzzySet}
+        @type relevance_models: C{dict} of L{FuzzySet}
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
