@@ -507,17 +507,21 @@ class MultiCamera(dict):
     def visualize_coverage(self, relevance):
         """\
         Visualize the discrete coverage model with respect to the points in a
-        given relevance model.
+        given relevance model, and return the coverage performance.
 
         @param relevance: The relevance model.
         @type relevance: L{PointFuzzySet}
+        @return: Performance metric in [0, 1].
+        @rtype: C{float}
         """
         try:
             del self._coverage_vis
         except AttributeError:
             pass
         self._coverage_vis = self.coverage(relevance)
+        performance = self._coverage_vis.overlap(relevance)
         self._coverage_vis.visualize(scale=self.scale, color=(1, 0, 0))
+        return performance
 
 
 def load_model_from_yaml(filename, active=True):

@@ -310,27 +310,14 @@ class Experiment(object):
             except KeyError:
                 self.display.message("Invalid camera name.")
 
-        def cmd_performance(args):
-            """name"""
-            try:
-                self.display.message("Calculating performance...")
-                self.display.userspin = False
-                self.display.message("Performance (%s): %.4f" % (args[0],
-                self.model.performance(self.relevance_models[args[0]])))
-            except KeyError:
-                self.display.message("Invalid relevance model name.")
-            except ValueError:
-                self.display.message("Too few active cameras.")
-            finally:
-                self.display.userspin = True
-
         def cmd_coverage(args):
             """name"""
             try:
                 self.display.message("Calculating coverage...")
                 self.display.userspin = False
-                self.model.visualize_coverage(self.relevance_models[args[0]])
-                self.display.message()
+                perf = self.model.visualize_coverage(\
+                    self.relevance_models[args[0]])
+                self.display.message("Performance (%s): %.4f" % (args[0], perf))
             except KeyError:
                 self.display.message("Invalid relevance model name.")
             except ValueError:
