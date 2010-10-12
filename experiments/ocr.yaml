@@ -1,5 +1,5 @@
-name:           Vision Platform
-import:         vplatform
+name:           OCR Experiment for PAMI
+import:         ocr
 ocular:         1
 scale:          30
 
