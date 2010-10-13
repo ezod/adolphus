@@ -1,24 +1,24 @@
 from math import pi
 from fuzz import RealRange
 
-from ..geometry import Pose, Point, Rotation, Angle
+from ..geometry import Pose, Point, Rotation, Angle, Mount
 from ..visualization import visual, VisualizationObject, VisualizationError
 
 
-class MitsubishiRV1A(object):
+class MitsubishiRV1A(Mount):
     """\
     Mitsubishi RV-1A six-axis robotic arm.
     """
-    def __init__(self, pose=Pose(), tool_length=0, position=None):
+    def __init__(self, pose=Pose(), mount=None, config=None):
         """\
         Constructor.
 
         @param position: The joint position of the robot.
         @type position: C{tuple} of C{float}
         """
-        self.pose = pose
-        self.tool_length = tool_length
-        self.position = position
+        Mount.__init__(self, pose=pose, mount=mount)
+        self.tool_length = config[0]
+        self.position = config[1:]
 
     @property
     def position(self):
@@ -89,12 +89,12 @@ class MitsubishiRV1A(object):
       
     def mount_pose(self):
         """\
-        Return the overall 3D transformation from base origin to end effector.
+        Return the overall 3D transformation to the end effector.
 
         @return: The overall pose.
         @rtype: L{Pose}
         """
-        return reduce(lambda a, b: a + b, self.joint_poses())
+        return reduce(lambda a, b: a + b, self.joint_poses()) + self.pose
 
     def intersection(self, pa, pb):
         """\

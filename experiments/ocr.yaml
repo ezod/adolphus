@@ -27,7 +27,7 @@ cameras:
 mounts:
     - name:         RV1A
       model:        MitsubishiRV1A
-      position:     [7.84, 35.49, 60.08, 38.95, 48.76, -26.67]
+      config:       [0, 7.84, 35.49, 60.08, 38.95, 48.76, -26.67]
 
 scene:
     - model:        VisionPlatform

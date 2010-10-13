@@ -18,59 +18,9 @@ from itertools import combinations
 from fuzz import IndexedSet, TrapezoidalFuzzyNumber, PolygonalFuzzyNumber, \
                  FuzzySet, FuzzyElement, FuzzyGraph
 
-from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
+from geometry import Point, DirectionalPoint, Pose, Rotation, Posable, Plane, \
+                     pointrange
 from visualization import visual, VisualizationError, VisualizationObject
-
-
-class Scene(set):
-    """\
-    Discrete spatial-directional range with occlusion class.
-    """
-    def __init__(self, iterable=set()):
-        """\
-        Constructor.
-
-        @param iterable: The initial set of opaque scene planes.
-        @type iterable: C{iterable}
-        """
-        for plane in iterable:
-            if not isinstance(plane, Plane):
-                raise TypeError("only planes can be added")
-        set.__init__(self, iterable)
-
-    def add(self, element):
-        """\
-        Add an opaque element to the scene.
-
-        @param element: The element to add.
-        @type element: C{object}
-        """
-        if not hasattr(element, "intersection"):
-            raise TypeError("element must have intersection method")
-        set.add(self, element)
-
-    def occluded(self, p, cam=Point()):
-        """\
-        Return whether the specified point is occluded from the camera
-        viewpoint (by opaque scene planes).
-        """
-        for plane in self:
-            pr = plane.intersection(p, cam)
-            if pr is not None and pr.euclidean(p) > 0.0001:
-                return True
-        return False
-
-    def visualize(self, scale=1.0, color=(1, 1, 1)):
-        """\
-        Visualize the opaque scene objects.
-
-        @param color: The color of opaque scene objects.
-        @type color: C{tuple}
-        """
-        if not visual:
-            raise VisualizationError("visual module not loaded")
-        for element in self:
-            element.visualize(scale=scale, color=color)
 
 
 class PointFuzzySet(FuzzySet):
@@ -151,11 +101,11 @@ class PointFuzzySet(FuzzySet):
                     opacity=self.mu(point))
 
 
-class Camera(object):
+class Camera(Posable):
     """\
     Single-camera model, using continous fuzzy sets.
     """
-    def __init__(self, params, pose=Pose(), active=True, models=None):
+    def __init__(self, params, pose=Pose(), mount=None, active=True, models=None):
         """\
         Constructor.
 
@@ -163,9 +113,14 @@ class Camera(object):
         @type params: C{dict}
         @param pose: Pose of the camera in space (optional).
         @type pose: L{Pose}
-        @param active: Initial active state of camera.
+        @param mount: Mount object for the camera (optional).
+        @type mount: C{object}
+        @param active: Initial active state of camera (optional).
         @type active: C{bool}
+        @param models: Visualization models to use (optional).
+        @type models: C{list} of L{VisualizationObject}
         """
+        Posable.__init__(self, pose, mount)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self.models = models
@@ -335,6 +290,57 @@ class Camera(object):
                     size=(scale, self.Cv[1].support.size * scale,
                     self.Cv[0].support.size * scale), opacity=0.1,
                     color=(0.2, 0.5, 0.6)))
+
+
+class Scene(set):
+    """\
+    Discrete spatial-directional range with occlusion class.
+    """
+    def __init__(self, iterable=set()):
+        """\
+        Constructor.
+
+        @param iterable: The initial set of opaque scene planes.
+        @type iterable: C{iterable}
+        """
+        for widget in iterable:
+            if not hasattr(widget, 'intersection'):
+                raise TypeError('widget must have intersection method')
+        set.__init__(self, iterable)
+
+    def add(self, widget):
+        """\
+        Add a widget to the scene.
+
+        @param widget: The widget to add.
+        @type widget: C{object}
+        """
+        if not hasattr(widget, 'intersection'):
+            raise TypeError('widget must have intersection method')
+        set.add(self, widget)
+
+    def occluded(self, p, cam=Point()):
+        """\
+        Return whether the specified point is occluded from the camera
+        viewpoint (by opaque scene planes).
+        """
+        for widget in self:
+            pr = widget.intersection(p, cam)
+            if pr is not None and pr.euclidean(p) > 0.0001:
+                return True
+        return False
+
+    def visualize(self, scale=1.0, color=(1, 1, 1)):
+        """\
+        Visualize the opaque scene objects.
+
+        @param color: The color of opaque scene objects.
+        @type color: C{tuple}
+        """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
+        for widget in self:
+            widget.visualize(scale=scale, color=color)
 
 
 class MultiCamera(dict):
@@ -551,27 +557,29 @@ def load_model_from_yaml(filename, active=True):
     scene = Scene()
     mounts = {}
     try:
-        for mount in params['mounts']:
+        for widget in params['mounts']:
+            pose, mount = parse_widget(widget, mounts)
             try:
-                position = mount['position']
+                config = widget['config']
             except KeyError:
-                position = None
-            mounts[mount['name']] = getattr(external, mount['model'])(\
-                pose=full_pose(mount), position=position)
-            scene.add(mounts[mount['name']])
+                config = None
+            mounts[widget['name']] = getattr(external, widget['model'])(\
+                pose=pose, mount=mount, config=config)
+            scene.add(mounts[widget['name']])
     except KeyError:
         pass
     try:
-        for item in params['scene']:
-            if item.has_key('model'):
-                itemobject = getattr(external, item['model'])(\
-                    pose=full_pose(item, mounts))
-            elif item.has_key('z'):
-                itemobject = Plane(x=item['x'], y=item['y'], z=item['z'])
+        for widget in params['scene']:
+            pose, mount = parse_widget(widget, mounts)
+            if widget.has_key('model'):
+                wobject = getattr(external, widget['model'])(pose=pose,
+                    mount=mount)
+            elif widget.has_key('z'):
+                wobject = Plane(x=widget['x'], y=widget['y'], z=widget['z'])
             else:
-                itemobject = Plane(x=item['x'], y=item['y'],
-                    pose=full_pose(item, mounts))
-            scene.add(itemobject)
+                wobject = Plane(x=widget['x'], y=widget['y'], pose=pose,
+                    mount=mount)
+            scene.add(wobject)
     except KeyError:
         pass
 
@@ -581,8 +589,9 @@ def load_model_from_yaml(filename, active=True):
     for camera in params['cameras']:
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]
+        pose, mount = parse_widget(camera, mounts)
         model[camera['name']] = Camera(camera, active=active,
-            pose=full_pose(camera, mounts),
+            pose=pose, mount=mount,
             models=[getattr(external, mdl) for mdl in camera['models']])
 
     # relevance models
@@ -623,25 +632,27 @@ def parse_rotation(R, format):
         raise ValueError("unrecognized rotation format")
 
 
-def full_pose(item, mounts=None):
+def parse_widget(widget, mounts):
     """\
     Aggregate the full pose of an object based on pose and mount.
 
-    @param item: The object with pose/mount.
-    @type item: C{dict}
+    @param widget: The object with pose/mount.
+    @type widget: C{dict}
     @param mounts: A dict populated with mounts.
     @type mounts: C{dict}
     @return: The full pose.
     @rtype: L{Pose}
     """
-    if item.has_key('pose'):
-        pose = Pose(T=Point(tuple(item['pose']['T'])),
-        R=parse_rotation(item['pose']['R'], item['pose']['Rformat']))
+    if widget.has_key('pose'):
+        pose = Pose(T=Point(tuple(widget['pose']['T'])),
+        R=parse_rotation(widget['pose']['R'], widget['pose']['Rformat']))
     else:
         pose = Pose()
-    if mounts and item.has_key('mount'):
-        pose += mounts[item['mount']].mount_pose()
-    return pose
+    if mounts and widget.has_key('mount'):
+        mount = mounts[widget['mount']]
+    else:
+        mount = None
+    return pose, mount
 
 
 def generate_relevance_model(params, mounts=None):
@@ -654,7 +665,9 @@ def generate_relevance_model(params, mounts=None):
     @rtype: L{PointFuzzySet}
     """
     whole_model = PointFuzzySet()
-    pose = full_pose(params, mounts)
+    pose, mount = parse_widget(params, mounts)
+    if mount:
+        pose = pose + mount.mount_pose()
     # ranges
     try:
         ranges, extent = {}, {}

@@ -1,20 +1,21 @@
-from ..geometry import Point, Pose, Plane
+from ..geometry import Point, Pose, Plane, Posable
 from ..visualization import visual, VisualizationObject, VisualizationError
 
 
-class VisionPlatform(object):
+class VisionPlatform(Posable):
     """\
     Scene object for the vision platform.
     """
-    def __init__(self, pose=Pose()):
+    def __init__(self, pose=Pose(), mount=None):
         """\
         Constructor.
 
-        @param pose: The pose of the plane normal (from z-hat).
+        @param pose: The pose of the object (optional).
         @type pose: L{Pose}
+        @param mount: The mount of the object (optional).
+        @type mount: L{geometry.Mount}
         """
-        self.pose = pose
-        self.center = pose.T
+        Posable.__init__(self, pose, mount)
 
     def intersection(self, pa, pb):
         """\
@@ -88,19 +89,20 @@ class VisionPlatform(object):
         self.vis.transform(self.pose)
 
 
-class CheckerCalibrationBoard(object):
+class CheckerCalibrationBoard(Posable):
     """\
     Scene object for the checkerboard pattern calibration target.
     """
-    def __init__(self, pose=Pose()):
+    def __init__(self, pose=Pose(), mount=None):
         """\
         Constructor.
 
-        @param pose: The pose of the plane normal (from z-hat).
+        @param pose: The pose of the object (optional).
         @type pose: L{Pose}
+        @param mount: The mount of the object (optional).
+        @type mount: L{geometry.Mount}
         """
-        self.pose = pose
-        self.center = pose.T
+        Posable.__init__(self, pose, mount)
     
     def intersection(self, pa, pb):
         """\

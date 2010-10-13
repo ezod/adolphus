@@ -1018,17 +1018,84 @@ class Pose(object):
         return q
 
 
-class Plane(object):
+class Posable(object):
+    """\
+    Base class for posable objects.
+    """
+    def __init__(self, pose=Pose(), mount=None):
+        """\
+        Constructor.
+
+        @param pose: The pose of the object (optional).
+        @type pose: L{Pose}
+        @param mount: The mount of the object (optional).
+        @type mount: L{Mount}
+        """
+        if self.__class__ is Posable:
+            raise NotImplementedError("cannot directly instantiate Posable")
+        self._pose = pose
+        self.mount = mount
+
+    @property
+    def pose(self):
+        """\
+        The pose of the object.
+        """
+        if self.mount:
+            return self._pose + self.mount.mount_pose()
+        else:
+            return self._pose
+
+    @pose.setter
+    def pose(self, value):
+        """\
+        Set the pose of the object.
+        """
+        self._pose = value
+
+
+class Mount(Posable):
+    """\
+    Base class for mounts (a special type of Posable which allows Posables to
+    attach to it with a pose offset).
+    """
+    def __init__(self, pose=Pose(), mount=None, config=None):
+        """\
+        Constructor.
+
+        @param pose: The pose of the object (optional).
+        @type pose: L{Pose}
+        @param mount: The mount of the object (optional).
+        @type mount: L{Mount}
+        @param config: The configuration of the mount (optional).
+        @type config: C{object}
+        """
+        if self.__class__ is Mount:
+            raise NotImplementedError("cannot directly instantiate Mount")
+        Posable.__init__(self, pose, mount)
+
+    def mount_pose(self):
+        """\
+        Return the overall pose transformation to the mount end.
+
+        @return: The overall pose.
+        @rtype: L{Pose}
+        """
+        return self.pose
+
+
+class Plane(Posable):
     """\
     Plane segment (2D subspace of 3D space) class.
     """
-    def __init__(self, pose=None, **kwargs):
+    def __init__(self, pose=None, mount=None, **kwargs):
         """\
         Constructor.
 
         @param pose: The pose of the plane normal (from z-hat).
         @type pose: L{Pose}
         """
+        Posable.__init__(self, pose, mount)
         if pose is None:
             dims = []
             try:
@@ -1053,7 +1120,6 @@ class Plane(object):
             self.x = (float(min(kwargs[dims[0]])), float(max(kwargs[dims[0]])))
             self.y = (float(min(kwargs[dims[1]])), float(max(kwargs[dims[1]])))
         else:
-            self.pose = pose
             try:
                 self.x = (float(min(kwargs['x'])), float(max(kwargs['x'])))
                 self.y = (float(min(kwargs['y'])), float(max(kwargs['y'])))
@@ -1072,6 +1138,7 @@ class Plane(object):
         return self.pose.map(Point((self.x[1] - self.x[0]) / 2.0 + self.x[0],
             (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0))
 
+    @property
     def corners(self):
         """\
         Return the corners of the plane.
