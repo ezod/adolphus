@@ -1,11 +1,11 @@
 from math import pi
 from fuzz import RealRange
 
-from ..geometry import Pose, Point, Rotation, Angle, Mount
+from ..geometry import Pose, Point, Rotation, Angle, Posable
 from ..visualization import visual, VisualizationObject, VisualizationError
 
 
-class MitsubishiRV1A(Mount):
+class MitsubishiRV1A(Posable):
     """\
     Mitsubishi RV-1A six-axis robotic arm.
     """
@@ -16,7 +16,7 @@ class MitsubishiRV1A(Mount):
         @param position: The joint position of the robot.
         @type position: C{tuple} of C{float}
         """
-        Mount.__init__(self, pose=pose, mount=mount)
+        Posable.__init__(self, pose=pose, mount=mount)
         self.tool_length = config[0]
         self.position = config[1:]
 

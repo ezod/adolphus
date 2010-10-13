@@ -24,25 +24,31 @@ cameras:
           R:            [-1.38, 1.03, 0.30]
           Rformat:      'euler-zyx-rad'
 
-mounts:
-    - name:         RV1A
-      model:        MitsubishiRV1A
-      config:       [0, 7.84, 35.49, 60.08, 38.95, 48.76, -26.67]
-
 scene:
-    - model:        VisionPlatform
+    - name:         VisionPlatform
+      model:        VisionPlatform
       pose:
           T:            [-978, -455, -553]
           R:            [0, 0, 0]
           Rformat:      'euler-zyx-deg'
 
-    - x:            [-108, 108]
+    - name:         RV1A
+      model:        MitsubishiRV1A
+      config:       [0, 7.84, 35.49, 60.08, 38.95, 48.76, -26.67]
+      mount:        VisionPlatform
+      pose:
+          T:            [978, 455, 553]
+          R:            [0, 0, 0]
+          Rformat:      'euler-zyx-deg'
+
+    - name:         Target
+      x:            [-108, 108]
       y:            [-140, 140]
       mount:        RV1A
 
 relevance:
     - name:         target
-      mount:        RV1A
+      mount:        Target
       points:
         - point:        [-100, -140, 0, 0, 0]
         - point:        [-100, -100, 0, 0, 0]

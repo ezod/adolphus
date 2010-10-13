@@ -1022,14 +1022,16 @@ class Posable(object):
     """\
     Base class for posable objects.
     """
-    def __init__(self, pose=Pose(), mount=None):
+    def __init__(self, pose=Pose(), mount=None, config=None):
         """\
         Constructor.
 
         @param pose: The pose of the object (optional).
         @type pose: L{Pose}
         @param mount: The mount of the object (optional).
-        @type mount: L{Mount}
+        @type mount: L{Posable}
+        @param config: The configuration of the object (optional).
+        @type config: C{object}
         """
         if self.__class__ is Posable:
             raise NotImplementedError("cannot directly instantiate Posable")
@@ -1054,30 +1056,11 @@ class Posable(object):
         # TODO: handle += and the like?
         self._pose = value
 
-
-class Mount(Posable):
-    """\
-    Base class for mounts (a special type of Posable which allows Posables to
-    attach to it with a pose offset).
-    """
-    def __init__(self, pose=Pose(), mount=None, config=None):
-        """\
-        Constructor.
-
-        @param pose: The pose of the object (optional).
-        @type pose: L{Pose}
-        @param mount: The mount of the object (optional).
-        @type mount: L{Mount}
-        @param config: The configuration of the mount (optional).
-        @type config: C{object}
-        """
-        if self.__class__ is Mount:
-            raise NotImplementedError("cannot directly instantiate Mount")
-        Posable.__init__(self, pose, mount)
-
     def mount_pose(self):
         """\
-        Return the overall pose transformation to the mount end.
+        Return the overall pose transformation to the mount end (unless
+        otherwise specified, this will simply place the mounted object into
+        this object's coordinate system).
 
         @return: The overall pose.
         @rtype: L{Pose}

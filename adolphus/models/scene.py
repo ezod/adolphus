@@ -6,14 +6,16 @@ class VisionPlatform(Posable):
     """\
     Scene object for the vision platform.
     """
-    def __init__(self, pose=Pose(), mount=None):
+    def __init__(self, pose=Pose(), mount=None, config=None):
         """\
         Constructor.
 
         @param pose: The pose of the object (optional).
         @type pose: L{Pose}
         @param mount: The mount of the object (optional).
-        @type mount: L{geometry.Mount}
+        @type mount: L{Posable}
+        @param config: The configuration of the object (unused).
+        @type config: C{object}
         """
         Posable.__init__(self, pose, mount)
 
@@ -93,14 +95,16 @@ class CheckerCalibrationBoard(Posable):
     """\
     Scene object for the checkerboard pattern calibration target.
     """
-    def __init__(self, pose=Pose(), mount=None):
+    def __init__(self, pose=Pose(), mount=None, config=None):
         """\
         Constructor.
 
         @param pose: The pose of the object (optional).
         @type pose: L{Pose}
         @param mount: The mount of the object (optional).
-        @type mount: L{geometry.Mount}
+        @type mount: L{Posable}
+        @param config: The configuration of the object (unused).
+        @type config: C{object}
         """
         Posable.__init__(self, pose, mount)
     

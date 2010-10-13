@@ -27,7 +27,7 @@ class PointFuzzySet(FuzzySet, Posable):
     """\
     Fuzzy set of points.
     """
-    def __init__(self, iterable=set(), pose=Pose(), mount=None):
+    def __init__(self, iterable=set(), pose=Pose(), mount=None, config=None):
         """\
         Constructor.
 
@@ -106,7 +106,8 @@ class Camera(Posable):
     """\
     Single-camera model, using continous fuzzy sets.
     """
-    def __init__(self, params, pose=Pose(), mount=None, active=True, models=None):
+    def __init__(self, params, pose=Pose(), mount=None, config=None,
+                 active=True, models=None):
         """\
         Constructor.
 
@@ -116,6 +117,8 @@ class Camera(Posable):
         @type pose: L{Pose}
         @param mount: Mount object for the camera (optional).
         @type mount: C{object}
+        @param config: Configuration of the camera (unused).
+        @type config: C{object}
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
         @param models: Visualization models to use (optional).
@@ -558,28 +561,18 @@ def load_model_from_yaml(filename, active=True):
     scene = Scene()
     mounts = {}
     try:
-        for widget in params['mounts']:
-            pose, mount = parse_widget(widget, mounts)
-            try:
-                config = widget['config']
-            except KeyError:
-                config = None
-            mounts[widget['name']] = getattr(external, widget['model'])(\
-                pose=pose, mount=mount, config=config)
-            scene.add(mounts[widget['name']])
-    except KeyError:
-        pass
-    try:
         for widget in params['scene']:
-            pose, mount = parse_widget(widget, mounts)
+            pose, mount, config = parse_widget(widget, mounts)
             if widget.has_key('model'):
                 wobject = getattr(external, widget['model'])(pose=pose,
-                    mount=mount)
+                    mount=mount, config=config)
             elif widget.has_key('z'):
                 wobject = Plane(x=widget['x'], y=widget['y'], z=widget['z'])
             else:
                 wobject = Plane(x=widget['x'], y=widget['y'], pose=pose,
                     mount=mount)
+            if widget.has_key('name'):
+                mounts[widget['name']] = wobject
             scene.add(wobject)
     except KeyError:
         pass
@@ -590,9 +583,9 @@ def load_model_from_yaml(filename, active=True):
     for camera in params['cameras']:
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]
-        pose, mount = parse_widget(camera, mounts)
+        pose, mount, config = parse_widget(camera, mounts)
         model[camera['name']] = Camera(camera, active=active,
-            pose=pose, mount=mount,
+            pose=pose, mount=mount, config=config,
             models=[getattr(external, mdl) for mdl in camera['models']])
 
     # relevance models
@@ -653,7 +646,11 @@ def parse_widget(widget, mounts):
         mount = mounts[widget['mount']]
     else:
         mount = None
-    return pose, mount
+    if widget.has_key('config'):
+        config = widget['config']
+    else:
+        config = None
+    return pose, mount, config
 
 
 def generate_relevance_model(params, mounts=None):
@@ -701,5 +698,5 @@ def generate_relevance_model(params, mounts=None):
         whole_model |= part_model
     except KeyError:
         pass
-    whole_model.pose, whole_model.mount = parse_widget(params, mounts)
+    whole_model.pose, whole_model.mount = parse_widget(params, mounts)[:2]
     return whole_model
