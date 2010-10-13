@@ -114,21 +114,6 @@ class MitsubishiRV1A(Posable):
         """
         return reduce(lambda a, b: a + b, self.joint_poses()) + self.pose
 
-    def intersection(self, pa, pb):
-        """\
-        Return the 3D point of intersection (if any) of the line segment
-        between the two specified points and this object.
-
-        @param pa: The first vertex of the line segment.
-        @type pa: L{Point}
-        @param pb: The second vertex of the line segment.
-        @type pb: L{Point}
-        @return: The point of intersection with the object.
-        @rtype: L{Point}
-        """
-        # TODO: intersection for the robot?
-        return None
-
     def visualize(self, scale=None, color=None, opacity=1.0):
         """\
         Create a 3D visual model of the robot.

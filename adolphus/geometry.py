@@ -1068,6 +1068,20 @@ class Posable(object):
         """
         return self.pose
 
+    def intersection(self, pa, pb):
+        """\
+        Return the 3D point of intersection (if any) of the line segment
+        between the two specified points and this object.
+
+        @param pa: The first vertex of the line segment.
+        @type pa: L{Point}
+        @param pb: The second vertex of the line segment.
+        @type pb: L{Point}
+        @return: The point of intersection with the object.
+        @rtype: L{Point}
+        """
+        return None
+
 
 class Plane(Posable):
     """\

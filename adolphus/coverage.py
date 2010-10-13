@@ -308,8 +308,8 @@ class Scene(set):
         @type iterable: C{iterable}
         """
         for widget in iterable:
-            if not hasattr(widget, 'intersection'):
-                raise TypeError('widget must have intersection method')
+            if not isinstance(widget, Posable):
+                raise TypeError('widget must be a Posable object')
         set.__init__(self, iterable)
 
     def add(self, widget):
@@ -319,8 +319,8 @@ class Scene(set):
         @param widget: The widget to add.
         @type widget: C{object}
         """
-        if not hasattr(widget, 'intersection'):
-            raise TypeError('widget must have intersection method')
+        if not isinstance(widget, Posable):
+            raise TypeError('widget must be a Posable object')
         set.add(self, widget)
 
     def occluded(self, p, cam=Point()):
