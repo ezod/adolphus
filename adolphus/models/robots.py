@@ -16,9 +16,27 @@ class MitsubishiRV1A(Posable):
         @param position: The joint position of the robot.
         @type position: C{tuple} of C{float}
         """
-        Posable.__init__(self, pose=pose, mount=mount)
-        self.tool_length = config[0]
-        self.position = config[1:]
+        Posable.__init__(self, pose=pose, mount=mount, config=config)
+
+    @property
+    def config(self):
+        """\
+        The configuration of the robot.
+
+        @rtype: C{list}
+        """
+        return [self.tool_length] + list(self.position)
+
+    @config.setter
+    def config(self, value):
+        """\
+        Set the configuration of the robot.
+
+        @param value: The configuration of the robot.
+        @type value: C{list}
+        """
+        self.tool_length = value[0]
+        self.position = tuple(value[1:])
 
     @property
     def position(self):

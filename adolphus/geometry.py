@@ -1037,6 +1037,7 @@ class Posable(object):
             raise NotImplementedError("cannot directly instantiate Posable")
         self._pose = pose
         self.mount = mount
+        self.config = config
 
     @property
     def pose(self):
