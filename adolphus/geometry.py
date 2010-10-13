@@ -1051,6 +1051,7 @@ class Posable(object):
         """\
         Set the pose of the object.
         """
+        # TODO: handle += and the like?
         self._pose = value
 
 

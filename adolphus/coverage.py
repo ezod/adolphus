@@ -23,11 +23,11 @@ from geometry import Point, DirectionalPoint, Pose, Rotation, Posable, Plane, \
 from visualization import visual, VisualizationError, VisualizationObject
 
 
-class PointFuzzySet(FuzzySet):
+class PointFuzzySet(FuzzySet, Posable):
     """\
     Fuzzy set of points.
     """
-    def __init__(self, iterable=set()):
+    def __init__(self, iterable=set(), pose=Pose(), mount=None):
         """\
         Constructor.
 
@@ -35,6 +35,7 @@ class PointFuzzySet(FuzzySet):
         @type iterable: C{object}
         """
         FuzzySet.__init__(self, iterable)
+        Posable.__init__(self, pose, mount)
         self.vis = False
 
     def __del__(self):
@@ -69,7 +70,7 @@ class PointFuzzySet(FuzzySet):
             self._color = color
             for point in self.keys():
                 if self.mu(point):
-                    point.visualize(scale=scale, color=color,
+                    self.pose.map(point).visualize(scale=scale, color=color,
                         opacity=self.mu(point))
             self.vis = True
 
@@ -97,8 +98,8 @@ class PointFuzzySet(FuzzySet):
                 except KeyError:
                     pass
             except AttributeError:
-                point.visualize(scale=self._scale, color=self._color,
-                    opacity=self.mu(point))
+                self.pose.map(point).visualize(scale=self._scale,
+                    color=self._color, opacity=self.mu(point))
 
 
 class Camera(Posable):
@@ -426,9 +427,9 @@ class MultiCamera(dict):
         @return: The coverage model.
         @rtype: L{PointFuzzySet}
         """
-        coverage = PointFuzzySet()
+        coverage = PointFuzzySet(pose=relevance._pose, mount=relevance.mount)
         for point in relevance.keys():
-            coverage.add(point, mu=self.mu(point))
+            coverage.add(point, mu=self.mu(relevance.pose.map(point)))
         return coverage
 
     def performance(self, relevance):
@@ -665,9 +666,6 @@ def generate_relevance_model(params, mounts=None):
     @rtype: L{PointFuzzySet}
     """
     whole_model = PointFuzzySet()
-    pose, mount = parse_widget(params, mounts)
-    if mount:
-        pose = pose + mount.mount_pose()
     # ranges
     try:
         ranges, extent = {}, {}
@@ -683,7 +681,7 @@ def generate_relevance_model(params, mounts=None):
             part_model = PointFuzzySet()
             for point in pointrange(extent['x'], extent['y'], extent['z'],
                                     params['step'], ddiv=ddiv):
-                part_model.add(pose.map(point), mu=min([ranges[axis].mu(\
+                part_model.add(point, mu=min([ranges[axis].mu(\
                     getattr(point, axis)) for axis in ['x', 'y', 'z']]))
             whole_model |= part_model
     except KeyError:
@@ -699,8 +697,9 @@ def generate_relevance_model(params, mounts=None):
             mu = 1.0
             if point.has_key('mu'):
                 mu = point['mu']
-            part_model.add(pose.map(pointobject), mu=mu)
+            part_model.add(pointobject, mu=mu)
         whole_model |= part_model
     except KeyError:
         pass
+    whole_model.pose, whole_model.mount = parse_widget(params, mounts)
     return whole_model
