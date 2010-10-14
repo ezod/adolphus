@@ -1038,6 +1038,7 @@ class Posable(object):
         self._pose = pose
         self.mount = mount
         self.config = config
+        self.vis = None
 
     @property
     def pose(self):
@@ -1081,6 +1082,39 @@ class Posable(object):
         @rtype: L{Point}
         """
         return None
+
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
+        """\
+        Visualize the object.
+
+        @param scale: The scale of the visualization (optional).
+        @type scale: C{float}
+        @param color: The color of the visualization (optional).
+        @type color: C{tuple}
+        @param opacity: The opacity of the visualization (optional).
+        @type opacity: C{float}
+        @return: True if visualization was initialized for the first time.
+        @rtype: C{bool}
+        """
+        if not visual:
+            raise VisualizationError("visual module not loaded")
+        try:
+            self.update_visualization()
+        except VisualizationError:
+            self.vis = VisualizationObject(self, properties={'scale': scale,
+                'color': color, 'opacity': opacity})
+            if self.__class__.visualize == Posable.visualize:
+                self.update_visualization()
+            return True
+        return False
+
+    def update_visualization(self):
+        """\
+        Update the visualization.
+        """
+        if not self.vis:
+            raise VisualizationError("object has not yet been visualized")
+        self.vis.transform(self.pose)
 
 
 class Plane(Posable):
@@ -1146,7 +1180,7 @@ class Plane(Posable):
         @rtype: C{list} of L{Point}
         """
         if self.x is None or self.y is None:
-            raise ValueError("an infinite plane has no corners")
+            return None
         return [self.pose.map(Point(x, y, 0)) for x in self.x for y in self.y]
 
     def intersection(self, pa, pb):
@@ -1177,31 +1211,39 @@ class Plane(Posable):
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
-        Plot the plane in a 3D visual model.
+        Visualize the plane.
 
-        @param scale: The scale to which to plot the plane (thickness).
+        @param scale: The scale of the visualization (optional).
         @type scale: C{float}
-        @param color: The color in which to plot the plane segment.
+        @param color: The color of the visualization (optional).
         @type color: C{tuple}
-        @param opacity: The opacity with which to plot the plane segment.
+        @param opacity: The opacity of the visualization (optional).
         @type opacity: C{float}
+        @return: True if visualization was initialized for the first time.
+        @rtype: C{bool}
         """
-        if not visual:
-            raise VisualizationError("visual module not loaded")
         if self.x is None or self.y is None:
-            raise ValueError("cannot plot an infinite plane")
-        try:
-            self.vis['plane'].length = self.x[1] - self.x[0]
-            self.vis['plane'].height = self.y[1] - self.y[0]
-            self.vis['plane'].color = color
-            self.vis['plane'].opacity = opacity
-        except AttributeError:
-            self.vis = VisualizationObject(self)
+            raise ValueError('cannot plot an infinite plane')
+        if Posable.visualize(self, scale=scale, color=color, opacity=opacity): 
             self.vis.add('plane', visual.box(frame=self.vis,
-                pos=(0, 0, 0), length=(self.x[1] - self.x[0]),
-                height=(self.y[1] - self.y[0]), width=(scale / 30.0),
-                color=color, opacity=opacity, material=visual.materials.wood))
+                pos=(0, 0, 0), width=(scale / 30.0),
+                material=visual.materials.wood))
+            self.update_visualization()
+            return True
+        else:
+            return False
+        
+    def update_visualization(self):
+        """\
+        Update the visualization.
+        """
+        if not self.vis:
+            raise VisualizationError('object has not yet been visualized')
         self.vis.transform(Pose(self.center, self.pose.R))
+        self.vis.members['plane'].length = self.x[1] - self.x[0]
+        self.vis.members['plane'].height = self.y[1] - self.y[0]
+        self.vis.members['plane'].color = self.vis.properties['color']
+        self.vis.members['plane'].opacity = self.vis.properties['opacity']
 
 
 def pointrange(xrange, yrange, zrange, step, ddiv=None):

@@ -36,7 +36,6 @@ class PointFuzzySet(FuzzySet, Posable):
         """
         FuzzySet.__init__(self, iterable)
         Posable.__init__(self, pose, mount)
-        self.vis = False
 
     def __del__(self):
         """\
@@ -52,36 +51,22 @@ class PointFuzzySet(FuzzySet, Posable):
             except AttributeError:
                 pass
 
-    def visualize(self, scale=1.0, color=(1, 1, 1)):
-        """\
-        Visualize the fuzzy set of points.
-
-        @param scale: The scale of the visualization.
-        @type scale: C{float}
-        @param color: The color of the points.
-        @type color: C{tuple}
-        """
-        if not visual:
-            raise VisualizationError("visual module not loaded")
-        try:
-            self.update_visualization()
-        except VisualizationError:
-            self._scale = scale
-            self._color = color
-            for point in self.keys():
-                if self.mu(point):
-                    self.pose.map(point).visualize(scale=scale, color=color,
-                        opacity=self.mu(point))
-            self.vis = True
-
     def update_visualization(self):
         """\
         Update the visualization.
         """
-        if not self.vis:
-            raise VisualizationError("visualization not yet initialized")
+        Posable.update_visualization(self)
         for point in self.keys():
-            if not self.mu(point):
+            if self.mu(point):
+                try:
+                    for member in point.vis.keys():
+                        point.vis.members[member].opacity = self.mu(point)
+                except AttributeError:
+                    point.visualize(scale=self.vis.properties['scale'], color=\
+                        self.vis.properties['color'], opacity=self.mu(point))
+                    point.vis.frame = self.vis
+                    self.vis.add('%s' % point, point.vis)
+            else:
                 try:
                     for member in point.vis.members.keys():
                         point.vis.members[member].visible = False
@@ -91,15 +76,6 @@ class PointFuzzySet(FuzzySet, Posable):
                 except AttributeError:
                     pass
                 continue
-            try:
-                point.vis.members['point'].opacity = self.mu(point)
-                try:
-                    point.vis.members['dir'].opacity = self.mu(point)
-                except KeyError:
-                    pass
-            except AttributeError:
-                self.pose.map(point).visualize(scale=self._scale,
-                    color=self._color, opacity=self.mu(point))
 
 
 class Camera(Posable):
@@ -241,40 +217,39 @@ class Camera(Posable):
         # algebraic product intersection
         return mu_v * mu_r * mu_f * mu_d
 
-    def visualize(self, scale=1.0, fov=False):
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
-        Plot the camera in a 3D visual model.
+        Visualize the camera.
 
-        @param scale: The scale of the camera.
+        @param scale: The scale of the visualization (optional).
         @type scale: C{float}
-        @param fov: Toggle visualization of the field ov view.
-        @type fov: C{bool}
+        @param color: The color of the visualization (optional).
+        @type color: C{tuple}
+        @param opacity: The opacity of the visualization (optional).
+        @type opacity: C{float}
+        @return: True if visualization was initialized for the first time.
+        @rtype: C{bool}
         """
-        if not visual:
-            raise VisualizationError("visual module not loaded")
         if not self.models:
             raise VisualizationError("no models to visualize")
-        try:
-            self.update_visualization()
-        except VisualizationError:
-            self.vis = VisualizationObject(self)
+        if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
             for model in self.models:
                 self.vis.add(model.__name__, model(self, frame=self.vis))
             self.update_visualization()
+            return True
+        else:
+            return False
 
     def update_visualization(self):
         """\
         Update the visualization for camera active state and pose.
         """
-        if not self.vis:
-            raise VisualizationError("visualization not yet initialized")
+        Posable.update_visualization(self)
         self.vis.fade(not self.active)
         try:
             self.vis.members['fov'].opacity = 0.1
-            # TODO: any other updates?
         except KeyError:
             pass
-        self.vis.transform(self.pose)
 
     def visualize_fov_toggle(self):
         """\
@@ -334,7 +309,7 @@ class Scene(set):
                 return True
         return False
 
-    def visualize(self, scale=1.0, color=(1, 1, 1)):
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
         Visualize the opaque scene objects.
 
@@ -344,7 +319,7 @@ class Scene(set):
         if not visual:
             raise VisualizationError("visual module not loaded")
         for widget in self:
-            widget.visualize(scale=scale, color=color)
+            widget.visualize(scale=scale, color=color, opacity=opacity)
 
 
 class MultiCamera(dict):

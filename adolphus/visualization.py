@@ -19,15 +19,20 @@ class VisualizationError(Exception):
 
 class VisualizationObject(visual.frame):
     """\
+    Visualization object class.
     """
-    def __init__(self, parent, frame=None):
+    def __init__(self, parent, frame=None,
+                 properties={'scale': 1.0, 'color': (1, 1, 1), 'opacity': 1.0}):
         """\
         Constructor.
 
         @param parent: Reference to the parent object being visualized.
         @type parent: C{object}
+        @param frame: Parent frame for this frame.
+        @type frame: C{visual.frame}
         """
         self.parent = parent
+        self.properties = properties
         self.members = {}
         visual.frame.__init__(self, frame=frame)
 
