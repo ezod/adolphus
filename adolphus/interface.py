@@ -250,9 +250,6 @@ class Experiment(object):
         def cmd_cdot(args):
             self.display.cdot.visible = not self.display.cdot.visible
 
-        def cmd_ptmu(args):
-            self.model.visualize_ptmu_toggle()
-        
         def cmd_name(args):
             self.model.visualize_name_toggle()
 

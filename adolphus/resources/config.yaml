@@ -1,5 +1,5 @@
 keybindings:
-    f5:           ptmu
+    f2:           coverage main
     f6:           name
     f7:           axes
     f8:           cdot

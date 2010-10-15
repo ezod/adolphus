@@ -64,7 +64,6 @@ class PointFuzzySet(FuzzySet, Posable):
                 except AttributeError:
                     point.visualize(scale=self.vis.properties['scale'], color=\
                         self.vis.properties['color'], opacity=self.mu(point))
-                    point.vis.frame = self.vis
                     self.vis.add('%s' % point, point.vis)
             else:
                 try:
@@ -234,7 +233,7 @@ class Camera(Posable):
             raise VisualizationError("no models to visualize")
         if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
             for model in self.models:
-                self.vis.add(model.__name__, model(self, frame=self.vis))
+                self.vis.add(model.__name__, model(self))
             self.update_visualization()
             return True
         else:
@@ -264,8 +263,8 @@ class Camera(Posable):
                 scale = self.Cf.kernel[1]
                 a = [self.fov['sr'][i] - (self.fov['s'][i] / 2.0) \
                      for i in range(2)]
-                self.vis.add('fov', visual.pyramid(frame=self.vis, axis=(-a[0],
-                    a[1], -1), pos=(scale * a[0], -scale * a[1], scale),
+                self.vis.add('fov', visual.pyramid(axis=(-a[0], a[1], -1),
+                    pos=(scale * a[0], -scale * a[1], scale),
                     size=(scale, self.Cv[1].support.size * scale,
                     self.Cv[0].support.size * scale), opacity=0.1,
                     color=(0.2, 0.5, 0.6)))
@@ -345,7 +344,7 @@ class MultiCamera(dict):
         self.ocular = ocular
         self.scene = scene
         self.fvg = FuzzyGraph(directed=False)
-        self.vis = None
+        self.vis = False
         self.scale = scale
 
     def __setitem__(self, key, value):
@@ -426,45 +425,26 @@ class MultiCamera(dict):
         """\
         Visualize all cameras and the directional points of the coverage model
         (with opacity reflecting degree of coverage).
+
+        @return: True if the visualization was initialized for the first time.
+        @rtype: C{bool}
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
         try:
             self.update_visualization()
+            return False
         except VisualizationError:
             # scene
             self.scene.visualize(scale=self.scale, color=(0.3, 0.3, 0.3))
             # cameras
             for camera in self.keys():
-                self[camera].visualize(scale=self.scale)
+                self[camera].visualize()
                 self[camera].vis.add('name', visual.label(color=(1, 1, 1),
-                    frame=self[camera].vis, pos=(0, self.scale, 0), height=6,
-                    text=camera, visible=False))
-            # graph edges
-            self.vis = VisualizationObject(self)
-            for pair in combinations(self.keys(), 2):
-                edge = 'e-%s-%s' % tuple(pair)
-                self.vis.add(edge, visual.cylinder(frame=self.vis,
-                    pos=self[pair[0]].pose.T.tuple, visible=False,
-                    axis=(self[pair[1]].pose.T - self[pair[0]].pose.T).tuple,
-                    radius=(self.scale / 10.0), color=(1, 0, 0)))
-                try:
-                    if len(self.fvg.edges(tail=pair[0], head=pair[1])):
-                        self.vis.members[edge].visible = True
-                        self.vis.members[edge].opacity = \
-                            self.fvg.mu(tail=pair[0], head=pair[1])
-                except KeyError:
-                    pass
-
-    def visualize_name_toggle(self):
-        """\
-        Toggle visibility of the camera name tags.
-        """
-        if not self.vis:
-            raise VisualizationError("visualization not yet initialized")
-        for camera in self:
-            self[camera].vis.members['name'].visible = \
-                not self[camera].vis.members['name'].visible
+                    height=6, text=camera))
+                self[camera].vis.members['name'].visible = False
+            self.vis = True
+            return True
 
     def update_visualization(self):
         """\
@@ -475,19 +455,16 @@ class MultiCamera(dict):
         # cameras
         for camera in self:
             self[camera].update_visualization()
-        # graph edges
-        for pair in combinations(self.keys(), 2):
-            edge = 'e-%s-%s' % tuple(pair)
-            self.vis.members[edge].pos = self[pair[0]].pose.T.tuple
-            self.vis.members[edge].axis = \
-                (self[pair[1]].pose.T - self[pair[0]].pose.T).tuple
-            try:
-                if len(self.fvg.edges(tail=pair[0], head=pair[1])):
-                    self.vis.members[edge].visible = True
-                    self.vis.members[edge].opacity = \
-                        self.fvg.mu(tail=pair[0], head=pair[1])
-            except KeyError:
-                pass
+
+    def visualize_name_toggle(self):
+        """\
+        Toggle visibility of the camera name tags.
+        """
+        if not self.vis:
+            raise VisualizationError("visualization not yet initialized")
+        for camera in self:
+            self[camera].vis.members['name'].visible = \
+                not self[camera].vis.members['name'].visible
 
     def visualize_coverage(self, relevance):
         """\

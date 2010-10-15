@@ -126,84 +126,78 @@ class MitsubishiRV1A(Posable):
         @type opacity: C{float}
         """
         if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
-            self.flange = VisualizationObject(self)
-            self.wrist = VisualizationObject(self)
-            self.forearm = VisualizationObject(self)
-            self.elbow = VisualizationObject(self)
-            self.upperarm = VisualizationObject(self)
-            self.shoulder = VisualizationObject(self)
+            self.shoulder = VisualizationObject(self, frame=self.vis)
+            self.upperarm = VisualizationObject(self, frame=self.shoulder)
+            self.elbow = VisualizationObject(self, frame=self.upperarm)
+            self.forearm = VisualizationObject(self, frame=self.elbow)
+            self.wrist = VisualizationObject(self, frame=self.forearm)
+            self.flange = VisualizationObject(self, frame=self.wrist)
             # flange
-            self.flange.add('small', visual.cylinder(frame=self.flange,
-                pos=(0, 0, 12.8), axis=(0, 0, 6.5), color=(0.7, 0.7, 0.7),
-                radius=15.75, material=visual.materials.plastic))
-            self.flange.add('large', visual.cylinder(frame=self.flange,
-                pos=(0, 0, 0), axis=(0, 0, 12.8), color=(0.7, 0.7, 0.7),
-                radius=35, material=visual.materials.plastic))
-            self.flange.frame = self.wrist
+            self.flange.add('small', visual.cylinder(pos=(0, 0, 12.8),
+                axis=(0, 0, 6.5), radius=15.75,
+                color=(0.7, 0.7, 0.7), material=visual.materials.plastic))
+            self.flange.add('large', visual.cylinder(pos=(0, 0, 0),
+                axis=(0, 0, 12.8), radius=35,
+                color=(0.7, 0.7, 0.7), material=visual.materials.plastic))
             # wrist
-            self.wrist.add('front', visual.box(frame=self.wrist,
-                pos=(0, 0, 26.35), length=56, height=46, width=52.7,
+            self.wrist.add('front', visual.box(pos=(0, 0, 26.35),
+                length=56, height=46, width=52.7,
                 color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.wrist.add('back', visual.cylinder(frame=self.wrist, radius=28,
-                pos=(0, -23, 0), axis=(0, 46, 0), color=(0.9, 0.9, 0.9),
-                material=visual.materials.plastic))
-            self.wrist.frame = self.forearm
+            self.wrist.add('back', visual.cylinder(pos=(0, -23, 0),
+                axis=(0, 46, 0), radius=28,
+                color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
             # forearm
-            self.forearm.add('bp', visual.box(frame=self.forearm,
-                pos=(0, 0, 42), width=84, height=116, length=96,
+            self.forearm.add('bp', visual.box(pos=(0, 0, 42),
+                length=96, height=116, width=84,
                 color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
             for i in [-1, 1]:
-                self.forearm.add('c%d' % i, visual.cylinder(frame=self.forearm,
-                    pos=(0, i * 30, 117), axis=(0, i * 28, 0), radius=48,
+                self.forearm.add('c%d' % i, visual.cylinder(radius=48,
+                    pos=(0, i * 30, 117), axis=(0, i * 28, 0),
                     color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-                self.forearm.add('s%d' % i, visual.box(frame=self.forearm,
-                    pos=(0, i * 44, 99.5), width=35, height=28, length=96,
+                self.forearm.add('s%d' % i, visual.box(pos=(0, i * 44, 99.5),
+                    length=96, height=28, width=35,
                     color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.forearm.frame = self.elbow
             # elbow
-            self.elbow.add('top', visual.box(frame=self.elbow,
-                pos=(-90, 0, -58.5), length=96, width=203, height=116,
+            self.elbow.add('top', visual.box(pos=(-90, 0, -58.5),
+                length=96, height=116, width=203,
                 color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.elbow.add('bot', visual.box(frame=self.elbow,
-                pos=(-21, 0, -58.5), length=42, width=203, height=86,
+            self.elbow.add('bot', visual.box(pos=(-21, 0, -58.5),
+                length=42, height=86, width=203,
                 color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.elbow.frame = self.upperarm
             # upperarm
             for i in [-1, 1]:
-                self.upperarm.add('t%d' % i, visual.cylinder(frame=self.upperarm,
-                    pos=(0, i * 43, 250), axis=(0, i * 30, 0), radius=48,
+                self.upperarm.add('t%d' % i, visual.cylinder(radius=48,
+                    pos=(0, i * 43, 250), axis=(0, i * 30, 0),
                     color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-                self.upperarm.add('m%d' % i, visual.box(frame=self.upperarm,
-                    pos=(0, i * 58, 125), length=96, width=250, height=30,
+                self.upperarm.add('m%d' % i, visual.box(pos=(0, i * 58, 125),
+                    length=96, height=30, width=250,
                     color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-                self.upperarm.add('b%d' % i, visual.cylinder(frame=self.upperarm,
-                    pos=(0, i * 43, 0), axis=(0, i * 30, 0), radius=48,
+                self.upperarm.add('b%d' % i, visual.cylinder(pos=(0, i * 43, 0),
+                    axis=(0, i * 30, 0), radius=48,
                     color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.upperarm.add('ct', visual.box(frame=self.upperarm, pos=(0, 0, 145),
-                length=96, width=140, height=86, color=(0.9, 0.9, 0.9),
-                material=visual.materials.plastic))
-            self.upperarm.frame = self.shoulder
+            self.upperarm.add('ct', visual.box(pos=(0, 0, 145),
+                length=96, height=86, width=140,
+                color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
             # shoulder
-            self.shoulder.add('top', visual.cylinder(frame=self.shoulder,
-                pos=(0, -43, 135), axis=(0, 86, 0), radius=65,
+            self.shoulder.add('top', visual.cylinder(pos=(0, -43, 135),
+                axis=(0, 86, 0), radius=65,
                 color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.shoulder.add('con', visual.box(frame=self.shoulder,
-                pos=(0, 0, 97.5), length=130, width=75, height=86,
+            self.shoulder.add('con', visual.box(pos=(0, 0, 97.5),
+                length=130, height=86, width=75,
                 color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.shoulder.add('base', visual.cylinder(frame=self.shoulder,
-                axis=(0, 0, 60), radius=77.5, color=(0.9, 0.9, 0.9),
-                material=visual.materials.plastic))
-            self.shoulder.frame = self.vis
+            self.shoulder.add('base', visual.cylinder(axis=(0, 0, 60),
+                radius=77.5,
+                color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
             # base
-            self.vis.add('round', visual.cylinder(frame=self.vis,
-                pos=(0, 0, 15), axis=(0, 0, 150), radius=77.5,
+            self.vis.add('round', visual.cylinder(pos=(0, 0, 15),
+                axis=(0, 0, 150), radius=77.5,
                 color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
-            self.vis.add('box', visual.box(frame=self.vis, pos=(-81.75, 0, 77.5),
-                length=163.5, width=125, height=155, color=(0.9, 0.9, 0.9),
-                material=visual.materials.plastic))
-            self.vis.add('base', visual.box(frame=self.vis, pos=(-43, 0, 7.5),
-                length=250, width=15, height=188, color=(0.9, 0.9, 0.9),
-                material=visual.materials.plastic))
+            self.vis.add('box', visual.box(pos=(-81.75, 0, 77.5),
+                length=163.5, height=155, width=125,
+                color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
+            self.vis.add('base', visual.box(pos=(-43, 0, 7.5),
+                length=250, height=188, width=15,
+                color=(0.9, 0.9, 0.9), material=visual.materials.plastic))
             # pose
             self.update_visualization()
             return True

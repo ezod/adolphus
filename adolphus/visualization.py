@@ -30,6 +30,8 @@ class VisualizationObject(visual.frame):
         @type parent: C{object}
         @param frame: Parent frame for this frame.
         @type frame: C{visual.frame}
+        @param properties: Visualization property storage.
+        @type properties: C{dict}
         """
         self.parent = parent
         self.properties = properties
@@ -55,8 +57,7 @@ class VisualizationObject(visual.frame):
         @param entity: The entity itself.
         @type entity: C{object}
         """
-        if entity.frame is not self:
-            raise ValueError("must specify this VisualizationObject as frame")
+        entity.frame = self
         self.members[name] = entity
 
     def transform(self, pose):
@@ -80,7 +81,9 @@ class VisualizationObject(visual.frame):
         @type on: C{bool}
         """
         for member in self.members.keys():
-            if isinstance(self.members[member], VisualizationObject):
+            if isinstance(self.members[member], visual.label):
+                continue
+            elif isinstance(self.members[member], VisualizationObject):
                 self.members[member].fade(on)
             else:
                 self.members[member].opacity = on and 0.2 or 1.0
