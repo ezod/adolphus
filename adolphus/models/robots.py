@@ -35,8 +35,12 @@ class MitsubishiRV1A(Posable):
         @param value: The configuration of the robot.
         @type value: C{list}
         """
-        self.tool_length = value[0]
-        self.position = tuple(value[1:])
+        if value:
+            self.tool_length = value[0]
+            self.position = tuple(value[1:])
+        else:
+            self.tool_length = 0.0
+            self.position = None
 
     @property
     def position(self):
