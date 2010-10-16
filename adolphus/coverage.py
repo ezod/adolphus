@@ -270,40 +270,26 @@ class Camera(Posable):
                     color=(0.2, 0.5, 0.6)))
 
 
-class Scene(set):
+class Scene(dict):
     """\
     Discrete spatial-directional range with occlusion class.
     """
-    def __init__(self, iterable=set()):
+    def __init__(self):
         """\
         Constructor.
 
         @param iterable: The initial set of opaque scene planes.
         @type iterable: C{iterable}
         """
-        for widget in iterable:
-            if not isinstance(widget, Posable):
-                raise TypeError('widget must be a Posable object')
-        set.__init__(self, iterable)
-
-    def add(self, widget):
-        """\
-        Add a widget to the scene.
-
-        @param widget: The widget to add.
-        @type widget: C{object}
-        """
-        if not isinstance(widget, Posable):
-            raise TypeError('widget must be a Posable object')
-        set.add(self, widget)
+        dict.__init__(self)
 
     def occluded(self, p, cam=Point()):
         """\
         Return whether the specified point is occluded from the camera
         viewpoint (by opaque scene planes).
         """
-        for widget in self:
-            pr = widget.intersection(p, cam)
+        for widget in self.keys():
+            pr = self[widget].intersection(p, cam)
             if pr is not None and pr.euclidean(p) > 0.0001:
                 return True
         return False
@@ -317,8 +303,8 @@ class Scene(set):
         """
         if not visual:
             raise VisualizationError("visual module not loaded")
-        for widget in self:
-            widget.visualize(scale=scale, color=color, opacity=opacity)
+        for widget in self.keys():
+            self[widget].visualize(scale=scale, color=color, opacity=opacity)
 
 
 class MultiCamera(dict):
@@ -338,6 +324,7 @@ class MultiCamera(dict):
         @param scale: The scale of the model (for visualization).
         @type scale: C{float}
         """
+        dict.__init__(self)
         self.name = name
         if ocular < 1:
             raise ValueError("network must be at least 1-ocular")
@@ -509,12 +496,11 @@ def load_model_from_yaml(filename, active=True):
     except KeyError:
         pass
 
-    # scene and mounts
+    # scene
     scene = Scene()
-    mounts = {}
     try:
         for widget in params['scene']:
-            pose, mount, config = parse_widget(widget, mounts)
+            pose, mount, config = parse_widget(widget, scene)
             if widget.has_key('model'):
                 wobject = getattr(external, widget['model'])(pose=pose,
                     mount=mount, config=config)
@@ -523,9 +509,7 @@ def load_model_from_yaml(filename, active=True):
             else:
                 wobject = Plane(x=widget['x'], y=widget['y'], pose=pose,
                     mount=mount)
-            if widget.has_key('name'):
-                mounts[widget['name']] = wobject
-            scene.add(wobject)
+            scene[widget['name']] = wobject
     except KeyError:
         pass
 
@@ -535,7 +519,7 @@ def load_model_from_yaml(filename, active=True):
     for camera in params['cameras']:
         for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
             camera[ap] = params[ap]
-        pose, mount, config = parse_widget(camera, mounts)
+        pose, mount, config = parse_widget(camera, scene)
         model[camera['name']] = Camera(camera, active=active,
             pose=pose, mount=mount, config=config,
             models=[getattr(external, mdl) for mdl in camera['models']])
@@ -545,7 +529,7 @@ def load_model_from_yaml(filename, active=True):
     try:
         for rmodel in params['relevance']:
             relevance_models[rmodel['name']] = \
-                generate_relevance_model(rmodel, mounts)
+                generate_relevance_model(rmodel, scene)
     except KeyError:
         pass
 
