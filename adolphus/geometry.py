@@ -952,7 +952,7 @@ class Pose(object):
         @return: String representations of T and R.
         @rtype: C{str}
         """
-        return str(self.T) + "\n" + str(self.R)
+        return 'Pose(%s, %s)' % (self.T, self.R)
 
     @property
     def nonzero(self):
