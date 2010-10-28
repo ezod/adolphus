@@ -92,31 +92,38 @@ cameras:
 
 scene:
     # vision platform
-    - model:        VisionPlatform
+    - name:         VisionPlatform
+      model:        VisionPlatform
       pose:
           T:            [1850, 435, -640]
           R:            [0, 0, 180]
           Rformat:      'euler-zyx-deg'
 
     # box
-    - x:            [-150, 150]
+    - name:         boxtop
+      x:            [-150, 150]
       y:            [-100, 100]
       z:            0
-    - x:            -150
+    - name:         boxfront
+      x:            -150
       y:            [-100, 100]
       z:            [-100, 0]
-    - x:            150
+    - name:         boxback
+      x:            150
       y:            [-100, 100]
       z:            [-100, 0]
-    - x:            [-150, 150]
+    - name:         boxleft
+      x:            [-150, 150]
       y:            -100
       z:            [-100, 0]
-    - x:            [-150, 150]
+    - name:         boxright
+      x:            [-150, 150]
       y:            100
       z:            [-100, 0]
 
     # checkerboard calibration target
-    - model:        CheckerCalibrationBoard
+    - name:         CheckerCalibrationBoard
+      model:        CheckerCalibrationBoard
       pose:
           T:            [0, 0, 0]
           R:            [0, 0, 0]
