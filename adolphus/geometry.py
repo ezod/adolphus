@@ -545,6 +545,8 @@ class Quaternion(object):
         """\
         Constructor.
         """
+        if len(args) == 1:
+            args = tuple([arg for arg in args[0]])
         if not args or args[0] is None:
             self.a = 1.0
             self.v = Point()
