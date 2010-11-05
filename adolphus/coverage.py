@@ -118,6 +118,9 @@ class Camera(Posable):
         zl, zr = self.zc(min(params['s']))
         zn, zf = self.zc(params['cmax'])
         self.Cf = TrapezoidalFuzzyNumber((zl, zr), (zn, zf))
+        # fuzzy set for direction
+        self.Cd = TrapezoidalFuzzyNumber(((pi / 2.0) - params['zeta1'],
+            pi / 2.0), ((pi / 2.0) - params['zeta2'], pi / 2.0))
         # pose
         self.pose = pose
         # active
@@ -204,8 +207,8 @@ class Camera(Posable):
                 termb = atan(r / campoint.z)
             except ZeroDivisionError:
                 termb = pi / 2.0
-            mu_d = min(max((float(campoint.rho) - ((pi / 2.0) + terma \
-                * termb)) / self.params['zeta'], 0.0), 1.0)
+            mu_d = self.Cd.mu(float(campoint.rho) \
+                - ((pi / 2.0) + terma * termb))
         else:
             mu_d = 1.0
 

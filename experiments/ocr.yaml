@@ -8,7 +8,8 @@ gamma:          20
 r1:             3.0
 r2:             0.5
 cmax:           0.036
-zeta:           0.3
+zeta1:          0.1
+zeta2:          0.7
 
 cameras:
     - name:         CAC

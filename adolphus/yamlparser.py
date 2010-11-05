@@ -58,10 +58,13 @@ def load_model_from_yaml(filename, active=True):
         pass
 
     # cameras
+    for i in [1, 2]:
+        if params['zeta%d' % i] == 'max':
+            params['zeta%d' % i] = pi / 2.0
     model = MultiCamera(name=params['name'], ocular=params['ocular'],
                         scene=scene, scale=params['scale'])
     for camera in params['cameras']:
-        for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta']:
+        for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta1', 'zeta2']:
             camera[ap] = params[ap]
         pose, mount, config = parse_widget(camera, scene)
         model[camera['name']] = Camera(camera, active=active,
