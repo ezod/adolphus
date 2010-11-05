@@ -11,7 +11,7 @@ cmax:           0.036
 zeta:           0.3
 
 cameras:
-    - name:         T1
+    - name:         CAC
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.253
@@ -20,7 +20,7 @@ cameras:
       dim:          [1360, 1024]
       zS:           1252.15
 
-    - name:         T2
+    - name:         C35
       models:       [ProsilicaEC1350, ComputarM3Z1228CMP]
       A:            4.4765
       f:            12.1563
