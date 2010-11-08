@@ -67,11 +67,11 @@ class VisualizationObject(visual.frame):
         @param pose: The pose.
         @type pose: L{geometry.Pose}
         """
-        self.pos = pose.T.tuple
+        self.pos = pose.T
         self.axis = (1, 0, 0)
         self.up = (1, 0, 0)
         axis, angle = pose.R.to_axis_angle()
-        self.rotate(axis=(axis).tuple, angle=angle)
+        self.rotate(axis=axis, angle=angle)
 
     def fade(self, on):
         """\

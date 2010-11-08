@@ -94,18 +94,18 @@ class MitsubishiRV1A(Posable):
         @rtype: C{tuple} of L{Pose}
         """
         rpos = tuple([Angle(j * pi / 180) for j in self.position])
-        EE = Pose(T=Point(0, 0, 19.3 + self.tool_length))
-        J6 = Pose(T=Point(0, 0, 52.7),
+        EE = Pose(T=Point((0.0, 0.0, 19.3 + self.tool_length)))
+        J6 = Pose(T=Point((0.0, 0.0, 52.7)),
             R=Rotation(Rotation.from_axis_angle(rpos[5], (0, 0, 1))))
-        J5 = Pose(T=Point(0, 0, 117.0),
+        J5 = Pose(T=Point((0.0, 0.0, 117.0)),
             R=Rotation(Rotation.from_axis_angle(rpos[4], (0, 1, 0))))
-        J4 = Pose(T=Point(-90.0, 0, 43.0),
+        J4 = Pose(T=Point((-90.0, 0.0, 43.0)),
             R=Rotation(Rotation.from_axis_angle(rpos[3], (0, 0, 1))))
-        J3 = Pose(T=Point(0, 0, 250.0),
+        J3 = Pose(T=Point((0.0, 0.0, 250.0)),
             R=Rotation(Rotation.from_axis_angle(rpos[2], (0, 1, 0))))
-        J2 = Pose(T=Point(0, 0, 135.0),
+        J2 = Pose(T=Point((0.0, 0.0, 135.0)),
             R=Rotation(Rotation.from_axis_angle(rpos[1], (0, 1, 0))))
-        J1 = Pose(T=Point(0, 0, 165.0),
+        J1 = Pose(T=Point((0.0, 0.0, 165.0)),
             R=Rotation(Rotation.from_axis_angle(rpos[0], (0, 0, 1))))
         return (EE, J6, J5, J4, J3, J2, J1)
       

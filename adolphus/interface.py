@@ -237,9 +237,9 @@ class Experiment(object):
         def cmd_mu(args):
             """x y z [rho eta]"""
             if len(args) == 3:
-                p = Point(tuple([float(args[i]) for i in range(3)]))
+                p = Point([float(args[i]) for i in range(3)])
             elif len(args) == 5:
-                p = DirectionalPoint(tuple([float(args[i]) for i in range(5)]))
+                p = DirectionalPoint([float(args[i]) for i in range(5)])
             else:
                 raise ValueError
             self.display.message(u'\u03bc%s = %.4f' % (p, self.model.mu(p)))
@@ -339,12 +339,12 @@ class Experiment(object):
             self.commands[cmd](args)
         except KeyError:
             self.display.message("Invalid command.")
-        except Exception, e:
-            if self.commands[cmd].__doc__:
-                self.display.message("Usage: %s %s" \
-                    % (cmd, self.commands[cmd].__doc__))
-            else:
-                raise e
+        #except Exception, e:
+        #    if self.commands[cmd].__doc__:
+        #        self.display.message("Usage: %s %s" \
+        #            % (cmd, self.commands[cmd].__doc__))
+        #    else:
+        #        raise e
 
     def run(self):
         """\

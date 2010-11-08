@@ -49,32 +49,16 @@ class Angle(float):
         return Angle(-float(self))
 
 
-class Point(object):
+class Point(tuple):
     """\
     3D point (vector) class.
     """
-    def __init__(self, *args):
+    def __new__(cls, iterable=(0.0, 0.0, 0.0)):
         """\
         Constructor.
         """
-        if not args or len(args) == 1 and args[0] is None:
-            self.x, self.y, self.z = [0.0] * 3
-        elif len(args) == 1 and isinstance(args[0], Point):
-            self.x, self.y, self.z = args[0].tuple[:3]
-        elif len(args) == 1 and isinstance(args[0], tuple):
-            self.x, self.y, self.z = args[0][:3]
-        elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
-            self.x, self.y, self.z = [args[0][i][0] for i in range(3)]
-        elif len(args) >= 3 and all([isinstance(a, Number) for a in args[:3]]):
-            self.x, self.y, self.z = [float(args[i]) for i in range(3)]
-        else:
-            raise TypeError("incompatible type in initializer")
-    
-    def __hash__(self):
-        """\
-        Hash function.
-        """
-        return hash(self.tuple)
+        assert len(iterable) == 3 or len(iterable) == 5
+        return tuple.__new__(cls, iterable)
 
     def __eq__(self, p):
         """\
@@ -85,9 +69,8 @@ class Point(object):
         """
         epsilon = 1e-4
         try:
-            return abs(self.x - p.x) < epsilon \
-               and abs(self.y - p.y) < epsilon \
-               and abs(self.z - p.z) < epsilon
+            return all([abs(self[i] - p[i]) < epsilon \
+                for i in range(len(self))])
         except AttributeError:
             return False
 
@@ -100,38 +83,6 @@ class Point(object):
         """
         return not self.__eq__(p)
 
-    def __getitem__(self, i):
-        """\
-        Return x, y, and z via numerical indexing.
-    
-        @param i: The numerical index.
-        @type i: C{int}
-        @return: The indexed coordinate.
-        @rtype: C{float}
-        """
-        if i == 0:
-            return self.x
-        elif i == 1:
-            return self.y
-        elif i == 2:
-            return self.z
-
-    def __setitem__(self, i, value):
-        """\
-        Set x, y, and z via numerical indexing.
-    
-        @param i: The numerical index.
-        @type i: C{int}
-        @param value: The new coordinate value.
-        @type value: C{float}
-        """
-        if i == 0:
-            self.x = value
-        elif i == 1:
-            self.y = value
-        elif i == 2:
-            self.z = value
-
     def __add__(self, p):
         """\
         Vector addition.
@@ -141,7 +92,7 @@ class Point(object):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(self.x + p.x, self.y + p.y, self.z + p.z)
+        return Point(tuple([self[i] + p[i] for i in range(3)]) + self[3:])
 
     def __sub__(self, p):
         """\
@@ -152,7 +103,7 @@ class Point(object):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(self.x - p.x, self.y - p.y, self.z - p.z)
+        return Point(tuple([self[i] - p[i] for i in range(3)]) + self[3:])
 
     def __mul__(self, p):
         """\
@@ -164,10 +115,10 @@ class Point(object):
         @return: Result vector.
         @rtype: L{Point}
         """
-        if isinstance(p, Point):
-            return (self.x * p.x + self.y * p.y + self.z * p.z)
-        else:
-            return Point(self.x * p, self.y * p, self.z * p)
+        try:
+            return sum([self[i] * p[i] for i in range(3)])
+        except TypeError:
+            return Point(tuple([self[i] * p for i in range(3)]) + self[3:])
 
     def __rmul__(self, p):
         """\
@@ -190,7 +141,7 @@ class Point(object):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(self.x / p, self.y / p, self.z / p)
+        return Point(tuple([self[i] / p for i in range(3)]) + self[3:])
 
     def __pow__(self, p):
         """\
@@ -202,10 +153,9 @@ class Point(object):
         @rtype: L{Point}
         """
         if not isinstance(p, Point):
-            raise TypeError("cross product operand must be a vector")
-        return Point(self.y * p.z - self.z * p.y,
-                     self.z * p.x - self.x * p.z,
-                     self.x * p.y - self.y * p.x)
+            raise TypeError('cross product operand must be a vector')
+        return Point([self[(i + 1) % 3] * p[(i + 2) % 3] - self[(i + 2) % 3] \
+            * p[(i + 1) % 3] for i in range(3)])
 
     def __neg__(self):
         """\
@@ -214,7 +164,7 @@ class Point(object):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(-self.x, -self.y, -self.z)
+        return Point([-self[i] for i in range(3)])
 
     def __repr__(self):
         """\
@@ -223,8 +173,8 @@ class Point(object):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return "%s(%f, %f, %f)" % (self.__class__.__name__,
-            self.x, self.y, self.z)
+        return '%s(%f, %f, %f)' % (self.__class__.__name__,
+            self[0], self[1], self[2])
 
     def __str__(self):
         """\
@@ -233,16 +183,19 @@ class Point(object):
         @return: Vector string.
         @rtype: C{str}
         """
-        return "(%.2f, %.2f, %.2f)" % (self.x, self.y, self.z)
+        return '(%.2f, %.2f, %.2f)' % self
 
     @property
-    def tuple(self):
-        """
-        Return a tuple of this vector.
+    def x(self):
+        return self[0]
 
-        @rtype: C{tuple}
-        """
-        return (self.x, self.y, self.z)
+    @property
+    def y(self):
+        return self[1]
+
+    @property
+    def z(self):
+        return self[2]
 
     @property
     def array(self):
@@ -251,7 +204,7 @@ class Point(object):
 
         @rtype: C{numpy.ndarray}
         """
-        return numpy.array([[self.x], [self.y], [self.z]])
+        return numpy.array([[self[0]], [self[1]], [self[2]]])
 
     @property
     def magnitude(self):
@@ -260,7 +213,7 @@ class Point(object):
 
         @rtype: C{float}
         """
-        return sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+        return sqrt(sum([self[i] ** 2 for i in range(3)]))
 
     @property
     def normal(self):
@@ -270,9 +223,10 @@ class Point(object):
         @rtype: L{Point}
         """
         m = self.magnitude
-        if m == 0:
-            raise ValueError("cannot normalize a zero vector")
-        return Point(self.x / m, self.y / m, self.z / m)
+        try:
+            return Point([self[i] / m for i in range(3)])
+        except ZeroDivisionError:
+            raise ValueError('cannot normalize a zero vector')
 
     def euclidean(self, p):
         """\
@@ -283,8 +237,7 @@ class Point(object):
         @return: Euclidean distance.
         @rtype: C{float}
         """
-        return sqrt((self.x - p.x) ** 2 + (self.y - p.y) ** 2 + \
-                    (self.z - p.z) ** 2)
+        return sqrt(sum([(self[i] - p[i]) ** 2 for i in range(3)]))
 
     distance = euclidean
 
@@ -320,159 +273,23 @@ class Point(object):
             self.vis = VisualizationObject(self)
             self.vis.add('point', visual.sphere(frame=self.vis,
                 radius=(0.1 * scale), color=color, opacity=opacity))
-        self.vis.pos = self.tuple
+        self.vis.pos = self[:3]
 
 
 class DirectionalPoint(Point):
     """\
     3D directional point (spatial-directional vector) class.
     """
-    def __init__(self, *args):
+    def __new__(cls, iterable=(0.0, 0.0, 0.0, 0.0, 0.0)):
         """\
         Constructor.
         """
-        Point.__init__(self, *args)
-        if not args or len(args) == 1 and args[0] is None:
-            self.rho, self.eta = [0.0] * 2
-        elif len(args) == 1 and isinstance(args[0], DirectionalPoint):
-            self.rho, self.eta = args[0].tuple[-2:]
-        elif len(args) == 1 and isinstance(args[0], tuple):
-            self.rho, self.eta = args[0][-2:]
-        elif len(args) == 1 and isinstance(args[0], numpy.ndarray):
-            self.rho, self.eta = [args[0][i][0] for i in [3, 4]]
-        elif len(args) >= 5 and all([isinstance(a, Number) for a in args[3:5]]):
-            self.rho, self.eta = [args[i] for i in [3, 4]]
-        else:
-            raise TypeError("incompatible type in initializer")
-        self.rho = Angle(self.rho)
-        self.eta = Angle(self.eta)
-        self._normalize_direction()
-
-    def __hash__(self):
-        """\
-        Hash function.
-        """
-        return hash((self.x, self.y, self.z, self.rho, self.eta))
-
-    def __eq__(self, p):
-        """\
-        Equality function.
-
-        @param p: The other point.
-        @type p: L{DirectionalPoint}
-        """
-        epsilon = 1e-4
-        try:
-            return Point.__eq__(self, p) \
-               and abs(self.rho - p.rho) < epsilon \
-               and abs(self.eta - p.eta) < epsilon
-        except AttributeError:
-            return False
-
-    def _normalize_direction(self):
-        """\
-        Normalize the inclination angle to within [0,pi), reversing the azimuth
-        angle as necesary.
-        """
-        if self.rho > pi:
-            self.rho -= 2. * (self.rho - pi)
-            self.eta += pi
-
-    def __getitem__(self, i):
-        """\
-        Return x, y, z, rho, and eta via numerical indexing.
-    
-        @param i: The numerical index.
-        @type i: C{int}
-        @return: The indexed coordinate.
-        @rtype: C{float}
-        """
-        if i < 3:
-            return Point.__getitem__(self, i)
-        elif i == 3:
-            return self.rho
-        elif i == 4:
-            return self.eta
-
-    def __setitem__(self, i, value):
-        """\
-        Set x, y, z, rho, and eta via numerical indexing.
-    
-        @param i: The numerical index.
-        @type i: C{int}
-        @param value: The new coordinate value.
-        @type value: C{float}
-        """
-        if i < 3:
-            Point.__setitem__(self, i, value)
-        elif i == 3:
-            self.rho = value
-        elif i == 4:
-            self.eta = value
-
-    def __add__(self, p):
-        """\
-        Vector addition.
-
-        @param p: The operand vector.
-        @type p: L{Point}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
-        return DirectionalPoint(self.x + p.x, self.y + p.y, self.z + p.z,
-                                self.rho, self.eta)
-
-    def __sub__(self, p):
-        """\
-        Vector subtraction.
-
-        @param p: The operand vector.
-        @type p: L{Point}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
-        return DirectionalPoint(self.x - p.x, self.y - p.y, self.z - p.z,
-                                self.rho, self.eta)
-
-    def __mul__(self, p):
-        """\
-        Scalar multiplication (if p is a scalar) or dot product (if p is a
-        vector).
-
-        @param p: The operand scalar or vector.
-        @type p: C{float} or L{Point}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
-        if isinstance(p, Point):
-            return (self.x * p.x + self.y * p.y + self.z * p.z)
-        else:
-            return DirectionalPoint(self.x * p, self.y * p, self.z * p,
-                                    self.rho, self.eta)
-
-    def __rmul__(self, p):
-        """\
-        Scalar multiplication (if p is a scalar) or dot product (if p is a
-        vector).
-
-        @param p: The operand scalar or vector.
-        @type p: C{float} or L{Point}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
-        return self.__mul__(p)
-
-    def __div__(self, p):
-        """\
-        Scalar division.
-
-        @param p: The scalar divisor.
-        @type p: C{float}
-        @return: Result vector.
-        @rtype: L{Point}
-        """
-        return DirectionalPoint(self.x / p, self.y / p, self.z / p,
-                                self.rho, self.eta)
+        assert len(iterable) == 5
+        iterable = list(iterable[:3]) + [Angle(iterable[3]), Angle(iterable[4])]
+        if iterable[3] > pi:
+            iterable[3] -= 2. * (iterable[3] - pi)
+            iterable[4] += pi
+        return Point.__new__(cls, iterable)
 
     def __neg__(self):
         """\
@@ -481,8 +298,8 @@ class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint(-self.x, -self.y, -self.z,
-                                self.rho + pi, self.eta)
+        return DirectionalPoint(tuple([-self[i] for i in range(3)]) + \
+                                (self[3] + pi, self[4]))
 
     def __repr__(self):
         """\
@@ -491,8 +308,8 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return "%s(%f, %f, %f, %f, %f)" % (self.__class__.__name__,
-            self.x, self.y, self.z, self.rho, self.eta)
+        return '%s(%f, %f, %f, %f, %f)' % (self.__class__.__name__,
+            self[0], self[1], self[2], self[3], self[4])
 
     def __str__(self):
         """\
@@ -501,8 +318,15 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return "(%.2f, %.2f, %.2f, %.2f, %.2f)" \
-            % (self.x, self.y, self.z, self.rho, self.eta)
+        return '(%.2f, %.2f, %.2f, %.2f, %.2f)' % self
+
+    @property
+    def rho(self):
+        return self[3]
+
+    @property
+    def eta(self):
+        return self[4]
 
     @property
     def direction_unit(self):
@@ -512,8 +336,8 @@ class DirectionalPoint(Point):
 
         @rtype: L{Point}
         """
-        return Point(sin(self.rho) * cos(self.eta),
-                     sin(self.rho) * sin(self.eta), cos(self.rho))
+        return Point((sin(self[3]) * cos(self[4]),
+                      sin(self[3]) * sin(self[4]), cos(self[3])))
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
@@ -529,60 +353,48 @@ class DirectionalPoint(Point):
         Point.visualize(self, scale=scale, color=color, opacity=opacity)
         unit = scale * self.direction_unit
         try:
-            self.vis.members['dir'].axis = unit.tuple
+            self.vis.members['dir'].axis = unit
             self.vis.members['dir'].color = color
             self.vis.members['dir'].opacity = opacity
         except KeyError:
-            self.vis.add('dir', visual.arrow(frame=self.vis, axis=unit.tuple,
+            self.vis.add('dir', visual.arrow(frame=self.vis, axis=unit,
                 color=color, opacity=opacity))
 
 
-class Quaternion(object):
+class Quaternion(tuple):
     """\
     Quaternion class.
     """
-    def __init__(self, *args):
+    def __new__(cls, iterable=(1.0, Point())):
         """\
         Constructor.
         """
-        if len(args) == 1:
-            args = tuple([arg for arg in args[0]])
-        if not args or args[0] is None:
-            self.a = 1.0
-            self.v = Point()
-        elif len(args) == 2 and isinstance(args[0], Number) \
-        and (isinstance(args[1], Point) or len(args[1]) >= 3):
-            self.a = float(args[0])
-            self.v = Point(args[1])
-        elif len(args) >= 4 and all([isinstance(a, Number) for a in args[:4]]):
-            self.a = float(args[0])
-            self.v = Point(args[1:4])
+        if len(iterable) == 4:
+            return tuple.__new__(cls, (float(iterable[0]),
+                                       Point(iterable[1:4])))
         else:
-            raise TypeError("unrecognized initial value format")
+            assert len(iterable) == 2 and isinstance(iterable[1], Point)
+            return tuple.__new__(cls, iterable)
+
+    @property
+    def a(self):
+        return self[0]
+
+    @property
+    def v(self):
+        return self[1]
 
     @property
     def b(self):
-        return self.v.x
-
-    @b.setter
-    def b(self, value):
-        self.v.x = float(value)
+        return self[1][0]
 
     @property
     def c(self):
-        return self.v.y
-
-    @c.setter
-    def c(self, value):
-        self.v.y = float(value)
+        return self[1][1]
 
     @property
     def d(self):
-        return self.v.z
-
-    @d.setter
-    def d(self, value):
-        self.v.z = float(value)
+        return self[1][2]
 
     def __add__(self, q):
         """\
@@ -593,7 +405,7 @@ class Quaternion(object):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a + q.a, self.v + q.v)
+        return Quaternion([self[i] + q[i] for i in range(2)])
 
     def __sub__(self, q):
         """\
@@ -604,7 +416,7 @@ class Quaternion(object):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a - q.a, self.v - q.v)
+        return Quaternion([self[i] - q[i] for i in range(2)])
 
     def __mul__(self, q):
         """\
@@ -616,11 +428,11 @@ class Quaternion(object):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        if isinstance(q, Quaternion):
-            return Quaternion((self.a * q.a - self.v * q.v),
-                (self.a * q.v + q.a * self.v + self.v ** q.v))
-        else:
-            return Quaternion(self.a * q, self.v * q)
+        try:
+            return Quaternion(((self[0] * q[0] - self[1] * q[1]),
+                Point(self[0] * q[1] + q[0] * self[1] + self[1] ** q[1])))
+        except TypeError:
+            return Quaternion([self[i] * q for i in range(2)])
 
     def __div__(self, q):
         """\
@@ -631,7 +443,7 @@ class Quaternion(object):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a / q, self.v / q)
+        return Quaternion([self[i] / q for i in range(2)])
 
     def __neg__(self):
         """\
@@ -640,7 +452,7 @@ class Quaternion(object):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(-self.a, -self.v)
+        return Quaternion([-self[i] for i in range(2)])
 
     def __repr__(self):
         """\
@@ -649,7 +461,7 @@ class Quaternion(object):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return "%s(%f, %s)" % (self.__class__.__name__, self.a, self.v)
+        return "%s(%f, %s)" % (self.__class__.__name__, self[0], self[1])
 
     def __str__(self):
         """\
@@ -658,7 +470,7 @@ class Quaternion(object):
         @return: Vector string.
         @rtype: C{str}
         """
-        return "(%.2f, %s)" % (self.a, self.v)
+        return "(%.2f, %s)" % self
 
     @property
     def magnitude(self):
@@ -667,7 +479,7 @@ class Quaternion(object):
 
         @rtype: C{float}
         """
-        return sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2 + self.d ** 2)
+        return sqrt(self[0] ** 2 + sum([self[1][i] ** 2 for i in range(3)]))
 
     @property
     def conjugate(self):
@@ -676,7 +488,7 @@ class Quaternion(object):
 
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a, -self.v)
+        return Quaternion((self[0], -self[1]))
 
     @property
     def inverse(self):
@@ -685,7 +497,7 @@ class Quaternion(object):
 
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a, -self.v) / (self.magnitude ** 2)
+        return self.conjugate / (self.magnitude ** 2)
 
     def rotate(self, p):
         """\
@@ -696,7 +508,7 @@ class Quaternion(object):
         @return: The rotated (conjugated) point.
         @rtype: L{Point}
         """
-        return (self * Quaternion(0, p) * self.inverse).v
+        return (self * Quaternion((0.0, p)) * self.inverse)[1]
 
 
 class Rotation(object):
@@ -723,7 +535,7 @@ class Rotation(object):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return "Rotation(%s)" % self.Q
+        return 'Rotation(%s)' % str(self.Q)
 
     __str__ = __repr__
 
@@ -785,11 +597,11 @@ class Rotation(object):
         if r == 0:
             return Quaternion(1, (0, 0, 0))
         Qa = (R[w][v] - R[v][w]) / (2.0 * r)
-        Qv = Point()
+        Qv = [0.0] * 3
         Qv[u] = r / 2.0
         Qv[v] = (R[u][v] + R[v][u]) / (2.0 * r)
         Qv[w] = (R[w][u] + R[u][w]) / (2.0 * r)
-        return Quaternion(Qa, Qv)
+        return Quaternion((Qa, Point(Qv)))
     
     @staticmethod
     def from_axis_angle(theta, axis):
@@ -806,7 +618,7 @@ class Rotation(object):
         """
         if not isinstance(axis, Point):
             axis = Point(axis)
-        return Quaternion(cos(theta / 2.0), sin(theta / 2.0) * axis.normal)
+        return Quaternion((cos(theta / 2.0), sin(theta / 2.0) * axis.normal))
 
     @staticmethod
     def from_euler(convention, angles):
@@ -834,9 +646,9 @@ class Rotation(object):
         a, b, c, d = [sum([qterm(eulerquat[convention][i + j * 2]) \
                       for i in range(2)]) for j in range(4)]
         if a > 0:
-            return Quaternion(a, -b, -c, -d)
+            return Quaternion((a, -b, -c, -d))
         else:
-            return Quaternion(-a, b, c, d)
+            return Quaternion((-a, b, c, d))
 
     def to_rotation_matrix(self):
         """\
@@ -871,7 +683,7 @@ class Rotation(object):
         try:
             return (self.Q.v.normal, theta)
         except ValueError:
-            return (Point(1, 0, 0), theta)
+            return (Point((1.0, 0.0, 0.0)), theta)
 
     def to_euler_zyx(self):
         """\
@@ -904,7 +716,7 @@ class Pose(object):
         if isinstance(T, Point):
             self.T = T
         elif T is None:
-            self.T = Point(0, 0, 0)
+            self.T = Point()
         else:
             raise TypeError("translation vector must be a Point or None")
         if isinstance(R, Rotation):
@@ -922,7 +734,7 @@ class Pose(object):
         @rtype: L{Pose}
         """
         if not isinstance(other, Pose):
-            raise TypeError("argument must be a Pose")
+            raise TypeError('argument must be a Pose')
         Tnew = other.R.rotate(self.T) + other.T
         Rnew = other.R + self.R
         return Pose(Tnew, Rnew)
@@ -1001,7 +813,7 @@ class Pose(object):
                 else:
                     rho = pi
             eta = atan2(unit.y, unit.x)
-            return DirectionalPoint(q.tuple + (rho, eta))
+            return DirectionalPoint(tuple(q) + (rho, eta))
         else:
             return Point(q)
 
@@ -1143,13 +955,13 @@ class Plane(Posable):
             except KeyError:
                 raise ValueError("pose or full dimensions must be supplied")
             if dims == ['x', 'y']:
-                self.pose = Pose(T=Point(0, 0, kwargs['z']))
+                self.pose = Pose(T=Point((0.0, 0.0, kwargs['z'])))
             elif dims == ['x', 'z']:
-                self.pose = Pose(T=Point(0, kwargs['y'], 0),
+                self.pose = Pose(T=Point((0.0, kwargs['y'], 0.0)),
                                  R=Rotation(Rotation.from_euler('zyx',
                                  (-pi / 2.0, 0, 0))))
             elif dims == ['y', 'z']:
-                self.pose = Pose(T=Point(kwargs['x'], 0, 0),
+                self.pose = Pose(T=Point((kwargs['x'], 0.0, 0.0)),
                                  R=Rotation(Rotation.from_euler('zyx',
                                  (0, -pi / 2.0, -pi / 2.0))))
             self.x = (float(min(kwargs[dims[0]])), float(max(kwargs[dims[0]])))
@@ -1170,8 +982,8 @@ class Plane(Posable):
         """
         if self.x is None or self.y is None:
             return None
-        return self.pose.map(Point((self.x[1] - self.x[0]) / 2.0 + self.x[0],
-            (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0))
+        return self.pose.map(Point(((self.x[1] - self.x[0]) / 2.0 + self.x[0],
+            (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0)))
 
     @property
     def corners(self):
@@ -1183,7 +995,8 @@ class Plane(Posable):
         """
         if self.x is None or self.y is None:
             return None
-        return [self.pose.map(Point(x, y, 0)) for x in self.x for y in self.y]
+        return [self.pose.map(Point((x, y, 0.0))) \
+            for x in self.x for y in self.y]
 
     def intersection(self, pa, pb):
         """\
@@ -1271,14 +1084,14 @@ def pointrange(xrange, yrange, zrange, step, ddiv=None):
                     rho, eta = 0.0, 0.0
                     while rho <= pi:
                         if rho == 0.0 or rho == pi:
-                            yield DirectionalPoint(x, y, z, rho, 0.0)
+                            yield DirectionalPoint((x, y, z, rho, 0.0))
                         else:
                             while eta < 2 * pi:
-                                yield DirectionalPoint(x, y, z, rho, eta)
+                                yield DirectionalPoint((x, y, z, rho, eta))
                                 eta += pi / ddiv
                         rho += pi / ddiv
                 else:
-                    yield Point(x, y, z)
+                    yield Point((x, y, z))
                 z += step
             z = zrange[0]
             y += step

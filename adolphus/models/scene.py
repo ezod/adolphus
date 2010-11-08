@@ -33,10 +33,10 @@ class VisionPlatform(Posable):
         """
         planes = set()
         # top plate
-        planes.add(Plane(pose=(self.pose + Pose(T=Point(1285, 460, 1775))),
+        planes.add(Plane(pose=(self.pose + Pose(T=Point((1285, 460, 1775)))),
             x=(-1265, 1265), y=(-430, 430)))
         # steel plate
-        planes.add(Plane(pose=(self.pose + Pose(T=Point(1590, 460, 535))),
+        planes.add(Plane(pose=(self.pose + Pose(T=Point((1590, 460, 535)))),
             x=(-950, 950), y=(-430, 430)))
         return reduce(lambda a, b: a or b, [plane.intersection(pa, pb) \
             for plane in planes])
@@ -123,9 +123,10 @@ class CheckerCalibrationBoard(Posable):
         """
         plane = Plane(pose=self.pose, x=(-138, 174), y=(-111, 115))
         pr = plane.intersection(pa, pb)
-        prlocal = (-self.pose).map(pr)
-        if prlocal.x > 276 and prlocal.y > -55 and prlocal.y < 57:
-            return None
+        if pr:
+            prlocal = (-self.pose).map(pr)
+            if prlocal.x > 276 and prlocal.y > -55 and prlocal.y < 57:
+                return None
         return pr
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):

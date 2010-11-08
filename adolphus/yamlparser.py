@@ -121,7 +121,7 @@ def parse_widget(widget, mounts):
     @rtype: L{Pose}
     """
     if widget.has_key('pose'):
-        pose = Pose(T=Point(tuple(widget['pose']['T'])),
+        pose = Pose(T=Point(widget['pose']['T']),
         R=parse_rotation(widget['pose']['R'], widget['pose']['Rformat']))
     else:
         pose = Pose()
@@ -171,9 +171,9 @@ def generate_relevance_model(params, mounts=None):
         part_model = PointFuzzySet()
         for point in params['points']:
             if len(point['point']) == 3:
-                pointobject = Point(tuple(point['point']))
+                pointobject = Point(point['point'])
             elif len(point['point']) == 5:
-                pointobject = DirectionalPoint(tuple(point['point']))
+                pointobject = DirectionalPoint(point['point'])
             mu = 1.0
             if point.has_key('mu'):
                 mu = point['mu']

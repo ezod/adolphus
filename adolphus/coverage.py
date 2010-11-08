@@ -60,7 +60,7 @@ class PointFuzzySet(FuzzySet, Posable):
                 except AttributeError:
                     point.visualize(scale=self.vis.properties['scale'], color=\
                         self.vis.properties['color'], opacity=self.mu(point))
-                    self.vis.add('%s' % point, point.vis)
+                    self.vis.add(str(point), point.vis)
             else:
                 try:
                     for member in point.vis.members.keys():
