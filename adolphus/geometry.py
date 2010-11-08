@@ -152,8 +152,6 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        if not isinstance(p, Point):
-            raise TypeError('cross product operand must be a vector')
         return Point([self[(i + 1) % 3] * p[(i + 2) % 3] - self[(i + 2) % 3] \
             * p[(i + 1) % 3] for i in range(3)])
 
@@ -515,18 +513,12 @@ class Rotation(object):
     """\
     3D Euclidean rotation class. Handles multiple representations of SO(3).
     """
-    def __init__(self, Q=None):
+    def __init__(self, Q=Quaternion()):
         """\
         Constructor.
         """
-        if Q is None:
-            self.Q = Quaternion()
-        elif isinstance(Q, Rotation):
-            self.Q = Q.Q
-        elif isinstance(Q, Quaternion):
-            self.Q = Q
-        else:
-            self.Q = Quaternion(Q)
+        assert isinstance(Q, Quaternion)
+        self.Q = Q
 
     def __repr__(self):
         """\
@@ -589,7 +581,7 @@ class Rotation(object):
         @param R: The rotation matrix.
         @type R: C{numpy.ndarray}
         @return: Quaternion representation of the rotation.
-        @rtype: L{Quaternion}
+        @rtype: L{Rotation}
         """
         u = max([(abs(R[i][i]), i) for i in range(3)])[1]
         v, w = (u + 1) % 3, (u + 2) % 3
@@ -601,7 +593,7 @@ class Rotation(object):
         Qv[u] = r / 2.0
         Qv[v] = (R[u][v] + R[v][u]) / (2.0 * r)
         Qv[w] = (R[w][u] + R[u][w]) / (2.0 * r)
-        return Quaternion((Qa, Point(Qv)))
+        return Rotation(Quaternion((Qa, Point(Qv))))
     
     @staticmethod
     def from_axis_angle(theta, axis):
@@ -614,16 +606,23 @@ class Rotation(object):
         @param axis: The axis of rotation.
         @type axis: L{Point}
         @return: Quaternion representation of the rotation.
-        @rtype: L{Quaternion}
+        @rtype: L{Rotation}
         """
-        if not isinstance(axis, Point):
-            axis = Point(axis)
-        return Quaternion((cos(theta / 2.0), sin(theta / 2.0) * axis.normal))
+        assert isinstance(axis, Point)
+        return Rotation(Quaternion((cos(theta / 2.0), sin(theta / 2.0) \
+            * axis.normal)))
 
     @staticmethod
     def from_euler(convention, angles):
         """\
         TODO
+
+        @param convention: The convention to use (e.g. 'zyx').
+        @type convention: C{str}
+        @param angles: The angles of rotation.
+        @type angles: C{tuple} of L{Angle}
+        @return Quaternion representation of the rotation.
+        @rtype: L{Rotation}
         """
         def qterm(index):
             bin = lambda x: [(x >> 2) % 2, (x >> 1) % 2, x % 2]
@@ -646,9 +645,9 @@ class Rotation(object):
         a, b, c, d = [sum([qterm(eulerquat[convention][i + j * 2]) \
                       for i in range(2)]) for j in range(4)]
         if a > 0:
-            return Quaternion((a, -b, -c, -d))
+            return Rotation(Quaternion((a, -b, -c, -d)))
         else:
-            return Quaternion((-a, b, c, d))
+            return Rotation(Quaternion((-a, b, c, d)))
 
     def to_rotation_matrix(self):
         """\
@@ -704,7 +703,7 @@ class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
-    def __init__(self, T=None, R=None):
+    def __init__(self, T=Point(), R=Rotation()):
         """\
         Constructor.
 
@@ -713,16 +712,10 @@ class Pose(object):
         @param R: The 3x3 rotation matrix.
         @type R: L{Rotation}
         """
-        if isinstance(T, Point):
-            self.T = T
-        elif T is None:
-            self.T = Point()
-        else:
-            raise TypeError("translation vector must be a Point or None")
-        if isinstance(R, Rotation):
-            self.R = R
-        else:
-            self.R = Rotation(R)
+        assert isinstance(T, Point)
+        self.T = T
+        assert isinstance(R, Rotation)
+        self.R = R
 
     def __add__(self, other):
         """\
@@ -733,8 +726,6 @@ class Pose(object):
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        if not isinstance(other, Pose):
-            raise TypeError('argument must be a Pose')
         Tnew = other.R.rotate(self.T) + other.T
         Rnew = other.R + self.R
         return Pose(Tnew, Rnew)
@@ -800,11 +791,10 @@ class Pose(object):
         @return: The rotated point/vector.
         @rtype: L{Point}
         """
-        if not isinstance(p, Point):
-            p = Point(p)
+        assert isinstance(p, Point)
         q = self.R.rotate(p)
         if isinstance(p, DirectionalPoint):
-            unit = Pose(None, self.R).map(p.direction_unit)
+            unit = Pose(R=self.R).map(p.direction_unit)
             try:
                 rho = acos(unit.z)
             except ValueError:
@@ -826,8 +816,7 @@ class Pose(object):
         @return: The translated point/vector.
         @rtype: L{Point}
         """
-        if not isinstance(p, Point):
-            p = Point(p)
+        assert isinstance(p, Point)
         q = p + self.T
         return q
 
@@ -958,12 +947,12 @@ class Plane(Posable):
                 self.pose = Pose(T=Point((0.0, 0.0, kwargs['z'])))
             elif dims == ['x', 'z']:
                 self.pose = Pose(T=Point((0.0, kwargs['y'], 0.0)),
-                                 R=Rotation(Rotation.from_euler('zyx',
-                                 (-pi / 2.0, 0, 0))))
+                                 R=Rotation.from_euler('zyx',
+                                    (-pi / 2.0, 0, 0)))
             elif dims == ['y', 'z']:
                 self.pose = Pose(T=Point((kwargs['x'], 0.0, 0.0)),
-                                 R=Rotation(Rotation.from_euler('zyx',
-                                 (0, -pi / 2.0, -pi / 2.0))))
+                                 R=Rotation.from_euler('zyx',
+                                    (0, -pi / 2.0, -pi / 2.0)))
             self.x = (float(min(kwargs[dims[0]])), float(max(kwargs[dims[0]])))
             self.y = (float(min(kwargs[dims[1]])), float(max(kwargs[dims[1]])))
         else:

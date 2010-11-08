@@ -445,9 +445,9 @@ class Experiment(object):
                     if zdiff.mag < self.display.rmin / 10.0:
                         continue
                     self.modifier.parent.pose.R += \
-                        Rotation(Rotation.from_axis_angle(copysign(zdiff.mag,
+                        Rotation.from_axis_angle(copysign(zdiff.mag,
                         zdiff.z) * 0.01, (-self.modifier.parent.pose\
-                        ).map_rotate(Point(axes[rotating]))))
+                        ).map_rotate(Point(axes[rotating])))
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif zoom:

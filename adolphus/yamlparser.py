@@ -97,14 +97,14 @@ def parse_rotation(R, format):
     if format == 'quaternion':
         return Rotation(R)
     elif format == 'matrix':
-        return Rotation(Rotation.from_rotation_matrix(R))
+        return Rotation.from_rotation_matrix(R)
     elif format == 'axis-angle':
-        return Rotation(Rotation.from_axis_angle(R[0], R[1]))
+        return Rotation.from_axis_angle(R[0], R[1])
     elif format.startswith('euler'):
         convention, unit = format.split('-')[1:]
         if unit == 'deg':
             R = [r * pi / 180.0 for r in R]
-        return Rotation(Rotation.from_euler(convention, (R[0], R[1], R[2])))
+        return Rotation.from_euler(convention, (R[0], R[1], R[2]))
     else:
         raise ValueError("unrecognized rotation format")
 
