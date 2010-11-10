@@ -57,7 +57,7 @@ class Point(tuple):
         """\
         Constructor.
         """
-        assert len(iterable) == 3 or len(iterable) == 5
+        #assert len(iterable) == 3 or len(iterable) == 5
         return tuple.__new__(cls, iterable)
 
     def __eq__(self, p):
@@ -92,7 +92,8 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(tuple([self[i] + p[i] for i in range(3)]) + self[3:])
+        return self.__class__(tuple([self[i] + p[i] for i in range(3)]) + \
+            self[3:])
 
     def __sub__(self, p):
         """\
@@ -103,7 +104,8 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(tuple([self[i] - p[i] for i in range(3)]) + self[3:])
+        return self.__class__(tuple([self[i] - p[i] for i in range(3)]) + \
+            self[3:])
 
     def __mul__(self, p):
         """\
@@ -118,7 +120,8 @@ class Point(tuple):
         try:
             return sum([self[i] * p[i] for i in range(3)])
         except TypeError:
-            return Point(tuple([self[i] * p for i in range(3)]) + self[3:])
+            return self.__class__(tuple([self[i] * p for i in range(3)]) + \
+                self[3:])
 
     def __rmul__(self, p):
         """\
@@ -141,7 +144,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(tuple([self[i] / p for i in range(3)]) + self[3:])
+        return self.__class__(tuple([self[i] / p for i in range(3)]) + self[3:])
 
     def __pow__(self, p):
         """\
@@ -152,8 +155,8 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point([self[(i + 1) % 3] * p[(i + 2) % 3] - self[(i + 2) % 3] \
-            * p[(i + 1) % 3] for i in range(3)])
+        return self.__class__(tuple([self[(i + 1) % 3] * p[(i + 2) % 3] - \
+            self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)]) + self[3:])
 
     def __neg__(self):
         """\
@@ -282,7 +285,7 @@ class DirectionalPoint(Point):
         """\
         Constructor.
         """
-        assert len(iterable) == 5
+        #assert len(iterable) == 5
         iterable = list(iterable[:3]) + [Angle(iterable[3]), Angle(iterable[4])]
         if iterable[3] > pi:
             iterable[3] -= 2. * (iterable[3] - pi)
@@ -371,8 +374,7 @@ class Quaternion(tuple):
             return tuple.__new__(cls, (float(iterable[0]),
                                        Point(iterable[1:4])))
         else:
-            assert len(iterable) == 2 and isinstance(iterable[1], Point)
-            return tuple.__new__(cls, iterable)
+            return tuple.__new__(cls, (float(iterable[0]), Point(iterable[1])))
 
     @property
     def a(self):
@@ -517,7 +519,7 @@ class Rotation(object):
         """\
         Constructor.
         """
-        assert isinstance(Q, Quaternion)
+        #assert isinstance(Q, Quaternion)
         self.Q = Q
 
     def __repr__(self):
@@ -608,7 +610,7 @@ class Rotation(object):
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        assert isinstance(axis, Point)
+        #assert isinstance(axis, Point)
         return Rotation(Quaternion((cos(theta / 2.0), sin(theta / 2.0) \
             * axis.normal)))
 
@@ -712,9 +714,9 @@ class Pose(object):
         @param R: The 3x3 rotation matrix.
         @type R: L{Rotation}
         """
-        assert isinstance(T, Point)
+        #assert isinstance(T, Point)
         self.T = T
-        assert isinstance(R, Rotation)
+        #assert isinstance(R, Rotation)
         self.R = R
 
     def __add__(self, other):
@@ -791,7 +793,7 @@ class Pose(object):
         @return: The rotated point/vector.
         @rtype: L{Point}
         """
-        assert isinstance(p, Point)
+        #assert isinstance(p, Point)
         q = self.R.rotate(p)
         if isinstance(p, DirectionalPoint):
             unit = Pose(R=self.R).map(p.direction_unit)
@@ -805,7 +807,7 @@ class Pose(object):
             eta = atan2(unit.y, unit.x)
             return DirectionalPoint(tuple(q) + (rho, eta))
         else:
-            return Point(q)
+            return q
 
     def map_translate(self, p):
         """\
@@ -816,7 +818,7 @@ class Pose(object):
         @return: The translated point/vector.
         @rtype: L{Point}
         """
-        assert isinstance(p, Point)
+        #assert isinstance(p, Point)
         q = p + self.T
         return q
 
