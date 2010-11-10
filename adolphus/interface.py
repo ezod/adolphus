@@ -164,7 +164,7 @@ class Display(visual.display):
                     else:
                         self.message()
                         break
-                elif k.isalnum() or k in ' -_(),.':
+                elif k.isalnum() or k in " -_(),.[]+*%=|&:<>'":
                     cmd += k
             self.message(cmd + " ")
         self.userspin = True
@@ -322,6 +322,10 @@ class Experiment(object):
             finally:
                 self.display.userspin = True
 
+        def cmd_eval(args):
+            """code"""
+            self.display.message(str(eval(' '.join(args))))
+
         self.commands = {}
         for function in dir():
             if function.startswith('cmd_'):
@@ -338,13 +342,13 @@ class Experiment(object):
         try:
             self.commands[cmd](args)
         except KeyError:
-            self.display.message("Invalid command.")
-        #except Exception, e:
-        #    if self.commands[cmd].__doc__:
-        #        self.display.message("Usage: %s %s" \
-        #            % (cmd, self.commands[cmd].__doc__))
-        #    else:
-        #        raise e
+            self.display.message('Invalid command.')
+        except Exception as e:
+            if self.commands[cmd].__doc__:
+                es = str(e)
+                es += '\nUsage: %s %s' % (cmd, self.commands[cmd].__doc__)
+                self.display.message(es)
+
 
     def run(self):
         """\
