@@ -20,7 +20,7 @@ class Display(visual.display):
     """\
     Visual display class.
     """
-    def __init__(self, name="Untitled Model", center=(0, 0, 0), mscale=1.0,
+    def __init__(self, name='Untitled Model', center=(0, 0, 0), mscale=1.0,
                  background=(1, 1, 1), foreground=(0.3, 0.3, 0.3)):
         """\
         Contstructor.
@@ -37,8 +37,8 @@ class Display(visual.display):
         @type foreground: C{tuple}
         """
         if not visual:
-            raise VisualizationError("visual module not loaded")
-        visual.display.__init__(self, title="Adolphus - %s" % name,
+            raise VisualizationError('visual module not loaded')
+        visual.display.__init__(self, title='Adolphus - %s' % name,
             center=center, background=background, foreground=foreground)
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
@@ -86,7 +86,7 @@ class Display(visual.display):
         """
         if camera:
             if self._stored_view:
-                raise VisualizationError("already in a camera view")
+                raise VisualizationError('already in a camera view')
             self.userspin = False
             camera.vis.visible = False
             self._stored_view = {'camera': camera,
@@ -147,8 +147,8 @@ class Display(visual.display):
         @rtype: C{str}
         """
         self.userspin = False
-        self.message(" ")
-        cmd = ""
+        self.message(' ')
+        cmd = ''
         process_cmd = False
         while True:
             visual.rate(100)
@@ -166,7 +166,7 @@ class Display(visual.display):
                         break
                 elif k.isalnum() or k in " -_(),.[]+*%=|&:<>'":
                     cmd += k
-            self.message(cmd + " ")
+            self.message(cmd + ' ')
         self.userspin = True
         return process_cmd and cmd or None
 
@@ -185,7 +185,7 @@ class Experiment(object):
         @type relevance_models: C{dict} of L{FuzzySet}
         """
         if not visual:
-            raise VisualizationError("visual module not loaded")
+            raise VisualizationError('visual module not loaded')
         self.model = model
         self.relevance_models = relevance_models
         self.display = Display(name=model.name, mscale=model.scale)
@@ -218,7 +218,7 @@ class Experiment(object):
         else:
             import pkg_resources
             config = yaml.load(pkg_resources.resource_string(__name__,
-                "resources/config.yaml"))
+                'resources/config.yaml'))
         try:
             self.keybindings = config['keybindings']
         except KeyError:
@@ -229,7 +229,7 @@ class Experiment(object):
         def cmd_sc(args):
             """x y z"""
             if self.display.in_camera_view:
-                self.display.message("Cannot shift center in camera view.")
+                self.display.message('Cannot shift center in camera view.')
                 return
             self.display.shift_center((float(args[0]), float(args[1]),
                 float(args[2])))
@@ -263,7 +263,7 @@ class Experiment(object):
                     u'R: \u03d1 = %0.2f, \u03d5 = %0.2f, \u0471 = %0.2f' \
                     % self.model[args[0]].pose.R.to_euler_zyx())
             except KeyError:
-                self.display.message("Invalid camera name.")
+                self.display.message('Invalid camera name.')
 
         def cmd_camview(args):
             """name"""
@@ -272,9 +272,9 @@ class Experiment(object):
                     self.display.camera_view(self.model[args[0]])
                     self.modifier.visible = False
                     self.modifier.parent = None
-                    self.display.message("Camera view %s." % args[0])
+                    self.display.message('Camera view %s.' % args[0])
                 except KeyError:
-                    self.display.message("Invalid camera name.")
+                    self.display.message('Invalid camera name.')
             else:
                 self.display.camera_view()
                 self.display.message()
@@ -287,7 +287,7 @@ class Experiment(object):
                     self.modifier.visible = True
                     self.modifier.parent = self.model[args[0]]
                 except KeyError:
-                    self.display.message("Invalid camera name.")
+                    self.display.message('Invalid camera name.')
             else:
                 self.modifier.visible = False
                 self.modifier.parent = None
@@ -297,7 +297,7 @@ class Experiment(object):
             try:
                 self.model[args[0]].visualize_fov_toggle()
             except KeyError:
-                self.display.message("Invalid camera name.")
+                self.display.message('Invalid camera name.')
 
         def cmd_active(args):
             """name"""
@@ -305,20 +305,20 @@ class Experiment(object):
                 self.model[args[0]].active = not self.model[args[0]].active
                 self.model[args[0]].update_visualization()
             except KeyError:
-                self.display.message("Invalid camera name.")
+                self.display.message('Invalid camera name.')
 
         def cmd_coverage(args):
             """name"""
             try:
-                self.display.message("Calculating coverage...")
+                self.display.message('Calculating coverage...')
                 self.display.userspin = False
                 perf = self.model.visualize_coverage(\
                     self.relevance_models[args[0]])
-                self.display.message("Performance (%s): %.4f" % (args[0], perf))
+                self.display.message('Performance (%s): %.4f' % (args[0], perf))
             except KeyError:
-                self.display.message("Invalid relevance model name.")
+                self.display.message('Invalid relevance model name.')
             except ValueError:
-                self.display.message("Too few active cameras.")
+                self.display.message('Too few active cameras.')
             finally:
                 self.display.userspin = True
 
@@ -378,33 +378,33 @@ class Experiment(object):
             # process mouse events
             if self.display.mouse.events:
                 m = self.display.mouse.getevent()
-                if m.drag == "middle" and not self.display.in_camera_view:
+                if m.drag == 'middle' and not self.display.in_camera_view:
                     zoom = True
                     lastpos = m.pos
-                elif m.drop == "middle":
+                elif m.drop == 'middle':
                     zoom = False
-                elif m.click == "left" and m.pick in cam_vis:
+                elif m.click == 'left' and m.pick in cam_vis:
                     if m.ctrl:
                         m.pick.frame.parent.visualize_fov_toggle()
                     elif m.alt:
                         try:
                             for camera in self.model.keys():
                                 if m.pick.frame.parent == self.model[camera]:
-                                    self.execute("camview %s" % camera)
+                                    self.execute('camview %s' % camera)
                         except VisualizationError:
                             pass
                     elif m.shift:
                         if self.modifier.parent == m.pick.frame.parent:
-                            self.execute("modify")
+                            self.execute('modify')
                         else:
                             for camera in self.model.keys():
                                 if m.pick.frame.parent == self.model[camera]:
-                                    self.execute("modify %s" % camera)
+                                    self.execute('modify %s' % camera)
                     else:
                         m.pick.frame.parent.active = \
                             not m.pick.frame.parent.active
                         m.pick.frame.parent.update_visualization()
-                elif m.drag == "left" and m.pick in self.modifier.primitives:
+                elif m.drag == 'left' and m.pick in self.modifier.primitives:
                     for name in self.modifier.members.keys():
                         if m.pick == self.modifier.members[name]:
                             if name.startswith('rot'):
@@ -423,7 +423,7 @@ class Experiment(object):
                                 for name in self.modifier.members.keys():
                                     if moving and name.startswith(moving):
                                         self.modifier.members[name].color = (0, 1, 0)
-                elif m.drop == "left" and (moving or rotating):
+                elif m.drop == 'left' and (moving or rotating):
                     for name in self.modifier.members.keys():
                         self.modifier.members[name].color = (0, 0.25, 0.75)
                     moving = None
@@ -476,16 +476,16 @@ class Experiment(object):
                     if cmd:
                         self.execute(cmd)
                 elif k == 'left':
-                    self.execute("sc %f 0 0" % -self.model.scale)
+                    self.execute('sc %f 0 0' % -self.model.scale)
                 elif k == 'right':
-                    self.execute("sc %f 0 0" % self.model.scale)
+                    self.execute('sc %f 0 0' % self.model.scale)
                 elif k == 'down':
-                    self.execute("sc 0 %f 0" % -self.model.scale)
+                    self.execute('sc 0 %f 0' % -self.model.scale)
                 elif k == 'up':
-                    self.execute("sc 0 %f 0" % self.model.scale)
+                    self.execute('sc 0 %f 0' % self.model.scale)
                 elif k == 'page down':
-                    self.execute("sc 0 0 %f" % -self.model.scale)
+                    self.execute('sc 0 0 %f' % -self.model.scale)
                 elif k == 'page up':
-                    self.execute("sc 0 0 %f" % self.model.scale)
+                    self.execute('sc 0 0 %f' % self.model.scale)
                 elif self.keybindings.has_key(k):
                     self.execute(self.keybindings[k])

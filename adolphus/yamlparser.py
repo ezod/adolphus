@@ -36,7 +36,7 @@ def load_model_from_yaml(filename, active=True):
             os.path.join(os.path.split(filename)[0],
             params['import'] + '.py'))
     except ImportError:
-        raise ImportError("could not load custom module")
+        raise ImportError('could not load custom module')
     except KeyError:
         pass
 
@@ -106,7 +106,7 @@ def parse_rotation(R, format):
             R = [r * pi / 180.0 for r in R]
         return Rotation.from_euler(convention, (R[0], R[1], R[2]))
     else:
-        raise ValueError("unrecognized rotation format")
+        raise ValueError('unrecognized rotation format')
 
 
 def parse_widget(widget, mounts):

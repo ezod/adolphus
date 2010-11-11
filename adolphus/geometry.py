@@ -67,10 +67,8 @@ class Point(tuple):
         @param p: The other point.
         @type p: L{Point}
         """
-        epsilon = 1e-4
         try:
-            return all([abs(self[i] - p[i]) < epsilon \
-                for i in range(len(self))])
+            return all([abs(self[i] - p[i]) < 1e-4 for i in range(len(self))])
         except AttributeError:
             return False
 
@@ -265,7 +263,7 @@ class Point(tuple):
         @type opacity: C{float}
         """
         if not visual:
-            raise VisualizationError("visual module not loaded")
+            raise VisualizationError('visual module not loaded')
         try:
             self.vis.members['point'].radius = 0.1 * scale
             self.vis.members['point'].color = color
@@ -461,7 +459,7 @@ class Quaternion(tuple):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return "%s(%f, %s)" % (self.__class__.__name__, self[0], self[1])
+        return '%s(%f, %s)' % (self.__class__.__name__, self[0], self[1])
 
     def __str__(self):
         """\
@@ -470,7 +468,7 @@ class Quaternion(tuple):
         @return: Vector string.
         @rtype: C{str}
         """
-        return "(%.2f, %s)" % self
+        return '(%.2f, %s)' % self
 
     @property
     def magnitude(self):
@@ -839,7 +837,7 @@ class Posable(object):
         @type config: C{object}
         """
         if self.__class__ is Posable:
-            raise NotImplementedError("cannot directly instantiate Posable")
+            raise NotImplementedError('cannot directly instantiate Posable')
         self._pose = pose
         self.mount = mount
         self.config = config
@@ -902,7 +900,7 @@ class Posable(object):
         @rtype: C{bool}
         """
         if not visual:
-            raise VisualizationError("visual module not loaded")
+            raise VisualizationError('visual module not loaded')
         try:
             self.update_visualization()
         except VisualizationError:
@@ -918,7 +916,7 @@ class Posable(object):
         Update the visualization.
         """
         if not self.vis:
-            raise VisualizationError("object has not yet been visualized")
+            raise VisualizationError('object has not yet been visualized')
         self.vis.transform(self.pose)
 
 
@@ -944,7 +942,7 @@ class Plane(Posable):
                     except TypeError:
                         pass
             except KeyError:
-                raise ValueError("pose or full dimensions must be supplied")
+                raise ValueError('pose or full dimensions must be supplied')
             if dims == ['x', 'y']:
                 self.pose = Pose(T=Point((0.0, 0.0, kwargs['z'])))
             elif dims == ['x', 'z']:

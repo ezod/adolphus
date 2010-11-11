@@ -178,9 +178,6 @@ class Camera(Posable):
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        if not isinstance(point, Point):
-            raise TypeError("invalid point")
-
         campoint = (-self.pose).map(point)
 
         # visibility
@@ -229,7 +226,7 @@ class Camera(Posable):
         @rtype: C{bool}
         """
         if not self.models:
-            raise VisualizationError("no models to visualize")
+            raise VisualizationError('no models to visualize')
         if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
             for model in self.models:
                 self.vis.add(model.__name__, model(self))
@@ -289,7 +286,7 @@ class Scene(dict):
         """
         for widget in self.keys():
             pr = self[widget].intersection(p, cam)
-            if pr is not None and pr.euclidean(p) > 0.0001:
+            if pr is not None and pr.euclidean(p) > 1e-4:
                 return True
         return False
 
@@ -301,7 +298,7 @@ class Scene(dict):
         @type color: C{tuple}
         """
         if not visual:
-            raise VisualizationError("visual module not loaded")
+            raise VisualizationError('visual module not loaded')
         for widget in self.keys():
             self[widget].visualize(scale=scale, color=color, opacity=opacity)
 
@@ -310,7 +307,7 @@ class MultiCamera(dict):
     """\
     Multi-camera n-ocular fuzzy coverage model.
     """
-    def __init__(self, name="Untitled", ocular=1, scene=Scene(), scale=1.0):
+    def __init__(self, name='Untitled', ocular=1, scene=Scene(), scale=1.0):
         """\
         Constructor.
    
@@ -325,8 +322,7 @@ class MultiCamera(dict):
         """
         dict.__init__(self)
         self.name = name
-        if ocular < 1:
-            raise ValueError("network must be at least 1-ocular")
+        #assert ocular > 0
         self.ocular = ocular
         self.scene = scene
         self.fvg = FuzzyGraph(directed=False)
@@ -342,8 +338,7 @@ class MultiCamera(dict):
         @param value: The Camera object to assign to the key.
         @type value: L{Camera}
         """
-        if not isinstance(value, Camera):
-            raise ValueError("assigned value must be a Camera object")
+        #assert isinstance(value, Camera)
         dict.__setitem__(self, key, value)
 
     @property
@@ -374,7 +369,7 @@ class MultiCamera(dict):
         """
         active_cameras = self.active_cameras
         if len(active_cameras) < self.ocular:
-            raise ValueError("network has too few cameras")
+            raise ValueError('network has too few active cameras')
         return max([min([not self.scene.occluded(point,
             self[camera].pose.T) and self[camera].mu(point) or 0.0 \
             for camera in combination]) for combination \
@@ -416,7 +411,7 @@ class MultiCamera(dict):
         @rtype: C{bool}
         """
         if not visual:
-            raise VisualizationError("visual module not loaded")
+            raise VisualizationError('visual module not loaded')
         try:
             self.update_visualization()
             return False
@@ -437,7 +432,7 @@ class MultiCamera(dict):
         Update the visualization.
         """
         if not self.vis:
-            raise VisualizationError("visualization not yet initialized")
+            raise VisualizationError('visualization not yet initialized')
         # cameras
         for camera in self:
             self[camera].update_visualization()
@@ -447,7 +442,7 @@ class MultiCamera(dict):
         Toggle visibility of the camera name tags.
         """
         if not self.vis:
-            raise VisualizationError("visualization not yet initialized")
+            raise VisualizationError('visualization not yet initialized')
         for camera in self:
             self[camera].vis.members['name'].visible = \
                 not self[camera].vis.members['name'].visible
