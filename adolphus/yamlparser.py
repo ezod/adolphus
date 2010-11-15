@@ -17,7 +17,7 @@ from coverage import PointFuzzySet, Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
 
 
-def load_model_from_yaml(filename, active=True):
+def load_model_from_yaml(filename, active=True, apoverride=None):
     """\
     Load parameters for a multi-camera fuzzy coverage model from a YAML file.
 
@@ -25,6 +25,8 @@ def load_model_from_yaml(filename, active=True):
     @type filename: C{str}
     @param active: The default active state of cameras (default True).
     @type active: C{bool}
+    @param apoverride: An override set of application parameters.
+    @type apoverride: C{dict}
     @return: The multi-camera fuzzy coverage model.
     @rtype: L{MultiCamera}
     """
@@ -64,8 +66,12 @@ def load_model_from_yaml(filename, active=True):
     model = MultiCamera(name=params['name'], ocular=params['ocular'],
                         scene=scene, scale=params['scale'])
     for camera in params['cameras']:
-        for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta1', 'zeta2']:
-            camera[ap] = params[ap]
+        if apoverride:
+            for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta1', 'zeta2']:
+                camera[ap] = apoverride[ap]
+        else:
+            for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta1', 'zeta2']:
+                camera[ap] = params[ap]
         pose, mount, config = parse_widget(camera, scene)
         model[camera['name']] = Camera(camera, active=active,
             pose=pose, mount=mount, config=config,
