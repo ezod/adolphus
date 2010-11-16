@@ -94,9 +94,9 @@ class Display(visual.display):
                                  'center': tuple(self.center),
                                  'fov': self.fov,
                                  'range': self.range}
-            self.center = camera.pose.map((0, 0, camera.params['zS'])).tuple
-            self.forward = camera.pose.map_rotate((0, 0, 1)).tuple
-            self.up = camera.pose.map_rotate((0, -1, 0)).tuple
+            self.center = camera.pose.map((0, 0, camera.params['zS']))
+            self.forward = camera.pose.map_rotate((0, 0, 1))
+            self.up = camera.pose.map_rotate((0, -1, 0))
             self.fov = max(camera.fov['a'])
             # FIXME: zoom still isn't exactly right
             self.range = max(max(camera.fov['sl']), max(camera.fov['sr'])) \
@@ -259,8 +259,9 @@ class Experiment(object):
         def cmd_pose(args):
             """name"""
             try:
-                self.display.message('T: %s\n' % self.model[args[0]].pose.T + \
-                    u'R: \u03d1 = %0.2f, \u03d5 = %0.2f, \u0471 = %0.2f' \
+                self.display.message('T: (%.2f, %.2f, %.2f)\n' \
+                    % self.model[args[0]].pose.T + \
+                    u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
                     % self.model[args[0]].pose.R.to_euler_zyx())
             except KeyError:
                 self.display.message('Invalid camera name.')
@@ -283,7 +284,7 @@ class Experiment(object):
             """name"""
             if len(args):
                 try:
-                    self.modifier.pos = self.model[args[0]].pose.T.tuple
+                    self.modifier.pos = self.model[args[0]].pose.T
                     self.modifier.visible = True
                     self.modifier.parent = self.model[args[0]]
                 except KeyError:
@@ -435,7 +436,7 @@ class Experiment(object):
                     setattr(self.modifier.parent.pose.T, moving,
                         getattr(self.modifier.parent.pose.T, moving) + getattr(\
                         newpos, moving) - getattr(lastpos, moving))
-                    self.modifier.pos = self.modifier.parent.pose.T.tuple
+                    self.modifier.pos = self.modifier.parent.pose.T
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif rotating:
