@@ -51,7 +51,8 @@ def load_model_from_yaml(filename, active=True, apoverride=None):
                 wobject = getattr(external, widget['model'])(pose=pose,
                     mount=mount, config=config)
             elif widget.has_key('z'):
-                wobject = Plane(x=widget['x'], y=widget['y'], z=widget['z'])
+                wobject = Plane(x=widget['x'], y=widget['y'], z=widget['z'],
+                    mount=mount)
             else:
                 wobject = Plane(x=widget['x'], y=widget['y'], pose=pose,
                     mount=mount)
