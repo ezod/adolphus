@@ -161,15 +161,22 @@ def generate_relevance_model(params, mounts=None):
         else:
             ddiv = None
         for range in params['ranges']:
-            for axis in ['x', 'y', 'z']:
-                ranges[axis] = PolygonalFuzzyNumber(range[axis])
-                extent[axis] = (ranges[axis].support[0][0],
-                                ranges[axis].support[-1][1])
+            if range.has_key('mu'):
+                mu = range['mu']
+            else:
+                mu = 1.0
+            if range.has_key('rho'):
+                rhorange = range['rho']
+            else:
+                rhorange = (0.0, pi)
+            if range.has_key('eta'):
+                etarange = range['eta']
+            else:
+                etarange = (0.0, 2 * pi)
             part_model = PointFuzzySet()
-            for point in pointrange(extent['x'], extent['y'], extent['z'],
-                                    params['step'], ddiv=ddiv):
-                part_model.add(point, mu=min([ranges[axis].mu(\
-                    getattr(point, axis)) for axis in ['x', 'y', 'z']]))
+            for point in pointrange(range['x'], range['y'], range['z'],
+                params['step'], rhorange, etarange, ddiv=ddiv):
+                part_model.add(point, mu=mu)
             whole_model |= part_model
     except KeyError:
         pass

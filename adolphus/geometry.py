@@ -9,7 +9,6 @@ geometric descriptor functions for features.
 """
 
 from math import pi, sqrt, sin, cos, asin, acos, atan, atan2, copysign
-from numbers import Number
 import numpy
 
 from visualization import visual, VisualizationError, VisualizationObject
@@ -1050,7 +1049,7 @@ class Plane(Posable):
         self.vis.members['plane'].opacity = self.vis.properties['opacity']
 
 
-def pointrange(xrange, yrange, zrange, step, ddiv=None):
+def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
     """\
     Generate discrete (directional) points in a range.
 
@@ -1065,24 +1064,34 @@ def pointrange(xrange, yrange, zrange, step, ddiv=None):
     @param ddiv: The fraction of pi for discrete direction angles.
     @type ddiv: C{int}
     """
-    x, y, z = xrange[0], yrange[0], zrange[0]
-    while x <= xrange[1]:
-        while y <= yrange[1]:
-            while z <= zrange[1]:
+    def rangify(r):
+        try:
+            return (r[0], r[1])
+        except TypeError:
+            return (r, r)
+    xr = rangify(xr)    
+    yr = rangify(yr)    
+    zr = rangify(zr)    
+    rhor = rangify(rhor)    
+    etar = rangify(etar)
+    x, y, z = xr[0], yr[0], zr[0]
+    while x <= xr[1]:
+        while y <= yr[1]:
+            while z <= zr[1]:
                 if ddiv:
-                    rho, eta = 0.0, 0.0
-                    while rho <= pi:
+                    rho, eta = rhor[0], etar[0]
+                    while rho <= rhor[1] and rho <= pi:
                         if rho == 0.0 or rho == pi:
                             yield DirectionalPoint((x, y, z, rho, 0.0))
                         else:
-                            while eta < 2 * pi:
+                            while eta <= etar[1] and eta < 2 * pi:
                                 yield DirectionalPoint((x, y, z, rho, eta))
                                 eta += pi / ddiv
                         rho += pi / ddiv
                 else:
                     yield Point((x, y, z))
                 z += step
-            z = zrange[0]
+            z = zr[0]
             y += step
-        y = yrange[0]
+        y = yr[0]
         x += step
