@@ -103,14 +103,17 @@ class Camera(Posable):
         self.params = params
         # fuzzy sets for visibility
         self.Cv = []
-        for i in range(2):
-            g = (params['gamma'] / float(params['dim'][i])) * 2.0 \
-                * sin(self.fov['a'][i] / 2.0)
-            self.Cv.append(TrapezoidalFuzzyNumber((self.fov['sl'][i] + g,
-                self.fov['sr'][i] - g), (self.fov['sl'][i], self.fov['sr'][i])))
+        gh = (params['gamma'] / float(params['dim'][0])) * 2.0 \
+            * sin(self.fov['ah'] / 2.0)
+        self.Cv.append(TrapezoidalFuzzyNumber((self.fov['sahl'] + gh,
+            self.fov['sahr'] - gh), (self.fov['sahl'], self.fov['sahr'])))
+        gv = (params['gamma'] / float(params['dim'][1])) * 2.0 \
+            * sin(self.fov['av'] / 2.0)
+        self.Cv.append(TrapezoidalFuzzyNumber((self.fov['savb'] + gv,
+            self.fov['savt'] - gv), (self.fov['savb'], self.fov['savt'])))
         # fuzzy set for resolution
-        mr = min([float(params['dim'][i]) / (2 * sin(self.fov['a'][i] / 2.0)) \
-                  for i in range(2)])
+        mr = min([float(params['dim'][0]) / (2 * sin(self.fov['ah'] / 2.0)),
+                  float(params['dim'][1]) / (2 * sin(self.fov['av'] / 2.0))])
         zr1 = (1.0 / params['r1']) * mr
         zr2 = (1.0 / params['r2']) * mr
         self.Cr = TrapezoidalFuzzyNumber((0, zr1), (0, zr2))
@@ -136,18 +139,27 @@ class Camera(Posable):
         try:
             return self._fov
         except AttributeError:
-            self._fov = {'a': [], 'al': [], 'ar': [],
-                         's': [], 'sl': [], 'sr': []}
-            for i in range(2):
-                self._fov['al'].append(2.0 * atan((self.params['o'][i] \
-                    * self.params['s'][i]) / (2.0 * self.params['f'])))
-                self._fov['ar'].append(2.0 * atan(((self.params['dim'][i] \
-                    - self.params['o'][i]) * self.params['s'][i]) \
-                    / (2.0 * self.params['f'])))
-                self._fov['a'].append(self._fov['al'][i] + self._fov['ar'][i])
-                self._fov['sl'].append(-sin(self._fov['al'][i]))
-                self._fov['sr'].append(sin(self._fov['ar'][i]))
-                self._fov['s'].append(self._fov['sr'][i] - self._fov['sl'][i])
+            self._fov = {}
+            # horizontal
+            self._fov['ahl'] = 2.0 * atan((self.params['o'][0] * \
+                self.params['s'][0]) / (2.0 * self.params['f']))
+            self._fov['ahr'] = 2.0 * atan(((self.params['dim'][0] - \
+                self.params['o'][0]) * self.params['s'][0]) / \
+                (2.0 * self.params['f']))
+            self._fov['ah'] = self._fov['ahl'] + self._fov['ahr']
+            self._fov['sahl'] = -sin(self._fov['ahl'])
+            self._fov['sahr'] = sin(self._fov['ahr'])
+            self._fov['sah'] = self._fov['sahr'] - self._fov['sahl']
+            # vertical
+            self._fov['avt'] = 2.0 * atan((self.params['o'][1] * \
+                self.params['s'][1]) / (2.0 * self.params['f']))
+            self._fov['avb'] = 2.0 * atan(((self.params['dim'][1] - \
+                self.params['o'][1]) * self.params['s'][1]) / \
+                (2.0 * self.params['f']))
+            self._fov['av'] = self._fov['avt'] + self._fov['avb']
+            self._fov['savt'] = sin(self._fov['avt'])
+            self._fov['savb'] = -sin(self._fov['avb'])
+            self._fov['sav'] = self._fov['savb'] - self._fov['savt']
             return self._fov
 
     def zc(self, c):
@@ -251,19 +263,23 @@ class Camera(Posable):
         Visualize the field of view of the camera.
         """
         if self.vis:
-            if self.vis.members.has_key('fov'):
-                self.vis.members['fov'].visible = \
-                    not self.vis.members['fov'].visible
-            else:
-                # TODO: verify if this is a good value for the depth
-                scale = self.Cf.kernel[1]
-                a = [self.fov['sr'][i] - (self.fov['s'][i] / 2.0) \
-                     for i in range(2)]
-                self.vis.add('fov', visual.pyramid(axis=(-a[0], a[1], -1),
-                    pos=(scale * a[0], -scale * a[1], scale),
-                    size=(scale, self.Cv[1].support.size * scale,
-                    self.Cv[0].support.size * scale), opacity=0.1,
-                    color=(0.2, 0.5, 0.6)))
+            try:
+                self.vis_fov.visible = not self.vis_fov.visible
+            except AttributeError:
+                self.vis_fov = VisualizationObject(self, frame=self.vis)
+                # FIXME: replace 1000 with something more dynamic?
+                self.vis_fov.add('lb', visual.cylinder(pos=(0, 0, 0), radius=1,
+                    axis=(1000 * self.fov['sahl'], 1000 * self.fov['savb'],
+                    1000), color=(0, 1, 0), material=visual.materials.emissive))
+                self.vis_fov.add('lt', visual.cylinder(pos=(0, 0, 0), radius=1,
+                    axis=(1000 * self.fov['sahl'], 1000 * self.fov['savt'],
+                    1000), color=(0, 1, 0), material=visual.materials.emissive))
+                self.vis_fov.add('rb', visual.cylinder(pos=(0, 0, 0), radius=1,
+                    axis=(1000 * self.fov['sahr'], 1000 * self.fov['savb'],
+                    1000), color=(0, 1, 0), material=visual.materials.emissive))
+                self.vis_fov.add('rt', visual.cylinder(pos=(0, 0, 0), radius=1,
+                    axis=(1000 * self.fov['sahr'], 1000 * self.fov['savt'],
+                    1000), color=(0, 1, 0), material=visual.materials.emissive))
 
 
 class Scene(dict):
