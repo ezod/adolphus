@@ -359,6 +359,7 @@ class Experiment(object):
         shows/hides its (approximate) field of view. Clicking a point prints
         its membership degree in the fuzzy coverage model.
         """
+        axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
         self.model.visualize()
         cam_vis = [primitive for objects in [self.model[camera].vis.primitives \
             for camera in self.model] for primitive in objects]
@@ -410,9 +411,6 @@ class Experiment(object):
                         if m.pick == self.modifier.members[name]:
                             if name.startswith('rot'):
                                 rotating = name[3]
-                                axes = {'x': (1, 0, 0),
-                                        'y': (0, 1, 0),
-                                        'z': (0, 0, 1)}
                                 lastpos = self.display.mouse.project(normal=\
                                     axes[rotating], point=self.modifier.pos)
                                 m.pick.color = (0, 1, 0)
@@ -433,14 +431,13 @@ class Experiment(object):
                 newpos = self.display.mouse.project(normal=self.display.forward,
                     point=self.modifier.pos)
                 if newpos != lastpos:
-                    setattr(self.modifier.parent.pose.T, moving,
-                        getattr(self.modifier.parent.pose.T, moving) + getattr(\
-                        newpos, moving) - getattr(lastpos, moving))
+                    self.modifier.parent.pose.T = self.modifier.parent.pose.T \
+                        + (Point(axes[moving]) * (getattr(newpos, moving) \
+                        - getattr(lastpos, moving)))
                     self.modifier.pos = self.modifier.parent.pose.T
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif rotating:
-                axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
                 newpos = self.display.mouse.project(normal=axes[rotating],
                     point=self.modifier.pos)
                 if newpos != lastpos:
