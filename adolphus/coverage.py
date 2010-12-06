@@ -109,8 +109,8 @@ class Camera(Posable):
             self.fov['sahr'] - gh), (self.fov['sahl'], self.fov['sahr'])))
         gv = (params['gamma'] / float(params['dim'][1])) * 2.0 \
             * sin(self.fov['av'] / 2.0)
-        self.Cv.append(TrapezoidalFuzzyNumber((self.fov['savb'] + gv,
-            self.fov['savt'] - gv), (self.fov['savb'], self.fov['savt'])))
+        self.Cv.append(TrapezoidalFuzzyNumber((self.fov['savt'] + gv,
+            self.fov['savb'] - gv), (self.fov['savt'], self.fov['savb'])))
         # fuzzy set for resolution
         mr = min([float(params['dim'][0]) / (2 * sin(self.fov['ah'] / 2.0)),
                   float(params['dim'][1]) / (2 * sin(self.fov['av'] / 2.0))])
@@ -157,8 +157,8 @@ class Camera(Posable):
                 self.params['o'][1]) * self.params['s'][1]) / \
                 (2.0 * self.params['f']))
             self._fov['av'] = self._fov['avt'] + self._fov['avb']
-            self._fov['savt'] = sin(self._fov['avt'])
-            self._fov['savb'] = -sin(self._fov['avb'])
+            self._fov['savt'] = -sin(self._fov['avt'])
+            self._fov['savb'] = sin(self._fov['avb'])
             self._fov['sav'] = self._fov['savb'] - self._fov['savt']
             return self._fov
 
@@ -176,7 +176,7 @@ class Camera(Posable):
         for s in [1, -1]:
             r.append((self.params['A'] * self.params['f'] * self.params['zS']) \
                 / (self.params['A'] * self.params['f'] + s * c \
-                * self.params['zS'] - self.params['f']))
+                * (self.params['zS'] - self.params['f'])))
         if r[1] < 0:
             r[1] = float('inf')
         return tuple(r)
@@ -223,6 +223,7 @@ class Camera(Posable):
 
         # algebraic product intersection
         return mu_v * mu_r * mu_f * mu_d
+        #return mu_v * mu_r * mu_d
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
