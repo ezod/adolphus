@@ -162,7 +162,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point([-self[i] for i in range(3)])
+        return self.__class__([-self[i] for i in range(3)])
 
     def __repr__(self):
         """\
