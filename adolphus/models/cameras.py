@@ -50,23 +50,23 @@ class SICKIVPRangerED(VisualizationObject):
             raise VisualizationError("visual module not loaded")
         VisualizationObject.__init__(self, parent)
         self.add('body', visual.box(length=49, height=37, width=106,
-            pos=(0, -6.5, -44), color=(1, 1, 1),
+            pos=(0, 6.5, -44), color=(1, 1, 1),
             material=visual.materials.plastic))
         self.add('top', visual.box(length=23, height=13, width=106,
-            pos=(0, 18.5, -44), color=(1, 1, 1),
+            pos=(0, -18.5, -44), color=(1, 1, 1),
             material=visual.materials.plastic))
-        self.add('bevell', visual.cylinder(pos=(11.5, 12, 9),
+        self.add('bevell', visual.cylinder(pos=(-11.5, -12, 9),
             radius=13, axis=(0, 0, -106), color=(1, 1, 1),
             material=visual.materials.plastic))
-        self.add('bevelr', visual.cylinder(pos=(-11.5, 12, 9),
+        self.add('bevelr', visual.cylinder(pos=(11.5, -12, 9),
             radius=13, axis=(0, 0, -106), color=(1, 1, 1),
             material=visual.materials.plastic))
-        self.add('ecport', visual.cylinder(pos=(-13.5, 9.5, -97),
+        self.add('ecport', visual.cylinder(pos=(13.5, -9.5, -97),
             radius=6, axis=(0, 0, -15), color=(0.8, 0.8, 0.8),
             material=visual.materials.plastic))
-        self.add('pwport', visual.cylinder(pos=(-13.5, -9, -97),
+        self.add('pwport', visual.cylinder(pos=(13.5, 9, -97),
             radius=5, axis=(0, 0, -12), color=(0.8, 0.8, 0.8),
             material=visual.materials.plastic))
         self.add('enport', visual.box(length=18, height=22, width=2,
-            pos=(7, -3, -98), color=(0.1, 0.1, 0.1),
+            pos=(-7, 3, -98), color=(0.1, 0.1, 0.1),
             material=visual.materials.plastic))
