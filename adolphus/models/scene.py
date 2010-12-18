@@ -160,3 +160,86 @@ class CheckerCalibrationBoard(Posable):
             return True
         else:
             return False
+
+class Conveyor(Posable):
+    """\
+    Scene object for the Conveyor belt.
+    """
+    def __init__(self, pose=Pose(), mount=None, config=None):
+        """\
+        Constructor.
+        
+        @param pose: The pose of the object (optional).
+        @type pose: L{Pose}
+        @param mount: The mount of the object (optional).
+        @type mount: L{Posable}
+        @param config: The configuration of the object (unused).
+        @type config: C{object}
+        """
+        
+        Posable.__init__(self, pose, mount)
+
+    def intersection(self, pa, pb):
+        """\
+        Return the 3D point of intersection (if any) of the line segment
+        between the two specified points and this object.
+
+        @param pa: The first vertex of the line segment.
+        @type pa: L{Point}
+        @param pb: The second vertex of the line segment.
+        @type pb: L{Point}
+        @return: The point of intersection with the object.
+        @rtype: L{Point}
+        """
+        plane = Plane(pose=self.pose, x=(-105, 105), y=(-470, 470))
+        pr = plane.intersection(pa, pb)        
+        return pr
+        
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
+        """\
+        Visualize the object.
+        
+        @param scale: The scale of the visualization (optional).
+        @type scale: C{float}
+        @param color: The color of the visualization (optional).
+        @type color: C{tuple}
+        @param opacity: The opacity of the visualization.
+        @type opacity: C{float}
+        """
+        
+        if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
+            self.vis.add('ubelt', visual.box(pos=(0, 0, -2), length=914, width=4, 
+                         height=210, color=(0.1, 0.1, 0.1), opacity=opacity,
+                         material=visual.materials.plastic))
+            self.vis.add('lbelt', visual.box(pos=(0, 0, -48), length=914, width=4, 
+                         height=210, color=(0, 0, 0), opacity=opacity,
+                         material=visual.materials.plastic))
+            self.vis.add('lroler', visual.cylinder(pos=(-457, -105, -25), 
+                         axis=(0, 210, 0), radius=25, color=(0.2, 0.2, 0.2),
+                         material=visual.materials.plastic))
+            self.vis.add('rroler', visual.cylinder(pos=(457, -105, -25), 
+                         axis=(0, 210, 0), radius=25, color=(0.2, 0.2, 0.2),
+                         material=visual.materials.plastic))
+            self.vis.add('lbar', visual.box(pos=(0, 106, -25), length=914, 
+                         width=19, height=4, color=(0.8, 0.8, 0.8), 
+                         opacity=opacity, material=visual.materials.rough))
+            self.vis.add('rbar', visual.box(pos=(0, -106, -25), length=914, 
+                         width=19, height=4, color=(0.8, 0.8, 0.8), 
+                         opacity=opacity, material=visual.materials.rough))
+            self.vis.add('sup1', visual.box(pos=(304, 115, -215.5), length=50, 
+                         width=400, height=20, color=(0.8, 0.8, 0.8), 
+                         opacity=opacity, material=visual.materials.rough))
+            self.vis.add('sup2', visual.box(pos=(304, -115, -215.5), length=50, 
+                         width=400, height=20, color=(0.8, 0.8, 0.8), 
+                         opacity=opacity, material=visual.materials.rough))
+            self.vis.add('sup3', visual.box(pos=(-304, 115, -215.5), length=50, 
+                         width=400, height=20, color=(0.8, 0.8, 0.8), 
+                         opacity=opacity, material=visual.materials.rough))
+            self.vis.add('sup4', visual.box(pos=(-304, -115, -215.5), length=50, 
+                         width=400, height=20, color=(0.8, 0.8, 0.8), 
+                         opacity=opacity, material=visual.materials.rough))
+            self.update_visualization()            
+            return True
+        else:
+            return False
+        
