@@ -28,9 +28,9 @@ class ProsilicaEC1350(VisualizationObject):
             pos=(0, 0, -35.5), color=(0.29, 0.49, 0.69),
             material=visual.materials.rough))
         self.add('fwport', visual.box(length=6, height=12, width=10,
-            pos=(16.5, 0, -41.5), color=(0.8, 0.8, 0.8),
+            pos=(-16.5, 0, -41.5), color=(0.8, 0.8, 0.8),
             material=visual.materials.plastic))
-        self.add('clport', visual.cylinder(pos=(-14.5, 0, -36.5),
+        self.add('clport', visual.cylinder(pos=(14.5, 0, -36.5),
             radius=4.5, axis=(0, 0, -6), color=(0.8, 0.8, 0.8),
             material=visual.materials.plastic))
 
