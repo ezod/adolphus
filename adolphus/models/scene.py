@@ -242,4 +242,70 @@ class Conveyor(Posable):
             return True
         else:
             return False
+
+class SICKCalibrationTarget(Posable):
+    """\
+    Scene object for Sick's calibration target.
+    """
+    def __init__(self, pose=Pose(), mount=None, config=None):
+        """\
+        Constructor.
         
+        @param pose: The pose of the object (optional).
+        @type pose: L{Pose}
+        @param mount: The mount of the object (optional).
+        @type mount: L{Posable}
+        @param config: The configuration of the object (unused).
+        @type config: C{object}
+        """
+        
+        Posable.__init__(self, pose, mount)
+
+    def intersection(self, pa, pb):
+        """\
+        Return the 3D point of intersection (if any) of the line segment
+        between the two specified points and this object.
+
+        @param pa: The first vertex of the line segment.
+        @type pa: L{Point}
+        @param pb: The second vertex of the line segment.
+        @type pb: L{Point}
+        @return: The point of intersection with the object.
+        @rtype: L{Point}
+        """
+        plane = Plane(pose=self.pose, x=(-150, 150), z=(-6, 16))
+        pr = plane.intersection(pa, pb)
+        return pr
+        
+    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
+        """\
+        Visualize the object.
+        
+        @param scale: The scale of the visualization (optional).
+        @type scale: C{float}
+        @param color: The color of the visualization (optional).
+        @type color: C{tuple}
+        @param opacity: The opacity of the visualization.
+        @type opacity: C{float}
+        """
+        
+        if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
+            self.vis.add('base', visual.box(pos=(-10, 0, 0), length=300, 
+                         width=12, height=5, color=(0.8, 0.8, 0.8), 
+                         material=visual.materials.plastic))
+            for y in range(15):
+                self.vis.add('tri%d' % y, visual.box(
+                             pos=(-150 + (y * 20), 0, 6), axis=(1, 0, 1), 
+                             length=14.1421, width=14.1421, height=5, 
+                             color=(0.8, 0.8, 0.8), 
+                             material=visual.materials.plastic))
+            self.vis.add('lholder', visual.cylinder(pos=(-150, 0, 0), 
+                         axis=(0, -30, 0), radius=2.5, color=(0, 0, 0),
+                         material=visual.materials.plastic))
+            self.vis.add('rholder', visual.cylinder(pos=(130, 0, 0), 
+                         axis=(0, -30, 0), radius=2.5, color=(0, 0, 0),
+                         material=visual.materials.plastic))
+            self.update_visualization()
+            return True
+        else:
+            return False
