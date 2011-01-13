@@ -121,9 +121,21 @@ class Camera(Posable):
         zn, zf = self.zc(params['cmax'])
         self.Cf = lambda p: min(max(min((p.z - zn) / (zl - zn),
             (zf - p.z) / (zf - zr)), 0.0), 1.0)
-        # fuzzy set for direction
-        self.Cd = TrapezoidalFuzzyNumber(((pi / 2.0) - params['zeta1'],
-            pi / 2.0), ((pi / 2.0) - params['zeta2'], pi / 2.0))
+        # direction
+        def Cd(p):
+            if not isinstance(p, DirectionalPoint):
+                return 1.0
+            r = sqrt(p.x ** 2 + p.y ** 2)
+            try:
+                terma = (p.y / r) * sin(p.eta) + (p.x / r) * cos(p.eta)
+            except ZeroDivisionError:
+                terma = 1.0
+            try:
+                termb = atan(r / p.z)
+            except ZeroDivisionError:
+                termb = pi / 2.0
+            return min(max((float(p.rho) - (terma * termb) - pi + self.params['zeta2']) / (self.params['zeta2'] - self.params['zeta1']), 0.0), 1.0)
+        self.Cd = Cd
         # pose
         self.pose = pose
         # active
@@ -190,30 +202,8 @@ class Camera(Posable):
         @return: The membership degree (coverage) of the point.
         @rtype: C{float}
         """
-        campoint = (-self.pose).map(point)
-
-        # direction
-        if isinstance(campoint, DirectionalPoint):
-            r = sqrt(campoint.x ** 2 + campoint.y ** 2)
-            try:
-                terma = (campoint.y / r) * sin(campoint.eta) + \
-                        (campoint.x / r) * cos(campoint.eta)
-            except ZeroDivisionError:
-                terma = 1.0
-            try:
-                termb = atan(r / campoint.z)
-            except ZeroDivisionError:
-                termb = pi / 2.0
-            mu_d = self.Cd.mu(float(campoint.rho) \
-                - ((pi / 2.0) + terma * termb))
-
-            # VERIFY (24)
-            assert abs(mu_d - min(max((float(campoint.rho) - (terma * termb) - pi + self.params['zeta2']) / (self.params['zeta2'] - self.params['zeta1']), 0.0), 1.0)) < 1e-4
-
-        else:
-            mu_d = 1.0
-
-        return self.Cv(campoint) * self.Cr(campoint) * self.Cf(campoint) * mu_d
+        cp = (-self.pose).map(point)
+        return self.Cv(cp) * self.Cr(cp) * self.Cf(cp) * self.Cd(cp)
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
