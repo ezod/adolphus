@@ -7,12 +7,10 @@ Visual interface module.
 @license: GPL-3
 """
 
-import sys
 import yaml
-from math import tan, copysign
-from time import sleep
+from math import copysign
 
-from geometry import Point, DirectionalPoint, Rotation, Pose
+from geometry import Point, DirectionalPoint, Rotation
 from visualization import visual, VisualizationObject, VisualizationError
 
 
