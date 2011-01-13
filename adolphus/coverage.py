@@ -101,26 +101,26 @@ class Camera(Posable):
         self.models = models
         self.vis = None
         self.params = params
-        # fuzzy sets for visibility
-        self.Cv = []
+        # visibility
         gh = (params['gamma'] / float(params['dim'][0])) * 2.0 \
             * sin(self.fov['ah'] / 2.0)
-        self.Cv.append(TrapezoidalFuzzyNumber((self.fov['sahl'] + gh,
-            self.fov['sahr'] - gh), (self.fov['sahl'], self.fov['sahr'])))
         gv = (params['gamma'] / float(params['dim'][1])) * 2.0 \
             * sin(self.fov['av'] / 2.0)
-        self.Cv.append(TrapezoidalFuzzyNumber((self.fov['savt'] + gv,
-            self.fov['savb'] - gv), (self.fov['savt'], self.fov['savb'])))
-        # fuzzy set for resolution
+        self.Cv = lambda p: p.z > 0 and min(min(max((min(p.x / p.z + \
+            sin(self.fov['ahl']), sin(self.fov['ahr']) - p.x / p.z) / gh), 0.0),
+            1.0), min(max((min(p.y / p.z + sin(self.fov['avt']),
+            sin(self.fov['avb']) - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
+        # resolution
         mr = min([float(params['dim'][0]) / (2 * sin(self.fov['ah'] / 2.0)),
                   float(params['dim'][1]) / (2 * sin(self.fov['av'] / 2.0))])
         zr1 = (1.0 / params['r1']) * mr
         zr2 = (1.0 / params['r2']) * mr
-        self.Cr = TrapezoidalFuzzyNumber((0, zr1), (0, zr2))
-        # fuzzy set for focus
+        self.Cr = lambda p: min(max((zr2 - p.z) / (zr2 - zr1), 0.0), 1.0)
+        # focus
         zl, zr = self.zc(min(params['s']))
         zn, zf = self.zc(params['cmax'])
-        self.Cf = TrapezoidalFuzzyNumber((zl, zr), (zn, zf))
+        self.Cf = lambda p: min(max(min((p.z - zn) / (zl - zn),
+            (zf - p.z) / (zf - zr)), 0.0), 1.0)
         # fuzzy set for direction
         self.Cd = TrapezoidalFuzzyNumber(((pi / 2.0) - params['zeta1'],
             pi / 2.0), ((pi / 2.0) - params['zeta2'], pi / 2.0))
@@ -192,18 +192,6 @@ class Camera(Posable):
         """
         campoint = (-self.pose).map(point)
 
-        # visibility
-        try:
-            mu_v = min([self.Cv[i].mu(campoint[i] / campoint.z) for i in range(2)])
-        except ZeroDivisionError:
-            mu_v = 0.0
-
-        # resolution
-        mu_r = self.Cr.mu(campoint.z)
-
-        # focus
-        mu_f = self.Cf.mu(campoint.z)
-
         # direction
         if isinstance(campoint, DirectionalPoint):
             r = sqrt(campoint.x ** 2 + campoint.y ** 2)
@@ -218,12 +206,14 @@ class Camera(Posable):
                 termb = pi / 2.0
             mu_d = self.Cd.mu(float(campoint.rho) \
                 - ((pi / 2.0) + terma * termb))
+
+            # VERIFY (24)
+            assert abs(mu_d - min(max((float(campoint.rho) - (terma * termb) - pi + self.params['zeta2']) / (self.params['zeta2'] - self.params['zeta1']), 0.0), 1.0)) < 1e-4
+
         else:
             mu_d = 1.0
 
-        # algebraic product intersection
-        return mu_v * mu_r * mu_f * mu_d
-        #return mu_v * mu_r * mu_d
+        return self.Cv(campoint) * self.Cr(campoint) * self.Cf(campoint) * mu_d
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
