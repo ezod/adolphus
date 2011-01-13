@@ -12,10 +12,9 @@ classes.
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
-from fuzz import IndexedSet, TrapezoidalFuzzyNumber, FuzzySet, FuzzyElement, \
-                 FuzzyGraph
+from fuzz import FuzzySet, FuzzyGraph
 
-from geometry import Point, DirectionalPoint, Pose, Rotation, Posable, Plane
+from geometry import Point, DirectionalPoint, Pose, Posable
 from visualization import visual, VisualizationError, VisualizationObject
 
 
