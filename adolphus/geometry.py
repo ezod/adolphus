@@ -56,7 +56,6 @@ class Point(tuple):
         """\
         Constructor.
         """
-        #assert len(iterable) == 3 or len(iterable) == 5
         return tuple.__new__(cls, iterable)
 
     def __eq__(self, p):
@@ -115,7 +114,7 @@ class Point(tuple):
         @rtype: L{Point}
         """
         try:
-            return sum([self[i] * p[i] for i in range(3)])
+            return self[0] * p[0] + self[1] * p[1] + self[2] * p[2]
         except TypeError:
             return self.__class__(tuple([self[i] * p for i in range(3)]) + \
                 self[3:])
@@ -367,11 +366,7 @@ class Quaternion(tuple):
         """\
         Constructor.
         """
-        if len(iterable) == 4:
-            return tuple.__new__(cls, (float(iterable[0]),
-                                       Point(iterable[1:4])))
-        else:
-            return tuple.__new__(cls, (float(iterable[0]), Point(iterable[1])))
+        return tuple.__new__(cls, iterable)
 
     @property
     def a(self):
@@ -586,7 +581,7 @@ class Rotation(object):
         v, w = (u + 1) % 3, (u + 2) % 3
         r = sqrt(1.0 + R[u][u] - R[v][v] - R[w][w])
         if r == 0:
-            return Quaternion(1, (0, 0, 0))
+            return Quaternion()
         Qa = (R[w][v] - R[v][w]) / (2.0 * r)
         Qv = [0.0] * 3
         Qv[u] = r / 2.0
@@ -644,9 +639,9 @@ class Rotation(object):
         a, b, c, d = [sum([qterm(eulerquat[convention][i + j * 2]) \
                       for i in range(2)]) for j in range(4)]
         if a > 0:
-            return Rotation(Quaternion((a, -b, -c, -d)))
+            return Rotation(Quaternion((a, Point((-b, -c, -d)))))
         else:
-            return Rotation(Quaternion((-a, b, c, d)))
+            return Rotation(Quaternion((-a, Point((b, c, d)))))
 
     def to_rotation_matrix(self):
         """\
