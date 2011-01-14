@@ -281,7 +281,6 @@ class DirectionalPoint(Point):
         """\
         Constructor.
         """
-        #assert len(iterable) == 5
         iterable = list(iterable[:3]) + [Angle(iterable[3]), Angle(iterable[4])]
         if iterable[3] > pi:
             iterable[3] -= 2. * (iterable[3] - pi)
@@ -978,10 +977,14 @@ class Plane(Posable):
         @return: The corners of the plane.
         @rtype: C{list} of L{Point}
         """
-        if self.x is None or self.y is None:
-            return None
-        return [self.pose.map(Point((x, y, 0.0))) \
-            for x in self.x for y in self.y]
+        try:
+            return self._corners
+        except AttributeError:
+            if self.x is None or self.y is None:
+                return None
+            self._corners = [self.pose.map(Point((x, y, 0.0))) \
+                for x in self.x for y in self.y]
+            return self._corners
 
     def intersection(self, pa, pb):
         """\
@@ -995,19 +998,20 @@ class Plane(Posable):
         @return: The point of intersection with the plane.
         @rtype: L{Point}
         """
-        pa = (-self.pose).map(pa)
-        pb = (-self.pose).map(pb)
-        M = numpy.array([[pa.x - pb.x, 1.0, 0.0],
-                         [pa.y - pb.y, 0.0, 1.0],
-                         [pa.z - pb.z, 0.0, 0.0]])
+        c = self.corners
+        M = numpy.array([[pa.x - pb.x, c[1].x - c[0].x, c[2].x - c[0].x],
+                         [pa.y - pb.y, c[1].y - c[0].y, c[2].y - c[0].y],
+                         [pa.z - pb.z, c[1].z - c[0].z, c[2].z - c[0].z]])
         t = numpy.dot(numpy.linalg.inv(M), pa.array)[0][0]
         if t < 0 or t > 1:
             return None
         pr = pa + t * (pb - pa)
-        if pr.x < self.x[0] or pr.x > self.x[1] \
-        or pr.y < self.y[0] or pr.y > self.y[1]:
+        # FIXME: get rid of this pose mapping junk
+        spr = (-self.pose).map(pr)
+        if spr.x < self.x[0] or spr.x > self.x[1] \
+        or spr.y < self.y[0] or spr.y > self.y[1]:
             return None
-        return self.pose.map(pr)
+        return pr
 
     def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
         """\
