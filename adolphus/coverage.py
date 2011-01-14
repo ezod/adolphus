@@ -12,7 +12,7 @@ classes.
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
-from fuzz import FuzzySet, FuzzyGraph
+from fuzz import FuzzySet
 
 from geometry import Point, DirectionalPoint, Pose, Posable
 from visualization import visual, VisualizationError, VisualizationObject
@@ -321,7 +321,6 @@ class MultiCamera(dict):
         #assert ocular > 0
         self.ocular = ocular
         self.scene = scene
-        self.fvg = FuzzyGraph(directed=False)
         self.vis = False
         self.scale = scale
 
@@ -346,13 +345,6 @@ class MultiCamera(dict):
         """
         return [key for key in self.keys() if self[key].active]
     
-    def update_fvg(self):
-        """\
-        Update the fuzzy vision graph.
-        """
-        self.fvg = FuzzyGraph(viter=self.keys(), directed=False)
-        # TODO: update edges
-
     def mu(self, point):
         """\
         Return the individual membership degree of a point in the fuzzy
