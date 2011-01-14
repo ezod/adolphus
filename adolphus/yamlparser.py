@@ -11,7 +11,6 @@ import os
 import imp
 import yaml
 from math import pi
-from fuzz import PolygonalFuzzyNumber
 
 from coverage import PointFuzzySet, Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
