@@ -12,7 +12,7 @@ import imp
 import yaml
 from math import pi
 
-from coverage import PointFuzzySet, Scene, Camera, MultiCamera
+from coverage import DiscretePointCache, Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
 
 
@@ -149,9 +149,9 @@ def generate_relevance_model(params, mounts=None):
     @param params: The parameters (from YAML) for the polygonal fuzzy sets.
     @type params: C{dict}
     @return: The relevance model.
-    @rtype: L{PointFuzzySet}
+    @rtype: L{DiscretePointCache}
     """
-    whole_model = PointFuzzySet()
+    whole_model = DiscretePointCache()
     # ranges
     try:
         ranges, extent = {}, {}
@@ -172,16 +172,16 @@ def generate_relevance_model(params, mounts=None):
                 etarange = range['eta']
             else:
                 etarange = (0.0, 2 * pi)
-            part_model = PointFuzzySet()
+            part_model = DiscretePointCache()
             for point in pointrange(range['x'], range['y'], range['z'],
                 params['step'], rhorange, etarange, ddiv=ddiv):
-                part_model.add(point, mu=mu)
+                part_model[point] = mu
             whole_model |= part_model
     except KeyError:
         pass
     # points
     try:
-        part_model = PointFuzzySet()
+        part_model = DiscretePointCache()
         for point in params['points']:
             if len(point['point']) == 3:
                 pointobject = Point(point['point'])
@@ -190,7 +190,7 @@ def generate_relevance_model(params, mounts=None):
             mu = 1.0
             if point.has_key('mu'):
                 mu = point['mu']
-            part_model.add(pointobject, mu=mu)
+            part_model[pointobject] = mu
         whole_model |= part_model
     except KeyError:
         pass

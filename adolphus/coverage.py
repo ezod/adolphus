@@ -12,25 +12,54 @@ classes.
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
-from fuzz import FuzzySet
+from copy import copy
 
 from geometry import Point, DirectionalPoint, Pose, Posable
 from visualization import visual, VisualizationError, VisualizationObject
 
 
-class PointFuzzySet(FuzzySet, Posable):
+class DiscretePointCache(dict, Posable):
     """\
-    Fuzzy set of points.
+    A discrete cache of the coverage strengths of points. Can also be used as a
+    relevance model.
     """
-    def __init__(self, iterable=set(), pose=Pose(), mount=None, config=None):
+    def __init__(self, pose=Pose(), mount=None, config=None):
         """\
         Constructor.
 
         @param iterable: The iterable to construct from (optional).
         @type iterable: C{object}
         """
-        FuzzySet.__init__(self, iterable)
+        dict.__init__(self)
         Posable.__init__(self, pose, mount)
+
+    def __or__(self, other):
+        """\
+        TODO
+        """
+        result = copy(self)
+        for point in other.keys():
+            if not point in result.keys() or result[point] < other[point]:
+                result[point] = other[point]
+        return result
+
+    def __ior__(self, other):
+        self = self | other
+        return self
+
+    def __and__(self, other):
+        """\
+        TODO
+        """
+        result = DiscretePointCache()
+        for point in self.keys():
+            if point in other.keys():
+                result[point] = min(self[point], other[point])
+        return result
+
+    def __iand__(self, other):
+        self = self & other
+        return self
 
     def __del__(self):
         """\
@@ -52,13 +81,13 @@ class PointFuzzySet(FuzzySet, Posable):
         """
         Posable.update_visualization(self)
         for point in self.keys():
-            if self.mu(point):
+            if self[point]:
                 try:
                     for member in point.vis.keys():
-                        point.vis.members[member].opacity = self.mu(point)
+                        point.vis.members[member].opacity = self[point]
                 except AttributeError:
                     point.visualize(scale=self.vis.properties['scale'], color=\
-                        self.vis.properties['color'], opacity=self.mu(point))
+                        self.vis.properties['color'], opacity=self[point])
                     self.vis.add(str(point), point.vis)
             else:
                 try:
@@ -369,13 +398,13 @@ class MultiCamera(dict):
         the points in a given relevance model.
 
         @param relevance: The relevance model.
-        @type relevance: L{PointFuzzySet}
+        @type relevance: L{DiscretePointCache}
         @return: The coverage model.
-        @rtype: L{PointFuzzySet}
+        @rtype: L{DiscretePointCache}
         """
-        coverage = PointFuzzySet(pose=relevance._pose, mount=relevance.mount)
+        coverage = DiscretePointCache(pose=relevance._pose, mount=relevance.mount)
         for point in relevance.keys():
-            coverage.add(point, mu=self.mu(relevance.pose.map(point)))
+            coverage[point] = self.mu(relevance.pose.map(point))
         return coverage
 
     def performance(self, relevance):
@@ -384,11 +413,12 @@ class MultiCamera(dict):
         respect to a given relevance model.
 
         @param relevance: The relevance model.
-        @type relevance: L{PointFuzzySet}
+        @type relevance: L{DiscretePointCache}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
-        return self.coverage(relevance).overlap(relevance)
+        coverage = self.coverage(relevance)
+        return sum((coverage & relevance).values()) / sum(relevance.values())
 
     def visualize(self):
         """\
@@ -441,7 +471,7 @@ class MultiCamera(dict):
         given relevance model, and return the coverage performance.
 
         @param relevance: The relevance model.
-        @type relevance: L{PointFuzzySet}
+        @type relevance: L{DiscretePointCache}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
@@ -450,6 +480,7 @@ class MultiCamera(dict):
         except AttributeError:
             pass
         self._coverage_vis = self.coverage(relevance)
-        performance = self._coverage_vis.overlap(relevance)
+        performance = sum((self._coverage_vis & relevance).values()) \
+            / sum(relevance.values())
         self._coverage_vis.visualize(scale=self.scale, color=(1, 0, 0))
         return performance

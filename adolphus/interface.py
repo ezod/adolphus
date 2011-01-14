@@ -181,7 +181,7 @@ class Experiment(object):
         @param model: The multi-camera model to use.
         @type model: L{coverage.MultiCamera}
         @param relevance_models: The relevance models for performance.
-        @type relevance_models: C{dict} of L{FuzzySet}
+        @type relevance_models: C{dict} of L{DiscretePointCache}
         """
         if not visual:
             raise VisualizationError('visual module not loaded')
