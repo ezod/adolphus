@@ -9,6 +9,8 @@ classes.
 @license: GPL-3
 """
 
+import pyximport; pyximport.install()
+
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations

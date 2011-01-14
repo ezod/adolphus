@@ -7,6 +7,8 @@ Visual interface module.
 @license: GPL-3
 """
 
+import pyximport; pyximport.install()
+
 import yaml
 from math import copysign
 

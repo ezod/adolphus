@@ -8,7 +8,7 @@ geometric descriptor functions for features.
 @license: GPL-3
 """
 
-from math import pi, sqrt, sin, cos, asin, acos, atan, atan2, copysign
+from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 import numpy
 
 from visualization import visual, VisualizationError, VisualizationObject
@@ -838,7 +838,7 @@ class Posable(object):
         self.vis = None
 
     @property
-    def pose(self):
+    def pose_(self):
         """\
         The pose of the object.
         """
@@ -847,13 +847,15 @@ class Posable(object):
         else:
             return self._pose
 
-    @pose.setter
+    @pose_.setter
     def pose(self, value):
         """\
         Set the pose of the object.
         """
         # TODO: handle += and the like?
         self._pose = value
+
+    del pose_
 
     def mount_pose(self):
         """\
@@ -1042,51 +1044,3 @@ class Plane(Posable):
         self.vis.members['plane'].height = self.y[1] - self.y[0]
         self.vis.members['plane'].color = self.vis.properties['color']
         self.vis.members['plane'].opacity = self.vis.properties['opacity']
-
-
-def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
-    """\
-    Generate discrete (directional) points in a range.
-
-    @param xrange: The range in the x direction.
-    @type xrange: C{tuple} of C{float}
-    @param yrange: The range in the y direction.
-    @type yrange: C{tuple} of C{float}
-    @param zrange: The range in the z direction.
-    @type zrange: C{tuple} of C{float}
-    @param step: The resolution of the discrete point set.
-    @type step: C{float}
-    @param ddiv: The fraction of pi for discrete direction angles.
-    @type ddiv: C{int}
-    """
-    def rangify(r):
-        try:
-            return (r[0], r[1])
-        except TypeError:
-            return (r, r)
-    xr = rangify(xr)    
-    yr = rangify(yr)    
-    zr = rangify(zr)    
-    rhor = rangify(rhor)    
-    etar = rangify(etar)
-    x, y, z = xr[0], yr[0], zr[0]
-    while x <= xr[1]:
-        while y <= yr[1]:
-            while z <= zr[1]:
-                if ddiv:
-                    rho, eta = rhor[0], etar[0]
-                    while rho <= rhor[1] and rho <= pi:
-                        if rho == 0.0 or rho == pi:
-                            yield DirectionalPoint((x, y, z, rho, 0.0))
-                        else:
-                            while eta <= etar[1] and eta < 2 * pi:
-                                yield DirectionalPoint((x, y, z, rho, eta))
-                                eta += pi / ddiv
-                        rho += pi / ddiv
-                else:
-                    yield Point((x, y, z))
-                z += step
-            z = zr[0]
-            y += step
-        y = yr[0]
-        x += step

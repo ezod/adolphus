@@ -9,7 +9,7 @@ multi-camera networks.
 
 ## Requirements
 
-Adolphus requires [Python] [1] 2.6 or later, [FuzzPy] [2] 0.4.0 or later, and
+Adolphus requires [Python] [1] 2.6 or later, [Cython] [2] 0.14 or later, and
 [PyYAML] [3] 3.09 or later.
 
 The [Visual] [4] module of VPython is required for visualization (optional,
@@ -25,7 +25,7 @@ recommended).
 
 
 [1]: http://www.python.org
-[2]: http://mavrinac.com/index.cgi?page=fuzzpy
+[2]: http://cython.org
 [3]: http://pyyaml.org
 [4]: http://vpython.org
 [5]: http://epydoc.sourceforge.net

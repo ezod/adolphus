@@ -12,6 +12,8 @@ __version__ = (0, 0, 0)
 __all__ = ['geometry', 'coverage', 'interface', 'visualization', 'yamlparser']
 __name__ = 'adolphus'
 
+import pyximport; pyximport.install()
+
 from geometry import *
 from coverage import *
 from interface import *

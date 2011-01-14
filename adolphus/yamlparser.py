@@ -7,13 +7,15 @@ YAML parser module.
 @license: GPL-3
 """
 
+import pyximport; pyximport.install()
+
 import os
 import imp
 import yaml
 from math import pi
 
 from coverage import DiscretePointCache, Scene, Camera, MultiCamera
-from geometry import Point, DirectionalPoint, Pose, Rotation, Plane, pointrange
+from geometry import Point, DirectionalPoint, Pose, Rotation, Plane
 
 
 def load_model_from_yaml(filename, active=True, apoverride=None):
@@ -140,6 +142,54 @@ def parse_widget(widget, mounts):
     else:
         config = None
     return pose, mount, config
+
+
+def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
+    """\
+    Generate discrete (directional) points in a range.
+
+    @param xrange: The range in the x direction.
+    @type xrange: C{tuple} of C{float}
+    @param yrange: The range in the y direction.
+    @type yrange: C{tuple} of C{float}
+    @param zrange: The range in the z direction.
+    @type zrange: C{tuple} of C{float}
+    @param step: The resolution of the discrete point set.
+    @type step: C{float}
+    @param ddiv: The fraction of pi for discrete direction angles.
+    @type ddiv: C{int}
+    """
+    def rangify(r):
+        try:
+            return (r[0], r[1])
+        except TypeError:
+            return (r, r)
+    xr = rangify(xr)    
+    yr = rangify(yr)    
+    zr = rangify(zr)    
+    rhor = rangify(rhor)    
+    etar = rangify(etar)
+    x, y, z = xr[0], yr[0], zr[0]
+    while x <= xr[1]:
+        while y <= yr[1]:
+            while z <= zr[1]:
+                if ddiv:
+                    rho, eta = rhor[0], etar[0]
+                    while rho <= rhor[1] and rho <= pi:
+                        if rho == 0.0 or rho == pi:
+                            yield DirectionalPoint((x, y, z, rho, 0.0))
+                        else:
+                            while eta <= etar[1] and eta < 2 * pi:
+                                yield DirectionalPoint((x, y, z, rho, eta))
+                                eta += pi / ddiv
+                        rho += pi / ddiv
+                else:
+                    yield Point((x, y, z))
+                z += step
+            z = zr[0]
+            y += step
+        y = yr[0]
+        x += step
 
 
 def generate_relevance_model(params, mounts=None):
