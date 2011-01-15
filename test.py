@@ -38,7 +38,7 @@ class TestGeometry(unittest.TestCase):
         r = A.geometry.Point((3, -4, -5))
         self.assertEqual(r, self.R.rotate(self.p))
         r = A.geometry.DirectionalPoint((-7, -1, -9, pi - 1.3, 2 * pi - 0.2))
-        self.assertEqual(r, self.P1.map_rotate(self.dp))
+        self.assertEqual(r, self.P1.map(self.dp))
 
     def test_pose_map(self):
         m = A.geometry.Point((6, -2, -4))
