@@ -419,11 +419,10 @@ class Quaternion(tuple):
 
     def __mul__(self, q):
         """\
-        Scalar multiplication (if q is a scalar) or quaternion multiplication
-        (if q is a quaternion).
+        Quaternion multiplication.
 
         @param q: The operand scalar or quaternion.
-        @type q: C{float} or L{Quaternion}
+        @type q: L{Quaternion}
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
