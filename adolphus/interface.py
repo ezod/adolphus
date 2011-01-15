@@ -95,8 +95,8 @@ class Display(visual.display):
                                  'fov': self.fov,
                                  'range': self.range}
             self.center = camera.pose.map((0, 0, camera.params['zS']))
-            self.forward = camera.pose.map_rotate((0, 0, 1))
-            self.up = camera.pose.map_rotate((0, -1, 0))
+            self.forward = camera.pose.R.rotate((0, 0, 1))
+            self.up = camera.pose.R.rotate((0, -1, 0))
             self.fov = max(camera.fov['ah'], camera.fov['av'])
             # FIXME: zoom still isn't exactly right
             self.range = max(camera.fov['sahl'], camera.fov['sahr'],
@@ -450,7 +450,7 @@ class Experiment(object):
                     self.modifier.parent.pose.R += \
                         Rotation.from_axis_angle(copysign(zdiff.mag,
                         zdiff.z) * 0.01, (-self.modifier.parent.pose\
-                        ).map_rotate(Point(axes[rotating])))
+                        ).R.rotate(Point(axes[rotating])))
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif zoom:

@@ -1,3 +1,5 @@
+# cython: profile=True
+
 """\
 Geometry module. Contains point (vector) and pose transformation classes, and
 geometric descriptor functions for features.
@@ -210,7 +212,11 @@ class Point(tuple):
 
         @rtype: C{float}
         """
-        return sqrt(sum([self[i] ** 2 for i in range(3)]))
+        try:
+            return self._magnitude
+        except AttributeError:
+            self._magnitude = sqrt(sum([self[i] ** 2 for i in range(3)]))
+            return self._magnitude
 
     @property
     def normal(self):
@@ -219,11 +225,15 @@ class Point(tuple):
 
         @rtype: L{Point}
         """
-        m = self.magnitude
         try:
-            return Point([self[i] / m for i in range(3)])
-        except ZeroDivisionError:
-            raise ValueError('cannot normalize a zero vector')
+            return self._normal
+        except AttributeError:
+            m = self.magnitude
+            try:
+                self._normal = Point([self[i] / m for i in range(3)])
+                return self._normal
+            except ZeroDivisionError:
+                raise ValueError('cannot normalize a zero vector')
 
     def euclidean(self, p):
         """\
@@ -235,8 +245,6 @@ class Point(tuple):
         @rtype: C{float}
         """
         return sqrt(sum([(self[i] - p[i]) ** 2 for i in range(3)]))
-
-    distance = euclidean
 
     def angle(self, p):
         """\
@@ -365,7 +373,7 @@ class Quaternion(tuple):
         """\
         Constructor.
         """
-        return tuple.__new__(cls, iterable)
+        return tuple.__new__(cls, (iterable[0], Point(iterable[1][:3])))
 
     @property
     def a(self):
@@ -419,11 +427,8 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        try:
-            return Quaternion(((self[0] * q[0] - self[1] * q[1]),
-                Point(self[0] * q[1] + q[0] * self[1] + self[1] ** q[1])))
-        except TypeError:
-            return Quaternion([self[i] * q for i in range(2)])
+        return Quaternion(((self[0] * q[0] - self[1] * q[1]),
+            Point(self[0] * q[1] + q[0] * self[1] + self[1] ** q[1])))
 
     def __div__(self, q):
         """\
@@ -434,7 +439,7 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion([self[i] / q for i in range(2)])
+        return Quaternion((self[0] / q, self[1] / q))
 
     def __neg__(self):
         """\
@@ -443,7 +448,7 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion([-self[i] for i in range(2)])
+        return Quaternion((-self[0], -self[1]))
 
     def __repr__(self):
         """\
@@ -470,7 +475,12 @@ class Quaternion(tuple):
 
         @rtype: C{float}
         """
-        return sqrt(self[0] ** 2 + sum([self[1][i] ** 2 for i in range(3)]))
+        try:
+            return self._magnitude
+        except AttributeError:
+            self._magnitude = sqrt(self[0] ** 2 + \
+                sum([self[1][i] ** 2 for i in range(3)]))
+            return self._magnitude
 
     @property
     def conjugate(self):
@@ -479,7 +489,11 @@ class Quaternion(tuple):
 
         @rtype: L{Quaternion}
         """
-        return Quaternion((self[0], -self[1]))
+        try:
+            return self._conjugate
+        except AttributeError:
+            self._conjugate = Quaternion((self[0], -self[1]))
+            return self._conjugate
 
     @property
     def inverse(self):
@@ -488,7 +502,11 @@ class Quaternion(tuple):
 
         @rtype: L{Quaternion}
         """
-        return self.conjugate / (self.magnitude ** 2)
+        try:
+            return self._inverse
+        except AttributeError:
+            self._inverse = self.conjugate / (self.magnitude ** 2)
+            return self._inverse
 
     def rotate(self, p):
         """\
@@ -510,7 +528,6 @@ class Rotation(object):
         """\
         Constructor.
         """
-        #assert isinstance(Q, Quaternion)
         self.Q = Q
 
     def __repr__(self):
@@ -601,7 +618,6 @@ class Rotation(object):
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        #assert isinstance(axis, Point)
         return Rotation(Quaternion((cos(theta / 2.0), sin(theta / 2.0) \
             * axis.normal)))
 
@@ -705,9 +721,7 @@ class Pose(object):
         @param R: The 3x3 rotation matrix.
         @type R: L{Rotation}
         """
-        #assert isinstance(T, Point)
         self.T = T
-        #assert isinstance(R, Rotation)
         self.R = R
 
     def __add__(self, other):
@@ -736,12 +750,16 @@ class Pose(object):
 
     def __neg__(self):
         """\
-        Pose inversion.
+        Pose inversion (with caching).
 
         @return: Inverted pose.
         @rtype: L{Pose}
         """
-        return Pose(-(-self.R).rotate(self.T), -self.R)
+        try:
+            return self._inverse
+        except AttributeError:
+            self._inverse = Pose(-(-self.R).rotate(self.T), -self.R)
+            return self._inverse
 
     def __str__(self):
         """\
@@ -773,21 +791,9 @@ class Pose(object):
         @return: The mapped point/vector.
         @rtype: L{Point}
         """
-        return self.map_translate(self.map_rotate(p))
-
-    def map_rotate(self, p):
-        """\
-        Rotation component of point/vector mapping.
-
-        @param p: The point/vector to rotate.
-        @type p: L{Point}
-        @return: The rotated point/vector.
-        @rtype: L{Point}
-        """
-        #assert isinstance(p, Point)
         q = self.R.rotate(p)
-        if isinstance(p, DirectionalPoint):
-            unit = Pose(R=self.R).map(p.direction_unit)
+        try:
+            unit = self.R.rotate(p.direction_unit)
             try:
                 rho = acos(unit.z)
             except ValueError:
@@ -796,22 +802,9 @@ class Pose(object):
                 else:
                     rho = pi
             eta = atan2(unit.y, unit.x)
-            return DirectionalPoint(tuple(q) + (rho, eta))
-        else:
-            return q
-
-    def map_translate(self, p):
-        """\
-        Translation component of point/vector mapping.
-
-        @param p: The point/vector to translate.
-        @type p: L{Point}
-        @return: The translated point/vector.
-        @rtype: L{Point}
-        """
-        #assert isinstance(p, Point)
-        q = p + self.T
-        return q
+            return DirectionalPoint(tuple(q) + (rho, eta)) + self.T
+        except AttributeError:
+            return q + self.T
 
 
 class Posable(object):
@@ -1006,7 +999,6 @@ class Plane(Posable):
         if t < 0 or t > 1:
             return None
         pr = pa + t * (pb - pa)
-        # FIXME: get rid of this pose mapping junk
         spr = (-self.pose).map(pr)
         if spr.x < self.x[0] or spr.x > self.x[1] \
         or spr.y < self.y[0] or spr.y > self.y[1]:
