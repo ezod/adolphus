@@ -20,7 +20,7 @@ from geometry import Point, DirectionalPoint, Pose, Rotation, Plane
 
 def load_model_from_yaml(filename, active=True, apoverride=None):
     """\
-    Load parameters for a multi-camera fuzzy coverage model from a YAML file.
+    Load parameters for a multi-camera coverage strength model from a YAML file.
 
     @param filename: The YAML file to load from.
     @type filename: C{str}
@@ -28,7 +28,7 @@ def load_model_from_yaml(filename, active=True, apoverride=None):
     @type active: C{bool}
     @param apoverride: An override set of application parameters.
     @type apoverride: C{dict}
-    @return: The multi-camera fuzzy coverage model.
+    @return: The multi-camera coverage strength model.
     @rtype: L{MultiCamera}
     """
     params = yaml.load(open(filename))
@@ -194,9 +194,9 @@ def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
 
 def generate_relevance_model(params, mounts=None):
     """\
-    Generate a relevance model from a set of x-y-z polygonal fuzzy sets.
+    Generate a relevance model from a set of x-y-z ranges.
 
-    @param params: The parameters (from YAML) for the polygonal fuzzy sets.
+    @param params: The parameters (from YAML) for the ranges.
     @type params: C{dict}
     @return: The relevance model.
     @rtype: L{DiscretePointCache}
@@ -210,10 +210,10 @@ def generate_relevance_model(params, mounts=None):
         else:
             ddiv = None
         for range in params['ranges']:
-            if range.has_key('mu'):
-                mu = range['mu']
+            if range.has_key('strength'):
+                strength = range['strength']
             else:
-                mu = 1.0
+                strength = 1.0
             if range.has_key('rho'):
                 rhorange = range['rho']
             else:
@@ -225,7 +225,7 @@ def generate_relevance_model(params, mounts=None):
             part_model = DiscretePointCache()
             for point in pointrange(range['x'], range['y'], range['z'],
                 params['step'], rhorange, etarange, ddiv=ddiv):
-                part_model[point] = mu
+                part_model[point] = strength
             whole_model |= part_model
     except KeyError:
         pass
@@ -237,10 +237,10 @@ def generate_relevance_model(params, mounts=None):
                 pointobject = Point(point['point'])
             elif len(point['point']) == 5:
                 pointobject = DirectionalPoint(point['point'])
-            mu = 1.0
-            if point.has_key('mu'):
-                mu = point['mu']
-            part_model[pointobject] = mu
+            strength = 1.0
+            if point.has_key('strength'):
+                strength = point['strength']
+            part_model[pointobject] = strength
         whole_model |= part_model
     except KeyError:
         pass

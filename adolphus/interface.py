@@ -235,7 +235,7 @@ class Experiment(object):
             self.display.shift_center((float(args[0]), float(args[1]),
                 float(args[2])))
 
-        def cmd_mu(args):
+        def cmd_strength(args):
             """x y z [rho eta]"""
             if len(args) == 3:
                 p = Point([float(args[i]) for i in range(3)])
@@ -243,7 +243,7 @@ class Experiment(object):
                 p = DirectionalPoint([float(args[i]) for i in range(5)])
             else:
                 raise ValueError
-            self.display.message(u'\u03bc%s = %.4f' % (p, self.model.mu(p)))
+            self.display.message(u'\u03bc%s = %.4f' % (p, self.model.strength(p)))
 
         def cmd_axes(args):
             self.display.axes.visible = not self.display.axes.visible
@@ -355,10 +355,6 @@ class Experiment(object):
     def run(self):
         """\
         Run this experiment.
-
-        Clicking a camera toggles its active state. CTRL + clicking a camera
-        shows/hides its (approximate) field of view. Clicking a point prints
-        its membership degree in the fuzzy coverage model.
         """
         axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
         self.model.visualize()

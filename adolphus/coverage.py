@@ -1,5 +1,5 @@
 """\
-Coverage model module. Contains the fuzzy coverage model classes for single
+Coverage model module. Contains the coverage strength model classes for single
 cameras and multi-camera networks, as well as the scene and relevance map
 classes.
 
@@ -105,7 +105,7 @@ class DiscretePointCache(dict, Posable):
 
 class Camera(Posable):
     """\
-    Single-camera model, using continous fuzzy sets.
+    Single-camera coverage strength model.
     """
     def __init__(self, params, pose=Pose(), mount=None, config=None,
                  active=True, models=None):
@@ -223,13 +223,13 @@ class Camera(Posable):
             r[1] = float('inf')
         return tuple(r)
 
-    def mu(self, point):
+    def strength(self, point):
         """\
-        Return the membership degree (coverage) for a directional point.
+        Return the coverage strength for a directional point.
     
         @param point: The (directional) point to test.
         @type point: L{Point}
-        @return: The membership degree (coverage) of the point.
+        @return: The coverage strength of the point.
         @rtype: C{float}
         """
         cp = (-self.pose).map(point)
@@ -332,7 +332,7 @@ class Scene(dict):
 
 class MultiCamera(dict):
     """\
-    Multi-camera n-ocular fuzzy coverage model.
+    Multi-camera n-ocular coverage strength model.
     """
     def __init__(self, name='Untitled', ocular=1, scene=Scene(), scale=1.0):
         """\
@@ -376,14 +376,14 @@ class MultiCamera(dict):
         """
         return [key for key in self.keys() if self[key].active]
     
-    def mu(self, point):
+    def strength(self, point):
         """\
-        Return the individual membership degree of a point in the fuzzy
-        coverage model.
+        Return the individual coverage strength of a point in the coverage
+        strength model.
 
         @param point: The (directional) point to test.
         @type point: L{Point}
-        @return: The membership degree (coverage) of the point.
+        @return: The coverage strength of the point.
         @rtype: C{float}
         """
         active_cameras = self.active_cameras
@@ -393,7 +393,7 @@ class MultiCamera(dict):
         for combination in combinations(active_cameras, self.ocular):
             minstrength = float('inf')
             for camera in combination:
-                strength = self[camera].mu(point)
+                strength = self[camera].strength(point)
                 if strength and strength < minstrength:
                     minstrength = strength * (not self.scene.occluded(point, self[camera].pose.T))
             if minstrength > 1.0:
@@ -413,7 +413,7 @@ class MultiCamera(dict):
         """
         coverage = DiscretePointCache(pose=relevance._pose, mount=relevance.mount)
         for point in relevance.keys():
-            coverage[point] = self.mu(relevance.pose.map(point))
+            coverage[point] = self.strength(relevance.pose.map(point))
         return coverage
 
     def performance(self, relevance):
