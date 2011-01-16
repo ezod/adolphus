@@ -28,6 +28,12 @@ class TestGeometry(unittest.TestCase):
         self.P1 = A.geometry.Pose(T=A.geometry.Point(), R=self.R)
         self.P2 = A.geometry.Pose(T=A.geometry.Point((3, 2, 1)), R=self.R)
 
+    def test_angle(self):
+        a = A.geometry.Angle(0.3)
+        self.assertTrue(abs(a - A.geometry.Angle(0.3 + 2 * pi)) < 1e04)
+        b = a + A.geometry.Angle(6.0)
+        self.assertTrue(b < a)
+
     def test_point_addition(self):
         r = A.geometry.Point((-4, 5, 14))
         self.assertEqual(self.p + self.dp, r)
