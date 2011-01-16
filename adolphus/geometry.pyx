@@ -20,24 +20,6 @@ class Angle(float):
     def __new__(cls, arg=0.0):
         return float.__new__(cls, float(arg) % (2 * pi))
 
-    def __eq__(self, other):
-        return float(self) == float(other) % (2 * pi)
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __gt__(self, other):
-        return float(self) > float(other) % (2 * pi)
-
-    def __lt__(self, other):
-        return float(self) < float(other) % (2 * pi)
-
-    def __ge__(self, other):
-        return float( self) >= float(other) % (2 * pi)
-
-    def __le__(self, other):
-        return float(self) <= float(other) % (2 * pi)
-
     def __add__(self, other):
         return Angle(float(self) + float(other))
 
@@ -201,7 +183,11 @@ class Point(tuple):
 
         @rtype: C{numpy.ndarray}
         """
-        return numpy.array([[self[0]], [self[1]], [self[2]]])
+        try:
+            return self._array
+        except AttributeError:
+            self._array = numpy.array([[self[0]], [self[1]], [self[2]]])
+            return self._array
 
     @property
     def magnitude(self):
@@ -989,16 +975,16 @@ class Plane(Posable):
         @rtype: L{Point}
         """
         c = self.corners
-        M = numpy.array([[pa.x - pb.x, c[1].x - c[0].x, c[2].x - c[0].x],
-                         [pa.y - pb.y, c[1].y - c[0].y, c[2].y - c[0].y],
-                         [pa.z - pb.z, c[1].z - c[0].z, c[2].z - c[0].z]])
+        M = numpy.array([[pa[0] - pb[0], c[1][0] - c[0][0], c[2][0] - c[0][0]],
+                         [pa[1] - pb[1], c[1][1] - c[0][1], c[2][1] - c[0][1]],
+                         [pa[2] - pb[2], c[1][2] - c[0][2], c[2][2] - c[0][2]]])
         t = numpy.dot(numpy.linalg.inv(M), pa.array)[0][0]
         if t < 0 or t > 1:
             return None
         pr = pa + t * (pb - pa)
         spr = (-self.pose).map(pr)
-        if spr.x < self.x[0] or spr.x > self.x[1] \
-        or spr.y < self.y[0] or spr.y > self.y[1]:
+        if spr[0] < self.x[0] or spr[0] > self.x[1] \
+        or spr[1] < self.y[0] or spr[1] > self.y[1]:
             return None
         return pr
 
