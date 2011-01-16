@@ -389,10 +389,17 @@ class MultiCamera(dict):
         active_cameras = self.active_cameras
         if len(active_cameras) < self.ocular:
             raise ValueError('network has too few active cameras')
-        return max([min([not self.scene.occluded(point,
-            self[camera].pose.T) and self[camera].mu(point) or 0.0 \
-            for camera in combination]) for combination \
-            in combinations(active_cameras, self.ocular)])
+        maxstrength = 0.0
+        for combination in combinations(active_cameras, self.ocular):
+            minstrength = float('inf')
+            for camera in combination:
+                strength = self[camera].mu(point)
+                if strength and strength < minstrength:
+                    minstrength = strength * (not self.scene.occluded(point, self[camera].pose.T))
+            if minstrength > 1.0:
+                minstrength = 0.0
+            maxstrength = max(maxstrength, minstrength)
+        return maxstrength
 
     def coverage(self, relevance):
         """\
