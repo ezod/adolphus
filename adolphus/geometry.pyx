@@ -1,3 +1,5 @@
+# cython: profile=True
+
 """\
 Geometry module. Contains point (vector) and pose transformation classes, and
 geometric descriptor functions for features.
@@ -931,7 +933,7 @@ class Plane(Posable):
                 self.x = (float(min(kwargs['x'])), float(max(kwargs['x'])))
                 self.y = (float(min(kwargs['y'])), float(max(kwargs['y'])))
             except KeyError:
-                self.x, self.y = None, None
+                raise ValueError('pose or full dimensions must be supplied')
 
     @property
     def center(self):
@@ -940,8 +942,6 @@ class Plane(Posable):
 
         @rtype: L{Point}
         """
-        if self.x is None or self.y is None:
-            return None
         return self.pose.map(Point(((self.x[1] - self.x[0]) / 2.0 + self.x[0],
             (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0)))
 
@@ -956,8 +956,6 @@ class Plane(Posable):
         try:
             return self._corners
         except AttributeError:
-            if self.x is None or self.y is None:
-                return None
             self._corners = [self.pose.map(Point((x, y, 0.0))) \
                 for x in self.x for y in self.y]
             return self._corners
@@ -1001,9 +999,7 @@ class Plane(Posable):
         @return: True if visualization was initialized for the first time.
         @rtype: C{bool}
         """
-        if self.x is None or self.y is None:
-            raise ValueError('cannot plot an infinite plane')
-        if Posable.visualize(self, scale=scale, color=color, opacity=opacity): 
+        if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
             self.vis.add('plane', visual.box(frame=self.vis,
                 pos=(0, 0, 0), width=(scale / 30.0),
                 material=visual.materials.wood))
