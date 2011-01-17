@@ -609,7 +609,7 @@ class Rotation(object):
     @staticmethod
     def from_euler(convention, angles):
         """\
-        TODO
+        Generate the internal quaternion representation from Euler angles.
 
         @param convention: The convention to use (e.g. 'zyx').
         @type convention: C{str}

@@ -36,9 +36,6 @@ class DiscretePointCache(dict, Posable):
         Posable.__init__(self, pose, mount)
 
     def __or__(self, other):
-        """\
-        TODO
-        """
         result = copy(self)
         for point in other.keys():
             if not point in result.keys() or result[point] < other[point]:
@@ -50,9 +47,6 @@ class DiscretePointCache(dict, Posable):
         return self
 
     def __and__(self, other):
-        """\
-        TODO
-        """
         result = DiscretePointCache()
         for point in self.keys():
             if point in other.keys():
@@ -64,9 +58,6 @@ class DiscretePointCache(dict, Posable):
         return self
 
     def __del__(self):
-        """\
-        Deleter.
-        """
         for point in self.keys():
             try:
                 for member in point.vis.members.keys():
