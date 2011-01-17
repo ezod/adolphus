@@ -1,5 +1,3 @@
-# cython: profile=True
-
 """\
 Geometry module. Contains point (vector) and pose transformation classes, and
 geometric descriptor functions for features.
