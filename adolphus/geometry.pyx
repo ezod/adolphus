@@ -186,7 +186,8 @@ class Point(tuple):
         try:
             return self._array
         except AttributeError:
-            self._array = numpy.array([[self[0]], [self[1]], [self[2]]])
+            self._array = numpy.array(self)
+            self._array.shape = (3, 1)
             return self._array
 
     @property
@@ -507,6 +508,8 @@ class Rotation(object):
     """\
     3D Euclidean rotation class. Handles multiple representations of SO(3).
     """
+    __slots__ = ['Q']
+
     def __init__(self, Q=Quaternion()):
         """\
         Constructor.
@@ -695,6 +698,8 @@ class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
+    __slots__ = ['T', 'R', '_inverse']
+
     def __init__(self, T=Point(), R=Rotation()):
         """\
         Constructor.
