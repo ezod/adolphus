@@ -1,5 +1,3 @@
-# cython: profile=True
-
 """\
 Geometry module. Contains point (vector) and pose transformation classes, and
 geometric descriptor functions for features.
@@ -413,7 +411,7 @@ class Quaternion(tuple):
         @rtype: L{Quaternion}
         """
         return Quaternion(((self[0] * q[0] - self[1] * q[1]),
-            Point(self[0] * q[1] + q[0] * self[1] + self[1] ** q[1])))
+            (self[0] * q[1] + q[0] * self[1] + self[1] ** q[1])))
 
     def __div__(self, q):
         """\
@@ -653,7 +651,8 @@ class Rotation(object):
         @return: Rotation matrix.
         @rtype: C{numpy.ndarray}
         """
-        a, b, c, d = self.Q.a, self.Q.b, self.Q.c, self.Q.d
+        a = self.Q[0]
+        b, c, d = self.Q[1]
         R = numpy.ndarray((3, 3))
         R[0][0] = a ** 2 + b ** 2 - c ** 2 - d ** 2
         R[0][1] = 2.0 * b * c - 2.0 * a * d
@@ -688,7 +687,8 @@ class Rotation(object):
         @return: Three fixed-axis (Euler zyx) angle rotation form.
         @rtype: C{tuple} of L{Angle}
         """
-        a, b, c, d = self.Q.a, self.Q.b, self.Q.c, self.Q.d
+        a = self.Q[0]
+        b, c, d = self.Q[1]
         theta = atan2(2.0 * (c * d - a * b), 1.0 - 2.0 * (b ** 2 + c ** 2))
         phi = -asin(2.0 * (a * c + d * b))
         psi = atan2(2.0 * (b * c - a * d), 1.0 - 2.0 * (c ** 2 + d ** 2))
