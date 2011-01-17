@@ -1,3 +1,5 @@
+# cython: profile=True
+
 """\
 Geometry module. Contains point (vector) and pose transformation classes, and
 geometric descriptor functions for features.
@@ -186,8 +188,7 @@ class Point(tuple):
         try:
             return self._array
         except AttributeError:
-            self._array = numpy.array(self)
-            self._array.shape = (3, 1)
+            self._array = numpy.array([[self[0]], [self[1]], [self[2]]])
             return self._array
 
     @property
