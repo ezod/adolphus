@@ -340,7 +340,6 @@ class MultiCamera(dict):
         """
         dict.__init__(self)
         self.name = name
-        #assert ocular > 0
         self.ocular = ocular
         self.scene = scene
         self.vis = False
@@ -355,7 +354,6 @@ class MultiCamera(dict):
         @param value: The Camera object to assign to the key.
         @type value: L{Camera}
         """
-        #assert isinstance(value, Camera)
         dict.__setitem__(self, key, value)
 
     @property
