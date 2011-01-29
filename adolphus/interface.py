@@ -13,7 +13,7 @@ import yaml
 from math import copysign
 
 from geometry import Point, DirectionalPoint, Rotation
-from visualization import visual, VisualizationObject, VisualizationError
+from visualization import visual, VisualizationError, Sprite, Visualizable
 
 
 class Display(visual.display):
@@ -187,31 +187,9 @@ class Experiment(object):
         """
         if not visual:
             raise VisualizationError('visual module not loaded')
+
         self.model = model
         self.relevance_models = relevance_models
-        self.display = Display(name=model.name, mscale=model.scale)
-        self.display.select()
-        self.rate = 50
-
-        # camera modifier
-        self.modifier = VisualizationObject(None)
-        for arrow in [['xp', (model.scale * 3, 0, 0)],
-                      ['xn', (-model.scale * 3, 0, 0)],
-                      ['yp', (0, model.scale * 3, 0)],
-                      ['yn', (0, -model.scale * 3, 0)],
-                      ['zp', (0, 0, model.scale * 3)],
-                      ['zn', (0, 0, -model.scale * 3)]]:
-            self.modifier.add(arrow[0], visual.arrow(frame=self.modifier,
-                pos=arrow[1], axis=arrow[1], shaftwidth=(model.scale / 3.0),
-                color=(0, 0.25, 0.75), material=visual.materials.emissive))
-        for ring in [['rotx', (1, 0, 0)],
-                     ['roty', (0, 1, 0)],
-                     ['rotz', (0, 0, 1)]]:
-            self.modifier.add(ring[0], visual.ring(frame=self.modifier,
-                radius=(model.scale * 3), thickness=(model.scale / 6.0),
-                axis=ring[1], color=(0, 0.25, 0.75),
-                material=visual.materials.emissive))
-        self.modifier.visible = False
 
         # load and parse config file
         if config_file:
@@ -224,6 +202,38 @@ class Experiment(object):
             self.keybindings = config['keybindings']
         except KeyError:
             self.keybindings = {}
+
+        # main display
+        self.display = Display(name=model.name)
+        Visualizable.displays['main'] = self.display
+        self.display.select()
+        self.rate = 50
+
+        # camera modifier
+        primitives = []
+        for arrow in [['xp', (3, 0, 0)],
+                      ['xn', (-3, 0, 0)],
+                      ['yp', (0, 3, 0)],
+                      ['yn', (0, -3, 0)],
+                      ['zp', (0, 0, 3)],
+                      ['zn', (0, 0, -3)]]:
+            primitives.append({'type':          'arrow',
+                               'pos':           arrow[1],
+                               'axis':          arrow[1],
+                               'shaftwidth':    0.4,
+                               'color':         [0, 0.25, 0.75],
+                               'material':      'emissive'})
+        for ring in [['rotx', (1, 0, 0)],
+                     ['roty', (0, 1, 0)],
+                     ['rotz', (0, 0, 1)]]:
+            primitives.append({'type':          'ring',
+                               'radius':        3,
+                               'thickness':     0.2,
+                               'axis':          ring[1],
+                               'color':         [0, 0.25, 0.75],
+                               'material':      'emissive'})
+        self.modifier = Sprite(primitives)
+        self.modifier.visible = False
 
         # interface commands
         # these should not raise KeyErrors
@@ -358,8 +368,9 @@ class Experiment(object):
         """
         axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
         self.model.visualize()
-        cam_vis = [primitive for objects in [self.model[camera].vis.primitives \
-            for camera in self.model] for primitive in objects]
+        cam_vis = [primitive for objects in \
+            [self.model[cam].actuals['main'].objects for cam in self.model] \
+            for primitive in objects]
         zoom = False
         spin = False
         moving = None
