@@ -11,7 +11,7 @@ geometric descriptor functions for features.
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 import numpy
 
-from visualization import visual, VisualizationError, VisualizationObject
+from visualization import Visualizable
 
 class Angle(float):
     """\
@@ -30,7 +30,7 @@ class Angle(float):
         return Angle(-float(self))
 
 
-class Point(tuple):
+class Point(tuple, Visualizable):
     """\
     3D point (vector) class.
     """
@@ -39,6 +39,16 @@ class Point(tuple):
         Constructor.
         """
         return tuple.__new__(cls, iterable)
+
+    def __init__(self, iterable):
+        """\
+        Constructor for visualizable.
+        """
+        definition = {'primitives': [{'type':       'sphere',
+                                      'pos':        self[:3],
+                                      'radius':     0.1,
+                                      'color':      [1, 0, 0]}]}
+        Visualizable.__init__(self, [definition])
 
     def __eq__(self, p):
         """\
@@ -241,28 +251,11 @@ class Point(tuple):
         """
         return Angle(acos(p.normal * self.normal))
 
-    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
+    def update_visualization(self):
         """\
-        Plot the point in a 3D visual model.
-
-        @param scale: The scale of the sphere.
-        @type scale: C{float}
-        @param color: The color in which to plot the point.
-        @type color: C{tuple}
-        @param opacity: The opacity with which to plot the point.
-        @type opacity: C{float}
+        Point visualizations do not need to be updated.
         """
-        if not visual:
-            raise VisualizationError('visual module not loaded')
-        try:
-            self.vis.members['point'].radius = 0.1 * scale
-            self.vis.members['point'].color = color
-            self.vis.members['point'].opacity = opacity
-        except AttributeError:
-            self.vis = VisualizationObject(self)
-            self.vis.add('point', visual.sphere(frame=self.vis,
-                radius=(0.1 * scale), color=color, opacity=opacity))
-        self.vis.pos = self[:3]
+        pass
 
 
 class DirectionalPoint(Point):
@@ -278,6 +271,20 @@ class DirectionalPoint(Point):
             iterable[3] -= 2. * (iterable[3] - pi)
             iterable[4] += pi
         return Point.__new__(cls, iterable)
+
+    def __init__(self, iterable):
+        """\
+        Constructor for visualizable.
+        """
+        definition = {'primitives': [{'type':       'sphere',
+                                      'pos':        self[:3],
+                                      'radius':     0.1,
+                                      'color':      [1, 0, 0]},
+                                     {'type':       'arrow',
+                                      'pos':        self[:3],
+                                      'axis':       self.direction_unit,
+                                      'color':      [1, 0, 0]}]}
+        Visualizable.__init__(self, [definition])
 
     def __neg__(self):
         """\
@@ -326,27 +333,6 @@ class DirectionalPoint(Point):
         """
         return Point((sin(self[3]) * cos(self[4]),
                       sin(self[3]) * sin(self[4]), cos(self[3])))
-
-    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
-        """\
-        Plot the directional point in a 3D visual model.
-
-        @param scale: The scale of the sphere.
-        @type scale: C{float}
-        @param color: The color in which to plot the point.
-        @type color: C{tuple}
-        @param opacity: The opacity with which to plot the point.
-        @type opacity: C{float}
-        """
-        Point.visualize(self, scale=scale, color=color, opacity=opacity)
-        unit = scale * self.direction_unit
-        try:
-            self.vis.members['dir'].axis = unit
-            self.vis.members['dir'].color = color
-            self.vis.members['dir'].opacity = opacity
-        except KeyError:
-            self.vis.add('dir', visual.arrow(frame=self.vis, axis=unit,
-                color=color, opacity=opacity))
 
 
 class Quaternion(tuple):
