@@ -37,7 +37,11 @@ class Sprite(visual.frame):
         self.members = []
         for primitive in self.primitives:
             ptype = primitive['type']; del primitive['type']
-            primitive['material'] = getattr(visual.materials, primitive['material'])
+            try:
+                primitive['material'] = \
+                    getattr(visual.materials, primitive['material'])
+            except KeyError:
+                pass
             primitive['frame'] = self
             self.members.append(getattr(visual, ptype)(**primitive))
         self._opacity = 1.0
@@ -102,7 +106,8 @@ class Visualizable(object):
             if display in self.actuals.keys():
                 continue
             self.displays[display].select()
-            self.actuals[display] = [Sprite(definition) for definition in self.definitions]
+            self.actuals[display] = [Sprite(definition) \
+                for definition in self.definitions]
         self.update_visualization()
 
     def update_visualization(self):

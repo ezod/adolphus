@@ -119,7 +119,6 @@ class Plane(Posable, Visualizable):
         else:
             self.x, self.y = [float(n) for n in x], [float(n) for n in y]
         definition = {'primitives': [{'type':       'box',
-                                      'pos':        [0, 0, 0],
                                       'length':     self.x[1] - self.x[0],
                                       'height':     self.y[1] - self.y[0],
                                       'width':      0.03,
