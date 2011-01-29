@@ -17,7 +17,7 @@ from itertools import combinations
 from copy import copy
 
 from geometry import Point, DirectionalPoint, Pose, Posable
-from visualization import visual, VisualizationError, VisualizationObject
+from visualization import Visualizable
 
 
 class DiscretePointCache(dict, Posable):
@@ -94,12 +94,12 @@ class DiscretePointCache(dict, Posable):
                 continue
 
 
-class Camera(Posable):
+class Camera(Posable, Visualizable):
     """\
     Single-camera coverage strength model.
     """
     def __init__(self, params, pose=Pose(), mount=None, config=None,
-                 active=True, models=None):
+                 definitions=None, active=True):
         """\
         Constructor.
 
@@ -109,18 +109,17 @@ class Camera(Posable):
         @type pose: L{Pose}
         @param mount: Mount object for the camera (optional).
         @type mount: C{object}
-        @param config: Configuration of the camera (unused).
+        @param config: Configuration of the camera (currently unused).
         @type config: C{object}
+        @param definitions: Visualization models to use (optional).
+        @type models: C{list} of L{VisualizationObject}
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
-        @param models: Visualization models to use (optional).
-        @type models: C{list} of L{VisualizationObject}
         """
-        Posable.__init__(self, pose, mount)
+        Posable.__init__(self, pose, mount, config)
+        Visualizable.__init__(self, definitions)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
-        self.models = models
-        self.vis = None
         self.params = params
         # visibility
         gh = (params['gamma'] / float(params['dim'][0])) * 2.0 \
@@ -157,8 +156,6 @@ class Camera(Posable):
                 termb = pi / 2.0
             return min(max((float(p.rho) - (terma * termb) - pi + self.params['zeta2']) / (self.params['zeta2'] - self.params['zeta1']), 0.0), 1.0)
         self.Cd = Cd
-        # pose
-        self.pose = pose
         # active
         self.active = active
 
@@ -226,63 +223,13 @@ class Camera(Posable):
         cp = (-self.pose).map(point)
         return self.Cv(cp) * self.Cr(cp) * self.Cf(cp) * self.Cd(cp)
 
-    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
-        """\
-        Visualize the camera.
-
-        @param scale: The scale of the visualization (optional).
-        @type scale: C{float}
-        @param color: The color of the visualization (optional).
-        @type color: C{tuple}
-        @param opacity: The opacity of the visualization (optional).
-        @type opacity: C{float}
-        @return: True if visualization was initialized for the first time.
-        @rtype: C{bool}
-        """
-        if not self.models:
-            raise VisualizationError('no models to visualize')
-        if Posable.visualize(self, scale=scale, color=color, opacity=opacity):
-            for model in self.models:
-                self.vis.add(model.__name__, model(self))
-            self.update_visualization()
-            return True
-        else:
-            return False
-
     def update_visualization(self):
         """\
         Update the visualization for camera active state and pose.
         """
-        Posable.update_visualization(self)
-        self.vis.fade(not self.active)
-        try:
-            self.vis.members['fov'].opacity = 0.1
-        except KeyError:
-            pass
-
-    def visualize_fov_toggle(self):
-        """\
-        Visualize the field of view of the camera.
-        """
-        if self.vis:
-            try:
-                self.vis_fov.visible = not self.vis_fov.visible
-            except AttributeError:
-                self.vis_fov = VisualizationObject(self, frame=self.vis)
-                # FIXME: replace 1000 with something more dynamic?
-                self.vis_fov.add('lb', visual.cylinder(pos=(0, 0, 0), radius=1,
-                    axis=(1000 * self.fov['sahl'], 1000 * self.fov['savb'],
-                    1000), color=(0, 1, 0), material=visual.materials.emissive))
-                self.vis_fov.add('lt', visual.cylinder(pos=(0, 0, 0), radius=1,
-                    axis=(1000 * self.fov['sahl'], 1000 * self.fov['savt'],
-                    1000), color=(0, 1, 0), material=visual.materials.emissive))
-                self.vis_fov.add('rb', visual.cylinder(pos=(0, 0, 0), radius=1,
-                    axis=(1000 * self.fov['sahr'], 1000 * self.fov['savb'],
-                    1000), color=(0, 1, 0), material=visual.materials.emissive))
-                self.vis_fov.add('rt', visual.cylinder(pos=(0, 0, 0), radius=1,
-                    axis=(1000 * self.fov['sahr'], 1000 * self.fov['savt'],
-                    1000), color=(0, 1, 0), material=visual.materials.emissive))
-
+        self.opacity = self.active and 1.0 or 0.2
+        Visualizable.update_visualization(self)
+        
 
 class Scene(dict):
     """\
@@ -302,30 +249,38 @@ class Scene(dict):
         Return whether the specified point is occluded from the camera
         viewpoint (by opaque scene planes).
         """
-        for widget in self.keys():
-            pr = self[widget].intersection(p, cam)
+        for posable in self.keys():
+            pr = self[posable].intersection(p, cam)
             if pr is not None and pr.euclidean(p) > 1e-4:
                 return True
         return False
 
-    def visualize(self, scale=1.0, color=(1, 1, 1), opacity=1.0):
+    def visualize(self):
         """\
-        Visualize the opaque scene objects.
-
-        @param color: The color of opaque scene objects.
-        @type color: C{tuple}
+        Visualize the scene objects.
         """
-        if not visual:
-            raise VisualizationError('visual module not loaded')
-        for widget in self.keys():
-            self[widget].visualize(scale=scale, color=color, opacity=opacity)
+        for posable in self.keys():
+            try:
+                self[posable].visualize()
+            except AttributeError:
+                pass
+
+    def update_visualization(self):
+        """\
+        Update the visualizations of the scene objects.
+        """
+        for posable in self.keys():
+            try:
+                self[posable].update_visualization()
+            except AttributeError:
+                pass
 
 
 class MultiCamera(dict):
     """\
     Multi-camera n-ocular coverage strength model.
     """
-    def __init__(self, name='Untitled', ocular=1, scene=Scene(), scale=1.0):
+    def __init__(self, name='Untitled', ocular=1, scene=Scene()):
         """\
         Constructor.
    
@@ -335,26 +290,11 @@ class MultiCamera(dict):
         @type ocular: C{int}
         @param scene: The discrete scene model.
         @type scene: L{Scene}
-        @param scale: The scale of the model (for visualization).
-        @type scale: C{float}
         """
         dict.__init__(self)
         self.name = name
         self.ocular = ocular
         self.scene = scene
-        self.vis = False
-        self.scale = scale
-
-    def __setitem__(self, key, value):
-        """\
-        Assign a camera to a key, and update its in-scene model.
-
-        @param key: The key to assign.
-        @type key: C{object}
-        @param value: The Camera object to assign to the key.
-        @type value: L{Camera}
-        """
-        dict.__setitem__(self, key, value)
 
     @property
     def active_cameras(self):
@@ -426,59 +366,14 @@ class MultiCamera(dict):
         @return: True if the visualization was initialized for the first time.
         @rtype: C{bool}
         """
-        if not visual:
-            raise VisualizationError('visual module not loaded')
-        try:
-            self.update_visualization()
-            return False
-        except VisualizationError:
-            # scene
-            self.scene.visualize(scale=self.scale, color=(0.3, 0.3, 0.3))
-            # cameras
-            for camera in self.keys():
-                self[camera].visualize()
-                self[camera].vis.add('name', visual.label(color=(1, 1, 1),
-                    height=6, text=camera))
-                self[camera].vis.members['name'].visible = False
-            self.vis = True
-            return True
+        self.scene.visualize()
+        for camera in self.keys():
+            self[camera].visualize()
 
     def update_visualization(self):
         """\
         Update the visualization.
         """
-        if not self.vis:
-            raise VisualizationError('visualization not yet initialized')
-        # cameras
-        for camera in self:
+        self.scene.update_visualization()
+        for camera in self.keys():
             self[camera].update_visualization()
-
-    def visualize_name_toggle(self):
-        """\
-        Toggle visibility of the camera name tags.
-        """
-        if not self.vis:
-            raise VisualizationError('visualization not yet initialized')
-        for camera in self:
-            self[camera].vis.members['name'].visible = \
-                not self[camera].vis.members['name'].visible
-
-    def visualize_coverage(self, relevance):
-        """\
-        Visualize the discrete coverage model with respect to the points in a
-        given relevance model, and return the coverage performance.
-
-        @param relevance: The relevance model.
-        @type relevance: L{DiscretePointCache}
-        @return: Performance metric in [0, 1].
-        @rtype: C{float}
-        """
-        try:
-            del self._coverage_vis
-        except AttributeError:
-            pass
-        self._coverage_vis = self.coverage(relevance)
-        performance = sum((self._coverage_vis & relevance).values()) \
-            / sum(relevance.values())
-        self._coverage_vis.visualize(scale=self.scale, color=(1, 0, 0))
-        return performance
