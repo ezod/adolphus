@@ -12,7 +12,6 @@ import pyximport; pyximport.install()
 from math import pi
 from number import Number
 import numpy
-import yaml
 
 from geometry import Point, Pose, Rotation
 from visualization import Visualizable
@@ -22,7 +21,7 @@ class Posable(object):
     """\
     Posable abstract base class.
     """
-    def __init__(self, pose=Pose(), mount=None, config=None, filename=None):
+    def __init__(self, pose=Pose(), mount=None, config=None, planes=[]):
         """\
         Constructor.
 
@@ -39,10 +38,8 @@ class Posable(object):
         self.mount = mount
         self.config = config
         self.planes = set()
-        if filename:
-            definition = yaml.load(open(filename))
-            for plane in definition['planes']:
-                self.planes.add(Plane(**plane))
+        for plane in planes:
+            self.planes.add(Plane(**plane))
 
     @property
     def pose(self):

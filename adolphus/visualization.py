@@ -12,8 +12,6 @@ try:
 except ImportError:
     visual = None
 
-import yaml
-
 
 class VisualizationError(Exception):
     pass
@@ -23,17 +21,16 @@ class Sprite(visual.frame):
     """\
     Sprite class.
     """
-    def __init__(self, definition, frame=None):
+    def __init__(self, primitives, frame=None):
         """\
         Constructor.
 
-        @param filename: The YAML file to load the sprite from.
-        @type filename: C{str}
+        TODO
         @param frame: The parent frame for the sprite.
         @type frame: L{visual.frame}
         """
         super(Sprite, self).__init__(frame=frame)
-        self.primitives = definition['primitives']
+        self.primitives = primitives
         self.members = []
         for primitive in self.primitives:
             ptype = primitive['type']; del primitive['type']
@@ -82,17 +79,14 @@ class Visualizable(object):
     """
     displays = {}
 
-    def __init__(self, definitions=[]):
+    def __init__(self, sprites=[]):
         """\
         Constructor.
 
-        @param definitions: A list of definition files for sprites.
-        @type definitions: C{list} of C{string}
+        @param sprites: A list of sprite primitives or definition files.
+        @type sprites: C{list}
         """
-        for definition in definitions:
-            if isinstance(definition, str):
-                definition = yaml.load(open(definition))
-        self.definitions = definitions
+        self.sprites = sprites
         self.actuals = {}
         self.opacity = 1.0
 
@@ -106,8 +100,8 @@ class Visualizable(object):
             if display in self.actuals.keys():
                 continue
             self.displays[display].select()
-            self.actuals[display] = [Sprite(definition) \
-                for definition in self.definitions]
+            self.actuals[display] = [Sprite(primitives) \
+                for primitives in self.sprites]
         self.update_visualization()
 
     def update_visualization(self):

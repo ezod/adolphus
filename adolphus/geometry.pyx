@@ -44,11 +44,11 @@ class Point(tuple, Visualizable):
         """\
         Constructor for visualizable.
         """
-        definition = {'primitives': [{'type':       'sphere',
-                                      'pos':        self[:3],
-                                      'radius':     0.1,
-                                      'color':      [1, 0, 0]}]}
-        Visualizable.__init__(self, [definition])
+        primitives = [{'type':       'sphere',
+                       'pos':        self[:3],
+                       'radius':     0.1,
+                       'color':      [1, 0, 0]}]
+        Visualizable.__init__(self, [primitives])
 
     def __eq__(self, p):
         """\
@@ -276,15 +276,15 @@ class DirectionalPoint(Point):
         """\
         Constructor for visualizable.
         """
-        definition = {'primitives': [{'type':       'sphere',
-                                      'pos':        self[:3],
-                                      'radius':     0.1,
-                                      'color':      [1, 0, 0]},
-                                     {'type':       'arrow',
-                                      'pos':        self[:3],
-                                      'axis':       self.direction_unit,
-                                      'color':      [1, 0, 0]}]}
-        Visualizable.__init__(self, [definition])
+        primitives = [{'type':       'sphere',
+                       'pos':        self[:3],
+                       'radius':     0.1,
+                       'color':      [1, 0, 0]},
+                      {'type':       'arrow',
+                       'pos':        self[:3],
+                       'axis':       self.direction_unit,
+                       'color':      [1, 0, 0]}]
+        Visualizable.__init__(self, [primitives])
 
     def __neg__(self):
         """\

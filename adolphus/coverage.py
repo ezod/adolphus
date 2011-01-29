@@ -16,7 +16,8 @@ from numbers import Number
 from itertools import combinations
 from copy import copy
 
-from geometry import Point, DirectionalPoint, Pose, Posable
+from geometry import Point, DirectionalPoint, Pose
+from posable import Posable
 from visualization import Visualizable
 
 
@@ -99,7 +100,7 @@ class Camera(Posable, Visualizable):
     Single-camera coverage strength model.
     """
     def __init__(self, params, pose=Pose(), mount=None, config=None,
-                 definitions=None, active=True):
+                 planes=[], sprites=[], active=True):
         """\
         Constructor.
 
@@ -111,13 +112,12 @@ class Camera(Posable, Visualizable):
         @type mount: C{object}
         @param config: Configuration of the camera (currently unused).
         @type config: C{object}
-        @param definitions: Visualization models to use (optional).
-        @type models: C{list} of L{VisualizationObject}
+        TODO
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
         """
-        Posable.__init__(self, pose, mount, config)
-        Visualizable.__init__(self, definitions)
+        Posable.__init__(self, pose, mount, config, planes)
+        Visualizable.__init__(self, sprites)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self.params = params
