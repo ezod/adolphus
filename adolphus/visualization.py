@@ -12,57 +12,57 @@ try:
 except ImportError:
     visual = None
 
+import yaml
+
 
 class VisualizationError(Exception):
     pass
 
 
-class VisualizationObject(visual.frame):
+class Sprite(visual.frame):
     """\
-    Visualization object class.
+    Sprite class.
     """
-    def __init__(self, parent, frame=None,
-                 properties={'scale': 1.0, 'color': (1, 1, 1), 'opacity': 1.0}):
+    def __init__(self, filename, frame=None):
         """\
         Constructor.
 
-        @param parent: Reference to the parent object being visualized.
-        @type parent: C{object}
-        @param frame: Parent frame for this frame.
-        @type frame: C{visual.frame}
-        @param properties: Visualization property storage.
-        @type properties: C{dict}
+        @param filename: The YAML file to load the sprite from.
+        @type filename: C{str}
+        @param frame: The parent frame for the sprite.
+        @type frame: L{visual.frame}
         """
-        self.parent = parent
-        self.properties = properties
-        self.members = {}
-        visual.frame.__init__(self, frame=frame)
+        super(Sprite, self).__init__(frame=frame)
+        definition = yaml.load(open(filename))
+        self.description = definition['description']
+        self.primitives = definition['primitives']
+        self.members = []
+        for primitive in self.primitives:
+            ptype = primitive['type']; del primitive['type']
+            primitive['material'] = getattr(visual.materials, primitive['material'])
+            primitive['frame'] = self
+            self.members.append(getattr(visual, ptype)(**primitive))
+        self._opacity = 1.0
 
     @property
-    def primitives(self):
-        primitives = []
-        for object in self.objects:
-            if isinstance(object, VisualizationObject):
-                primitives += object.primitives
-            else:
-                primitives.append(object)
-        return primitives
-
-    def add(self, name, entity):
+    def opacity(self):
         """\
-        Add an entity to the visualization object.
-
-        @param name: The name of the entity.
-        @type name: C{str}
-        @param entity: The entity itself.
-        @type entity: C{object}
+        Sprite opacity.
         """
-        entity.frame = self
-        self.members[name] = entity
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, value):
+        for i in range(len(self.members)):
+            try:
+                self.members[i].opacity = self.primitives[i]['opacity'] * value
+            except KeyError:
+                self.members[i].opacity = value
+        self._opacity = value
 
     def transform(self, pose):
         """\
-        Execute a 3D transformation on this visualization object.
+        Execute a 3D transformation on this sprite.
 
         @param pose: The pose.
         @type pose: L{geometry.Pose}
@@ -73,17 +73,45 @@ class VisualizationObject(visual.frame):
         axis, angle = pose.R.to_axis_angle()
         self.rotate(axis=axis, angle=angle)
 
-    def fade(self, on):
-        """\
-        Reduce the opacity of the visualization object.
 
-        @param on: Turn fade on or off.
-        @type on: C{bool}
+class Visualizable(object):
+    """\
+    Visualizable abstract base class.
+    """
+    displays = {}
+
+    def __init__(self, definitions=[]):
+        """\
+        Constructor.
+
+        @param definitions: A list of definition files for sprites.
+        @type definitions: C{list} of C{string}
         """
-        for member in self.members.keys():
-            if isinstance(self.members[member], visual.label):
+        self.definitions = definitions
+        self.actuals = {}
+        self.opacity = 1.0
+
+    def visualize(self):
+        """\
+        Visualize this visualizable.
+        """
+        if not visual:
+            raise VisualizationError('visual module not loaded')
+        for display in self.displays.keys():
+            if display in self.actuals.keys():
                 continue
-            elif isinstance(self.members[member], VisualizationObject):
-                self.members[member].fade(on)
-            else:
-                self.members[member].opacity = on and 0.2 or 1.0
+            self.displays[display].select()
+            self.actuals[display] = [Sprite(definition) for definition in self.definitions]
+        self.update_visualization()
+
+    def update_visualization(self):
+        """\
+        Update this visualizable.
+        """
+        for display in self.actuals.keys():
+            for sprite in self.actuals[display]:
+                try:
+                    sprite.transform(self.pose)
+                except AttributeError:
+                    pass
+                sprite.opacity = self.opacity
