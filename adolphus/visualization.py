@@ -23,7 +23,7 @@ class Sprite(visual.frame):
     """\
     Sprite class.
     """
-    def __init__(self, filename, frame=None):
+    def __init__(self, definition, frame=None):
         """\
         Constructor.
 
@@ -33,8 +33,6 @@ class Sprite(visual.frame):
         @type frame: L{visual.frame}
         """
         super(Sprite, self).__init__(frame=frame)
-        definition = yaml.load(open(filename))
-        self.description = definition['description']
         self.primitives = definition['primitives']
         self.members = []
         for primitive in self.primitives:
@@ -87,6 +85,9 @@ class Visualizable(object):
         @param definitions: A list of definition files for sprites.
         @type definitions: C{list} of C{string}
         """
+        for definition in definitions:
+            if isinstance(definition, str):
+                definition = yaml.load(open(definition))
         self.definitions = definitions
         self.actuals = {}
         self.opacity = 1.0
