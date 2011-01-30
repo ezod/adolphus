@@ -33,14 +33,8 @@ class Sprite(visual.frame):
         self.primitives = primitives
         self.members = []
         for primitive in self.primitives:
-            ptype = primitive['type']; del primitive['type']
-            try:
-                primitive['material'] = \
-                    getattr(visual.materials, primitive['material'])
-            except KeyError:
-                pass
             primitive['frame'] = self
-            self.members.append(getattr(visual, ptype)(**primitive))
+            self.members.append(getattr(visual, primitive['type'])(**primitive))
         self._opacity = 1.0
         self.parent = parent
 
@@ -87,6 +81,12 @@ class Visualizable(object):
         @param primitives: A list of sprite primitives.
         @type primitives: C{list}
         """
+        for primitive in primitives:
+            try:
+                primitive['material'] = \
+                    getattr(visual.materials, primitive['material'])
+            except KeyError:
+                pass
         self.primitives = primitives
         self.actuals = {}
         self.opacity = 1.0

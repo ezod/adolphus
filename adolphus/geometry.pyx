@@ -48,7 +48,7 @@ class Point(tuple, Visualizable):
                        'pos':        self[:3],
                        'radius':     3,
                        'color':      [1, 0, 0]}]
-        Visualizable.__init__(self, [primitives])
+        Visualizable.__init__(self, primitives)
 
     def __eq__(self, p):
         """\
@@ -284,7 +284,7 @@ class DirectionalPoint(Point):
                        'pos':        self[:3],
                        'axis':       self.direction_unit,
                        'color':      [1, 0, 0]}]
-        Visualizable.__init__(self, [primitives])
+        Visualizable.__init__(self, primitives)
 
     def __neg__(self):
         """\

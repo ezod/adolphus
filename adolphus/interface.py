@@ -220,7 +220,7 @@ class Experiment(object):
                                'axis':          arrow[1],
                                'shaftwidth':    0.4,
                                'color':         [0, 0.25, 0.75],
-                               'material':      'emissive'})
+                               'material':      visual.materials.emissive})
         for ring in [['rotx', (1, 0, 0)],
                      ['roty', (0, 1, 0)],
                      ['rotz', (0, 0, 1)]]:
@@ -229,7 +229,7 @@ class Experiment(object):
                                'thickness':     0.2,
                                'axis':          ring[1],
                                'color':         [0, 0.25, 0.75],
-                               'material':      'emissive'})
+                               'material':      visual.materials.emissive})
         self.modifier = Sprite(primitives)
         self.modifier.visible = False
 
@@ -370,6 +370,7 @@ class Experiment(object):
         """
         axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
         self.model.visualize()
+        self.display.select()
         cam_vis = [primitive for objects in [self.model[cam].actuals['main'].objects for cam in self.model] for primitive in objects]
         zoom = False
         spin = False
