@@ -99,8 +99,8 @@ class Camera(Posable, Visualizable):
     """\
     Single-camera coverage strength model.
     """
-    def __init__(self, params, pose=Pose(), mount=None, config=None,
-                 planes=[], sprites=[], active=True):
+    def __init__(self, params, pose=Pose(), mount=None, sprites=[],
+                 active=True):
         """\
         Constructor.
 
@@ -110,13 +110,12 @@ class Camera(Posable, Visualizable):
         @type pose: L{Pose}
         @param mount: Mount object for the camera (optional).
         @type mount: C{object}
-        @param config: Configuration of the camera (currently unused).
-        @type config: C{object}
-        TODO
+        @param sprites: Sprite primitives for the object.
+        @type sprites: C{dict}
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
         """
-        Posable.__init__(self, pose, mount, config, planes)
+        Posable.__init__(self, pose, mount)
         Visualizable.__init__(self, sprites)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
