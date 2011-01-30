@@ -20,7 +20,7 @@ class Display(visual.display):
     """\
     Visual display class.
     """
-    def __init__(self, name='Untitled Model', center=(0, 0, 0), mscale=1.0,
+    def __init__(self, name='Untitled Model', center=(0, 0, 0),
                  background=(1, 1, 1), foreground=(0.3, 0.3, 0.3)):
         """\
         Contstructor.
@@ -29,8 +29,6 @@ class Display(visual.display):
         @type name: C{str}
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
-        @param mscale: The scale of the model.
-        @type mscale: C{float}
         @param background: The background color of the scene.
         @type background: C{tuple}
         @param foreground: The default foreground color of the scene.
@@ -43,9 +41,9 @@ class Display(visual.display):
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self.userzoom = False
-        self.range = mscale * 50
-        self.rmin = mscale
-        self.rmax = mscale * 300
+        self.range = 1500
+        self.rmin = 30
+        self.rmax = 9000
         self._stored_view = None
 
         # center marker
@@ -56,11 +54,11 @@ class Display(visual.display):
         self.axes = visual.frame(visible=False)
         axes = ['X', 'Y', 'Z']
         for axis in range(3):
-            visual.arrow(frame=self.axes, shaftwidth=(mscale / 10.0),
-                color=(0, 0, 1), axis=tuple([i == axis and mscale * 5 or 0 \
+            visual.arrow(frame=self.axes, shaftwidth=3,
+                color=(0, 0, 1), axis=tuple([i == axis and 150 or 0 \
                 for i in range(3)]))
             visual.label(frame=self.axes, height=6, color=(1, 1, 1),
-                text=axes[axis], pos=tuple([i == axis and mscale * 5.5 or 0 \
+                text=axes[axis], pos=tuple([i == axis and 165 or 0 \
                 for i in range(3)]))
 
         # command/message box
@@ -480,16 +478,16 @@ class Experiment(object):
                     if cmd:
                         self.execute(cmd)
                 elif k == 'left':
-                    self.execute('sc %f 0 0' % -self.model.scale)
+                    self.execute('sc %f 0 0' % -30)
                 elif k == 'right':
-                    self.execute('sc %f 0 0' % self.model.scale)
+                    self.execute('sc %f 0 0' % 30)
                 elif k == 'down':
-                    self.execute('sc 0 %f 0' % -self.model.scale)
+                    self.execute('sc 0 %f 0' % -30)
                 elif k == 'up':
-                    self.execute('sc 0 %f 0' % self.model.scale)
+                    self.execute('sc 0 %f 0' % 30)
                 elif k == 'page down':
-                    self.execute('sc 0 0 %f' % -self.model.scale)
+                    self.execute('sc 0 0 %f' % -30)
                 elif k == 'page up':
-                    self.execute('sc 0 0 %f' % self.model.scale)
+                    self.execute('sc 0 0 %f' % 30)
                 elif self.keybindings.has_key(k):
                     self.execute(self.keybindings[k])

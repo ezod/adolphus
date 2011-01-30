@@ -46,7 +46,7 @@ class Point(tuple, Visualizable):
         """
         primitives = [{'type':       'sphere',
                        'pos':        self[:3],
-                       'radius':     0.1,
+                       'radius':     3,
                        'color':      [1, 0, 0]}]
         Visualizable.__init__(self, [primitives])
 
@@ -278,7 +278,7 @@ class DirectionalPoint(Point):
         """
         primitives = [{'type':       'sphere',
                        'pos':        self[:3],
-                       'radius':     0.1,
+                       'radius':     3,
                        'color':      [1, 0, 0]},
                       {'type':       'arrow',
                        'pos':        self[:3],

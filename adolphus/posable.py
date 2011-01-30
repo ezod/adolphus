@@ -118,7 +118,7 @@ class Plane(Posable, Visualizable):
         definition = {'primitives': [{'type':       'box',
                                       'length':     self.x[1] - self.x[0],
                                       'height':     self.y[1] - self.y[0],
-                                      'width':      0.03,
+                                      'width':      1,
                                       'material':   'wood'}]}
         Visualizable.__init__(self, [definition])
 
