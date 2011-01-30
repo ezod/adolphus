@@ -186,3 +186,13 @@ class Plane(Posable, Visualizable):
             for sprite in self.actuals[display]:
                 sprite.transform(Pose(self.center, self.pose.R))
                 sprite.opacity = self.opacity
+
+
+class SceneObject(Posable, Visualizable):
+    """\
+    Sprite-based scene object.
+    """
+    def __init__(self, pose=Pose(), mount=None, config=None, planes=[],
+                 sprites=[]):
+        Posable.__init__(self, pose, mount, config, planes)
+        Visualizable.__init__(self, sprites)
