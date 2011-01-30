@@ -21,7 +21,7 @@ class Sprite(visual.frame):
     """\
     Sprite class.
     """
-    def __init__(self, primitives, frame=None):
+    def __init__(self, primitives, parent=None, frame=None):
         """\
         Constructor.
 
@@ -42,6 +42,7 @@ class Sprite(visual.frame):
             primitive['frame'] = self
             self.members.append(getattr(visual, ptype)(**primitive))
         self._opacity = 1.0
+        self.parent = parent
 
     @property
     def opacity(self):
@@ -100,7 +101,7 @@ class Visualizable(object):
             if display in self.actuals.keys():
                 continue
             self.displays[display].select()
-            self.actuals[display] = Sprite(self.primitives)
+            self.actuals[display] = Sprite(self.primitives, parent=self)
         self.update_visualization()
 
     def update_visualization(self):
