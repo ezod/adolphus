@@ -370,7 +370,6 @@ class Experiment(object):
         """
         axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
         self.model.visualize()
-        self.display.select()
         cam_vis = [primitive for objects in [self.model[cam].actuals['main'].objects for cam in self.model] for primitive in objects]
         zoom = False
         spin = False
@@ -483,17 +482,5 @@ class Experiment(object):
                     cmd = self.display.prompt()
                     if cmd:
                         self.execute(cmd)
-                elif k == 'left':
-                    self.execute('sc %f 0 0' % -30)
-                elif k == 'right':
-                    self.execute('sc %f 0 0' % 30)
-                elif k == 'down':
-                    self.execute('sc 0 %f 0' % -30)
-                elif k == 'up':
-                    self.execute('sc 0 %f 0' % 30)
-                elif k == 'page down':
-                    self.execute('sc 0 0 %f' % -30)
-                elif k == 'page up':
-                    self.execute('sc 0 0 %f' % 30)
                 elif self.keybindings.has_key(k):
                     self.execute(self.keybindings[k])
