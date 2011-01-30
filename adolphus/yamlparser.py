@@ -9,12 +9,15 @@ YAML parser module.
 
 import pyximport; pyximport.install()
 
+import os
 import yaml
 from math import pi
 
 from coverage import DiscretePointCache, Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation
 from posable import Plane, SceneObject
+
+PATH = '.'
 
 def parse_pose(pose):
     """\
@@ -48,8 +51,7 @@ def parse_primitives(sprite):
     @type sprite: C{dict} or C{str}
     """
     if isinstance(sprite, str):
-        # TODO: need to handle relative path?
-        sprite = yaml.load(open(sprite))
+        sprite = yaml.load(open(os.path.join(PATH, sprite)))
     return sprite['primitives']
 
 
@@ -59,8 +61,7 @@ def parse_planes(sprite):
     @type sprite: C{dict} or C{str}
     """
     if isinstance(sprite, str):
-        # TODO: need to handle relative path?
-        sprite = yaml.load(open(sprite))
+        sprite = yaml.load(open(os.path.join(PATH, sprite)))
     return sprite['planes']
 
 
@@ -176,6 +177,8 @@ def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
 def parse_experiment(filename):
     """\
     """
+    global PATH
+    PATH = os.path.split(filename)[0]
     experiment = yaml.load(open(filename))
     model = parse_model(experiment['model'])
     #relevances = [parse_relevance(relevance) for relevance in experiment['relevance']]

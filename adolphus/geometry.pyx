@@ -40,7 +40,7 @@ class Point(tuple, Visualizable):
         """
         return tuple.__new__(cls, iterable)
 
-    def __init__(self, iterable):
+    def __init__(self, iterable=(0.0, 0.0, 0.0)):
         """\
         Constructor for visualizable.
         """

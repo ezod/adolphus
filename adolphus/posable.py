@@ -10,7 +10,7 @@ Posable TODO
 import pyximport; pyximport.install()
 
 from math import pi
-from number import Number
+from numbers import Number
 import numpy
 
 from geometry import Point, Pose, Rotation
