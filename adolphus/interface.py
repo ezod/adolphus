@@ -260,7 +260,11 @@ class Experiment(object):
             self.display.cdot.visible = not self.display.cdot.visible
 
         def cmd_name(args):
-            self.model.visualize_name_toggle()
+            for camera in self.model.keys():
+                for display in self.model[camera].actuals.keys():
+                    for member in self.model[camera].actuals[display].members:
+                        if isinstance(member, visual.label):
+                            member.visible = not member.visible
 
         def cmd_clearpoints(args):
             self.model.visualize_clear_points()
@@ -372,6 +376,7 @@ class Experiment(object):
         moving = None
         rotating = None
         msgctr = 0
+        self.execute('name')
         # event loop
         while True:
             visual.rate(self.rate)

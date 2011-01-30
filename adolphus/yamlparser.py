@@ -127,6 +127,7 @@ def parse_model(model):
         mount = None
         # parse sprites
         sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in camera['sprites']])
+        sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6, 'text': camera['name']})
         # create camera
         rmodel[camera['name']] = Camera(camera, pose, mount, sprites, True)
     return rmodel

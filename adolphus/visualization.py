@@ -83,8 +83,8 @@ class Visualizable(object):
         """\
         Constructor.
 
-        @param sprites: A list of sprite primitives or definition files.
-        @type sprites: C{list}
+        @param primitives: A list of sprite primitives.
+        @type primitives: C{list}
         """
         self.primitives = primitives
         self.actuals = {}
