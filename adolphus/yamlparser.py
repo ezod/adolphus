@@ -30,16 +30,16 @@ def parse_pose(pose):
     """
     T = Point(pose['T'])
     if pose['Rformat'] == 'quaternion':
-        return Rotation(pose['R'])
+        R = Rotation(pose['R'])
     elif pose['Rformat'] == 'matrix':
-        return Rotation.from_rotation_matrix(pose['R'])
+        R = Rotation.from_rotation_matrix(pose['R'])
     elif pose['Rformat'] == 'axis-angle':
         return Rotation.from_axis_angle(pose['R'][0], pose['R'][1])
     elif pose['Rformat'].startswith('euler'):
         convention, unit = pose['Rformat'].split('-')[1:]
         if unit == 'deg':
             R = [r * pi / 180.0 for r in pose['R']]
-        return Rotation.from_euler(convention, (R[0], R[1], R[2]))
+        R = Rotation.from_euler(convention, (R[0], R[1], R[2]))
     else:
         raise ValueError('unrecognized rotation format')
     return Pose(T, R)
