@@ -52,7 +52,10 @@ def parse_primitives(sprite):
     """
     if isinstance(sprite, str):
         sprite = yaml.load(open(os.path.join(PATH, sprite)))
-    return sprite['primitives']
+    try:
+        return sprite['primitives']
+    except KeyError:
+        return []
 
 
 def parse_planes(sprite):
@@ -62,7 +65,10 @@ def parse_planes(sprite):
     """
     if isinstance(sprite, str):
         sprite = yaml.load(open(os.path.join(PATH, sprite)))
-    return sprite['planes']
+    try:
+        return sprite['planes']
+    except KeyError:
+        return []
 
 
 def parse_scene(scene):
@@ -80,17 +86,17 @@ def parse_scene(scene):
         try:
             pose = parse_pose(item['pose'])
         except KeyError:
-            pose = Pose()
+            pose = None
         # parse mount TODO
         mount = None
         # parse config TODO
         config = None
         if item.has_key('sprites'):
             # parse sprites and planes
-            sprites = [parse_primitives(sprite) for sprite in item['sprites']]
-            planes = [parse_planes(sprite) for sprite in item['sprites']]
+            sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in item['sprites']])
+            planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
             # create object
-            rscene[item['name']] = SceneObject(pose, mount, config, planes, sprites)
+            rscene[item['name']] = SceneObject(pose or Pose(), mount, config, planes, sprites)
         elif item.has_key('z'):
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'], item['z'])
         else:
@@ -101,9 +107,9 @@ def parse_scene(scene):
 def parse_model(model):
     """\
     """
-    try:
+    if 'scene' in model.keys():
         scene = parse_scene(model['scene'])
-    except KeyError:
+    else:
         scene = Scene()
     rmodel = MultiCamera(model['name'], model['ocular'], scene)
     for i in [1, 2]:
@@ -120,7 +126,7 @@ def parse_model(model):
         # parse mount TODO
         mount = None
         # parse sprites
-        sprites = [parse_primitives(sprite) for sprite in camera['sprites']]
+        sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in camera['sprites']])
         # create camera
         rmodel[camera['name']] = Camera(camera, pose, mount, sprites, True)
     return rmodel

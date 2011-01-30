@@ -366,7 +366,7 @@ class Experiment(object):
         """
         axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
         self.model.visualize()
-        cam_vis = [primitive for objects in [[frame.objects for frame in self.model[cam].actuals['main']] for cam in self.model] for primitive in objects]
+        cam_vis = [primitive for objects in [self.model[cam].actuals['main'].objects for cam in self.model] for primitive in objects]
         zoom = False
         spin = False
         moving = None

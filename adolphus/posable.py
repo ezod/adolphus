@@ -115,12 +115,12 @@ class Plane(Posable, Visualizable):
                 self.x, self.y = [float(n) for n in y], [float(n) for n in z]
         else:
             self.x, self.y = [float(n) for n in x], [float(n) for n in y]
-        definition = {'primitives': [{'type':       'box',
-                                      'length':     self.x[1] - self.x[0],
-                                      'height':     self.y[1] - self.y[0],
-                                      'width':      1,
-                                      'material':   'wood'}]}
-        Visualizable.__init__(self, [definition])
+        primitives = [{'type':       'box',
+                       'length':     self.x[1] - self.x[0],
+                       'height':     self.y[1] - self.y[0],
+                       'width':      1,
+                       'material':   'wood'}]
+        Visualizable.__init__(self, primitives)
 
     @property
     def center(self):
@@ -183,9 +183,8 @@ class Plane(Posable, Visualizable):
         account for possible off-center true center.
         """
         for display in self.actuals.keys():
-            for sprite in self.actuals[display]:
-                sprite.transform(Pose(self.center, self.pose.R))
-                sprite.opacity = self.opacity
+            self.actuals[display].transform(Pose(self.center, self.pose.R))
+            self.actuals[display].opacity = self.opacity
 
 
 class SceneObject(Posable, Visualizable):

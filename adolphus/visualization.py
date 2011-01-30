@@ -79,14 +79,14 @@ class Visualizable(object):
     """
     displays = {}
 
-    def __init__(self, sprites=[]):
+    def __init__(self, primitives=[]):
         """\
         Constructor.
 
         @param sprites: A list of sprite primitives or definition files.
         @type sprites: C{list}
         """
-        self.sprites = sprites
+        self.primitives = primitives
         self.actuals = {}
         self.opacity = 1.0
 
@@ -100,8 +100,7 @@ class Visualizable(object):
             if display in self.actuals.keys():
                 continue
             self.displays[display].select()
-            self.actuals[display] = [Sprite(primitives) \
-                for primitives in self.sprites]
+            self.actuals[display] = Sprite(self.primitives)
         self.update_visualization()
 
     def update_visualization(self):
@@ -109,9 +108,8 @@ class Visualizable(object):
         Update this visualizable.
         """
         for display in self.actuals.keys():
-            for sprite in self.actuals[display]:
-                try:
-                    sprite.transform(self.pose)
-                except AttributeError:
-                    pass
-                sprite.opacity = self.opacity
+            try:
+                self.actuals[display].transform(self.pose)
+            except AttributeError:
+                pass
+            self.actuals[display].opacity = self.opacity
