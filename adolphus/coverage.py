@@ -14,85 +14,10 @@ import pyximport; pyximport.install()
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
-from copy import copy
 
 from geometry import Point, DirectionalPoint, Pose
 from posable import Posable
 from visualization import Visualizable
-
-
-class DiscretePointCache(dict, Posable):
-    """\
-    A discrete cache of the coverage strengths of points. Can also be used as a
-    relevance model.
-    """
-    def __init__(self, pose=Pose(), mount=None, config=None):
-        """\
-        Constructor.
-
-        @param iterable: The iterable to construct from (optional).
-        @type iterable: C{object}
-        """
-        dict.__init__(self)
-        Posable.__init__(self, pose, mount)
-
-    def __or__(self, other):
-        result = copy(self)
-        for point in other.keys():
-            if not point in result.keys() or result[point] < other[point]:
-                result[point] = other[point]
-        return result
-
-    def __ior__(self, other):
-        self = self | other
-        return self
-
-    def __and__(self, other):
-        result = DiscretePointCache()
-        for point in self.keys():
-            if point in other.keys():
-                result[point] = min(self[point], other[point])
-        return result
-
-    def __iand__(self, other):
-        self = self & other
-        return self
-
-    def __del__(self):
-        for point in self.keys():
-            try:
-                for member in point.vis.members.keys():
-                    point.vis.members[member].visible = False
-                    del point.vis.members[member]
-                point.vis.visible = False
-                del point.vis
-            except AttributeError:
-                pass
-
-    def update_visualization(self):
-        """\
-        Update the visualization.
-        """
-        Posable.update_visualization(self)
-        for point in self.keys():
-            if self[point]:
-                try:
-                    for member in point.vis.keys():
-                        point.vis.members[member].opacity = self[point]
-                except AttributeError:
-                    point.visualize(scale=self.vis.properties['scale'], color=\
-                        self.vis.properties['color'], opacity=self[point])
-                    self.vis.add(str(point), point.vis)
-            else:
-                try:
-                    for member in point.vis.members.keys():
-                        point.vis.members[member].visible = False
-                        del point.vis.members[member]
-                    point.vis.visible = False
-                    del point.vis
-                except AttributeError:
-                    pass
-                continue
 
 
 class Camera(Posable, Visualizable):
