@@ -90,6 +90,17 @@ class Visualizable(object):
         self.primitives = primitives
         self.actuals = {}
         self.opacity = 1.0
+        self._visible = True
+
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        for display in self.actuals.keys():
+            self.actuals[display].visible = value
+        self._visible = value
 
     def visualize(self):
         """\
@@ -102,6 +113,7 @@ class Visualizable(object):
                 continue
             self.displays[display].select()
             self.actuals[display] = Sprite(self.primitives, parent=self)
+            self.actuals[display].visible = self._visible
         self.update_visualization()
 
     def update_visualization(self):
