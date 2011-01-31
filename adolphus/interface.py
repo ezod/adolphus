@@ -34,8 +34,6 @@ class Display(visual.display):
         @param foreground: The default foreground color of the scene.
         @type foreground: C{tuple}
         """
-        if not visual:
-            raise VisualizationError('visual module not loaded')
         visual.display.__init__(self, title='Adolphus - %s' % name,
             center=center, background=background, foreground=foreground)
         self.forward = (-1, -1, -1)
@@ -86,7 +84,7 @@ class Display(visual.display):
             if self._stored_view:
                 raise VisualizationError('already in a camera view')
             self.userspin = False
-            camera.vis.visible = False
+            camera.visible = False
             self._stored_view = {'camera': camera,
                                  'forward': tuple(self.forward),
                                  'center': tuple(self.center),
@@ -108,7 +106,7 @@ class Display(visual.display):
             for key in self._stored_view:
                 self.__setattr__(key, self._stored_view[key])
             self.up = (0, 0, 1)
-            self._stored_view['camera'].vis.visible = True
+            self._stored_view['camera'].visible = True
             self.userspin = True
             self.cdot.pos = self.center
             self._messagebox.pos = self.center

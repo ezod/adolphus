@@ -13,7 +13,7 @@ import os
 import yaml
 from math import pi
 
-from coverage import DiscretePointCache, Scene, Camera, MultiCamera
+from coverage import Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation
 from posable import Plane, SceneObject
 
