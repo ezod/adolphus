@@ -20,6 +20,53 @@ from posable import Posable
 from visualization import Visualizable
 
 
+class PointCache(dict):
+    """\
+    Point cache class.
+    """
+    def __setitem__(self, key, item):
+        super(PointCache, self).__setitem__(repr(key), item)
+
+    def __getitem__(self, key):
+        return super(PointCache, self).__getitem__(repr(key))
+
+    def __delitem__(self, key):
+        super(PointCache, self).__delitem__(repr(key))
+
+    def keys(self):
+        return [eval(key) for key in super(PointCache, self).keys()]
+
+    def visualize(self):
+        """\
+        Visualize the point cache, with opacity representing coverage strength.
+        """
+        try:
+            self.update_visualization()
+        except AttributeError:
+            self.visual = set([point for point in self.keys() if self[point]])
+            for point in self.visual:
+                point.opacity = self[point]
+                point.visualize()
+
+    def update_visualization(self):
+        """\
+        Update the point cache visualization.
+        """
+        newvisual = set([point for point in self.keys() if self[point]])
+        # remove old points
+        for point in self.visual.difference(newvisual):
+            point.visible = False
+            self.visual.remove(point)
+        # add new points
+        for point in newvisual.difference(self.visual):
+            self.visual.add(point)
+            point.visualize()
+        # update opacities
+        for point in self.visual:
+            point.opacity = self[point]
+            point.update_visualization()
+
+
 class Camera(Posable, Visualizable):
     """\
     Single-camera coverage strength model.

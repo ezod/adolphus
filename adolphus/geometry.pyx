@@ -251,12 +251,6 @@ class Point(tuple, Visualizable):
         """
         return Angle(acos(p.normal * self.normal))
 
-    def update_visualization(self):
-        """\
-        Point visualizations do not need to be updated.
-        """
-        pass
-
 
 class DirectionalPoint(Point):
     """\
