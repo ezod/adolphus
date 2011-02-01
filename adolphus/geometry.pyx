@@ -162,7 +162,7 @@ class Point(tuple, Visualizable):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return '%s(%f, %f, %f)' % (self.__class__.__name__,
+        return '%s((%.4f, %.4f, %.4f))' % (self.__class__.__name__,
             self[0], self[1], self[2])
 
     def __str__(self):
@@ -172,7 +172,7 @@ class Point(tuple, Visualizable):
         @return: Vector string.
         @rtype: C{str}
         """
-        return '(%.2f, %.2f, %.2f)' % self
+        return '(%.4f, %.4f, %.4f)' % self
 
     @property
     def x(self):
@@ -303,7 +303,7 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return '%s(%f, %f, %f, %f, %f)' % (self.__class__.__name__,
+        return '%s((%.4f, %.4f, %.4f, %.4f, %.4f))' % (self.__class__.__name__,
             self[0], self[1], self[2], self[3], self[4])
 
     def __str__(self):
@@ -313,7 +313,7 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return '(%.2f, %.2f, %.2f, %.2f, %.2f)' % self
+        return '(%.4f, %.4f, %.4f, %.4f, %.4f)' % self
 
     @property
     def rho(self):
