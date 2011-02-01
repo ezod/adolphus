@@ -14,10 +14,11 @@ import pyximport; pyximport.install()
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
+from copy import deepcopy
 
 from geometry import Point, DirectionalPoint, Pose
 from posable import Posable
-from visualization import Visualizable
+from visualization import VisualizationError, Visualizable
 
 
 class PointCache(dict):
@@ -35,6 +36,35 @@ class PointCache(dict):
 
     def keys(self):
         return [eval(key) for key in super(PointCache, self).keys()]
+
+    def __or__(self, other):
+        result = deepcopy(self)
+        for point in other.keys():
+            if not point in result.keys() or result[point] < other[point]:
+                result[point] = other[point]
+        return result
+
+    def __ior__(self, other):
+        self = self | other
+        return self
+
+    def __and__(self, other):
+        result = PointCache()
+        for point in self.keys():
+            if point in other.keys():
+                result[point] = min(self[point], other[point])
+        return result
+
+    def __iand__(self, other):
+        self = self & other
+        return self
+
+    def __del__(self):
+        try:
+            for point in self.visual:
+                point.visible = False
+        except AttributeError:
+            pass
 
     def visualize(self):
         """\
@@ -65,6 +95,26 @@ class PointCache(dict):
         for point in self.visual:
             point.opacity = self[point]
             point.update_visualization()
+
+
+class RelevanceModel(PointCache, Posable):
+    """\
+    Relevance model class.
+    """
+    def __init__(self, pose=Pose(), mount=None):
+        Posable.__init__(self, pose, mount)
+
+    def __setitem__(self, key, item):
+        PointCache.__setitem__(self, (-self.pose).map(key), item)
+
+    def __getitem__(self, key):
+        PointCache.__getitem__(self, (-self.pose).map(key))
+
+    def __delitem__(self, key):
+        PointCache.__delitem__(self, (-self.pose).map(key))
+
+    def keys(self):
+        return [self.pose.map(point) for point in PointCache.keys(self)]
 
 
 class Camera(Posable, Visualizable):
@@ -307,13 +357,13 @@ class MultiCamera(dict):
         the points in a given relevance model.
 
         @param relevance: The relevance model.
-        @type relevance: L{DiscretePointCache}
+        @type relevance: L{RelevanceModel}
         @return: The coverage model.
-        @rtype: L{DiscretePointCache}
+        @rtype: L{PointCache}
         """
-        coverage = DiscretePointCache(pose=relevance._pose, mount=relevance.mount)
+        coverage = PointCache()
         for point in relevance.keys():
-            coverage[point] = self.strength(relevance.pose.map(point))
+            coverage[point] = self.strength(point)
         return coverage
 
     def performance(self, relevance):
@@ -322,7 +372,7 @@ class MultiCamera(dict):
         respect to a given relevance model.
 
         @param relevance: The relevance model.
-        @type relevance: L{DiscretePointCache}
+        @type relevance: L{RelevanceModel}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
