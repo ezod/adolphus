@@ -11,7 +11,6 @@ geometric descriptor functions for features.
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 import numpy
 
-from visualization import Visualizable
 
 class Angle(float):
     """\
@@ -30,7 +29,7 @@ class Angle(float):
         return Angle(-float(self))
 
 
-class Point(tuple, Visualizable):
+class Point(tuple):
     """\
     3D point (vector) class.
     """
@@ -39,16 +38,6 @@ class Point(tuple, Visualizable):
         Constructor.
         """
         return tuple.__new__(cls, iterable)
-
-    def __init__(self, iterable=(0.0, 0.0, 0.0)):
-        """\
-        Constructor for visualizable.
-        """
-        primitives = [{'type':       'sphere',
-                       'pos':        self[:3],
-                       'radius':     3,
-                       'color':      [1, 0, 0]}]
-        Visualizable.__init__(self, primitives)
 
     def __eq__(self, p):
         """\
@@ -265,20 +254,6 @@ class DirectionalPoint(Point):
             iterable[3] -= 2. * (iterable[3] - pi)
             iterable[4] += pi
         return Point.__new__(cls, iterable)
-
-    def __init__(self, iterable):
-        """\
-        Constructor for visualizable.
-        """
-        primitives = [{'type':       'sphere',
-                       'pos':        self[:3],
-                       'radius':     3,
-                       'color':      [1, 0, 0]},
-                      {'type':       'arrow',
-                       'pos':        self[:3],
-                       'axis':       self.direction_unit,
-                       'color':      [1, 0, 0]}]
-        Visualizable.__init__(self, primitives)
 
     def __neg__(self):
         """\
