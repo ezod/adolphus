@@ -92,6 +92,9 @@ class Visualizable(object):
         self.opacity = 1.0
         self._visible = True
 
+    def __del__(self):
+        self.visible = False
+
     @property
     def visible(self):
         return self._visible

@@ -26,44 +26,69 @@ class PointCache(dict):
     """
     def __setitem__(self, key, item):
         super(PointCache, self).__setitem__(repr(key), item)
+        try:
+            del self._keys
+        except AttributeError:
+            pass
 
     def __getitem__(self, key):
         return super(PointCache, self).__getitem__(repr(key))
 
     def __delitem__(self, key):
         super(PointCache, self).__delitem__(repr(key))
+        try:
+            del self._keys
+        except AttributeError:
+            pass
 
     def keys(self):
-        return [eval(key) for key in super(PointCache, self).keys()]
+        try:
+            return self._keys
+        except AttributeError:
+            self._keys = [eval(key) for key in super(PointCache, self).keys()]
+            return self._keys
 
     def __or__(self, other):
         result = self.__class__()
-        for point in self.keys():
-            result[point] = self[point]
-        for point in other.keys():
-            if not point in result.keys() or result[point] < other[point]:
-                result[point] = other[point]
+        for point in super(PointCache, self).keys():
+            super(PointCache, result).__setitem__(point,
+                super(PointCache, self).__getitem__(point))
+        for point in super(PointCache, other).keys():
+            if not point in super(PointCache, result).keys() or \
+                super(PointCache, result).__getitem__(point) < \
+                super(PointCache, other).__getitem__(point):
+                super(PointCache, result).__setitem__(point,
+                    super(PointCache, other).__getitem__(point))
         return result
 
     def __ior__(self, other):
         self = self | other
+        try:
+            del self._keys
+        except AttributeError:
+            pass
         return self
 
     def __and__(self, other):
         result = self.__class__()
-        for point in self.keys():
-            if point in other.keys():
-                result[point] = min(self[point], other[point])
+        for point in super(PointCache, self).keys():
+            if point in super(PointCache, other).keys():
+                super(PointCache, result).__setitem__(point,
+                    min(super(PointCache, self).__getitem__(point),
+                        super(PointCache, other).__getitem__(point)))
         return result
 
     def __iand__(self, other):
         self = self & other
+        try:
+            del self._keys
+        except AttributeError:
+            pass
         return self
 
     def __del__(self):
         try:
-            for point in self.visual:
-                point.visible = False
+            self.visual.visible = False
         except AttributeError:
             pass
 
@@ -72,30 +97,21 @@ class PointCache(dict):
         Visualize the point cache, with opacity representing coverage strength.
         """
         try:
-            self.update_visualization()
+            self.visual.visible = False
+            del self.visual
         except AttributeError:
-            self.visual = set([point for point in self.keys() if self[point]])
-            for point in self.visual:
-                point.opacity = self[point]
-                point.visualize()
-
-    def update_visualization(self):
-        """\
-        Update the point cache visualization.
-        """
-        newvisual = set([point for point in self.keys() if self[point]])
-        # remove old points
-        for point in self.visual.difference(newvisual):
-            point.visible = False
-            self.visual.remove(point)
-        # add new points
-        for point in newvisual.difference(self.visual):
-            self.visual.add(point)
-            point.visualize()
-        # update opacities
-        for point in self.visual:
-            point.opacity = self[point]
-            point.update_visualization()
+            pass
+        primitives = []
+        for point in set([point for point in self.keys() if self[point]]):
+            primitives.append({'type': 'sphere', 'pos': point[:3], 'radius': 3,
+                'color': [1, 0, 0]})
+            try:
+                primitives.append({'type': 'arrow', 'pos': point[:3],
+                    'axis': self.direction_unit, 'color': [1, 0, 0]})
+            except AttributeError:
+                pass
+        self.visual = Visualizable(primitives=primitives)
+        self.visual.visualize()
 
 
 class RelevanceModel(PointCache, Posable):
@@ -115,7 +131,12 @@ class RelevanceModel(PointCache, Posable):
         PointCache.__delitem__(self, (-self.pose).map(key))
 
     def keys(self):
-        return [self.pose.map(point) for point in PointCache.keys(self)]
+        try:
+            return self._keys
+        except AttributeError:
+            self._keys = [self.pose.map(point) \
+                for point in PointCache.keys(self)]
+            return self._keys
 
 
 class Camera(Posable, Visualizable):

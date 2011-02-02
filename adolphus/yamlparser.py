@@ -239,5 +239,7 @@ def parse_experiment(filename):
     PATH = os.path.split(filename)[0]
     experiment = yaml.load(open(filename))
     model = parse_model(experiment['model'])
-    relevances = [parse_relevance(relevance) for relevance in experiment['relevance']]
+    relevances = {}
+    for relevance in experiment['relevance']:
+        relevances[relevance['name']] = parse_relevance(relevance)
     return model, relevances
