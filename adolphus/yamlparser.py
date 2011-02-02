@@ -39,6 +39,8 @@ def parse_pose(pose):
         convention, unit = pose['Rformat'].split('-')[1:]
         if unit == 'deg':
             R = [r * pi / 180.0 for r in pose['R']]
+        else:
+            R = pose['R']
         R = Rotation.from_euler(convention, (R[0], R[1], R[2]))
     else:
         raise ValueError('unrecognized rotation format')
@@ -104,7 +106,7 @@ def parse_scene(scene):
     return rscene
 
 
-def parse_model(model):
+def parse_model(model, active=True):
     """\
     TODO
     """
@@ -130,7 +132,7 @@ def parse_model(model):
         sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in camera['sprites']])
         sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6, 'text': camera['name']})
         # create camera
-        rmodel[camera['name']] = Camera(camera, pose, mount, sprites, True)
+        rmodel[camera['name']] = Camera(camera, pose, mount, sprites, active=active)
     return rmodel
 
 
@@ -231,14 +233,14 @@ def parse_relevance(relevance):
     return whole_model
 
 
-def parse_experiment(filename):
+def parse_experiment(filename, active=True):
     """\
     TODO
     """
     global PATH
     PATH = os.path.split(filename)[0]
     experiment = yaml.load(open(filename))
-    model = parse_model(experiment['model'])
+    model = parse_model(experiment['model'], active=active)
     relevances = {}
     for relevance in experiment['relevance']:
         relevances[relevance['name']] = parse_relevance(relevance)

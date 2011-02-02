@@ -14,7 +14,7 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    model, relevances = parse_experiment(args[0])
+    model, relevances = parse_experiment(args[0], active=options.active)
     Experiment(model, relevance_models=relevances, config_file=options.conf).run()
 
 
