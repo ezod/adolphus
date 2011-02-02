@@ -18,6 +18,7 @@ from geometry import Point, DirectionalPoint, Pose, Rotation
 from posable import Plane, SceneObject
 
 PATH = '.'
+MOUNTS = {}
 
 def parse_pose(pose):
     """\
@@ -88,6 +89,7 @@ def parse_scene(scene):
     @return: The parsed scene model.
     @rtype: L{Scene}
     """
+    global MOUNTS
     rscene = Scene()
     for item in scene:
         # parse pose
@@ -95,20 +97,26 @@ def parse_scene(scene):
             pose = parse_pose(item['pose'])
         except KeyError:
             pose = None
-        # parse mount TODO
-        mount = None
-        # parse config TODO
-        config = None
+        try:
+            mount = MOUNTS[item['mount']]
+        except KeyError:
+            mount = None
         if item.has_key('sprites'):
             # parse sprites and planes
             sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in item['sprites']])
             planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
+            # parse config
+            try:
+                config = item['config']
+            except KeyError:
+                config = None
             # create object
             rscene[item['name']] = SceneObject(pose or Pose(), mount, config, planes, sprites)
         elif item.has_key('z'):
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'], item['z'])
         else:
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'])
+        MOUNTS[item['name']] = rscene[item['name']]
     return rscene
 
 
@@ -116,6 +124,7 @@ def parse_model(model, active=True):
     """\
     TODO
     """
+    global MOUNTS
     if 'scene' in model.keys():
         scene = parse_scene(model['scene'])
     else:
@@ -132,13 +141,17 @@ def parse_model(model, active=True):
             pose = parse_pose(camera['pose'])
         except KeyError:
             pose = Pose()
-        # parse mount TODO
+        try:
+            mount = MOUNTS[camera['mount']]
+        except KeyError:
+            mount = None
         mount = None
         # parse sprites
         sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in camera['sprites']])
         sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6, 'text': camera['name']})
         # create camera
         rmodel[camera['name']] = Camera(camera, pose, mount, sprites, active=active)
+        MOUNTS[camera['name']] = rmodel[camera['name']]
     return rmodel
 
 
@@ -239,7 +252,10 @@ def parse_relevance(relevance):
         whole_model.pose = parse_pose(relevance['pose'])
     except KeyError:
         pass
-    # TODO parse mount
+    try:
+        whole_model.mount = MOUNTS[relevance['mount']]
+    except KeyError:
+        pass
     return whole_model
 
 
