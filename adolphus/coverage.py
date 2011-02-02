@@ -14,11 +14,10 @@ import pyximport; pyximport.install()
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
-from copy import deepcopy
 
 from geometry import Point, DirectionalPoint, Pose
 from posable import Posable
-from visualization import VisualizationError, Visualizable
+from visualization import Visualizable
 
 
 class PointCache(dict):
@@ -38,7 +37,9 @@ class PointCache(dict):
         return [eval(key) for key in super(PointCache, self).keys()]
 
     def __or__(self, other):
-        result = deepcopy(self)
+        result = self.__class__()
+        for point in self.keys():
+            result[point] = self[point]
         for point in other.keys():
             if not point in result.keys() or result[point] < other[point]:
                 result[point] = other[point]
@@ -49,7 +50,7 @@ class PointCache(dict):
         return self
 
     def __and__(self, other):
-        result = PointCache()
+        result = self.__class__()
         for point in self.keys():
             if point in other.keys():
                 result[point] = min(self[point], other[point])

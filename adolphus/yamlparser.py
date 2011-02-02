@@ -13,7 +13,7 @@ import os
 import yaml
 from math import pi
 
-from coverage import Scene, Camera, MultiCamera
+from coverage import RelevanceModel, Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation
 from posable import Plane, SceneObject
 
@@ -106,6 +106,7 @@ def parse_scene(scene):
 
 def parse_model(model):
     """\
+    TODO
     """
     if 'scene' in model.keys():
         scene = parse_scene(model['scene'])
@@ -181,13 +182,62 @@ def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
         x += step
 
 
+def parse_relevance(relevance):
+    """\
+    TODO
+    """
+    whole_model = RelevanceModel()
+    try:
+        try:
+            ddiv = relevance['ddiv']
+        except KeyError:
+            ddiv = None
+        for prange in relevance['ranges']:
+            try:
+                strength = prange['strength']
+            except KeyError:
+                strength = 1.0
+            try:
+                rhorange = prange['rho']
+            except KeyError:
+                rhorange = (0.0, pi)
+            try:
+                etarange = prange['eta']
+            except KeyError:
+                etarange = (0.0, 2 * pi)
+            part_model = RelevanceModel()
+            for point in pointrange(prange['x'], prange['y'], prange['z'],
+                relevance['step'], rhorange, etarange, ddiv=ddiv):
+                part_model[point] = strength
+            whole_model |= part_model
+    except KeyError:
+        pass
+    try:
+        part_model = RelevanceModel()
+        for point in relevance['points']:
+            if len(point['point']) == 3:
+                pointobject = Point(point['point'])
+            elif len(point['point']) == 5:
+                pointobject = DirectionalPoint(point['point'])
+            try:
+                strength = point['strength']
+            except KeyError:
+                strength = 1.0
+            part_model[pointobject] = strength
+        whole_model |= part_model            
+    except KeyError:
+        pass
+    # TODO pose and mount
+    return whole_model
+
+
 def parse_experiment(filename):
     """\
+    TODO
     """
     global PATH
     PATH = os.path.split(filename)[0]
     experiment = yaml.load(open(filename))
     model = parse_model(experiment['model'])
-    #relevances = [parse_relevance(relevance) for relevance in experiment['relevance']]
-    relevances = []
+    relevances = [parse_relevance(relevance) for relevance in experiment['relevance']]
     return model, relevances
