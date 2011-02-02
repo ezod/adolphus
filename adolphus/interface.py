@@ -186,6 +186,7 @@ class Experiment(object):
 
         self.model = model
         self.relevance_models = relevance_models
+        self.coverage = {}
 
         # load and parse config file
         if config_file:
@@ -264,9 +265,6 @@ class Experiment(object):
                         if isinstance(member, visual.label):
                             member.visible = not member.visible
 
-        def cmd_clearpoints(args):
-            self.model.visualize_clear_points()
-
         def cmd_pose(args):
             """name"""
             try:
@@ -324,15 +322,24 @@ class Experiment(object):
             try:
                 self.display.message('Calculating coverage...')
                 self.display.userspin = False
-                perf = self.model.visualize_coverage(\
-                    self.relevance_models[args[0]])
-                self.display.message('Performance (%s): %.4f' % (args[0], perf))
+                performance = {}
+                if not args:
+                    args = self.relevance_models.keys()
+                for arg in args:
+                    self.coverage[arg] = self.model.coverage(self.relevance_models[arg])
+                    self.coverage[arg].visualize()
+                    performance[arg] = self.model.performance(self.relevance_models[arg], coverage=self.coverage[arg])
+                self.display.message('\n'.join(['%s: %.4f' % (key, performance[key]) for key in performance.keys()]))
             except KeyError:
                 self.display.message('Invalid relevance model name.')
             except ValueError:
                 self.display.message('Too few active cameras.')
             finally:
                 self.display.userspin = True
+
+        def cmd_clear(args):
+            for key in self.coverage.keys():
+                del self.coverage[key]
 
         def cmd_eval(args):
             """code"""

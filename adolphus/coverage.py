@@ -367,17 +367,21 @@ class MultiCamera(dict):
             coverage[point] = self.strength(point)
         return coverage
 
-    def performance(self, relevance):
+    def performance(self, relevance, coverage=None):
         """\
         Return the coverage performance of this multi-camera network with
-        respect to a given relevance model.
+        respect to a given relevance model. If a previously computed coverage
+        cache is provided, it should be for the same point set as used by the
+        relevance model.
 
         @param relevance: The relevance model.
         @type relevance: L{RelevanceModel}
+        @param coverage: Previously computed coverage cache for these points.
+        @type coverage: L{PointCache}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
-        coverage = self.coverage(relevance)
+        coverage = coverage or self.coverage(relevance)
         return sum((coverage & relevance).values()) / sum(relevance.values())
 
     def visualize(self):
