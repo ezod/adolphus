@@ -46,7 +46,7 @@ setup(
     author_email = "mavrin1@uwindsor.ca",
     url = URL,
     keywords = "fuzzy vision multicamera model",
-    packages = [PACKAGE, PACKAGE + '.models'],
+    packages = [PACKAGE],
     package_data = {PACKAGE: ['resources/*']},
     test_suite = "test",
     cmdclass = {'doc': GenerateDoc},
