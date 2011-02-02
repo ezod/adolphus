@@ -5,7 +5,7 @@ from optparse import OptionParser
 from adolphus import Experiment, parse_experiment
 
 
-if __name__ == '__main__':
+def main():
     parser = OptionParser()
     parser.add_option("-c", "--conf", dest="conf", default=None, 
         help="custom configuration file to load")
@@ -16,3 +16,7 @@ if __name__ == '__main__':
 
     model, relevances = parse_experiment(args[0])
     Experiment(model, relevance_models=relevances, config_file=options.conf).run()
+
+
+if __name__ == '__main__':
+    main()
