@@ -68,7 +68,13 @@ def parse_planes(sprite):
     if isinstance(sprite, str):
         sprite = yaml.load(open(os.path.join(PATH, sprite)))
     try:
-        return sprite['planes']
+        planes = sprite['planes']
+        for plane in planes:
+            try:
+                plane['pose'] = parse_pose(plane['pose'])
+            except KeyError:
+                pass
+        return planes
     except KeyError:
         return []
 
@@ -229,7 +235,11 @@ def parse_relevance(relevance):
         whole_model |= part_model            
     except KeyError:
         pass
-    # TODO pose and mount
+    try:
+        whole_model.pose = parse_pose(relevance['pose'])
+    except KeyError:
+        pass
+    # TODO parse mount
     return whole_model
 
 
