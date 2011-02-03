@@ -168,7 +168,7 @@ class Plane(Posable, Visualizable):
                          [pa[1] - pb[1], c[1][1] - c[0][1], c[2][1] - c[0][1]],
                          [pa[2] - pb[2], c[1][2] - c[0][2], c[2][2] - c[0][2]]])
         t = numpy.dot(numpy.linalg.inv(M), pa.array)[0][0]
-        if t < 0 or t > 1:
+        if t <= 0 or t >= 1:
             return None
         pr = pa + t * (pb - pa)
         spr = (-self.pose).map(pr)
