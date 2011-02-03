@@ -13,7 +13,7 @@ import os
 import yaml
 from math import pi
 
-from coverage import RelevanceModel, Scene, Camera, MultiCamera
+from coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation
 from posable import Plane, SceneObject
 
@@ -207,7 +207,7 @@ def parse_relevance(relevance):
     """\
     TODO
     """
-    whole_model = RelevanceModel()
+    whole_model = PointCache()
     try:
         try:
             ddiv = relevance['ddiv']
@@ -226,7 +226,7 @@ def parse_relevance(relevance):
                 etarange = prange['eta']
             except KeyError:
                 etarange = (0.0, 2 * pi)
-            part_model = RelevanceModel()
+            part_model = PointCache()
             for point in pointrange(prange['x'], prange['y'], prange['z'],
                 relevance['step'], rhorange, etarange, ddiv=ddiv):
                 part_model[point] = strength
@@ -234,7 +234,7 @@ def parse_relevance(relevance):
     except KeyError:
         pass
     try:
-        part_model = RelevanceModel()
+        part_model = PointCache()
         for point in relevance['points']:
             if len(point['point']) == 3:
                 pointobject = Point(point['point'])
@@ -249,14 +249,14 @@ def parse_relevance(relevance):
     except KeyError:
         pass
     try:
-        whole_model.pose = parse_pose(relevance['pose'])
+        pose = parse_pose(relevance['pose'])
     except KeyError:
-        pass
+        pose = Pose()
     try:
-        whole_model.mount = MOUNTS[relevance['mount']]
+        mount = MOUNTS[relevance['mount']]
     except KeyError:
-        pass
-    return whole_model
+        mount = None
+    return RelevanceModel(whole_model, pose=pose, mount=mount)
 
 
 def parse_experiment(filename, active=True):

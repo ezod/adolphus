@@ -39,6 +39,12 @@ class Point(tuple):
         """
         return tuple.__new__(cls, iterable)
 
+    def __hash__(self):
+        """\
+        Hash function.
+        """
+        return hash(repr(self))
+
     def __eq__(self, p):
         """\
         Equality function.

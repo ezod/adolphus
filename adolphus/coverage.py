@@ -24,66 +24,28 @@ class PointCache(dict):
     """\
     Point cache class.
     """
-    def __setitem__(self, key, item):
-        super(PointCache, self).__setitem__(repr(key), item)
-        try:
-            del self._keys
-        except AttributeError:
-            pass
-
-    def __getitem__(self, key):
-        return super(PointCache, self).__getitem__(repr(key))
-
-    def __delitem__(self, key):
-        super(PointCache, self).__delitem__(repr(key))
-        try:
-            del self._keys
-        except AttributeError:
-            pass
-
-    def keys(self):
-        try:
-            return self._keys
-        except AttributeError:
-            self._keys = [eval(key) for key in super(PointCache, self).keys()]
-            return self._keys
-
     def __or__(self, other):
         result = self.__class__()
-        for point in super(PointCache, self).keys():
-            super(PointCache, result).__setitem__(point,
-                super(PointCache, self).__getitem__(point))
-        for point in super(PointCache, other).keys():
-            if not point in super(PointCache, result).keys() or \
-                super(PointCache, result).__getitem__(point) < \
-                super(PointCache, other).__getitem__(point):
-                super(PointCache, result).__setitem__(point,
-                    super(PointCache, other).__getitem__(point))
+        for point in self.keys():
+            result[point] = self[point]
+        for point in other.keys():
+            if not point in result.keys() or result[point] < other[point]:
+                result[point] = other[point]
         return result
 
     def __ior__(self, other):
         self = self | other
-        try:
-            del self._keys
-        except AttributeError:
-            pass
         return self
 
     def __and__(self, other):
         result = self.__class__()
-        for point in super(PointCache, self).keys():
-            if point in super(PointCache, other).keys():
-                super(PointCache, result).__setitem__(point,
-                    min(super(PointCache, self).__getitem__(point),
-                        super(PointCache, other).__getitem__(point)))
+        for point in self.keys():
+            if point in other.keys():
+                result[point] = min(self[point], other[point])
         return result
 
     def __iand__(self, other):
         self = self & other
-        try:
-            del self._keys
-        except AttributeError:
-            pass
         return self
 
     def __del__(self):
@@ -115,29 +77,38 @@ class PointCache(dict):
         self.visual.visualize()
 
 
-class RelevanceModel(PointCache, Posable):
+class RelevanceModel(Posable):
     """\
     Relevance model class.
     """
-    def __init__(self, pose=Pose(), mount=None):
-        Posable.__init__(self, pose, mount)
+    def __init__(self, original, pose=Pose(), mount=None):
+        super(RelevanceModel, self).__init__(pose=pose, mount=mount)
+        self._original = original
 
-    def __setitem__(self, key, item):
-        PointCache.__setitem__(self, (-self.pose).map(key), item)
+    @property
+    def original(self):
+        return self._original
 
-    def __getitem__(self, key):
-        PointCache.__getitem__(self, (-self.pose).map(key))
-
-    def __delitem__(self, key):
-        PointCache.__delitem__(self, (-self.pose).map(key))
-
-    def keys(self):
+    @property
+    def mapped(self):
         try:
-            return self._keys
+            return self._mapped
         except AttributeError:
-            self._keys = [self.pose.map(point) \
-                for point in PointCache.keys(self)]
-            return self._keys
+            self._mapped = {}
+            for point in self.original.keys():
+                self._mapped[self.pose.map(point)] = self.original[point]
+            return self._mapped
+
+    #@pose.setter
+    #def pose(self, value):
+    #    """\
+    #    Set the pose of the object.
+    #    """
+    #    self._pose = value
+    #    del self._mapped
+
+    def visualize(self):
+        self.mapped.visualize()
 
 
 class Camera(Posable, Visualizable):
@@ -368,7 +339,8 @@ class MultiCamera(dict):
             for camera in combination:
                 strength = self[camera].strength(point)
                 if strength and strength < minstrength:
-                    minstrength = strength * (not self.scene.occluded(point, self[camera].pose.T))
+                    minstrength = strength * (not self.scene.occluded(point,
+                        self[camera].pose.T))
             if minstrength > 1.0:
                 minstrength = 0.0
             maxstrength = max(maxstrength, minstrength)
@@ -385,7 +357,7 @@ class MultiCamera(dict):
         @rtype: L{PointCache}
         """
         coverage = PointCache()
-        for point in relevance.keys():
+        for point in relevance.mapped.keys():
             coverage[point] = self.strength(point)
         return coverage
 
@@ -404,7 +376,8 @@ class MultiCamera(dict):
         @rtype: C{float}
         """
         coverage = coverage or self.coverage(relevance)
-        return sum((coverage & relevance).values()) / sum(relevance.values())
+        return sum((coverage & relevance.mapped).values()) \
+            / sum(relevance.mapped.values())
 
     def visualize(self):
         """\
