@@ -9,12 +9,20 @@ Coverage module.
 
 __version__ = (0, 0, 0)
 
-__all__ = ['geometry', 'coverage', 'interface', 'visualization', 'yamlparser']
+__all__ = ['geometry',
+           'posable',
+           'graph',
+           'coverage',
+           'interface',
+           'visualization',
+           'yamlparser']
 __name__ = 'adolphus'
 
 import pyximport; pyximport.install()
 
 from geometry import *
+from posable import *
+from graph import *
 from coverage import *
 from interface import *
 from visualization import *
