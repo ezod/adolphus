@@ -50,8 +50,12 @@ def parse_pose(pose):
 
 def parse_primitives(sprite):
     """\
-    @param sprite:
+    Parse the primitives of a sprite.
+
+    @param sprite: The YAML dict or filename of the sprite/posable.
     @type sprite: C{dict} or C{str}
+    @return: The primitives list.
+    @rtype: C{list} of C{dict}
     """
     if isinstance(sprite, str):
         sprite = yaml.load(open(os.path.join(PATH, sprite)))
@@ -63,8 +67,12 @@ def parse_primitives(sprite):
 
 def parse_planes(sprite):
     """\
-    @param sprite:
+    Parse the opaque plane segments of a posable.
+
+    @param sprite: The YAML dict or filename of the sprite/posable.
     @type sprite: C{dict} or C{str}
+    @return: The planes list with parsed pose.
+    @rtype: C{list} of C{dict}
     """
     if isinstance(sprite, str):
         sprite = yaml.load(open(os.path.join(PATH, sprite)))
@@ -102,11 +110,13 @@ def parse_scene(scene):
         except KeyError:
             mount = None
         if item.has_key('sprites'):
+            # TODO: parse mount pose
+            mount_pose = Pose()
             # parse sprites and planes
             sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in item['sprites']])
             planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
             # create object
-            rscene[item['name']] = SceneObject(pose or Pose(), mount, planes, sprites)
+            rscene[item['name']] = SceneObject(pose or Pose(), mount_pose, mount, planes, sprites)
         elif item.has_key('z'):
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'], item['z'])
         else:
@@ -117,7 +127,14 @@ def parse_scene(scene):
 
 def parse_model(model, active=True):
     """\
-    TODO
+    Parse a multi-camera model from YAML.
+
+    @param model: The YAML dict of the multi-camera model.
+    @type model: C{dict}
+    @param active: Default active state of cameras (optional).
+    @type active: C{bool}
+    @return: The parsed multi-camera model.
+    @rtype: L{MultiCamera}
     """
     global MOUNTS
     if 'scene' in model.keys():
@@ -200,7 +217,12 @@ def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
 
 def parse_relevance(relevance):
     """\
-    TODO
+    Parse a relevance model from YAML.
+    
+    @param relevance: The YAML dict of the relevance model.
+    @type relevance: C{dict}
+    @return: The parsed relevance model.
+    @rtype: L{RelevanceModel}
     """
     whole_model = PointCache()
     try:
@@ -256,7 +278,12 @@ def parse_relevance(relevance):
 
 def parse_experiment(filename, active=True):
     """\
-    TODO
+    Parse an experiment from YAML.
+
+    @param filename: The YAML file to load from.
+    @type filename: C{str}
+    @param active: Default active state of cameras (optional).
+    @type active: C{bool}
     """
     global PATH
     PATH = os.path.split(filename)[0]

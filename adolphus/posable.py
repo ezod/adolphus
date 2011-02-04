@@ -1,5 +1,5 @@
 """\
-Posable TODO
+Posable objects module.
 
 @author: Aaron Mavrinac
 @organization: University of Windsor
@@ -21,18 +21,23 @@ class Posable(object):
     """\
     Posable abstract base class.
     """
-    def __init__(self, pose=Pose(), mount=None, planes=[]):
+    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None, planes=[]):
         """\
         Constructor.
 
         @param pose: The pose of the object (optional).
         @type pose: L{Pose}
+        @param mount_pose: The transformation to the mounting end (optional).
+        @type mount_pose: L{Pose}
         @param mount: The mount of the object (optional).
         @type mount: L{Posable}
+        @param planes: The opaque planes associated with this object (optional).
+        @type planes: C{list} of L{Plane}
         """
         if self.__class__ is Posable:
             raise NotImplementedError('cannot directly instantiate Posable')
         self._pose = pose
+        self._mount_pose = mount_pose
         self.mount = mount
         self.planes = set()
         for plane in planes:
@@ -53,7 +58,6 @@ class Posable(object):
         """\
         Set the pose of the object.
         """
-        # TODO: handle += and the like?
         self._pose = value
 
     def mount_pose(self):
@@ -65,7 +69,7 @@ class Posable(object):
         @return: The overall pose.
         @rtype: L{Pose}
         """
-        return self.pose
+        return self.pose + self._mount_pose
 
     def intersection(self, pa, pb):
         """\
@@ -97,7 +101,7 @@ class Plane(Posable, Visualizable):
         @param pose: The pose of the plane normal (from z-hat).
         @type pose: L{Pose}
         """
-        Posable.__init__(self, pose, mount)
+        Posable.__init__(self, pose=pose, mount=mount)
         if pose is None:
             if isinstance(z, Number):
                 self.pose = Pose(T=Point((0.0, 0.0, z)))
@@ -188,6 +192,24 @@ class SceneObject(Posable, Visualizable):
     """\
     Sprite-based scene object.
     """
-    def __init__(self, pose=Pose(), mount=None, planes=[], sprites=[]):
-        Posable.__init__(self, pose, mount, planes)
+    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None, planes=[],
+                 sprites=[]):
+        Posable.__init__(self, pose, mount_pose, mount, planes)
         Visualizable.__init__(self, sprites)
+
+
+class Robot(Posable):
+    """\
+    Sprite-based robot.
+    """
+    def __init__(self, pose=Pose(), mount=None, pieces=[]):
+        super(Robot, self).__init__(pose, mount)
+        for i, piece in enumerate(pieces):
+            try:
+                mount = self.pieces[i - 1]
+            except IndexError:
+                mount = self
+            # TODO: calculate DH parameters into mount_pose
+            mount_pose = Pose()
+            self.pieces[i] = SceneObject(mount_pose=mount_pose, mount=mount,
+                planes=piece['planes'], sprites=piece['primitives'])

@@ -131,7 +131,7 @@ class Camera(Posable, Visualizable):
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
         """
-        Posable.__init__(self, pose, mount)
+        Posable.__init__(self, pose=pose, mount=mount)
         Visualizable.__init__(self, sprites)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
