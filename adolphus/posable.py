@@ -21,7 +21,7 @@ class Posable(object):
     """\
     Posable abstract base class.
     """
-    def __init__(self, pose=Pose(), mount=None, config=None, planes=[]):
+    def __init__(self, pose=Pose(), mount=None, planes=[]):
         """\
         Constructor.
 
@@ -29,14 +29,11 @@ class Posable(object):
         @type pose: L{Pose}
         @param mount: The mount of the object (optional).
         @type mount: L{Posable}
-        @param config: The configuration of the object (optional).
-        @type config: C{object}
         """
         if self.__class__ is Posable:
             raise NotImplementedError('cannot directly instantiate Posable')
         self._pose = pose
         self.mount = mount
-        self.config = config
         self.planes = set()
         for plane in planes:
             self.planes.add(Plane(**plane))
@@ -191,7 +188,6 @@ class SceneObject(Posable, Visualizable):
     """\
     Sprite-based scene object.
     """
-    def __init__(self, pose=Pose(), mount=None, config=None, planes=[],
-                 sprites=[]):
-        Posable.__init__(self, pose, mount, config, planes)
+    def __init__(self, pose=Pose(), mount=None, planes=[], sprites=[]):
+        Posable.__init__(self, pose, mount, planes)
         Visualizable.__init__(self, sprites)

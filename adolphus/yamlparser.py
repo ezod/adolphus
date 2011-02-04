@@ -105,13 +105,8 @@ def parse_scene(scene):
             # parse sprites and planes
             sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in item['sprites']])
             planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
-            # parse config
-            try:
-                config = item['config']
-            except KeyError:
-                config = None
             # create object
-            rscene[item['name']] = SceneObject(pose or Pose(), mount, config, planes, sprites)
+            rscene[item['name']] = SceneObject(pose or Pose(), mount, planes, sprites)
         elif item.has_key('z'):
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'], item['z'])
         else:
