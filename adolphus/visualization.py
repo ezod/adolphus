@@ -25,7 +25,10 @@ class Sprite(visual.frame):
         """\
         Constructor.
 
-        TODO
+        @param primitives: A formatted list of visual primitives.
+        @type primitives: C{dict}
+        @param parent: The parent object of this sprite.
+        @type parent: C{object}
         @param frame: The parent frame for the sprite.
         @type frame: L{visual.frame}
         """
@@ -78,8 +81,8 @@ class Visualizable(object):
         """\
         Constructor.
 
-        @param primitives: A list of sprite primitives.
-        @type primitives: C{list}
+        @param primitives: A list of sprite primitive sets.
+        @type primitives: C{list} of C{dict}
         """
         for primitive in primitives:
             try:
