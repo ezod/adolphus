@@ -17,8 +17,10 @@ from coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
 from geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from posable import Plane, SceneObject, Robot
 
+
 PATH = '.'
 MOUNTS = {}
+
 
 def parse_pose(pose):
     """\
@@ -132,8 +134,10 @@ def parse_scene(scene):
         else:
             mount = None
         if 'sprites' in item.keys():
-            # TODO: parse mount pose
-            mount_pose = Pose()
+            try:
+                mount_pose = parse_pose(item['mount_pose'])
+            except KeyError:
+                mount_pose = Pose()
             # parse sprites and planes
             sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in item['sprites']])
             planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
