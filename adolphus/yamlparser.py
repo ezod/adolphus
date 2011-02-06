@@ -34,8 +34,13 @@ def parse_pose(pose):
         R = Rotation(pose['R'])
     elif pose['Rformat'] == 'matrix':
         R = Rotation.from_rotation_matrix(pose['R'])
-    elif pose['Rformat'] == 'axis-angle':
-        return Rotation.from_axis_angle(pose['R'][0], pose['R'][1])
+    elif pose['Rformat'].startswith('axis-angle'):
+        unit = pose['Rformat'].split('-')[2]
+        if unit == 'deg':
+            angle = pose['R'][0] * pi / 180.0
+        else:
+            angle = pose['R'][0]
+        R = Rotation.from_axis_angle(angle, pose['R'][1])
     elif pose['Rformat'].startswith('euler'):
         convention, unit = pose['Rformat'].split('-')[1:]
         if unit == 'deg':
