@@ -69,7 +69,7 @@ class Posable(object):
         @return: The overall pose.
         @rtype: L{Pose}
         """
-        return self.pose + self._mount_pose
+        return self._mount_pose + self.pose
 
     def intersection(self, pa, pb):
         """\
@@ -193,23 +193,104 @@ class SceneObject(Posable, Visualizable):
     Sprite-based scene object.
     """
     def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None, planes=[],
-                 sprites=[]):
+                 primitives=[]):
         Posable.__init__(self, pose, mount_pose, mount, planes)
-        Visualizable.__init__(self, sprites)
+        Visualizable.__init__(self, primitives)
 
 
 class Robot(Posable):
     """\
     Sprite-based robot.
     """
-    def __init__(self, pose=Pose(), mount=None, pieces=[]):
+    def __init__(self, pose=Pose(), mount=None, pieces=[], config=None):
         super(Robot, self).__init__(pose, mount)
+        self.pieces = []
+        nextpose = Pose()
         for i, piece in enumerate(pieces):
+            offset = piece['offset']
             try:
                 mount = self.pieces[i - 1]
             except IndexError:
-                mount = self
-            # TODO: calculate DH parameters into mount_pose
-            mount_pose = Pose()
-            self.pieces[i] = SceneObject(mount_pose=mount_pose, mount=mount,
-                planes=piece['planes'], sprites=piece['primitives'])
+                mount = self.mount
+            try:
+                planes = piece['planes']
+            except KeyError:
+                planes = []
+            try:
+                primitives = piece['primitives']
+            except KeyError:
+                primitives = []
+            self.pieces.append(SceneObject(nextpose, offset, mount, planes,
+                primitives))
+            nextpose = self.generate_joint_pose(piece['joint'])
+        self._mount_pose = nextpose
+        self.joints = [piece['joint'] for piece in pieces]
+        self._config = [joint['home'] for joint in self.joints]
+        if config:
+            self.config = config
+
+    @property
+    def config(self):
+        """\
+        The configuration of the robot.
+
+        @rtype: C{list} of C{float}
+        """
+        return self._config
+
+    @config.setter
+    def config(self, value):
+        """\
+        Set the configuration of the robot.
+
+        @param value: The configuration of the robot.
+        @type value: C{list} of C{float}
+        """
+        if not len(value) == len(self.pieces):
+            raise ValueError('incorrect configuration length')
+        for i, position in enumerate(value):
+            try:
+                self.pieces[i + 1].pose = \
+                    self.generate_joint_pose(self.joints[i], position)
+            except IndexError:
+                self._mount_pose = \
+                    self.generate_joint_pose(self.joints[i], position)
+            self._config[i] = position
+
+    def mount_pose(self):
+        """\
+        Return the overall pose transformation to the tool end.
+
+        @return: The overall tool pose.
+        @rtype: L{Pose}
+        """
+        return self._mount_pose + self.pieces[-1].mount_pose()
+
+    @staticmethod
+    def generate_joint_pose(joint, position=None):
+        if position is None:
+            position = joint['home']
+        else:
+            if position < joint['limits'][0] or position > joint['limits'][1]:
+                raise ValueError('position out of joint range')
+        if joint['type'] == 'revolute':
+            position *= pi / 180.0
+            return Pose(R=Rotation.from_axis_angle(position, Point(joint['axis'])))
+        elif joint['type'] == 'prismatic':
+            return Pose(T=(position * Point(joint['axis'])))
+        else:
+            raise ValueError('invalid joint type')
+
+    def visualize(self):
+        """\
+        Visualize this robot.
+        """
+        for piece in self.pieces:
+            piece.visualize()
+
+    def update_visualization(self):
+        """\
+        Update this robot's visualization.
+        """
+        for piece in self.pieces:
+            piece.update_visualization()

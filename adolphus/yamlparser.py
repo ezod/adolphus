@@ -14,8 +14,8 @@ import yaml
 from math import pi
 
 from coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
-from geometry import Point, DirectionalPoint, Pose, Rotation
-from posable import Plane, SceneObject
+from geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
+from posable import Plane, SceneObject, Robot
 
 PATH = '.'
 MOUNTS = {}
@@ -31,7 +31,7 @@ def parse_pose(pose):
     """
     T = Point(pose['T'])
     if pose['Rformat'] == 'quaternion':
-        R = Rotation(pose['R'])
+        R = Rotation(Quaternion(pose['R']))
     elif pose['Rformat'] == 'matrix':
         R = Rotation.from_rotation_matrix(pose['R'])
     elif pose['Rformat'].startswith('axis-angle'):
@@ -93,6 +93,23 @@ def parse_planes(sprite):
         return []
 
 
+def parse_robot(robot):
+    """\
+    Parse a robot from YAML.
+
+    @param robot: The YAML list of the robot pieces.
+    @type robot: C{list}
+    @return: The parsed robot pieces.
+    @rtype: C{list}
+    """
+    if isinstance(robot, str):
+        robot = yaml.load(open(os.path.join(PATH, robot)))
+    pieces = robot['pieces']
+    for piece in pieces:
+        piece['offset'] = parse_pose(piece['offset'])
+    return pieces
+
+
 def parse_scene(scene):
     """\
     Parse a scene model from YAML.
@@ -110,11 +127,11 @@ def parse_scene(scene):
             pose = parse_pose(item['pose'])
         except KeyError:
             pose = None
-        try:
+        if 'mount' in item.keys():
             mount = MOUNTS[item['mount']]
-        except KeyError:
+        else:
             mount = None
-        if item.has_key('sprites'):
+        if 'sprites' in item.keys():
             # TODO: parse mount pose
             mount_pose = Pose()
             # parse sprites and planes
@@ -122,7 +139,14 @@ def parse_scene(scene):
             planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
             # create object
             rscene[item['name']] = SceneObject(pose or Pose(), mount_pose, mount, planes, sprites)
-        elif item.has_key('z'):
+        elif 'robot' in item.keys():
+            pieces = parse_robot(item['robot'])
+            try:
+                config = item['config']
+            except KeyError:
+                config = None
+            rscene[item['name']] = Robot(pose or Pose(), mount, pieces, config)
+        elif 'z' in item.keys():
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'], item['z'])
         else:
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'])
@@ -158,11 +182,10 @@ def parse_model(model, active=True):
             pose = parse_pose(camera['pose'])
         except KeyError:
             pose = Pose()
-        try:
+        if 'mount' in camera.keys():
             mount = MOUNTS[camera['mount']]
-        except KeyError:
+        else:
             mount = None
-        mount = None
         # parse sprites
         sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in camera['sprites']])
         sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6, 'text': camera['name']})
@@ -274,9 +297,9 @@ def parse_relevance(relevance):
         pose = parse_pose(relevance['pose'])
     except KeyError:
         pose = Pose()
-    try:
+    if 'mount' in relevance.keys():
         mount = MOUNTS[relevance['mount']]
-    except KeyError:
+    else:
         mount = None
     return RelevanceModel(whole_model, pose=pose, mount=mount)
 
