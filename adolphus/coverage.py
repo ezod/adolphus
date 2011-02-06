@@ -141,6 +141,7 @@ class Camera(Posable, Visualizable):
             * sin(self.fov['ah'] / 2.0)
         gv = (params['gamma'] / float(params['dim'][1])) * 2.0 \
             * sin(self.fov['av'] / 2.0)
+        # TODO: handle gh = 0, gv = 0
         self.Cv = lambda p: p.z > 0 and min(min(max((min(p.x / p.z + \
             sin(self.fov['ahl']), sin(self.fov['ahr']) - p.x / p.z) / gh), 0.0),
             1.0), min(max((min(p.y / p.z + sin(self.fov['avt']),
@@ -150,10 +151,12 @@ class Camera(Posable, Visualizable):
                   float(params['dim'][1]) / (2 * sin(self.fov['av'] / 2.0))])
         zr1 = (1.0 / params['r1']) * mr
         zr2 = (1.0 / params['r2']) * mr
+        # TODO: handle zr2 = zr1
         self.Cr = lambda p: min(max((zr2 - p.z) / (zr2 - zr1), 0.0), 1.0)
         # focus
         zl, zr = self.zc(min(params['s']))
         zn, zf = self.zc(params['cmax'])
+        # TODO: handle cmax = cmin
         self.Cf = lambda p: min(max(min((p.z - zn) / (zl - zn),
             (zf - p.z) / (zf - zr)), 0.0), 1.0)
         # direction
