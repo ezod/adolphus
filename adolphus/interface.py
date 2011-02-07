@@ -12,7 +12,7 @@ import pyximport; pyximport.install()
 import yaml
 from math import copysign
 
-from geometry import Point, DirectionalPoint, Rotation, Pose
+from geometry import Point, DirectionalPoint, Rotation
 from visualization import visual, VisualizationError, Sprite, Visualizable
 
 
@@ -187,6 +187,7 @@ class Experiment(object):
         self.model = model
         self.relevance_models = relevance_models
         self.coverage = {}
+        self.fovvis = {}
 
         # load and parse config file
         if config_file:
@@ -299,10 +300,14 @@ class Experiment(object):
 
         def cmd_fov(args):
             """name"""
-            try:
-                self.model[args[0]].visualize_fov_toggle()
-            except KeyError:
-                self.display.message('Invalid camera name.')
+            if args[0] in self.fovvis.keys():
+                self.fovvis[args[0]].visible = not self.fovvis[args[0]].visible
+            else:
+                try:
+                    self.fovvis[args[0]] = Sprite(self.model[args[0]].fovvis)
+                    self.fovvis[args[0]].frame = self.model[args[0]].actuals['main']
+                except KeyError:
+                    self.display.message('Invalid camera name.')
 
         def cmd_active(args):
             """name"""
@@ -400,7 +405,9 @@ class Experiment(object):
                     zoom = False
                 elif m.click == 'left' and m.pick in cam_vis:
                     if m.ctrl:
-                        m.pick.frame.parent.visualize_fov_toggle()
+                        for camera in self.model.keys():
+                            if m.pick.frame.parent == self.model[camera]:
+                                self.execute('fov %s' % camera)
                     elif m.alt:
                         try:
                             for camera in self.model.keys():

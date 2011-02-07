@@ -176,6 +176,45 @@ class Camera(Posable, Visualizable):
         self.Cd = Cd
         # active
         self.active = active
+        # fov sprite
+        zm = min(zf, zr2)
+        self.fovvis = \
+            [{'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahl'] * zn, self.fov['savt'] * zn, zn),
+                      (self.fov['sahl'] * zn, self.fov['savb'] * zn, zn),
+                      (self.fov['sahr'] * zn, self.fov['savb'] * zn, zn),
+                      (self.fov['sahr'] * zn, self.fov['savt'] * zn, zn),
+                      (self.fov['sahl'] * zn, self.fov['savt'] * zn, zn)]},
+             {'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahl'] * zm, self.fov['savt'] * zm, zm),
+                      (self.fov['sahl'] * zm, self.fov['savb'] * zm, zm),
+                      (self.fov['sahr'] * zm, self.fov['savb'] * zm, zm),
+                      (self.fov['sahr'] * zm, self.fov['savt'] * zm, zm),
+                      (self.fov['sahl'] * zm, self.fov['savt'] * zm, zm)]},
+             {'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahl'] * zl, self.fov['savt'] * zl, zl),
+                      (self.fov['sahl'] * zl, self.fov['savb'] * zl, zl),
+                      (self.fov['sahr'] * zl, self.fov['savb'] * zl, zl),
+                      (self.fov['sahr'] * zl, self.fov['savt'] * zl, zl),
+                      (self.fov['sahl'] * zl, self.fov['savt'] * zl, zl)]},
+             {'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahl'] * zr, self.fov['savt'] * zr, zr),
+                      (self.fov['sahl'] * zr, self.fov['savb'] * zr, zr),
+                      (self.fov['sahr'] * zr, self.fov['savb'] * zr, zr),
+                      (self.fov['sahr'] * zr, self.fov['savt'] * zr, zr),
+                      (self.fov['sahl'] * zr, self.fov['savt'] * zr, zr)]},
+             {'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahl'] * zn, self.fov['savt'] * zn, zn),
+                      (self.fov['sahl'] * zm, self.fov['savt'] * zm, zm)]},
+             {'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahl'] * zn, self.fov['savb'] * zn, zn),
+                      (self.fov['sahl'] * zm, self.fov['savb'] * zm, zm)]},
+             {'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahr'] * zn, self.fov['savb'] * zn, zn),
+                      (self.fov['sahr'] * zm, self.fov['savb'] * zm, zm)]},
+             {'type': 'curve', 'color': (1, 0, 0),
+              'pos': [(self.fov['sahr'] * zn, self.fov['savt'] * zn, zn),
+                      (self.fov['sahr'] * zm, self.fov['savt'] * zm, zm)]}]
 
     @property
     def fov(self):
