@@ -13,8 +13,8 @@ from math import pi
 from numbers import Number
 import numpy
 
-from geometry import Point, Pose, Rotation
-from visualization import Visualizable
+from .geometry import Point, Pose, Rotation
+from .visualization import Visualizable
 
 
 class Posable(object):

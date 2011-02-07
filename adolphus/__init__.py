@@ -20,10 +20,10 @@ __name__ = 'adolphus'
 
 import pyximport; pyximport.install()
 
-from geometry import *
-from posable import *
-from graph import *
-from coverage import *
-from interface import *
-from visualization import *
-from yamlparser import *
+from .geometry import *
+from .posable import *
+from .graph import *
+from .coverage import *
+from .interface import *
+from .visualization import *
+from .yamlparser import *

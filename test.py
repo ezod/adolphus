@@ -13,7 +13,7 @@ import unittest
 from math import pi
 
 import adolphus as A
-print "Adolphus imported from '%s'" % A.__path__[0]
+print('Adolphus imported from "%s"' % A.__path__[0])
 
 
 class TestGeometry(unittest.TestCase):

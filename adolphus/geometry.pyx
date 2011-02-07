@@ -8,8 +8,9 @@ geometric descriptor functions for features.
 @license: GPL-3
 """
 
-from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 import numpy
+from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
+from functools import reduce
 
 
 class Angle(float):

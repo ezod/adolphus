@@ -12,8 +12,8 @@ import pyximport; pyximport.install()
 import yaml
 from math import copysign
 
-from geometry import Point, DirectionalPoint, Rotation
-from visualization import visual, VisualizationError, Sprite, Visualizable
+from .geometry import Point, DirectionalPoint, Rotation
+from .visualization import visual, VisualizationError, Sprite, Visualizable
 
 
 class Display(visual.display):

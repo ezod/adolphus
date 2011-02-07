@@ -12,10 +12,11 @@ import pyximport; pyximport.install()
 import os
 import yaml
 from math import pi
+from functools import reduce
 
-from coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
-from geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
-from posable import Plane, SceneObject, Robot
+from .coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
+from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
+from .posable import Plane, SceneObject, Robot
 
 
 PATH = '.'

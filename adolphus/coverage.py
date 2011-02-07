@@ -15,9 +15,9 @@ from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
 
-from geometry import Point, DirectionalPoint, Pose
-from posable import Posable
-from visualization import Visualizable
+from .geometry import Point, DirectionalPoint, Pose
+from .posable import Posable
+from .visualization import Visualizable
 
 
 class PointCache(dict):
