@@ -445,10 +445,13 @@ class Experiment(object):
                 newpos = self.display.mouse.project(normal=self.display.forward,
                     point=self.modifier.pos)
                 if newpos != lastpos:
-                    self.modifier.parent._pose.T = \
-                        self.modifier.parent._pose.T + \
-                        (-self.modifier.parent.mount.mount_pose()).R.rotate(\
-                        moving * (newpos * moving - lastpos * moving))
+                    if self.modifier.parent.mount:
+                        self.modifier.parent._pose.T += \
+                            (-self.modifier.parent.mount.mount_pose()).R.rotate\
+                            (moving * (newpos * moving - lastpos * moving))
+                    else:
+                        self.modifier.parent._pose.T += \
+                            moving * (newpos * moving - lastpos * moving)
                     self.modifier.pos = self.modifier.parent.pose.T
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
