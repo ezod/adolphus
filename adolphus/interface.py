@@ -12,7 +12,7 @@ import pyximport; pyximport.install()
 import yaml
 from math import copysign
 
-from geometry import Point, DirectionalPoint, Rotation
+from geometry import Point, DirectionalPoint, Rotation, Pose
 from visualization import visual, VisualizationError, Sprite, Visualizable
 
 
@@ -208,25 +208,19 @@ class Experiment(object):
 
         # camera modifier
         primitives = []
-        for arrow in [['xp', (3, 0, 0)],
-                      ['xn', (-3, 0, 0)],
-                      ['yp', (0, 3, 0)],
-                      ['yn', (0, -3, 0)],
-                      ['zp', (0, 0, 3)],
-                      ['zn', (0, 0, -3)]]:
+        for arrow in [(90, 0, 0), (-90, 0, 0), (0, 90, 0),
+                      (0, -90, 0), (0, 0, 90), (0, 0, -90)]:
             primitives.append({'type':          'arrow',
-                               'pos':           arrow[1],
-                               'axis':          arrow[1],
-                               'shaftwidth':    0.4,
+                               'pos':           arrow,
+                               'axis':          arrow,
+                               'shaftwidth':    10,
                                'color':         [0, 0.25, 0.75],
                                'material':      visual.materials.emissive})
-        for ring in [['rotx', (1, 0, 0)],
-                     ['roty', (0, 1, 0)],
-                     ['rotz', (0, 0, 1)]]:
+        for ring in [(30, 0, 0), (0, 30, 0), (0, 0, 30)]:
             primitives.append({'type':          'ring',
-                               'radius':        3,
-                               'thickness':     0.2,
-                               'axis':          ring[1],
+                               'radius':        90,
+                               'thickness':     6,
+                               'axis':          ring,
                                'color':         [0, 0.25, 0.75],
                                'material':      visual.materials.emissive})
         self.modifier = Sprite(primitives)
@@ -250,7 +244,8 @@ class Experiment(object):
                 p = DirectionalPoint([float(args[i]) for i in range(5)])
             else:
                 raise ValueError
-            self.display.message(u'\u03bc%s = %.4f' % (p, self.model.strength(p)))
+            self.display.message(u'\u03bc%s = %.4f' \
+                % (p, self.model.strength(p)))
 
         def cmd_axes(args):
             self.display.axes.visible = not self.display.axes.visible
@@ -326,10 +321,13 @@ class Experiment(object):
                 if not args:
                     args = self.relevance_models.keys()
                 for arg in args:
-                    self.coverage[arg] = self.model.coverage(self.relevance_models[arg])
+                    self.coverage[arg] = \
+                        self.model.coverage(self.relevance_models[arg])
                     self.coverage[arg].visualize()
-                    performance[arg] = self.model.performance(self.relevance_models[arg], coverage=self.coverage[arg])
-                self.display.message('\n'.join(['%s: %.4f' % (key, performance[key]) for key in performance.keys()]))
+                    performance[arg] = self.model.performance(\
+                        self.relevance_models[arg], coverage=self.coverage[arg])
+                self.display.message('\n'.join(['%s: %.4f' % (key,
+                    performance[key]) for key in performance.keys()]))
             except KeyError:
                 self.display.message('Invalid relevance model name.')
             except ValueError:
@@ -373,9 +371,10 @@ class Experiment(object):
         """\
         Run this experiment.
         """
-        axes = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}
         self.model.visualize()
-        cam_vis = [primitive for objects in [self.model[cam].actuals['main'].objects for cam in self.model] for primitive in objects]
+        cam_vis = [primitive for objects in \
+            [self.model[cam].actuals['main'].objects for cam in self.model] \
+            for primitive in objects]
         zoom = False
         spin = False
         moving = None
@@ -420,39 +419,34 @@ class Experiment(object):
                         m.pick.frame.parent.active = \
                             not m.pick.frame.parent.active
                         m.pick.frame.parent.update_visualization()
-                elif m.drag == 'left' and m.pick in self.modifier.primitives:
-                    for name in self.modifier.members.keys():
-                        if m.pick == self.modifier.members[name]:
-                            if name.startswith('rot'):
-                                rotating = name[3]
-                                lastpos = self.display.mouse.project(normal=\
-                                    axes[rotating], point=self.modifier.pos)
-                                m.pick.color = (0, 1, 0)
-                            else:
-                                moving = name[0]
-                                lastpos = self.display.mouse.project(normal=\
-                                    self.display.forward,
-                                    point=self.modifier.pos)
-                                for name in self.modifier.members.keys():
-                                    if moving and name.startswith(moving):
-                                        self.modifier.members[name].color = (0, 1, 0)
+                elif m.drag == 'left' and m.pick in self.modifier.objects:
+                    m.pick.color = (0, 1, 0)
+                    if isinstance(m.pick, visual.arrow):
+                        moving = Point(m.pick.axis).normal
+                        lastpos = self.display.mouse.project(normal=\
+                            self.display.forward, point=self.modifier.pos)
+                    else:
+                        rotating = Point(m.pick.axis).normal
+                        lastpos = self.display.mouse.project(normal=rotating,
+                            point=self.modifier.pos)
                 elif m.drop == 'left' and (moving or rotating):
-                    for name in self.modifier.members.keys():
-                        self.modifier.members[name].color = (0, 0.25, 0.75)
+                    for member in self.modifier.objects:
+                        member.color = (0, 0.25, 0.75)
                     moving = None
                     rotating = None
             elif moving:
                 newpos = self.display.mouse.project(normal=self.display.forward,
                     point=self.modifier.pos)
                 if newpos != lastpos:
-                    self.modifier.parent.pose.T = self.modifier.parent.pose.T \
-                        + (Point(axes[moving]) * (getattr(newpos, moving) \
-                        - getattr(lastpos, moving)))
+                    self.modifier.parent._pose.T = \
+                        self.modifier.parent._pose.T + \
+                        (-self.modifier.parent.mount.mount_pose()).R.rotate(\
+                        moving * (newpos * moving - lastpos * moving))
                     self.modifier.pos = self.modifier.parent.pose.T
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif rotating:
-                newpos = self.display.mouse.project(normal=axes[rotating],
+                newpos = self.display.mouse.project(normal=rotating,
                     point=self.modifier.pos)
                 if newpos != lastpos:
                     planex = -self.display.up.cross(self.display.forward)
@@ -460,10 +454,9 @@ class Experiment(object):
                     zdiff = (lastpos - newpos).proj(planey)
                     if zdiff.mag < self.display.rmin / 10.0:
                         continue
-                    self.modifier.parent.pose.R += \
-                        Rotation.from_axis_angle(copysign(zdiff.mag,
-                        zdiff.z) * 0.01, (-self.modifier.parent.pose\
-                        ).R.rotate(Point(axes[rotating])))
+                    self.modifier.parent._pose.R += Rotation.from_axis_angle(\
+                        copysign(zdiff.mag, zdiff.z) * 0.01,
+                        (-self.modifier.parent.pose).R.rotate(rotating))
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif zoom:
