@@ -1,0 +1,3 @@
+[submodule "hypergraph"]
+	path = hypergraph
+	url = git://github.com/ezod/hypergraph.git
