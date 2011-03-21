@@ -174,49 +174,25 @@ class Camera(Posable, Visualizable):
                 termb = atan(r / p.z)
             except ZeroDivisionError:
                 termb = pi / 2.0
-            return min(max((float(p.rho) - (terma * termb) - pi + self.params['zeta2']) / (self.params['zeta2'] - self.params['zeta1']), 0.0), 1.0)
+            return min(max((float(p.rho) - (terma * termb) - pi + \
+                self.params['zeta2']) / (self.params['zeta2'] - \
+                self.params['zeta1']), 0.0), 1.0)
         self.Cd = Cd
         # active
         self.active = active
         # fov sprite
         zm = min(zf, zr2)
+        hull = []
+        for z in [zn, zm, zl, zr]:
+            hull += [(self.fov['sahl'] * z, self.fov['savt'] * z, z),
+                     (self.fov['sahl'] * z, self.fov['savb'] * z, z),
+                     (self.fov['sahr'] * z, self.fov['savb'] * z, z),
+                     (self.fov['sahr'] * z, self.fov['savt'] * z, z)]
         self.fovvis = \
             [{'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahl'] * zn, self.fov['savt'] * zn, zn),
-                      (self.fov['sahl'] * zn, self.fov['savb'] * zn, zn),
-                      (self.fov['sahr'] * zn, self.fov['savb'] * zn, zn),
-                      (self.fov['sahr'] * zn, self.fov['savt'] * zn, zn),
-                      (self.fov['sahl'] * zn, self.fov['savt'] * zn, zn)]},
-             {'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahl'] * zm, self.fov['savt'] * zm, zm),
-                      (self.fov['sahl'] * zm, self.fov['savb'] * zm, zm),
-                      (self.fov['sahr'] * zm, self.fov['savb'] * zm, zm),
-                      (self.fov['sahr'] * zm, self.fov['savt'] * zm, zm),
-                      (self.fov['sahl'] * zm, self.fov['savt'] * zm, zm)]},
-             {'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahl'] * zl, self.fov['savt'] * zl, zl),
-                      (self.fov['sahl'] * zl, self.fov['savb'] * zl, zl),
-                      (self.fov['sahr'] * zl, self.fov['savb'] * zl, zl),
-                      (self.fov['sahr'] * zl, self.fov['savt'] * zl, zl),
-                      (self.fov['sahl'] * zl, self.fov['savt'] * zl, zl)]},
-             {'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahl'] * zr, self.fov['savt'] * zr, zr),
-                      (self.fov['sahl'] * zr, self.fov['savb'] * zr, zr),
-                      (self.fov['sahr'] * zr, self.fov['savb'] * zr, zr),
-                      (self.fov['sahr'] * zr, self.fov['savt'] * zr, zr),
-                      (self.fov['sahl'] * zr, self.fov['savt'] * zr, zr)]},
-             {'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahl'] * zn, self.fov['savt'] * zn, zn),
-                      (self.fov['sahl'] * zm, self.fov['savt'] * zm, zm)]},
-             {'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahl'] * zn, self.fov['savb'] * zn, zn),
-                      (self.fov['sahl'] * zm, self.fov['savb'] * zm, zm)]},
-             {'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahr'] * zn, self.fov['savb'] * zn, zn),
-                      (self.fov['sahr'] * zm, self.fov['savb'] * zm, zm)]},
-             {'type': 'curve', 'color': (1, 0, 0),
-              'pos': [(self.fov['sahr'] * zn, self.fov['savt'] * zn, zn),
-                      (self.fov['sahr'] * zm, self.fov['savt'] * zm, zm)]}]
+              'pos': hull[i:i + 4] + hull[i:i + 1]} for i in range(0, 16, 4)] +\
+            [{'type': 'curve', 'color': (1, 0, 0),
+              'pos': [hull[i], hull[i + 4]]} for i in range(4)]
 
     @property
     def fov(self):
@@ -339,20 +315,17 @@ class MultiCamera(dict):
     """\
     Multi-camera n-ocular coverage strength model.
     """
-    def __init__(self, name='Untitled', ocular=1, scene=Scene()):
+    def __init__(self, name='Untitled', scene=Scene()):
         """\
         Constructor.
    
         @param name: The name of this model.
         @type name: C{str}
-        @param ocular: Mutual camera coverage degree.
-        @type ocular: C{int}
         @param scene: The discrete scene model.
         @type scene: L{Scene}
         """
         dict.__init__(self)
         self.name = name
-        self.ocular = ocular
         self.scene = scene
 
     @property
@@ -364,21 +337,25 @@ class MultiCamera(dict):
         """
         return [key for key in self.keys() if self[key].active]
     
-    def strength(self, point):
+    def strength(self, point, ocular=1, subset=None):
         """\
         Return the individual coverage strength of a point in the coverage
         strength model.
 
         @param point: The (directional) point to test.
         @type point: L{Point}
+        @param ocular: Mutual camera coverage degree.
+        @type ocular: C{int}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
-        active_cameras = self.active_cameras
-        if len(active_cameras) < self.ocular:
+        active_cameras = subset or self.active_cameras
+        if len(active_cameras) < ocular:
             raise ValueError('network has too few active cameras')
         maxstrength = 0.0
-        for combination in combinations(active_cameras, self.ocular):
+        for combination in combinations(active_cameras, ocular):
             minstrength = float('inf')
             for camera in combination:
                 strength = self[camera].strength(point)
@@ -390,22 +367,26 @@ class MultiCamera(dict):
             maxstrength = max(maxstrength, minstrength)
         return maxstrength
 
-    def coverage(self, relevance):
+    def coverage(self, relevance, ocular=1, subset=None):
         """\
         Return the coverage model of this multi-camera network with respect to
         the points in a given relevance model.
 
         @param relevance: The relevance model.
         @type relevance: L{RelevanceModel}
+        @param ocular: Mutual camera coverage degree.
+        @type ocular: C{int}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
         @return: The coverage model.
         @rtype: L{PointCache}
         """
         coverage = PointCache()
         for point in relevance.mapped.keys():
-            coverage[point] = self.strength(point)
+            coverage[point] = self.strength(point, ocular, subset)
         return coverage
 
-    def performance(self, relevance, coverage=None):
+    def performance(self, relevance, ocular=1, coverage=None):
         """\
         Return the coverage performance of this multi-camera network with
         respect to a given relevance model. If a previously computed coverage
@@ -414,14 +395,38 @@ class MultiCamera(dict):
 
         @param relevance: The relevance model.
         @type relevance: L{RelevanceModel}
+        @param ocular: Mutual camera coverage degree.
+        @type ocular: C{int}
         @param coverage: Previously computed coverage cache for these points.
         @type coverage: L{PointCache}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
-        coverage = coverage or self.coverage(relevance)
+        coverage = coverage or self.coverage(relevance, ocular)
         return sum((coverage & relevance.mapped).values()) \
             / sum(relevance.mapped.values())
+
+    def coverage_hypergraph(self, relevance, K=None):
+        """\
+        Return the coverage hypergraph of this multi-camera network. If K is
+        specified, return the K-coverage hypergraph.
+
+        @param relevance: The relevance model.
+        @type relevance: L{RelevanceModel}
+        @param K: A set of possible hyperedge sizes.
+        @type K: C{set} of C{int}
+        @return: The coverage hypergraph.
+        @rtype: L{Hypergraph}
+        """
+        H = Hypergraph(vertices=self.keys())
+        if K is None:
+            K = set(range(1, len(self.keys()) + 1))
+        active_cameras = self.active_cameras
+        for k in K:
+            for subset in combinations(active_cameras, k):
+                H.add_edge(Edge(subset), weight=sum(self.coverage(relevance,
+                    len(subset), subset).values()))
+        return H
 
     def visualize(self):
         """\

@@ -11,6 +11,7 @@ import pyximport; pyximport.install()
 
 import yaml
 from math import copysign
+from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
 from .geometry import Point, DirectionalPoint, Rotation
 from .visualization import visual, VisualizationError, Sprite, Visualizable
@@ -65,6 +66,10 @@ class Display(visual.display):
 
     def shift_center(self, direction=None):
         """\
+        Shift the center of the view.
+
+        @param direction: The vector by which to shift the center.
+        @type direction: L{visual.vector}
         """
         if direction is None:
             direction = -self.center
@@ -238,7 +243,8 @@ class Experiment(object):
                 float(args[2])))
 
         def cmd_strength(args):
-            """x y z [rho eta]"""
+            """ocular x y z [rho eta]"""
+            ocular = int(args.pop(0))
             if len(args) == 3:
                 p = Point([float(args[i]) for i in range(3)])
             elif len(args) == 5:
@@ -246,7 +252,7 @@ class Experiment(object):
             else:
                 raise ValueError
             self.display.message(u'\u03bc%s = %.4f' \
-                % (p, self.model.strength(p)))
+                % (p, self.model.strength(p, ocular=ocular)))
 
         def cmd_axes(args):
             self.display.axes.visible = not self.display.axes.visible
@@ -318,19 +324,22 @@ class Experiment(object):
                 self.display.message('Invalid camera name.')
 
         def cmd_coverage(args):
-            """name"""
+            """ocular name*"""
             try:
                 self.display.message('Calculating coverage...')
                 self.display.userspin = False
                 performance = {}
+                ocular = int(args.pop(0))
                 if not args:
                     args = self.relevance_models.keys()
                 for arg in args:
                     self.coverage[arg] = \
-                        self.model.coverage(self.relevance_models[arg])
+                        self.model.coverage(self.relevance_models[arg],
+                        ocular=ocular)
                     self.coverage[arg].visualize()
                     performance[arg] = self.model.performance(\
-                        self.relevance_models[arg], coverage=self.coverage[arg])
+                        self.relevance_models[arg], ocular=ocular,
+                        coverage=self.coverage[arg])
                 self.display.message('\n'.join(['%s: %.4f' % (key,
                     performance[key]) for key in performance.keys()]))
             except KeyError:
@@ -343,6 +352,26 @@ class Experiment(object):
         def cmd_clear(args):
             for key in self.coverage.keys():
                 del self.coverage[key]
+
+        def cmd_distribute(args):
+            """name"""
+            try:
+                self.display.message('Calculating coverage hypergraph...')
+                self.display.userspin = False
+                L = minimum_maximum_weighted_indegree_orientation(self.model.\
+                    coverage_hypergraph(self.relevance_models[args[0]]))
+                D = {}
+                for edge in L.edges:
+                    try:
+                        D[edge.head].append(frozenset(edge))
+                    except KeyError:
+                        D[edge.head] = [frozenset(edge)]
+                print(D)
+                self.display.message()
+            except KeyError:
+                self.display.message('Invalid relevance model name.')
+            finally:
+                self.display.userspin = True
 
         def cmd_eval(args):
             """code"""
@@ -381,7 +410,6 @@ class Experiment(object):
             [self.model[cam].actuals['main'].objects for cam in self.model] \
             for primitive in objects]
         zoom = False
-        spin = False
         moving = None
         rotating = None
         msgctr = 0

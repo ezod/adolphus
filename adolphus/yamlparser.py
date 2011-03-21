@@ -175,7 +175,7 @@ def parse_model(model, active=True):
         scene = parse_scene(model['scene'])
     else:
         scene = Scene()
-    rmodel = MultiCamera(model['name'], model['ocular'], scene)
+    rmodel = MultiCamera(model['name'], scene)
     for i in [1, 2]:
         if model['zeta%d' % i] == 'max':
             model['zeta%d' % i] = pi / 2.0
@@ -323,6 +323,9 @@ def parse_experiment(filename, active=True):
     experiment = yaml.load(open(filename))
     model = parse_model(experiment['model'], active=active)
     relevances = {}
-    for relevance in experiment['relevance']:
-        relevances[relevance['name']] = parse_relevance(relevance)
+    try:
+        for relevance in experiment['relevance']:
+            relevances[relevance['name']] = parse_relevance(relevance)
+    except KeyError:
+        pass
     return model, relevances
