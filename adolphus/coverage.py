@@ -427,8 +427,10 @@ class MultiCamera(dict):
         active_cameras = self.active_cameras
         for k in K:
             for subset in combinations(active_cameras, k):
-                H.add_edge(Edge(subset), weight=sum(self.coverage(relevance,
-                    len(subset), subset).values()))
+                weight = sum(self.coverage(relevance, len(subset),
+                    subset).values())
+                if weight:
+                    H.add_edge(Edge(subset), weight=weight)
         return H
 
     def visualize(self):
