@@ -359,7 +359,10 @@ class MultiCamera(dict):
             minstrength = float('inf')
             for camera in combination:
                 strength = self[camera].strength(point)
-                if strength and strength < minstrength:
+                if not strength:
+                    minstrength = 0.0
+                    break
+                elif strength < minstrength:
                     minstrength = strength * (not self.scene.occluded(point,
                         self[camera].pose.T))
             if minstrength > 1.0:
