@@ -11,11 +11,14 @@ def main():
         help="custom configuration file to load")
     parser.add_option("-i", "--inactive", dest="active", default=True,
         action="store_false", help="cameras are inactive by default")
+    parser.add_option("-z", "--zoom", dest="zoom", default=False,
+        action="store_true", help="disable camera view and use visual zoom")
 
     (options, args) = parser.parse_args()
 
     model, relevances = parse_experiment(args[0], active=options.active)
-    Experiment(model, relevance_models=relevances, config_file=options.conf).run()
+    Experiment(model, relevance_models=relevances, config_file=options.conf,
+               zoom=options.zoom).run()
 
 
 if __name__ == '__main__':

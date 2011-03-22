@@ -21,7 +21,7 @@ class Display(visual.display):
     """\
     Visual display class.
     """
-    def __init__(self, name='Untitled Model', center=(0, 0, 0),
+    def __init__(self, name='Untitled Model', zoom=False, center=(0, 0, 0),
                  background=(1, 1, 1), foreground=(0.3, 0.3, 0.3)):
         """\
         Contstructor.
@@ -39,10 +39,10 @@ class Display(visual.display):
             center=center, background=background, foreground=foreground)
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
-        self.userzoom = False
+        self.userzoom = zoom
         self.range = 1500
         self.rmin = 30
-        self.rmax = 9000
+        self.rmax = 18000
         self._stored_view = None
 
         # center marker
@@ -177,7 +177,8 @@ class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model, relevance_models={}, config_file=None):
+    def __init__(self, model, relevance_models={}, config_file=None,
+                 zoom=False):
         """\
         Constructor.
 
@@ -191,6 +192,7 @@ class Experiment(object):
 
         self.model = model
         self.relevance_models = relevance_models
+        self.zoom = zoom
         self.coverage = {}
         self.fovvis = {}
 
@@ -207,7 +209,7 @@ class Experiment(object):
             self.keybindings = {}
 
         # main display
-        self.display = Display(name=model.name)
+        self.display = Display(name=model.name, zoom=zoom)
         Visualizable.displays['main'] = self.display
         self.display.select()
         self.rate = 50
@@ -279,6 +281,8 @@ class Experiment(object):
 
         def cmd_camview(args):
             """name"""
+            if self.zoom:
+                return
             if len(args):
                 try:
                     self.display.camera_view(self.model[args[0]])
@@ -426,7 +430,8 @@ class Experiment(object):
             # process mouse events
             if self.display.mouse.events:
                 m = self.display.mouse.getevent()
-                if m.drag == 'middle' and not self.display.in_camera_view:
+                if m.drag == 'middle' and not self.display.in_camera_view \
+                and not self.zoom:
                     zoom = True
                     lastpos = m.pos
                 elif m.drop == 'middle':
