@@ -96,7 +96,7 @@ class RelevanceModel(Posable):
         try:
             return self._mapped
         except AttributeError:
-            self._mapped = {}
+            self._mapped = PointCache()
             for point in self.original.keys():
                 self._mapped[self.pose.map(point)] = self.original[point]
             return self._mapped
