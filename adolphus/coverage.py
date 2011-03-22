@@ -183,7 +183,7 @@ class Camera(Posable, Visualizable):
         # fov sprite
         zm = min(zf, zr2)
         hull = []
-        for z in [zn, zm, zl, zr]:
+        for z in [zn, zm]:
             hull += [(self.fov['sahl'] * z, self.fov['savt'] * z, z),
                      (self.fov['sahl'] * z, self.fov['savb'] * z, z),
                      (self.fov['sahr'] * z, self.fov['savb'] * z, z),
@@ -417,20 +417,43 @@ class MultiCamera(dict):
         @param relevance: The relevance model.
         @type relevance: L{RelevanceModel}
         @param K: A set of possible hyperedge sizes.
-        @type K: C{set} of C{int}
+        @type K: C{list} of C{int}
         @return: The coverage hypergraph.
         @rtype: L{Hypergraph}
         """
         H = Hypergraph(vertices=self.keys())
         if K is None:
-            K = set(range(1, len(self.keys()) + 1))
+            K = range(2, len(self.keys()) + 1)
+        else:
+            K.sort()
         active_cameras = self.active_cameras
+        cache = {}
+        for camera in active_cameras:
+            print('Computing single-camera coverage for %s...' % camera)
+            subset = frozenset([camera])
+            cache[subset] = self.coverage(relevance, subset=subset)
+            weight = sum(cache[subset].values())
+            if weight:
+                H.add_edge(Edge(subset), weight=weight)
+                print('    Edge added with weight %f.' % weight)
         for k in K:
+            if k < 2:
+                continue
             for subset in combinations(active_cameras, k):
-                weight = sum(self.coverage(relevance, len(subset),
-                    subset).values())
+                print('Computing multi-camera coverage for %s...' % (subset,))
+                if not all([frozenset(sc) in cache.keys() \
+                for sc in combinations(subset, k - 1)]):
+                    continue
+                subset = frozenset(subset)
+                sc = set(subset)
+                ec = sc.pop()
+                cache[subset] = cache[frozenset(sc)] & cache[frozenset([ec])]
+                weight = sum(cache[subset].values())
                 if weight:
                     H.add_edge(Edge(subset), weight=weight)
+                    print('    Edge added with weight %f.' % weight)
+                else:
+                    del cache[subset]
         return H
 
     def visualize(self):
