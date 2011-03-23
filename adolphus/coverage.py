@@ -27,12 +27,16 @@ class PointCache(dict):
     Point cache class.
     """
     def __or__(self, other):
-        result = self.__class__()
-        for point in self.keys():
-            result[point] = self[point]
-        for point in other.keys():
-            if not point in result.keys() or result[point] < other[point]:
-                result[point] = other[point]
+        if len(self) < len(other):
+            ds = self
+            dl = other
+        else:
+            ds = other
+            dl = self
+        result = self.__class__(dl)
+        for point, value in ds.iteritems():
+            if not point in result or result[point] < value:
+                result[point] = value
         return result
 
     def __ior__(self, other):
@@ -40,10 +44,18 @@ class PointCache(dict):
         return self
 
     def __and__(self, other):
-        result = self.__class__()
-        for point in self.keys():
-            if point in other.keys():
-                result[point] = min(self[point], other[point])
+        if len(self) < len(other):
+            ds = self
+            dl = other
+        else:
+            ds = other
+            dl = self
+        result = self.__class__(dl)
+        for point, value in ds.iteritems():
+            if not point in result:
+                result[point] = value
+            else:
+                result[point] = min(result[point], value)
         return result
 
     def __iand__(self, other):
