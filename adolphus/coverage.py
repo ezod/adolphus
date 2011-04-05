@@ -448,24 +448,30 @@ class MultiCamera(dict):
             if weight:
                 H.add_edge(Edge(subset), weight=weight)
                 print('    Edge added with weight %f.' % weight)
+        pk = 1
         for k in K:
             if k < 2:
                 continue
             for subset in combinations(active_cameras, k):
                 print('Computing multi-camera coverage for %s...' % (subset,))
                 if not all([frozenset(sc) in cache.keys() \
-                for sc in combinations(subset, k - 1)]):
+                for sc in combinations(subset, pk)]):
                     continue
                 subset = frozenset(subset)
                 sc = set(subset)
-                ec = sc.pop()
-                cache[subset] = cache[frozenset(sc)] & cache[frozenset([ec])]
+                ec = set()
+                for i in range(k - pk):
+                    ec.add(sc.pop())
+                cache[subset] = cache[frozenset(sc)] 
+                while ec:
+                    cache[subset] &= cache[frozenset([ec.pop()])]
                 weight = sum(cache[subset].values())
-                if weight:
+                if weight > 1e-4:
                     H.add_edge(Edge(subset), weight=weight)
                     print('    Edge added with weight %f.' % weight)
                 else:
                     del cache[subset]
+            pk = k
         return H
 
     def visualize(self):
