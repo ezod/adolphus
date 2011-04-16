@@ -18,6 +18,9 @@ from .coverage import MultiCamera
 from .visualization import visual, VisualizationError, Sprite, Visualizable
 from .yamlparser import parse_experiment
 
+if visual:
+    from visual.filedialog import get_file
+
 
 class Display(visual.display):
     """\
@@ -203,14 +206,19 @@ class Experiment(object):
         def cmd_open(args):
             """filename"""
             del self.model
-            self.model, self.relevance_models = parse_experiment(args[0])
+            try:
+                self.model, self.relevance_models = parse_experiment(args[0])
+            except IndexError:
+                self.model, self.relevance_models = parse_experiment(get_file().name)
             self.model.visualize()
 
         def cmd_config(args):
             """filename"""
             try:
                 config = yaml.load(open(args[0]))
-            except (IndexError, TypeError):
+            except IndexError:
+                config = yaml.load(get_file())
+            except TypeError:
                 import pkg_resources
                 config = yaml.load(pkg_resources.resource_string(__name__,
                     'resources/config.yaml'))
