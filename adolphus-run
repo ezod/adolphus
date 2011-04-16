@@ -2,7 +2,7 @@
 
 from optparse import OptionParser
 
-from adolphus import Experiment, parse_experiment
+from adolphus import Experiment
 
 
 def main():
@@ -16,9 +16,7 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    model, relevances = parse_experiment(args[0], active=options.active)
-    Experiment(model, relevance_models=relevances, config_file=options.conf,
-               zoom=options.zoom).run()
+    Experiment(args[0], config_file=options.conf, zoom=options.zoom).run()
 
 
 if __name__ == '__main__':

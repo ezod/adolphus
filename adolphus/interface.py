@@ -14,7 +14,9 @@ from math import copysign
 from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
 from .geometry import Point, DirectionalPoint, Rotation
+from .coverage import MultiCamera
 from .visualization import visual, VisualizationError, Sprite, Visualizable
+from .yamlparser import parse_experiment
 
 
 class Display(visual.display):
@@ -177,8 +179,7 @@ class Experiment(object):
     """\
     Experiment class.
     """
-    def __init__(self, model, relevance_models={}, config_file=None,
-                 zoom=False):
+    def __init__(self, model_file=None, config_file=None, zoom=False):
         """\
         Constructor.
 
@@ -190,26 +191,37 @@ class Experiment(object):
         if not visual:
             raise VisualizationError('visual module not loaded')
 
-        self.model = model
-        self.relevance_models = relevance_models
+        # model and config functions - can also be used during runtime
+        # these should not raise KeyErrors
+        def cmd_open(args):
+            """filename"""
+            self.model, self.relevance_models = parse_experiment(args[0])
+
+        def cmd_config(args):
+            """filename"""
+            try:
+                config = yaml.load(open(args[0]))
+            except (IndexError, TypeError):
+                import pkg_resources
+                config = yaml.load(pkg_resources.resource_string(__name__,
+                    'resources/config.yaml'))
+            try:
+                self.keybindings = config['keybindings']
+            except KeyError:
+                self.keybindings = {}
+
+        if model_file:
+            cmd_open([model_file])
+        else:
+            self.model = MultiCamera()
+        cmd_config([config_file])
+
         self.zoom = zoom
         self.coverage = {}
         self.fovvis = {}
 
-        # load and parse config file
-        if config_file:
-            config = yaml.load(open(config_file))
-        else:
-            import pkg_resources
-            config = yaml.load(pkg_resources.resource_string(__name__,
-                'resources/config.yaml'))
-        try:
-            self.keybindings = config['keybindings']
-        except KeyError:
-            self.keybindings = {}
-
         # main display
-        self.display = Display(name=model.name, zoom=zoom)
+        self.display = Display(name=self.model.name, zoom=zoom)
         Visualizable.displays['main'] = self.display
         self.display.select()
         self.rate = 50
