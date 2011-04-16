@@ -353,9 +353,6 @@ class MultiCamera(dict):
         self.scene = scene
 
     def __del__(self):
-        """\
-        TODO
-        """
         self.scene.visible = False
         for camera in self.keys():
             self[camera].visible = False
