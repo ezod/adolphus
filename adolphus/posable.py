@@ -231,6 +231,7 @@ class Robot(Posable):
         self._config = [joint['home'] for joint in self.joints]
         if config:
             self.config = config
+        self._visible = False
 
     @property
     def config(self):
@@ -259,6 +260,16 @@ class Robot(Posable):
                 self._mount_pose = \
                     self.generate_joint_pose(self.joints[i], position)
             self._config[i] = position
+
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        self._visible = value
+        for piece in self.pieces:
+            piece.visible = value
 
     def mount_pose(self):
         """\
@@ -290,6 +301,7 @@ class Robot(Posable):
         """
         for piece in self.pieces:
             piece.visualize()
+        self._visible = True
 
     def update_visualization(self):
         """\
