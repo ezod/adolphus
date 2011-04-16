@@ -290,6 +290,17 @@ class Scene(dict):
         @type iterable: C{iterable}
         """
         dict.__init__(self)
+        self._visible = False
+
+    @property
+    def visible(self):
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        self._visible = value
+        for posable in self.keys():
+            self[posable].visible = value
 
     def occluded(self, p, cam=Point()):
         """\
@@ -311,6 +322,7 @@ class Scene(dict):
                 self[posable].visualize()
             except AttributeError:
                 pass
+        self._visible = True
 
     def update_visualization(self):
         """\
@@ -339,6 +351,14 @@ class MultiCamera(dict):
         dict.__init__(self)
         self.name = name
         self.scene = scene
+
+    def __del__(self):
+        """\
+        TODO
+        """
+        self.scene.visible = False
+        for camera in self.keys():
+            self[camera].visible = False
 
     @property
     def active_cameras(self):

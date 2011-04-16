@@ -23,13 +23,11 @@ class Display(visual.display):
     """\
     Visual display class.
     """
-    def __init__(self, name='Untitled Model', zoom=False, center=(0, 0, 0),
-                 background=(1, 1, 1), foreground=(0.3, 0.3, 0.3)):
+    def __init__(self, zoom=False, center=(0, 0, 0), background=(1, 1, 1),
+                 foreground=(0.3, 0.3, 0.3)):
         """\
         Contstructor.
 
-        @param name: Title of the window.
-        @type name: C{str}
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         @param background: The background color of the scene.
@@ -37,8 +35,8 @@ class Display(visual.display):
         @param foreground: The default foreground color of the scene.
         @type foreground: C{tuple}
         """
-        visual.display.__init__(self, title='Adolphus - %s' % name,
-            center=center, background=background, foreground=foreground)
+        visual.display.__init__(self, title='Adolphus', center=center,
+            background=background, foreground=foreground)
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self.userzoom = zoom
@@ -168,7 +166,7 @@ class Display(visual.display):
                     else:
                         self.message()
                         break
-                elif k.isalnum() or k in " -_(),.[]+*%=|&:<>'":
+                elif k.isalnum() or k in " -_(),.[]+*%=|&:<>'~/\\":
                     cmd += k
             self.message(cmd + ' ')
         self.userspin = True
@@ -183,19 +181,30 @@ class Experiment(object):
         """\
         Constructor.
 
-        @param model: The multi-camera model to use.
-        @type model: L{coverage.MultiCamera}
-        @param relevance_models: The relevance models for performance.
-        @type relevance_models: C{dict} of L{DiscretePointCache}
+        @param model_file: The YAML file for the model.
+        @type model_file: C{str}
+        @param config_file: The YAML configuration file.
+        @type config_file: C{str}
+        @param zoom: Use Visual's userzoom (disables camera view).
+        @type zoom: C{bool}
         """
         if not visual:
             raise VisualizationError('visual module not loaded')
+
+        # main display
+        self.zoom = zoom
+        self.display = Display(zoom=zoom)
+        Visualizable.displays['main'] = self.display
+        self.display.select()
+        self.rate = 50
 
         # model and config functions - can also be used during runtime
         # these should not raise KeyErrors
         def cmd_open(args):
             """filename"""
+            del self.model
             self.model, self.relevance_models = parse_experiment(args[0])
+            self.model.visualize()
 
         def cmd_config(args):
             """filename"""
@@ -216,15 +225,8 @@ class Experiment(object):
             self.model = MultiCamera()
         cmd_config([config_file])
 
-        self.zoom = zoom
         self.coverage = {}
         self.fovvis = {}
-
-        # main display
-        self.display = Display(name=self.model.name, zoom=zoom)
-        Visualizable.displays['main'] = self.display
-        self.display.select()
-        self.rate = 50
 
         # camera modifier
         primitives = []
@@ -421,7 +423,6 @@ class Experiment(object):
         """\
         Run this experiment.
         """
-        self.model.visualize()
         cam_vis = [primitive for objects in \
             [self.model[cam].actuals['main'].objects for cam in self.model] \
             for primitive in objects]

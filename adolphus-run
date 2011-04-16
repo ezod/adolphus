@@ -15,8 +15,12 @@ def main():
         action="store_true", help="disable camera view and use visual zoom")
 
     (options, args) = parser.parse_args()
+    try:
+        model_file = args[0]
+    except IndexError:
+        model_file = None
 
-    Experiment(args[0], config_file=options.conf, zoom=options.zoom).run()
+    Experiment(model_file, config_file=options.conf, zoom=options.zoom).run()
 
 
 if __name__ == '__main__':
