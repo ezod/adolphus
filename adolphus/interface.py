@@ -285,8 +285,8 @@ class Experiment(object):
             self.display.cdot.visible = not self.display.cdot.visible
 
         def cmd_name(args):
-            for camera in self.model.keys():
-                for display in self.model[camera].actuals.keys():
+            for camera in self.model:
+                for display in self.model[camera].actuals:
                     for member in self.model[camera].actuals[display].members:
                         if isinstance(member, visual.label):
                             member.visible = not member.visible
@@ -332,7 +332,7 @@ class Experiment(object):
 
         def cmd_fov(args):
             """name"""
-            if args[0] in self.fovvis.keys():
+            if args[0] in self.fovvis:
                 self.fovvis[args[0]].visible = not self.fovvis[args[0]].visible
             else:
                 try:
@@ -367,7 +367,7 @@ class Experiment(object):
                         self.relevance_models[arg], ocular=ocular,
                         coverage=self.coverage[arg])
                 self.display.message('\n'.join(['%s: %.4f' % (key,
-                    performance[key]) for key in performance.keys()]))
+                    performance[key]) for key in performance]))
             except KeyError:
                 self.display.message('Invalid relevance model name.')
             except ValueError:
@@ -376,7 +376,7 @@ class Experiment(object):
                 self.display.userspin = True
 
         def cmd_clear(args):
-            for key in self.coverage.keys():
+            for key in self.coverage:
                 del self.coverage[key]
 
         def cmd_distribute(args):
@@ -459,12 +459,12 @@ class Experiment(object):
                     zoom = False
                 elif m.click == 'left' and m.pick in cam_vis:
                     if m.ctrl:
-                        for camera in self.model.keys():
+                        for camera in self.model:
                             if m.pick.frame.parent == self.model[camera]:
                                 self.execute('fov %s' % camera)
                     elif m.alt:
                         try:
-                            for camera in self.model.keys():
+                            for camera in self.model:
                                 if m.pick.frame.parent == self.model[camera]:
                                     self.execute('camview %s' % camera)
                         except VisualizationError:
@@ -473,7 +473,7 @@ class Experiment(object):
                         if self.modifier.parent == m.pick.frame.parent:
                             self.execute('modify')
                         else:
-                            for camera in self.model.keys():
+                            for camera in self.model:
                                 if m.pick.frame.parent == self.model[camera]:
                                     self.execute('modify %s' % camera)
                     else:
@@ -544,5 +544,5 @@ class Experiment(object):
                     cmd = self.display.prompt()
                     if cmd:
                         self.execute(cmd)
-                elif self.keybindings.has_key(k):
+                elif k in self.keybindings:
                     self.execute(self.keybindings[k])

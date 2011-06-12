@@ -78,7 +78,7 @@ class PointCache(dict):
         except AttributeError:
             pass
         primitives = []
-        for point in set([point for point in self.keys() if self[point]]):
+        for point in set([point for point in self if self[point]]):
             primitives.append({'type': 'sphere', 'pos': point[:3], 'radius': 3,
                 'color': [1, 0, 0], 'opacity': self[point]})
             try:
@@ -109,7 +109,7 @@ class RelevanceModel(Posable):
             return self._mapped
         except AttributeError:
             self._mapped = PointCache()
-            for point in self.original.keys():
+            for point in self.original:
                 self._mapped[self.pose.map(point)] = self.original[point]
             return self._mapped
 
@@ -299,7 +299,7 @@ class Scene(dict):
     @visible.setter
     def visible(self, value):
         self._visible = value
-        for posable in self.keys():
+        for posable in self:
             self[posable].visible = value
 
     def occluded(self, p, cam=Point()):
@@ -307,7 +307,7 @@ class Scene(dict):
         Return whether the specified point is occluded from the camera
         viewpoint (by opaque scene planes).
         """
-        for posable in self.keys():
+        for posable in self:
             pr = self[posable].intersection(p, cam)
             if pr is not None and pr.euclidean(p) > 1e-4:
                 return True
@@ -317,7 +317,7 @@ class Scene(dict):
         """\
         Visualize the scene objects.
         """
-        for posable in self.keys():
+        for posable in self:
             try:
                 self[posable].visualize()
             except AttributeError:
@@ -328,7 +328,7 @@ class Scene(dict):
         """\
         Update the visualizations of the scene objects.
         """
-        for posable in self.keys():
+        for posable in self:
             try:
                 self[posable].update_visualization()
             except AttributeError:
@@ -354,7 +354,7 @@ class MultiCamera(dict):
 
     def __del__(self):
         self.scene.visible = False
-        for camera in self.keys():
+        for camera in self:
             self[camera].visible = False
 
     @property
@@ -364,7 +364,7 @@ class MultiCamera(dict):
 
         @rtype: C{list}
         """
-        return [key for key in self.keys() if self[key].active]
+        return [key for key in self if self[key].active]
     
     def strength(self, point, ocular=1, subset=None):
         """\
@@ -414,7 +414,7 @@ class MultiCamera(dict):
         @rtype: L{PointCache}
         """
         coverage = PointCache()
-        for point in relevance.mapped.keys():
+        for point in relevance.mapped:
             coverage[point] = self.strength(point, ocular, subset)
         return coverage
 
@@ -452,7 +452,7 @@ class MultiCamera(dict):
         """
         H = Hypergraph(vertices=self.keys())
         if K is None:
-            K = range(2, len(self.keys()) + 1)
+            K = range(2, len(self) + 1)
         else:
             K.sort()
         active_cameras = self.active_cameras
@@ -471,7 +471,7 @@ class MultiCamera(dict):
                 continue
             for subset in combinations(active_cameras, k):
                 print('Computing multi-camera coverage for %s...' % (subset,))
-                if not all([frozenset(sc) in cache.keys() \
+                if not all([frozenset(sc) in cache \
                 for sc in combinations(subset, pk)]):
                     continue
                 subset = frozenset(subset)
@@ -500,7 +500,7 @@ class MultiCamera(dict):
         @rtype: C{bool}
         """
         self.scene.visualize()
-        for camera in self.keys():
+        for camera in self:
             self[camera].visualize()
 
     def update_visualization(self):
@@ -508,5 +508,5 @@ class MultiCamera(dict):
         Update the visualization.
         """
         self.scene.update_visualization()
-        for camera in self.keys():
+        for camera in self:
             self[camera].update_visualization()

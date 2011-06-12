@@ -130,11 +130,11 @@ def parse_scene(scene):
             pose = parse_pose(item['pose'])
         except KeyError:
             pose = None
-        if 'mount' in item.keys():
+        if 'mount' in item:
             mount = MOUNTS[item['mount']]
         else:
             mount = None
-        if 'sprites' in item.keys():
+        if 'sprites' in item:
             try:
                 mount_pose = parse_pose(item['mount_pose'])
             except KeyError:
@@ -144,14 +144,14 @@ def parse_scene(scene):
             planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
             # create object
             rscene[item['name']] = SceneObject(pose or Pose(), mount_pose, mount, planes, sprites)
-        elif 'robot' in item.keys():
+        elif 'robot' in item:
             pieces = parse_robot(item['robot'])
             try:
                 config = item['config']
             except KeyError:
                 config = None
             rscene[item['name']] = Robot(pose or Pose(), mount, pieces, config)
-        elif 'z' in item.keys():
+        elif 'z' in item:
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'], item['z'])
         else:
             rscene[item['name']] = Plane(pose, mount, item['x'], item['y'])
@@ -171,7 +171,7 @@ def parse_model(model, active=True):
     @rtype: L{MultiCamera}
     """
     global MOUNTS
-    if 'scene' in model.keys():
+    if 'scene' in model:
         scene = parse_scene(model['scene'])
     else:
         scene = Scene()
@@ -187,7 +187,7 @@ def parse_model(model, active=True):
             pose = parse_pose(camera['pose'])
         except KeyError:
             pose = Pose()
-        if 'mount' in camera.keys():
+        if 'mount' in camera:
             mount = MOUNTS[camera['mount']]
         else:
             mount = None
@@ -302,7 +302,7 @@ def parse_relevance(relevance):
         pose = parse_pose(relevance['pose'])
     except KeyError:
         pose = Pose()
-    if 'mount' in relevance.keys():
+    if 'mount' in relevance:
         mount = MOUNTS[relevance['mount']]
     else:
         mount = None

@@ -104,7 +104,7 @@ class Visualizable(object):
 
     @visible.setter
     def visible(self, value):
-        for display in self.actuals.keys():
+        for display in self.actuals:
             self.actuals[display].visible = value
         self._visible = value
 
@@ -114,8 +114,8 @@ class Visualizable(object):
         """
         if not visual:
             raise VisualizationError('visual module not loaded')
-        for display in self.displays.keys():
-            if display in self.actuals.keys():
+        for display in self.displays:
+            if display in self.actuals:
                 continue
             self.displays[display].select()
             self.actuals[display] = Sprite(self.primitives, parent=self)
@@ -126,7 +126,7 @@ class Visualizable(object):
         """\
         Update this visualizable.
         """
-        for display in self.actuals.keys():
+        for display in self.actuals:
             try:
                 self.actuals[display].transform(self.pose)
             except AttributeError:

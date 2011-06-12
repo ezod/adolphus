@@ -186,7 +186,7 @@ class Plane(Posable, Visualizable):
         Update the visualization. Use a slightly different pose definition to
         account for possible off-center true center.
         """
-        for display in self.actuals.keys():
+        for display in self.actuals:
             self.actuals[display].transform(Pose(self.center, self.pose.R))
             self.actuals[display].opacity = self.opacity
 
