@@ -205,7 +205,10 @@ class Experiment(object):
         # these should not raise KeyErrors
         def cmd_open(args):
             """filename"""
-            del self.model
+            try:
+                del self.model
+            except AttributeError:
+                pass
             try:
                 self.model, self.relevance_models = parse_experiment(args[0])
             except IndexError:
