@@ -142,7 +142,6 @@ class Plane(Posable, Visualizable):
         """\
         Return the corners of the plane.
 
-        @return: The corners of the plane.
         @rtype: C{list} of L{Point}
         """
         try:

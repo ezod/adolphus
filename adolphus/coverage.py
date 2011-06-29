@@ -293,8 +293,6 @@ class Camera(Posable, Visualizable):
 
         @param relevance: The relevance model.
         @type relevance: L{RelevanceModel}
-        @param ocular: Mutual camera coverage degree.
-        @type ocular: C{int}
         @param coverage: Previously computed coverage cache for these points.
         @type coverage: L{PointCache}
         @return: Performance metric in [0, 1].
@@ -319,9 +317,6 @@ class Scene(dict):
     def __init__(self):
         """\
         Constructor.
-
-        @param iterable: The initial set of opaque scene planes.
-        @type iterable: C{iterable}
         """
         dict.__init__(self)
         self._visible = False

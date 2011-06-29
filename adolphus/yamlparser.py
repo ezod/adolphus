@@ -204,12 +204,12 @@ def pointrange(xr, yr, zr, step, rhor=(0.0, pi), etar=(0.0, 2 * pi), ddiv=None):
     """\
     Generate discrete (directional) points in a range.
 
-    @param xrange: The range in the x direction.
-    @type xrange: C{tuple} of C{float}
-    @param yrange: The range in the y direction.
-    @type yrange: C{tuple} of C{float}
-    @param zrange: The range in the z direction.
-    @type zrange: C{tuple} of C{float}
+    @param xr: The range in the x direction.
+    @type xr: C{tuple} of C{float}
+    @param yr: The range in the y direction.
+    @type yr: C{tuple} of C{float}
+    @param zr: The range in the z direction.
+    @type zr: C{tuple} of C{float}
     @param step: The resolution of the discrete point set.
     @type step: C{float}
     @param ddiv: The fraction of pi for discrete direction angles.
