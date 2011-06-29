@@ -20,9 +20,10 @@ recommended).
 
 ## Related Publications
 
-* A. Mavrinac, X. Chen, and J. L. Alarcon Herrera, "Coverage Strength Models for Multi-Camera Systems," submitted to *IEEE Trans. on Pattern Analysis and Machine Intelligence*, manuscript no. TPAMI-2011-01-0069, 2011.
-* A. Mavrinac, J. L. Alarcon Herrera, and X. Chen, "[A Fuzzy Model for Coverage Evaluation of Cameras and Multi-Camera Networks] [6]," *Proc. 4th ACM/IEEE Intl. Conf. on Distributed Smart Cameras*, 2010.
-* A. Mavrinac, J. L. Alarcon Herrera, and X. Chen, "[Evaluating the Fuzzy Coverage Model for 3D Multi-Camera Network Applications] [7]," *Proc. Intl. Conf. on Intelligent Robotics and Applications*, 2010.
+* A. Mavrinac and X. Chen, "Optimizing Load Distribution in Camera Networks with a Hypergraph Model of Coverage Topology," to appear in *Proc 5th ACM/IEEE Int. Conf. Distributed Smart Cameras*, 2011.
+* J. L. Alarcon Herrera, A. Mavrinac, and X. Chen, "Sensor Planning for Range Cameras via a Coverage Strength Model," to appear in *Proc. IEEE/ASME Int. Conf. Advanced Intelligent Mechatronics*, 2011.
+* A. Mavrinac, J. L. Alarcon Herrera, and X. Chen, "[A Fuzzy Model for Coverage Evaluation of Cameras and Multi-Camera Networks] [6]," in *Proc. 4th ACM/IEEE Intl. Conf. on Distributed Smart Cameras*, 2010.
+* A. Mavrinac, J. L. Alarcon Herrera, and X. Chen, "[Evaluating the Fuzzy Coverage Model for 3D Multi-Camera Network Applications] [7]," in *Proc. Intl. Conf. on Intelligent Robotics and Applications*, 2010.
 
 
 [1]: http://www.python.org
