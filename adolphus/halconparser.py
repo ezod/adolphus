@@ -33,11 +33,11 @@ def parse_internal(filename):
                 continue
             value = float(line.split(':')[2][1:-1])
             if line.startswith('Focus'):
-                f = 1000 * value
+                f = 1e3 * value
             elif line.startswith('Sx'):
-                s[0] = 1000 * value
+                s[0] = 1e3 * value
             elif line.startswith('Sy'):
-                s[1] = 1000 * value
+                s[1] = 1e3 * value
             elif line.startswith('Cx'):
                 o[0] = value
             elif line.startswith('Cy'):
@@ -61,8 +61,8 @@ def parse_external(filename):
         for line in ecfile:
             line = line.rstrip()
             if line.startswith('t'):
-                T = Point([float(value) for value in line.split(' ')[1:]])
+                T = Point([1e3 * float(value) for value in line.split(' ')[1:]])
             elif line.startswith('r'):
-                R = Rotation.from_euler('zyx', [(360.0 - float(value)) * 180.0 \
-                    / pi for value in line.split(' ')[1:]])
+                R = Rotation.from_euler('zyx', [(360. - float(value)) * pi \
+                    / 180.0 for value in line.split(' ')[1:]])
     return Pose(T, R)
