@@ -484,9 +484,7 @@ class Rotation(object):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return 'Rotation(%s)' % str(self.Q)
-
-    __str__ = __repr__
+        return '%s(%s)' % (self.__class__.__name__, str(self.Q))
 
     def __add__(self, other):
         """\
@@ -712,14 +710,14 @@ class Pose(object):
             self._inverse = Pose(-(-self.R).rotate(self.T), -self.R)
             return self._inverse
 
-    def __str__(self):
+    def __repr__(self):
         """\
         String representation, display T and R.
 
         @return: String representations of T and R.
         @rtype: C{str}
         """
-        return 'Pose(%s, %s)' % (self.T, self.R)
+        return '%s(%s, %s)' % (self.__class__.__name__, self.T, self.R)
 
     @property
     def nonzero(self):
