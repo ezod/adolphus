@@ -395,7 +395,6 @@ class Experiment(object):
                         D[edge.head].append(frozenset(edge))
                     except KeyError:
                         D[edge.head] = [frozenset(edge)]
-                print(D)
                 self.display.message()
             except KeyError:
                 self.display.message('Invalid relevance model name.')

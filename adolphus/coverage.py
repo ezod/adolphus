@@ -497,19 +497,16 @@ class MultiCamera(dict):
         active_cameras = self.active_cameras
         cache = {}
         for camera in active_cameras:
-            print('Computing single-camera coverage for %s...' % camera)
             subset = frozenset([camera])
             cache[subset] = self.coverage(relevance, subset=subset)
             weight = sum(cache[subset].values())
             if weight:
                 H.add_edge(Edge(subset), weight=weight)
-                print('    Edge added with weight %f.' % weight)
         pk = 1
         for k in K:
             if k < 2:
                 continue
             for subset in combinations(active_cameras, k):
-                print('Computing multi-camera coverage for %s...' % (subset,))
                 if not all([frozenset(sc) in cache \
                 for sc in combinations(subset, pk)]):
                     continue
@@ -524,7 +521,6 @@ class MultiCamera(dict):
                 weight = sum(cache[subset].values())
                 if weight > 1e-4:
                     H.add_edge(Edge(subset), weight=weight)
-                    print('    Edge added with weight %f.' % weight)
                 else:
                     del cache[subset]
             pk = k
