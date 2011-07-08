@@ -130,10 +130,6 @@ def parse_scene(scene):
             pose = parse_pose(item['pose'])
         except KeyError:
             pose = None
-        if 'mount' in item:
-            mount = MOUNTS[item['mount']]
-        else:
-            mount = None
         if 'sprites' in item:
             try:
                 mount_pose = parse_pose(item['mount_pose'])
@@ -143,18 +139,18 @@ def parse_scene(scene):
             sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in item['sprites']])
             planes = reduce(lambda a, b: a + b, [parse_planes(sprite) for sprite in item['sprites']])
             # create object
-            rscene[item['name']] = SceneObject(pose or Pose(), mount_pose, mount, planes, sprites)
+            rscene[item['name']] = SceneObject(pose or Pose(), mount_pose, None, planes, sprites)
         elif 'robot' in item:
             pieces = parse_robot(item['robot'])
             try:
                 config = item['config']
             except KeyError:
                 config = None
-            rscene[item['name']] = Robot(pose or Pose(), mount, pieces, config)
+            rscene[item['name']] = Robot(pose or Pose(), None, pieces, config)
         elif 'z' in item:
-            rscene[item['name']] = Plane(pose, mount, item['x'], item['y'], item['z'])
+            rscene[item['name']] = Plane(pose, None, item['x'], item['y'], item['z'])
         else:
-            rscene[item['name']] = Plane(pose, mount, item['x'], item['y'])
+            rscene[item['name']] = Plane(pose, None, item['x'], item['y'])
         MOUNTS[item['name']] = rscene[item['name']]
     return rscene
 
@@ -187,16 +183,19 @@ def parse_model(model, active=True):
             pose = parse_pose(camera['pose'])
         except KeyError:
             pose = Pose()
-        if 'mount' in camera:
-            mount = MOUNTS[camera['mount']]
-        else:
-            mount = None
         # parse sprites
         sprites = reduce(lambda a, b: a + b, [parse_primitives(sprite) for sprite in camera['sprites']])
         sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6, 'text': camera['name']})
         # create camera
-        rmodel[camera['name']] = Camera(camera, pose, mount, sprites, active=active)
+        rmodel[camera['name']] = Camera(camera, pose, None, sprites, active=active)
         MOUNTS[camera['name']] = rmodel[camera['name']]
+    # parse mounts after to avoid ordering issues
+    for item in model['scene']:
+        if 'mount' in item:
+            rmodel.scene[item['name']].mount = MOUNTS[item['mount']]
+    for camera in model['cameras']:
+        if 'mount' in camera:
+            rmodel[camera['name']].mount = MOUNTS[camera['mount']]
     return rmodel
 
 
