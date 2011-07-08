@@ -16,7 +16,7 @@ from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 from .geometry import Point, DirectionalPoint, Rotation
 from .coverage import MultiCamera
 from .visualization import visual, VisualizationError, Sprite, Visualizable
-from .yamlparser import parse_experiment
+from .yamlparser import YAMLParser
 
 if visual:
     from visual.filedialog import get_file
@@ -210,9 +210,9 @@ class Experiment(object):
             except AttributeError:
                 pass
             try:
-                self.model, self.relevance_models = parse_experiment(args[0])
+                self.model, self.relevance_models = YAMLParser(args[0]).experiment
             except IndexError:
-                self.model, self.relevance_models = parse_experiment(get_file().name)
+                self.model, self.relevance_models = YAMLParser(get_file().name).experiment
             self.model.visualize()
 
         def cmd_config(args):
