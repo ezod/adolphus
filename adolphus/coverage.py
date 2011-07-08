@@ -113,13 +113,23 @@ class RelevanceModel(Posable):
                 self._mapped[self.pose.map(point)] = self.original[point]
             return self._mapped
 
-    #@pose.setter
-    #def pose(self, value):
-    #    """\
-    #    Set the pose of the object.
-    #    """
-    #    self._pose = value
-    #    del self._mapped
+    @property
+    def pose(self):
+        """\
+        The pose of the object.
+        """
+        if self.mount:
+            return self._pose + self.mount.mount_pose()
+        else:
+            return self._pose
+
+    @pose.setter
+    def pose(self, value):
+        """\
+        Set the pose of the object.
+        """
+        self._pose = value
+        del self._mapped
 
     def visualize(self):
         self.mapped.visualize()
