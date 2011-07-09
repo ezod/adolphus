@@ -129,7 +129,10 @@ class RelevanceModel(Posable):
         Set the pose of the object.
         """
         self._pose = value
-        del self._mapped
+        try:
+            del self._mapped
+        except AttributeError:
+            pass
 
     def visualize(self):
         self.mapped.visualize()
