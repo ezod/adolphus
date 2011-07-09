@@ -221,9 +221,12 @@ class YAMLParser(object):
                 active=active)
             self._mounts[camera['name']] = rmodel[camera['name']]
         # parse mounts after to avoid ordering issues
-        for item in model['scene']:
-            if 'mount' in item:
-                rmodel.scene[item['name']].mount = self._mounts[item['mount']]
+        try:
+            for item in model['scene']:
+                if 'mount' in item:
+                    rmodel.scene[item['name']].mount = self._mounts[item['mount']]
+        except KeyError:
+            pass
         for camera in model['cameras']:
             if 'mount' in camera:
                 rmodel[camera['name']].mount = self._mounts[camera['mount']]
