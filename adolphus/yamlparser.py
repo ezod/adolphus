@@ -200,21 +200,29 @@ class YAMLParser(object):
         else:
             scene = Scene()
         rmodel = MultiCamera(model['name'], scene)
+        tp_defaults = {'boundary_padding': 0.0,
+                       'res_max_ideal': float('inf'),
+                       'res_max_acceptable': float('inf'),
+                       'res_min_ideal': 0.0,
+                       'res_min_acceptable': 0.0,
+                       'blur_max_ideal': 1.0,
+                       'blur_max_acceptable': 1.0,
+                       'angle_max_ideal': pi / 2.0,
+                       'angle_max_acceptable': pi / 2.0}
+        for tp in tp_defaults:
+            if not tp in model:
+                model[tp] = tp_defaults[tp]
+        model['res_max_ideal'] = \
+            min(model['res_max_ideal'], model['res_max_acceptable'])
+        model['res_min_ideal'] = \
+            max(model['res_min_ideal'], model['res_min_acceptable'])
+        model['blur_max_ideal'] = \
+            min(model['blur_max_ideal'], model['blur_max_acceptable'])
+        model['angle_max_ideal'] = \
+            min(model['angle_max_ideal'], model['angle_max_acceptable'])
         for camera in model['cameras']:
-            tp_defaults = {'boundary_padding': 0.0,
-                           'res_max_ideal': float('inf'),
-                           'res_max_acceptable': float('inf'),
-                           'res_min_ideal': 0.0,
-                           'res_min_acceptable': 0.0,
-                           'blur_max_ideal': 1.0,
-                           'blur_max_acceptable': 1.0,
-                           'angle_max_ideal': pi / 2.0,
-                           'angle_max_acceptable': pi / 2.0}
             for tp in tp_defaults:
-                try:
-                    camera[tp] = model[tp]
-                except KeyError:
-                    camera[tp] = tp_defaults[tp]
+                camera[tp] = model[tp]
             # parse pose
             try:
                 pose = self._parse_pose(camera['pose'])
