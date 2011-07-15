@@ -182,8 +182,8 @@ class Camera(Posable, Visualizable):
         self.Cr = lambda p: min(max((zr2 - p.z) / (zr2 - zr1), 0.0), 1.0)
         # focus
         zl, zr = self.zc(min(params['s']))
-        zn, zf = self.zc(params['cmax'])
-        # TODO: handle cmax = cmin
+        zn, zf = self.zc(params['beta'] * min(params['s']))
+        # TODO: handle cmax = cmin (beta = 1)
         self.Cf = lambda p: min(max(min((p.z - zn) / (zl - zn),
             (zf - p.z) / (zf - zr)), 0.0), 1.0)
         # direction

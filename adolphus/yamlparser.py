@@ -204,7 +204,7 @@ class YAMLParser(object):
             if model['zeta%d' % i] == 'max':
                 model['zeta%d' % i] = pi / 2.0
         for camera in model['cameras']:
-            for ap in ['gamma', 'r1', 'r2', 'cmax', 'zeta1', 'zeta2']:
+            for ap in ['gamma', 'r1', 'r2', 'beta', 'zeta1', 'zeta2']:
                 camera[ap] = model[ap]
             # parse pose
             try:
