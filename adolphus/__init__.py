@@ -13,21 +13,14 @@ module = os.path.join(os.path.dirname(__file__), '../hypergraph')
 if os.path.exists(module):
     sys.path.insert(0, module)
 
+__import__('pkg_resources').declare_namespace(__name__)
 __version__ = (0, 0, 0)
-
-__all__ = ['geometry',
-           'posable',
-           'coverage',
-           'interface',
-           'visualization',
-           'yamlparser']
-__name__ = 'adolphus'
 
 import pyximport; pyximport.install()
 
-from geometry import *
-from posable import *
-from coverage import *
-from interface import *
-from visualization import *
-from yamlparser import *
+from .geometry import *
+from .posable import *
+from .coverage import *
+from .interface import *
+from .visualization import *
+from .yamlparser import *
