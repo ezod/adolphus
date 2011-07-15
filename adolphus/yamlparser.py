@@ -200,12 +200,21 @@ class YAMLParser(object):
         else:
             scene = Scene()
         rmodel = MultiCamera(model['name'], scene)
-        for i in [1, 2]:
-            if model['zeta%d' % i] == 'max':
-                model['zeta%d' % i] = pi / 2.0
         for camera in model['cameras']:
-            for ap in ['gamma', 'r1', 'r2', 'beta', 'zeta1', 'zeta2']:
-                camera[ap] = model[ap]
+            tp_defaults = {'boundary_padding': 0.0,
+                           'res_max_ideal': float('inf'),
+                           'res_max_acceptable': float('inf'),
+                           'res_min_ideal': 0.0,
+                           'res_min_acceptable': 0.0,
+                           'blur_max_ideal': 1.0,
+                           'blur_max_acceptable': 1.0,
+                           'angle_max_ideal': pi / 2.0,
+                           'angle_max_acceptable': pi / 2.0}
+            for tp in tp_defaults:
+                try:
+                    camera[tp] = model[tp]
+                except KeyError:
+                    camera[tp] = tp_defaults[tp]
             # parse pose
             try:
                 pose = self._parse_pose(camera['pose'])
