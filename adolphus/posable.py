@@ -19,7 +19,7 @@ from .visualization import Visualizable
 
 class Posable(object):
     """\
-    Posable abstract base class.
+    Posable base class.
     """
     def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None, planes=[]):
         """\
@@ -34,8 +34,6 @@ class Posable(object):
         @param planes: The opaque planes associated with this object (optional).
         @type planes: C{list} of L{Plane}
         """
-        if self.__class__ is Posable:
-            raise NotImplementedError('cannot directly instantiate Posable')
         self._pose = pose
         self._mount_pose = mount_pose
         self.mount = mount

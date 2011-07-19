@@ -16,7 +16,7 @@ from functools import reduce
 
 from .coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
-from .posable import Plane, SceneObject, Robot
+from .posable import Posable, Plane, SceneObject, Robot
 
 
 class YAMLParser(object):
@@ -73,7 +73,7 @@ class YAMLParser(object):
                 angle = pose['R'][0] * pi / 180.0
             else:
                 angle = pose['R'][0]
-            R = Rotation.from_axis_angle(angle, pose['R'][1])
+            R = Rotation.from_axis_angle(angle, Point(pose['R'][1]))
         elif pose['Rformat'].startswith('euler'):
             convention, unit = pose['Rformat'].split('-')[1:]
             if unit == 'deg':
@@ -174,12 +174,16 @@ class YAMLParser(object):
                     config = item['config']
                 except KeyError:
                     config = None
-                rscene[item['name']] = Robot(pose or Pose(), None, pieces, config)
+                rscene[item['name']] = \
+                    Robot(pose or Pose(), None, pieces, config)
             elif 'z' in item:
                 rscene[item['name']] = \
                     Plane(pose, None, item['x'], item['y'], item['z'])
-            else:
+            elif 'x' in item:
                 rscene[item['name']] = Plane(pose, None, item['x'], item['y'])
+            else:
+                rscene[item['name']] = \
+                    Posable(pose or Pose(), mount_pose, None, planes)
             self._mounts[item['name']] = rscene[item['name']]
         return rscene
 
