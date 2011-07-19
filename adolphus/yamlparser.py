@@ -286,11 +286,11 @@ class YAMLParser(object):
                 while z <= zr[1]:
                     if ddiv:
                         rho, eta = rhor[0], etar[0]
-                        while rho <= rhor[1] and rho <= pi:
-                            if rho == 0.0 or rho == pi:
+                        while rho - rhor[1] < 1e-4 and rho - pi < 1e-4:
+                            if abs(rho) < 1e-4 or abs(rho - pi) < 1e-4:
                                 yield DirectionalPoint((x, y, z, rho, 0.0))
                             else:
-                                while eta <= etar[1] and eta < 2 * pi:
+                                while eta - etar[1] < 1e-4 and eta < 2 * pi:
                                     yield DirectionalPoint((x, y, z, rho, eta))
                                     eta += pi / ddiv
                             rho += pi / ddiv
