@@ -349,6 +349,9 @@ class Experiment(object):
             try:
                 self.model[args[0]].active = not self.model[args[0]].active
                 self.model[args[0]].update_visualization()
+            except IndexError:
+                for camera in self.model:
+                    cmd_active([camera])
             except KeyError:
                 self.display.message('Invalid camera name.')
 
