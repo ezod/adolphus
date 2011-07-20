@@ -39,6 +39,7 @@ class Posable(object):
         self.mount = mount
         self.planes = set()
         for plane in planes:
+            plane['mount'] = self
             self.planes.add(Plane(**plane))
 
     @property

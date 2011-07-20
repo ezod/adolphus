@@ -183,7 +183,7 @@ class YAMLParser(object):
                 rscene[item['name']] = Plane(pose, None, item['x'], item['y'])
             else:
                 rscene[item['name']] = \
-                    Posable(pose or Pose(), mount_pose, None, planes)
+                    Posable(pose or Pose(), mount_pose, None, [])
             self._mounts[item['name']] = rscene[item['name']]
         return rscene
 
