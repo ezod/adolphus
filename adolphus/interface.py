@@ -408,10 +408,16 @@ class Experiment(object):
             """code"""
             self.display.message(str(eval(' '.join(args))))
 
+        def cmd_exit(args):
+            self.display.visible = False
+            self.exit = True
+
         self.commands = {}
         for function in dir():
             if function.startswith('cmd_'):
                 self.commands[function[4:]] = locals()[function]
+
+        self.exit = False
 
     def execute(self, cmd):
         """\
@@ -445,7 +451,7 @@ class Experiment(object):
         msgctr = 0
         self.execute('name')
         # event loop
-        while True:
+        while not self.exit:
             visual.rate(self.rate)
             # clear mesages after a while
             if self.display._messagebox.visible:
