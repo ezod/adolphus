@@ -19,8 +19,7 @@ except ImportError:
 __import__('pkg_resources').declare_namespace(__name__)
 __version__ = (0, 0, 0)
 
-import pyximport; pyximport.install()
-
+import cython
 from .geometry import *
 from .posable import *
 from .coverage import *

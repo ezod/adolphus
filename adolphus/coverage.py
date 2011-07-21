@@ -9,14 +9,13 @@ classes.
 @license: GPL-3
 """
 
-import pyximport; pyximport.install()
-
 from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
 
 from hypergraph import Hypergraph, Edge
 
+import cython
 from .geometry import Point, DirectionalPoint, Pose
 from .posable import Posable
 from .visualization import Visualizable

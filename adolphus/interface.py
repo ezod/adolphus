@@ -7,12 +7,11 @@ Visual interface module.
 @license: GPL-3
 """
 
-import pyximport; pyximport.install()
-
 import yaml
 from math import copysign
 from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
+import cython
 from .geometry import Point, DirectionalPoint, Rotation
 from .coverage import MultiCamera
 from .visualization import visual, VisualizationError, Sprite, Visualizable

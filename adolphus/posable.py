@@ -7,12 +7,11 @@ Posable objects module.
 @license: GPL-3
 """
 
-import pyximport; pyximport.install()
-
 from math import pi
 from numbers import Number
 import numpy
 
+import cython
 from .geometry import Point, Pose, Rotation
 from .visualization import Visualizable
 

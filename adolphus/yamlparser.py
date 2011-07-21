@@ -7,13 +7,12 @@ YAML parser module.
 @license: GPL-3
 """
 
-import pyximport; pyximport.install()
-
 import os
 import yaml
 from math import pi
 from functools import reduce
 
+import cython
 from .coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import Posable, Plane, SceneObject, Robot
