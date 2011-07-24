@@ -51,12 +51,23 @@ class Posable(object):
         else:
             return self._pose
 
-    @pose.setter
-    def pose(self, value):
+    def set_absolute_pose(self, pose):
         """\
-        Set the pose of the object.
+        Set the absolute (world frame) pose of the object.
+
+        @param pose: The absolute pose to set.
+        @type pose: L{Pose}
         """
-        self._pose = value
+        self._pose = pose - self.mount.mount_pose()
+
+    def set_relative_pose(self, pose):
+        """\
+        Set the relative (mounted) pose of the object.
+
+        @param pose: The relative pose to set.
+        @type pose: L{Pose}
+        """
+        self._pose = pose
 
     def mount_pose(self):
         """\
@@ -102,15 +113,15 @@ class Plane(Posable, Visualizable):
         Posable.__init__(self, pose=pose, mount=mount)
         if pose is None:
             if isinstance(z, Number):
-                self.pose = Pose(T=Point((0.0, 0.0, z)))
+                self.set_relative_pose(Pose(T=Point((0.0, 0.0, z))))
                 self.x, self.y = [float(n) for n in x], [float(n) for n in y]
             elif isinstance(y, Number):
-                self.pose = Pose(T=Point((0.0, y, 0.0)), R=Rotation.from_euler(\
-                    'zyx', (-pi / 2.0, 0, 0)))
+                self.set_relative_pose(Pose(T=Point((0.0, y, 0.0)),
+                    R=Rotation.from_euler('zyx', (-pi / 2.0, 0, 0))))
                 self.x, self.y = [float(n) for n in x], [float(n) for n in z]
             else:
-                self.pose = Pose(T=Point((x, 0.0, 0.0)), R=Rotation.from_euler(\
-                    'zyx', (0, -pi / 2.0, -pi / 2.0)))
+                self.set_relative_pose(Pose(T=Point((x, 0.0, 0.0)),
+                    R=Rotation.from_euler('zyx', (0, -pi / 2.0, -pi / 2.0))))
                 self.x, self.y = [float(n) for n in y], [float(n) for n in z]
         else:
             self.x, self.y = [float(n) for n in x], [float(n) for n in y]
@@ -251,8 +262,8 @@ class Robot(Posable):
             raise ValueError('incorrect configuration length')
         for i, position in enumerate(value):
             try:
-                self.pieces[i + 1].pose = \
-                    self.generate_joint_pose(self.joints[i], position)
+                self.pieces[i + 1].set_relative_pose(self.generate_joint_pose(\
+                    self.joints[i], position))
             except IndexError:
                 self._mount_pose = \
                     self.generate_joint_pose(self.joints[i], position)

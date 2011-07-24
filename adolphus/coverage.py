@@ -98,6 +98,14 @@ class RelevanceModel(Posable):
         super(RelevanceModel, self).__init__(pose=pose, mount=mount)
         self._original = original
 
+    def __setattr__(self, item, value):
+        super(RelevanceModel, self).__setattr__(item, value)
+        if item == '_pose':
+            try:
+                del self._mapped
+            except AttributeError:
+                pass
+
     @property
     def original(self):
         return self._original
@@ -121,17 +129,6 @@ class RelevanceModel(Posable):
             return self._pose + self.mount.mount_pose()
         else:
             return self._pose
-
-    @pose.setter
-    def pose(self, value):
-        """\
-        Set the pose of the object.
-        """
-        self._pose = value
-        try:
-            del self._mapped
-        except AttributeError:
-            pass
 
     def visualize(self):
         self.mapped.visualize()
