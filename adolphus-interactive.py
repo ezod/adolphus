@@ -18,7 +18,9 @@ def main():
     except IndexError:
         model_file = None
 
-    Experiment(model_file, config_file=options.conf, zoom=options.zoom).run()
+    experiment = Experiment(model_file, config_file=options.conf, zoom=options.zoom)
+    experiment.start()
+    experiment.join()
 
 
 if __name__ == '__main__':

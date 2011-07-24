@@ -7,6 +7,7 @@ Visual interface module.
 @license: GPL-3
 """
 
+import threading
 import yaml
 from math import copysign
 from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
@@ -175,7 +176,7 @@ class Display(visual.display):
         return process_cmd and cmd or None
 
 
-class Experiment(object):
+class Experiment(threading.Thread):
     """\
     Experiment class.
     """
@@ -417,6 +418,7 @@ class Experiment(object):
                 self.commands[function[4:]] = locals()[function]
 
         self.exit = False
+        super(Experiment, self).__init__()
 
     def execute(self, cmd):
         """\
@@ -435,7 +437,6 @@ class Experiment(object):
                 es = str(e)
                 es += '\nUsage: %s %s' % (cmd, self.commands[cmd].__doc__)
                 self.display.message(es)
-
 
     def run(self):
         """\
