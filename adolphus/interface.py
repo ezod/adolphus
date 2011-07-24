@@ -238,6 +238,15 @@ class Experiment(threading.Thread):
 
         self.coverage = {}
         self.fovvis = {}
+        self.valvis = {}
+
+        # camera indicator
+        self.indicator = Sprite([{'type':       'sphere',
+                                  'radius':     90,
+                                  'color':      [1, 1, 0],
+                                  'opacity':    0.2,
+                                  'material':   visual.materials.emissive}])
+        self.indicator.visible = False
 
         # camera modifier
         primitives = []
@@ -320,6 +329,19 @@ class Experiment(threading.Thread):
                 self.display.camera_view()
                 self.display.message()
 
+        def cmd_indicate(args):
+            """name"""
+            if len(args):
+                try:
+                    self.indicator.pos = self.model[args[0]].pose.T
+                    self.indicator.visible = True
+                    self.modifier.parent = self.model[args[0]]
+                except KeyError:
+                    self.display.message('Invalid camera name.')
+            else:
+                self.indicator.visible = False
+                self.modifier.parent = None
+
         def cmd_modify(args):
             """name"""
             if len(args):
@@ -343,6 +365,25 @@ class Experiment(threading.Thread):
                     self.fovvis[args[0]].frame = self.model[args[0]].actuals['main']
                 except KeyError:
                     self.display.message('Invalid camera name.')
+
+        def cmd_showval(args):
+            """name [value]"""
+            if args[0] in self.valvis:
+                self.valvis[args[0]].visible = False
+                del self.valvis[args[0]]
+            try:
+                value = float(args[1])
+                self.valvis[args[0]] = Sprite([{'type': 'cylinder',
+                    'color': (0.8, 0.8, 0.8), 'pos': (80, -30, 0), 'axis': (0,
+                    (1.0 - value) * 60, 0), 'radius': 6}, {'type': 'cylinder',
+                    'color': (1, 0, 0), 'pos': (80, -30 + (1.0 - value) * 60.0,
+                    0), 'axis': (0, value * 60.0, 0), 'radius': 6}])
+                try:
+                    self.valvis[args[0]].frame = self.model[args[0]].actuals['main']
+                except KeyError:
+                    self.display.message('Invalid camera name.')
+            except IndexError:
+                pass
 
         def cmd_active(args):
             """name"""
