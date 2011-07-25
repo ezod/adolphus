@@ -517,6 +517,15 @@ class Rotation(object):
         """
         return Rotation(self.Q.inverse)
 
+    def __hash__(self):
+        """\
+        Hash.
+
+        @return: Hash of this rotation.
+        @rtype: C{int}
+        """
+        return hash(self.Q)
+
     def rotate(self, p):
         """\
         Rotate a vector.
@@ -709,6 +718,15 @@ class Pose(object):
         except AttributeError:
             self._inverse = Pose(-(-self.R).rotate(self.T), -self.R)
             return self._inverse
+
+    def __hash__(self):
+        """\
+        Hash.
+
+        @return: Hash of this pose.
+        @rtype: C{int}
+        """
+        return hash(self.T) + hash(self.R)
 
     def __repr__(self):
         """\

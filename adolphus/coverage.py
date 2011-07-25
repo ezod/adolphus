@@ -98,14 +98,6 @@ class RelevanceModel(Posable):
         super(RelevanceModel, self).__init__(pose=pose, mount=mount)
         self._original = original
 
-    def __setattr__(self, item, value):
-        super(RelevanceModel, self).__setattr__(item, value)
-        if item == '_pose':
-            try:
-                del self._mapped
-            except AttributeError:
-                pass
-
     @property
     def original(self):
         return self._original
@@ -113,11 +105,14 @@ class RelevanceModel(Posable):
     @property
     def mapped(self):
         try:
+            if hash(self.pose) != self._pose_hash:
+                del self._mapped
             return self._mapped
         except AttributeError:
             self._mapped = PointCache()
             for point in self.original:
                 self._mapped[self.pose.map(point)] = self.original[point]
+            self._pose_hash = hash(self.pose)
             return self._mapped
 
     @property
