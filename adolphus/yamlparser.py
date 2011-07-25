@@ -93,9 +93,15 @@ class YAMLParser(object):
         @return: The primitives list.
         @rtype: C{list} of C{dict}
         """
+        tpath = self._path
         if isinstance(sprite, str):
+            tpath = os.path.split(os.path.join(self._path, sprite))[0]
             sprite = yaml.load(open(os.path.join(self._path, sprite)))
         try:
+            for primitive in sprite['primitives']:
+                if 'texture' in primitive:
+                    primitive['texture'] = os.path.join(tpath,
+                        primitive['texture'])
             return sprite['primitives']
         except KeyError:
             return []

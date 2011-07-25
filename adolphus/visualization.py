@@ -85,11 +85,13 @@ class Visualizable(object):
         @type primitives: C{list} of C{dict}
         """
         for primitive in primitives:
-            try:
+            if 'material' in primitive:
                 primitive['material'] = \
                     getattr(visual.materials, primitive['material'])
-            except KeyError:
-                pass
+            elif 'texture' in primitive:
+                primitive['material'] = visual.materials.texture(data=\
+                    visual.materials.loadTGA(primitive['texture']),
+                    mapping=primitive['mapping'])
         self.primitives = primitives
         self.actuals = {}
         self.opacity = 1.0
