@@ -241,10 +241,10 @@ class Experiment(threading.Thread):
         self.valvis = {}
 
         # camera indicator
-        self.indicator = Sprite([{'type':       'sphere',
+        self.indicator = Sprite([{'type':       'ring',
                                   'radius':     90,
+                                  'thickness':  6,
                                   'color':      [1, 1, 0],
-                                  'opacity':    0.2,
                                   'material':   visual.materials.emissive}])
         self.indicator.visible = False
 
