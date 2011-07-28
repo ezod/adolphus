@@ -19,12 +19,15 @@ if os.name == 'nt':
         os.environ['CPATH'] += numpy.get_include()
     except KeyError:
         os.environ['CPATH'] = numpy.get_include()
-    try:
-        os.environ['PATH'] += ';C:\MinGW\bin'
-    except KeyError:
-        os.environ['PATH'] = 'C:\MinGW\bin'
-    mingw_setup_args = {'options': {'build_ext': {'compiler': 'mingw32'}}}
-    pyximport.install(setup_args=mingw_setup_args)
+    if os.path.exists('C:\MinGW'):
+        try:
+            os.environ['PATH'] += ';C:\MinGW\bin'
+        except KeyError:
+            os.environ['PATH'] = 'C:\MinGW\bin'
+        mingw_setup_args = {'options': {'build_ext': {'compiler': 'mingw32'}}}
+        pyximport.install(setup_args=mingw_setup_args)
+    else:
+        pyximport.install()
 elif os.name == 'posix':
     try:
         os.environ['CFLAGS'] += ' -I' + numpy.get_include()
