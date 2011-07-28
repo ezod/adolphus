@@ -241,7 +241,7 @@ class YAMLParser(object):
             sprites = reduce(lambda a, b: a + b, [self.\
                 _parse_primitives(sprite) for sprite in camera['sprites']])
             sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6,
-                'text': camera['name']})
+                'background': [0, 0, 0], 'text': camera['name']})
             # create camera
             rmodel[camera['name']] = Camera(camera, pose, None, sprites,
                 active=active)

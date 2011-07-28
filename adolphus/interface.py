@@ -60,12 +60,12 @@ class Display(visual.display):
                 color=(0, 0, 1), axis=tuple([i == axis and 150 or 0 \
                 for i in range(3)]))
             visual.label(frame=self.axes, height=6, color=(1, 1, 1),
-                text=axes[axis], pos=tuple([i == axis and 165 or 0 \
-                for i in range(3)]))
+                background=(0, 0, 0), text=axes[axis],
+                pos=tuple([i == axis and 165 or 0 for i in range(3)]))
 
         # command/message box
         self._messagebox = visual.label(pos=center, height=12,
-            color=(1, 1, 1), visible=False)
+            color=(1, 1, 1), background=(0, 0, 0), visible=False)
 
     def shift_center(self, direction=None):
         """\
