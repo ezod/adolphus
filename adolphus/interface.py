@@ -15,6 +15,7 @@ from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 import cython
 from .geometry import Point, DirectionalPoint, Rotation
 from .coverage import MultiCamera
+from .posable import SceneObject, Robot
 from .visualization import visual, VisualizationError, Sprite, Visualizable
 from .yamlparser import YAMLParser
 
@@ -295,6 +296,14 @@ class Experiment(threading.Thread):
 
         def cmd_cdot(args):
             self.display.cdot.visible = not self.display.cdot.visible
+
+        def cmd_planes(args):
+            for posable in self.model.scene:
+                if(isinstance(self.model.scene[posable], SceneObject)):
+                    self.model.scene[posable].toggle_planes()
+                elif(isinstance(self.model.scene[posable], Robot)):
+                    for piece in self.model.scene[posable].pieces:
+                        piece.toggle_planes()
 
         def cmd_name(args):
             for camera in self.model:

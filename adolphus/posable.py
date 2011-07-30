@@ -207,6 +207,24 @@ class SceneObject(Posable, Visualizable):
                  primitives=[]):
         Posable.__init__(self, pose, mount_pose, mount, planes)
         Visualizable.__init__(self, primitives)
+        self._planes_view = False
+
+    def toggle_planes(self):
+        """\
+        Toggle display of occluding planes in the visualization.
+        """
+        if self._planes_view:
+            self.opacity = 1.0
+            self.update_visualization()
+            for plane in self.planes:
+                plane.visible = False
+        else:
+            self.opacity = 0.1
+            self.update_visualization()
+            for plane in self.planes:
+                plane.visualize()
+                plane.visible = True
+        self._planes_view = not self._planes_view
 
 
 class Robot(Posable):

@@ -1,5 +1,6 @@
 keybindings:
     f2:           coverage
+    f5:           planes
     f6:           name
     f7:           axes
     f8:           cdot
