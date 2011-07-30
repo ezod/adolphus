@@ -202,12 +202,11 @@ class Camera(Posable, Visualizable):
             self._generate_fovvis()
 
     def _generate_cv(self):
-        print('_generate_cv')
+        sahl = self.fov['sahl']
+        sahr = self.fov['sahr']
+        savt = self.fov['savt']
+        savb = self.fov['savb']
         if not self.getparam('boundary_padding'):
-            sahl = self.fov['sahl']
-            sahr = self.fov['sahr']
-            savt = self.fov['savt']
-            savb = self.fov['savb']
             self.Cv = lambda p: p.z > 0 and \
                 float(p.x / p.z > sahl and p.x / p.z < sahr and \
                       p.y / p.z > savt and p.y / p.z < savb) or 0.0
@@ -221,7 +220,6 @@ class Camera(Posable, Visualizable):
                 - savt, savb - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
 
     def _generate_cr(self):
-        print('_generate_cr')
         mr = min([float(self.getparam('dim')[0]) \
             / (2 * sin(self.fov['ah'] / 2.0)), float(self.getparam('dim')[1]) \
             / (2 * sin(self.fov['av'] / 2.0))])
@@ -249,7 +247,6 @@ class Camera(Posable, Visualizable):
         self._zrmaxa, self._zrmina = zrmaxa, zrmina
 
     def _generate_cf(self):
-        print('_generate_cf')
         zn, zf = self.zc(self.getparam('blur_max_acceptable') \
             * min(self.getparam('s')))
         if self.getparam('blur_max_ideal') == \
@@ -263,7 +260,6 @@ class Camera(Posable, Visualizable):
         self._zn, self._zf = zn, zf
 
     def _generate_cd(self):
-        print('_generate_cd')
         ama = self.getparam('angle_max_acceptable')
         if self.getparam('angle_max_ideal') == \
            self.getparam('angle_max_acceptable'):
@@ -287,7 +283,6 @@ class Camera(Posable, Visualizable):
         self.Cd = Cd
 
     def _generate_fovvis(self):
-        print('_generate_fovvis')
         hull = []
         for z in [max(self._zn, self._zrmaxa), min(self._zf, self._zrmina)]:
             hull += [(self.fov['sahl'] * z, self.fov['savt'] * z, z),
