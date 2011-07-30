@@ -172,7 +172,7 @@ class YAMLParser(object):
                     for sprite in item['sprites']])
                 # create object
                 rscene[item['name']] = SceneObject(pose or Pose(), mount_pose,
-                    None, planes, sprites)
+                    None, sprites, planes)
             elif 'robot' in item:
                 pieces = self._parse_robot(item['robot'])
                 try:
@@ -188,7 +188,7 @@ class YAMLParser(object):
                 rscene[item['name']] = Plane(pose, None, item['x'], item['y'])
             else:
                 rscene[item['name']] = \
-                    Posable(pose or Pose(), mount_pose, None, [])
+                    Posable(pose or Pose(), mount_pose, None)
             self._mounts[item['name']] = rscene[item['name']]
         return rscene
 

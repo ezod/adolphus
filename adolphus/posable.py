@@ -20,7 +20,7 @@ class Posable(object):
     """\
     Posable base class.
     """
-    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None, planes=[]):
+    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None):
         """\
         Constructor.
 
@@ -30,16 +30,10 @@ class Posable(object):
         @type mount_pose: L{Pose}
         @param mount: The mount of the object (optional).
         @type mount: L{Posable}
-        @param planes: The opaque planes associated with this object (optional).
-        @type planes: C{list} of L{Plane}
         """
         self._pose = pose
         self._mount_pose = mount_pose
         self.mount = mount
-        self.planes = set()
-        for plane in planes:
-            plane['mount'] = self
-            self.planes.add(Plane(**plane))
 
     @property
     def pose(self):
@@ -80,24 +74,6 @@ class Posable(object):
         """
         return self._mount_pose + self.pose
 
-    def intersection(self, pa, pb):
-        """\
-        Return the 3D point of intersection (if any) of the line segment
-        between the two specified points and this object.
-
-        @param pa: The first vertex of the line segment.
-        @type pa: L{Point}
-        @param pb: The second vertex of the line segment.
-        @type pb: L{Point}
-        @return: The point of intersection with the object.
-        @rtype: L{Point}
-        """
-        intersections = [plane.intersection(pa, pb) for plane in self.planes]
-        for intersection in intersections:
-            if intersection:
-                return intersection
-        return None
-        
 
 class Plane(Posable, Visualizable):
     """\
@@ -203,12 +179,48 @@ class SceneObject(Posable, Visualizable):
     """\
     Sprite-based scene object.
     """
-    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None, planes=[],
-                 primitives=[]):
-        Posable.__init__(self, pose, mount_pose, mount, planes)
+    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None,
+                 primitives=[], planes=[]):
+        """\
+        Constructor.
+
+        @param pose: The pose of the object (optional).
+        @type pose: L{Pose}
+        @param mount_pose: The transformation to the mounting end (optional).
+        @type mount_pose: L{Pose}
+        @param mount: The mount of the object (optional).
+        @type mount: L{Posable}
+        @param primitives: A list of sprite primitive sets (optional).
+        @type primitives: C{list} of C{dict}
+        @param planes: The opaque planes associated with this object (optional).
+        @type planes: C{list} of L{Plane}
+        """
+        Posable.__init__(self, pose, mount_pose, mount)
         Visualizable.__init__(self, primitives)
+        self.planes = set()
+        for plane in planes:
+            plane['mount'] = self
+            self.planes.add(Plane(**plane))
         self._planes_view = False
 
+    def intersection(self, pa, pb):
+        """\
+        Return the 3D point of intersection (if any) of the line segment
+        between the two specified points and this object.
+
+        @param pa: The first vertex of the line segment.
+        @type pa: L{Point}
+        @param pb: The second vertex of the line segment.
+        @type pb: L{Point}
+        @return: The point of intersection with the object.
+        @rtype: L{Point}
+        """
+        intersections = [plane.intersection(pa, pb) for plane in self.planes]
+        for intersection in intersections:
+            if intersection:
+                return intersection
+        return None
+        
     def toggle_planes(self):
         """\
         Toggle display of occluding planes in the visualization.
@@ -249,8 +261,8 @@ class Robot(Posable):
                 primitives = piece['primitives']
             except KeyError:
                 primitives = []
-            self.pieces.append(SceneObject(nextpose, offset, mount, planes,
-                primitives))
+            self.pieces.append(SceneObject(nextpose, offset, mount, primitives,
+                planes))
             nextpose = self.generate_joint_pose(piece['joint'])
         self._mount_pose = nextpose
         self.joints = [piece['joint'] for piece in pieces]
