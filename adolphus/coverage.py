@@ -154,91 +154,12 @@ class Camera(Posable, Visualizable):
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self._params = params
-        # visibility
-        if not params['boundary_padding']:
-            self.Cv = lambda p: p.z > 0 and \
-                float(p.x / p.z > -sin(self.fov['ahl']) and \
-                      p.x / p.z < sin(self.fov['ahr']) and \
-                      p.y / p.z > -sin(self.fov['avt']) and \
-                      p.y / p.z < sin(self.fov['avb'])) or 0.0
-        else:
-            gh = (params['boundary_padding'] / float(params['dim'][0])) * 2.0 \
-                * sin(self.fov['ah'] / 2.0)
-            gv = (params['boundary_padding'] / float(params['dim'][1])) * 2.0 \
-                * sin(self.fov['av'] / 2.0)
-            self.Cv = lambda p: p.z > 0 and min(min(max((min(p.x / p.z + \
-                sin(self.fov['ahl']), sin(self.fov['ahr']) - p.x / p.z) / gh),
-                0.0), 1.0), min(max((min(p.y / p.z + sin(self.fov['avt']),
-                sin(self.fov['avb']) - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
-        # resolution
-        mr = min([float(params['dim'][0]) / (2 * sin(self.fov['ah'] / 2.0)),
-                  float(params['dim'][1]) / (2 * sin(self.fov['av'] / 2.0))])
-        zrmaxi = (1.0 / params['res_max_ideal']) * mr
-        zrmaxa = (1.0 / params['res_max_acceptable']) * mr
-        try:
-            zrmini = (1.0 / params['res_min_ideal']) * mr
-        except ZeroDivisionError:
-            zrmini = float('inf')
-        try:
-            zrmina = (1.0 / params['res_min_acceptable']) * mr
-        except ZeroDivisionError:
-            zrmina = float('inf')
-        if zrmaxa == zrmaxi and zrmina == zrmini:
-            self.Cr = lambda p: float(p.z > zrmaxa and p.z < zrmina)
-        elif zrmaxa == zrmaxi:
-            self.Cr = lambda p: p.z > zrmaxa and min(max((zrmina - p.z) / \
-                (zrmina - zrmini), 0.0), 1.0) or 0.0
-        elif zrmina == zrmini:
-            self.Cr = lambda p: p.z < zrmina and min(max((p.z - zrmaxa) / \
-                (zrmaxi - zrmaxa), 0.0), 1.0) or 0.0
-        else:
-            self.Cr = lambda p: min(max(min((p.z - zrmaxa) / (zrmaxi - zrmaxa),
-                (zrmina - p.z) / (zrmina - zrmini)), 0.0), 1.0)
-        # focus
-        zn, zf = self.zc(params['blur_max_acceptable'] * min(params['s']))
-        if params['blur_max_ideal'] == params['blur_max_acceptable']:
-            self.Cf = lambda p: float(p.z > zn and p.z < zf)
-        else:
-            zl, zr = self.zc(params['blur_max_ideal'] * min(params['s']))
-            self.Cf = lambda p: min(max(min((p.z - zn) / (zl - zn),
-                (zf - p.z) / (zf - zr)), 0.0), 1.0)
-        # view angle
-        if params['angle_max_ideal'] == params['angle_max_acceptable']:
-            cdval = lambda rho, a, b: float(float(rho) - (a * b) - pi + \
-                params['angle_max_acceptable'] > 0)
-        else:
-            cdval = lambda rho, a, b: min(max((float(rho) - (a * b) - pi + \
-                params['angle_max_acceptable']) / \
-                (params['angle_max_acceptable'] - params['angle_max_ideal']),
-                0.0), 1.0)
-        def Cd(p):
-            if not isinstance(p, DirectionalPoint):
-                return 1.0
-            r = sqrt(p.x ** 2 + p.y ** 2)
-            try:
-                terma = (p.y / r) * sin(p.eta) + (p.x / r) * cos(p.eta)
-            except ZeroDivisionError:
-                terma = 1.0
-            try:
-                termb = atan(r / p.z)
-            except ZeroDivisionError:
-                termb = pi / 2.0
-            return cdval(p.rho, terma, termb)
-        self.Cd = Cd
-        # active
+        self._generate_cv()
+        self._generate_cr()
+        self._generate_cf()
+        self._generate_cd()
+        self._generate_fovvis()
         self.active = active
-        # fov sprite
-        hull = []
-        for z in [max(zn, zrmaxa), min(zf, zrmina)]:
-            hull += [(self.fov['sahl'] * z, self.fov['savt'] * z, z),
-                     (self.fov['sahl'] * z, self.fov['savb'] * z, z),
-                     (self.fov['sahr'] * z, self.fov['savb'] * z, z),
-                     (self.fov['sahr'] * z, self.fov['savt'] * z, z)]
-        self.fovvis = \
-            [{'type': 'curve', 'color': (1, 0, 0),
-              'pos': hull[i:i + 4] + hull[i:i + 1]} for i in range(0, 16, 4)] +\
-            [{'type': 'curve', 'color': (1, 0, 0),
-              'pos': [hull[i], hull[i + 4]]} for i in range(4)]
 
     def getparam(self, param):
         """\
@@ -261,6 +182,123 @@ class Camera(Posable, Visualizable):
         @type value: C{object}
         """
         self._params[param] = value
+        fov = False
+        fovvis = False
+        if param in ['f', 's', 'dim']:
+            del self._fov
+            fov = True
+            fovvis = True
+        if fov or param == 'boundary_padding':
+            self._generate_cv()
+        if fov or param.startswith('res'):
+            self._generate_cr()
+            fovvis = True
+        if param in ['A', 'zS', 'f', 's'] or param.startswith('blur'):
+            self._generate_cf()
+            fovvis = True
+        if param.startswith('angle'):
+            self._generate_cd()
+        if fovvis:
+            self._generate_fovvis()
+
+    def _generate_cv(self):
+        print('_generate_cv')
+        if not self.getparam('boundary_padding'):
+            sahl = self.fov['sahl']
+            sahr = self.fov['sahr']
+            savt = self.fov['savt']
+            savb = self.fov['savb']
+            self.Cv = lambda p: p.z > 0 and \
+                float(p.x / p.z > sahl and p.x / p.z < sahr and \
+                      p.y / p.z > savt and p.y / p.z < savb) or 0.0
+        else:
+            gh = (self.getparam('boundary_padding') / float(\
+                self.getparam('dim')[0])) * 2.0 * sin(self.fov['ah'] / 2.0)
+            gv = (self.getparam('boundary_padding') / float(\
+                self.getparam('dim')[1])) * 2.0 * sin(self.fov['av'] / 2.0)
+            self.Cv = lambda p: p.z > 0 and min(min(max((min(p.x / p.z - sahl,
+                sahr - p.x / p.z) / gh), 0.0), 1.0), min(max((min(p.y / p.z \
+                - savt, savb - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
+
+    def _generate_cr(self):
+        print('_generate_cr')
+        mr = min([float(self.getparam('dim')[0]) \
+            / (2 * sin(self.fov['ah'] / 2.0)), float(self.getparam('dim')[1]) \
+            / (2 * sin(self.fov['av'] / 2.0))])
+        zrmaxi = (1.0 / self.getparam('res_max_ideal')) * mr
+        zrmaxa = (1.0 / self.getparam('res_max_acceptable')) * mr
+        try:
+            zrmini = (1.0 / self.getparam('res_min_ideal')) * mr
+        except ZeroDivisionError:
+            zrmini = float('inf')
+        try:
+            zrmina = (1.0 / self.getparam('res_min_acceptable')) * mr
+        except ZeroDivisionError:
+            zrmina = float('inf')
+        if zrmaxa == zrmaxi and zrmina == zrmini:
+            self.Cr = lambda p: float(p.z > zrmaxa and p.z < zrmina)
+        elif zrmaxa == zrmaxi:
+            self.Cr = lambda p: p.z > zrmaxa and min(max((zrmina - p.z) / \
+                (zrmina - zrmini), 0.0), 1.0) or 0.0
+        elif zrmina == zrmini:
+            self.Cr = lambda p: p.z < zrmina and min(max((p.z - zrmaxa) / \
+                (zrmaxi - zrmaxa), 0.0), 1.0) or 0.0
+        else:
+            self.Cr = lambda p: min(max(min((p.z - zrmaxa) / (zrmaxi - zrmaxa),
+                (zrmina - p.z) / (zrmina - zrmini)), 0.0), 1.0)
+        self._zrmaxa, self._zrmina = zrmaxa, zrmina
+
+    def _generate_cf(self):
+        print('_generate_cf')
+        zn, zf = self.zc(self.getparam('blur_max_acceptable') \
+            * min(self.getparam('s')))
+        if self.getparam('blur_max_ideal') == \
+           self.getparam('blur_max_acceptable'):
+            self.Cf = lambda p: float(p.z > zn and p.z < zf)
+        else:
+            zl, zr = self.zc(self.getparam('blur_max_ideal') \
+                * min(self.getparam('s')))
+            self.Cf = lambda p: min(max(min((p.z - zn) / (zl - zn),
+                (zf - p.z) / (zf - zr)), 0.0), 1.0)
+        self._zn, self._zf = zn, zf
+
+    def _generate_cd(self):
+        print('_generate_cd')
+        ama = self.getparam('angle_max_acceptable')
+        if self.getparam('angle_max_ideal') == \
+           self.getparam('angle_max_acceptable'):
+            cdval = lambda rho, a, b: float(float(rho) - (a * b) - pi + ama > 0)
+        else:
+            ami = self.getparam('angle_max_ideal')
+            cdval = lambda rho, a, b: min(max((float(rho) - (a * b) - pi + ama) / (ama - ami), 0.0), 1.0)
+        def Cd(p):
+            if not isinstance(p, DirectionalPoint):
+                return 1.0
+            r = sqrt(p.x ** 2 + p.y ** 2)
+            try:
+                terma = (p.y / r) * sin(p.eta) + (p.x / r) * cos(p.eta)
+            except ZeroDivisionError:
+                terma = 1.0
+            try:
+                termb = atan(r / p.z)
+            except ZeroDivisionError:
+                termb = pi / 2.0
+            return cdval(p.rho, terma, termb)
+        self.Cd = Cd
+
+    def _generate_fovvis(self):
+        print('_generate_fovvis')
+        hull = []
+        for z in [max(self._zn, self._zrmaxa), min(self._zf, self._zrmina)]:
+            hull += [(self.fov['sahl'] * z, self.fov['savt'] * z, z),
+                     (self.fov['sahl'] * z, self.fov['savb'] * z, z),
+                     (self.fov['sahr'] * z, self.fov['savb'] * z, z),
+                     (self.fov['sahr'] * z, self.fov['savt'] * z, z)]
+        self.fovvis = \
+            [{'type': 'curve', 'color': (1, 0, 0),
+              'pos': hull[i:i + 4] + hull[i:i + 1]} for i in range(0, 16, 4)] +\
+            [{'type': 'curve', 'color': (1, 0, 0),
+              'pos': [hull[i], hull[i + 4]]} for i in range(4)]
 
     @property
     def fov(self):
