@@ -9,12 +9,10 @@ Coverage module.
 
 import sys
 import os.path
-try:
-    import hypergraph
-except ImportError:
-    module = os.path.join(os.path.dirname(__file__), '../hypergraph')
-    if os.path.exists(module):
-        sys.path.insert(0, module)
+
+module = os.path.join(os.path.dirname(__file__), '../hypergraph')
+if os.path.exists(module):
+    sys.path.insert(0, module)
 
 __import__('pkg_resources').declare_namespace(__name__)
 __version__ = (0, 0, 0)
