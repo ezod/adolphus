@@ -153,7 +153,7 @@ class Camera(Posable, Visualizable):
         Visualizable.__init__(self, sprites)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
-        self.params = params
+        self._params = params
         # visibility
         if not params['boundary_padding']:
             self.Cv = lambda p: p.z > 0 and \
@@ -205,12 +205,12 @@ class Camera(Posable, Visualizable):
         # view angle
         if params['angle_max_ideal'] == params['angle_max_acceptable']:
             cdval = lambda rho, a, b: float(float(rho) - (a * b) - pi + \
-                self.params['angle_max_acceptable'] > 0)
+                params['angle_max_acceptable'] > 0)
         else:
             cdval = lambda rho, a, b: min(max((float(rho) - (a * b) - pi + \
-                self.params['angle_max_acceptable']) / \
-                (self.params['angle_max_acceptable'] - \
-                self.params['angle_max_ideal']), 0.0), 1.0)
+                params['angle_max_acceptable']) / \
+                (params['angle_max_acceptable'] - params['angle_max_ideal']),
+                0.0), 1.0)
         def Cd(p):
             if not isinstance(p, DirectionalPoint):
                 return 1.0
@@ -240,6 +240,28 @@ class Camera(Posable, Visualizable):
             [{'type': 'curve', 'color': (1, 0, 0),
               'pos': [hull[i], hull[i + 4]]} for i in range(4)]
 
+    def getparam(self, param):
+        """\
+        Retrieve a camera parameter from this camera.
+
+        @param param: The name of the parameter to retrieve.
+        @type param: C{str}
+        @return: The value of the parameter.
+        @rtype: C{object}
+        """
+        return self._params[param]
+
+    def setparam(self, param, value):
+        """\
+        Set a camera parameter on this camera.
+
+        @param param: The name of the paramater to set.
+        @type param: C{str}
+        @param value: The value to which to set the parameter.
+        @type value: C{object}
+        """
+        self._params[param] = value
+
     @property
     def fov(self):
         """\
@@ -252,21 +274,21 @@ class Camera(Posable, Visualizable):
         except AttributeError:
             self._fov = {}
             # horizontal
-            self._fov['ahl'] = 2.0 * atan((self.params['o'][0] * \
-                self.params['s'][0]) / (2.0 * self.params['f']))
-            self._fov['ahr'] = 2.0 * atan(((self.params['dim'][0] - \
-                self.params['o'][0]) * self.params['s'][0]) / \
-                (2.0 * self.params['f']))
+            self._fov['ahl'] = 2.0 * atan((self.getparam('o')[0] * \
+                self.getparam('s')[0]) / (2.0 * self.getparam('f')))
+            self._fov['ahr'] = 2.0 * atan(((self.getparam('dim')[0] - \
+                self.getparam('o')[0]) * self.getparam('s')[0]) / \
+                (2.0 * self.getparam('f')))
             self._fov['ah'] = self._fov['ahl'] + self._fov['ahr']
             self._fov['sahl'] = -sin(self._fov['ahl'])
             self._fov['sahr'] = sin(self._fov['ahr'])
             self._fov['sah'] = self._fov['sahr'] - self._fov['sahl']
             # vertical
-            self._fov['avt'] = 2.0 * atan((self.params['o'][1] * \
-                self.params['s'][1]) / (2.0 * self.params['f']))
-            self._fov['avb'] = 2.0 * atan(((self.params['dim'][1] - \
-                self.params['o'][1]) * self.params['s'][1]) / \
-                (2.0 * self.params['f']))
+            self._fov['avt'] = 2.0 * atan((self.getparam('o')[1] * \
+                self.getparam('s')[1]) / (2.0 * self.getparam('f')))
+            self._fov['avb'] = 2.0 * atan(((self.getparam('dim')[1] - \
+                self.getparam('o')[1]) * self.getparam('s')[1]) / \
+                (2.0 * self.getparam('f')))
             self._fov['av'] = self._fov['avt'] + self._fov['avb']
             self._fov['savt'] = -sin(self._fov['avt'])
             self._fov['savb'] = sin(self._fov['avb'])
@@ -285,9 +307,10 @@ class Camera(Posable, Visualizable):
         """
         r = []
         for s in [1, -1]:
-            r.append((self.params['A'] * self.params['f'] * self.params['zS']) \
-                / (self.params['A'] * self.params['f'] + s * c \
-                * (self.params['zS'] - self.params['f'])))
+            r.append((self.getparam('A') * self.getparam('f') \
+                * self.getparam('zS')) / (self.getparam('A') \
+                * self.getparam('f') + s * c * (self.getparam('zS') \
+                - self.getparam('f'))))
         if r[1] < 0:
             r[1] = float('inf')
         return tuple(r)
