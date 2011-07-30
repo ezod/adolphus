@@ -285,10 +285,11 @@ class Experiment(threading.Thread):
         @type cmd: C{str}
         """
         cmd, args = cmd.split()[0], cmd.split()[1:]
+        if cmd not in self.commands:
+            self.display.message('Invalid command.')
+            return
         try:
             self.commands[cmd](self, args)
-        except KeyError:
-            self.display.message('Invalid command.')
         except Exception as e:
             if self.commands[cmd].__doc__:
                 es = str(e)
