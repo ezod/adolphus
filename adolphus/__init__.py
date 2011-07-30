@@ -12,7 +12,7 @@ import os.path
 
 module = os.path.join(os.path.dirname(__file__), '../hypergraph')
 if os.path.exists(module):
-    sys.path.insert(0, module)
+    sys.path.append(module)
 
 __import__('pkg_resources').declare_namespace(__name__)
 __version__ = (0, 0, 0)
