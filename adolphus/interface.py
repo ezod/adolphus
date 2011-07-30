@@ -10,12 +10,11 @@ Visual interface module.
 import threading
 import yaml
 from math import copysign
-from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
 import cython
-from .geometry import Point, DirectionalPoint, Rotation
+import commands
+from .geometry import Point, Rotation
 from .coverage import MultiCamera
-from .posable import SceneObject, Robot
 from .visualization import visual, VisualizationError, Sprite, Visualizable
 from .yamlparser import YAMLParser
 
@@ -270,202 +269,10 @@ class Experiment(threading.Thread):
         self.modifier.visible = False
 
         # interface commands
-        # these should not raise KeyErrors
-        def cmd_sc(args):
-            """x y z"""
-            if self.display.in_camera_view:
-                self.display.message('Cannot shift center in camera view.')
-                return
-            self.display.shift_center((float(args[0]), float(args[1]),
-                float(args[2])))
-
-        def cmd_strength(args):
-            """ocular x y z [rho eta]"""
-            ocular = int(args.pop(0))
-            if len(args) == 3:
-                p = Point([float(args[i]) for i in range(3)])
-            elif len(args) == 5:
-                p = DirectionalPoint([float(args[i]) for i in range(5)])
-            else:
-                raise ValueError
-            self.display.message(u'\u03bc%s = %.4f' \
-                % (p, self.model.strength(p, ocular=ocular)))
-
-        def cmd_axes(args):
-            self.display.axes.visible = not self.display.axes.visible
-
-        def cmd_cdot(args):
-            self.display.cdot.visible = not self.display.cdot.visible
-
-        def cmd_planes(args):
-            for posable in self.model.scene:
-                if(isinstance(self.model.scene[posable], SceneObject)):
-                    self.model.scene[posable].toggle_planes()
-                elif(isinstance(self.model.scene[posable], Robot)):
-                    for piece in self.model.scene[posable].pieces:
-                        piece.toggle_planes()
-
-        def cmd_name(args):
-            for camera in self.model:
-                for display in self.model[camera].actuals:
-                    for member in self.model[camera].actuals[display].members:
-                        if isinstance(member, visual.label):
-                            member.visible = not member.visible
-
-        def cmd_pose(args):
-            """name"""
-            try:
-                self.display.message('T: (%.2f, %.2f, %.2f)\n' \
-                    % self.model[args[0]].pose.T + \
-                    u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
-                    % self.model[args[0]].pose.R.to_euler_zyx())
-            except KeyError:
-                self.display.message('Invalid camera name.')
-
-        def cmd_camview(args):
-            """name"""
-            if self.zoom:
-                return
-            if len(args):
-                try:
-                    self.display.camera_view(self.model[args[0]])
-                    self.modifier.visible = False
-                    self.modifier.parent = None
-                    self.display.message('Camera view %s.' % args[0])
-                except KeyError:
-                    self.display.message('Invalid camera name.')
-            else:
-                self.display.camera_view()
-                self.display.message()
-
-        def cmd_indicate(args):
-            """name"""
-            if len(args):
-                try:
-                    self.indicator.pos = self.model[args[0]].pose.T
-                    self.indicator.visible = True
-                    self.modifier.parent = self.model[args[0]]
-                except KeyError:
-                    self.display.message('Invalid camera name.')
-            else:
-                self.indicator.visible = False
-                self.modifier.parent = None
-
-        def cmd_modify(args):
-            """name"""
-            if len(args):
-                try:
-                    self.modifier.pos = self.model[args[0]].pose.T
-                    self.modifier.visible = True
-                    self.modifier.parent = self.model[args[0]]
-                except KeyError:
-                    self.display.message('Invalid camera name.')
-            else:
-                self.modifier.visible = False
-                self.modifier.parent = None
-
-        def cmd_fov(args):
-            """name"""
-            if args[0] in self.fovvis:
-                self.fovvis[args[0]].visible = not self.fovvis[args[0]].visible
-            else:
-                try:
-                    self.fovvis[args[0]] = Sprite(self.model[args[0]].fovvis)
-                    self.fovvis[args[0]].frame = self.model[args[0]].actuals['main']
-                except KeyError:
-                    self.display.message('Invalid camera name.')
-
-        def cmd_showval(args):
-            """name [value]"""
-            if args[0] in self.valvis:
-                self.valvis[args[0]].visible = False
-                del self.valvis[args[0]]
-            try:
-                value = float(args[1])
-                self.valvis[args[0]] = Sprite([{'type': 'cylinder',
-                    'color': (0.8, 0.8, 0.8), 'pos': (80, -30, 0), 'axis': (0,
-                    (1.0 - value) * 60, 0), 'radius': 6}, {'type': 'cylinder',
-                    'color': (1, 0, 0), 'pos': (80, -30 + (1.0 - value) * 60.0,
-                    0), 'axis': (0, value * 60.0, 0), 'radius': 6}])
-                try:
-                    self.valvis[args[0]].frame = self.model[args[0]].actuals['main']
-                except KeyError:
-                    self.display.message('Invalid camera name.')
-            except IndexError:
-                pass
-
-        def cmd_active(args):
-            """name"""
-            try:
-                self.model[args[0]].active = not self.model[args[0]].active
-                self.model[args[0]].update_visualization()
-            except IndexError:
-                for camera in self.model:
-                    cmd_active([camera])
-            except KeyError:
-                self.display.message('Invalid camera name.')
-
-        def cmd_coverage(args):
-            """ocular name*"""
-            try:
-                self.display.message('Calculating coverage...')
-                self.display.userspin = False
-                performance = {}
-                ocular = int(args.pop(0))
-                if not args:
-                    args = self.relevance_models.keys()
-                for arg in args:
-                    self.coverage[arg] = \
-                        self.model.coverage(self.relevance_models[arg],
-                        ocular=ocular)
-                    self.coverage[arg].visualize()
-                    performance[arg] = self.model.performance(\
-                        self.relevance_models[arg], ocular=ocular,
-                        coverage=self.coverage[arg])
-                self.display.message('\n'.join(['%s: %.4f' % (key,
-                    performance[key]) for key in performance]))
-            except KeyError:
-                self.display.message('Invalid relevance model name.')
-            except ValueError:
-                self.display.message('Too few active cameras.')
-            finally:
-                self.display.userspin = True
-
-        def cmd_clear(args):
-            for key in self.coverage:
-                del self.coverage[key]
-
-        def cmd_distribute(args):
-            """name"""
-            try:
-                self.display.message('Calculating coverage hypergraph...')
-                self.display.userspin = False
-                L = minimum_maximum_weighted_indegree_orientation(self.model.\
-                    coverage_hypergraph(self.relevance_models[args[0]]))
-                D = {}
-                for edge in L.edges:
-                    try:
-                        D[edge.head].append(frozenset(edge))
-                    except KeyError:
-                        D[edge.head] = [frozenset(edge)]
-                self.display.message()
-            except KeyError:
-                self.display.message('Invalid relevance model name.')
-            finally:
-                self.display.userspin = True
-
-        def cmd_eval(args):
-            """code"""
-            self.display.message(str(eval(' '.join(args))))
-
-        def cmd_exit(args):
-            self.display.visible = False
-            self.exit = True
-
         self.commands = {}
-        for function in dir():
+        for function in dir(commands):
             if function.startswith('cmd_'):
-                self.commands[function[4:]] = locals()[function]
+                self.commands[function[4:]] = getattr(commands, function)
 
         self.exit = False
         super(Experiment, self).__init__()
@@ -479,7 +286,7 @@ class Experiment(threading.Thread):
         """
         cmd, args = cmd.split()[0], cmd.split()[1:]
         try:
-            self.commands[cmd](args)
+            self.commands[cmd](self, args)
         except KeyError:
             self.display.message('Invalid command.')
         except Exception as e:
