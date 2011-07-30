@@ -15,7 +15,7 @@ from functools import reduce
 import cython
 from .coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
-from .posable import Posable, Plane, SceneObject, Robot
+from .posable import Plane, SceneObject, Robot
 
 
 class YAMLParser(object):
@@ -188,7 +188,7 @@ class YAMLParser(object):
                 rscene[item['name']] = Plane(pose, None, item['x'], item['y'])
             else:
                 rscene[item['name']] = \
-                    Posable(pose or Pose(), mount_pose, None)
+                    SceneObject(pose or Pose(), mount_pose, None, [])
             self._mounts[item['name']] = rscene[item['name']]
         return rscene
 

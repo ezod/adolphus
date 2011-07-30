@@ -215,8 +215,8 @@ class SceneObject(Posable, Visualizable):
         @return: The point of intersection with the object.
         @rtype: L{Point}
         """
-        intersections = [plane.intersection(pa, pb) for plane in self.planes]
-        for intersection in intersections:
+        for plane in self.planes:
+            intersection = plane.intersection(pa, pb)
             if intersection:
                 return intersection
         return None
@@ -333,6 +333,24 @@ class Robot(Posable):
         else:
             raise ValueError('invalid joint type')
 
+    def intersection(self, pa, pb):
+        """\
+        Return the 3D point of intersection (if any) of the line segment
+        between the two specified points and this robot.
+
+        @param pa: The first vertex of the line segment.
+        @type pa: L{Point}
+        @param pb: The second vertex of the line segment.
+        @type pb: L{Point}
+        @return: The point of intersection with the robot.
+        @rtype: L{Point}
+        """
+        for piece in self.pieces:
+            intersection = piece.intersection(pa, pb)
+            if intersection:
+                return intersection
+        return None
+
     def visualize(self):
         """\
         Visualize this robot.
@@ -347,3 +365,10 @@ class Robot(Posable):
         """
         for piece in self.pieces:
             piece.update_visualization()
+        
+    def toggle_planes(self):
+        """\
+        Toggle display of occluding planes in the visualization.
+        """
+        for piece in self.pieces:
+            piece.toggle_planes()

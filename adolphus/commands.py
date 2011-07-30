@@ -11,7 +11,6 @@ from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
 import cython
 from .geometry import Point, DirectionalPoint
-from .posable import SceneObject, Robot
 from .visualization import visual, Sprite
 
 
@@ -43,11 +42,7 @@ def cmd_cdot(ex, args):
 
 def cmd_planes(ex, args):
     for posable in ex.model.scene:
-        if(isinstance(ex.model.scene[posable], SceneObject)):
-            ex.model.scene[posable].toggle_planes()
-        elif(isinstance(ex.model.scene[posable], Robot)):
-            for piece in ex.model.scene[posable].pieces:
-                piece.toggle_planes()
+        ex.model.scene[posable].toggle_planes()
 
 def cmd_name(ex, args):
     for camera in ex.model:
