@@ -98,21 +98,31 @@ class RelevanceModel(Posable):
         super(RelevanceModel, self).__init__(pose=pose, mount=mount)
         self._original = original
 
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        del self._mapped
+        super(RelevanceModel, self)._pose_changed_hook()
+
     @property
     def original(self):
+        """\
+        Original (unmapped) relevance model points.
+        """
         return self._original
 
     @property
     def mapped(self):
+        """\
+        Actual (mapped) relevance model points.
+        """
         try:
-            if hash(self.pose) != self._pose_hash:
-                del self._mapped
             return self._mapped
         except AttributeError:
             self._mapped = PointCache()
             for point in self.original:
                 self._mapped[self.pose.map(point)] = self.original[point]
-            self._pose_hash = hash(self.pose)
             return self._mapped
 
     @property

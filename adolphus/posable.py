@@ -33,6 +33,8 @@ class Posable(object):
         """
         self._pose = pose
         self._mount_pose = mount_pose
+        self.children = set()
+        self._mount = None
         self.mount = mount
 
     @property
@@ -45,6 +47,32 @@ class Posable(object):
         else:
             return self._pose
 
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        pass
+
+    @property
+    def mount(self):
+        """\
+        The mount of this posable.
+        """
+        return self._mount
+
+    @mount.setter
+    def mount(self, value):
+        """\
+        Set the mount of this posable.
+        """
+        if self._mount:
+            self._mount.children.discard(self)
+        self._mount = value
+        if value:
+            value.children.add(self)
+        for child in self.children:
+            child._pose_changed_hook()
+
     def set_absolute_pose(self, pose):
         """\
         Set the absolute (world frame) pose of the object.
@@ -53,6 +81,8 @@ class Posable(object):
         @type pose: L{Pose}
         """
         self._pose = pose - self.mount.mount_pose()
+        for child in self.children:
+            child._pose_changed_hook()
 
     def set_relative_pose(self, pose):
         """\
@@ -62,6 +92,8 @@ class Posable(object):
         @type pose: L{Pose}
         """
         self._pose = pose
+        for child in self.children:
+            child._pose_changed_hook()
 
     def mount_pose(self):
         """\
@@ -107,6 +139,13 @@ class Plane(Posable, Visualizable):
                        'width':      1,
                        'material':   'wood'}]
         Visualizable.__init__(self, primitives)
+
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        del self._center
+        Posable._pose_changed_hook(self)
 
     @property
     def center(self):
@@ -173,6 +212,13 @@ class Plane(Posable, Visualizable):
         for display in self.actuals:
             self.actuals[display].transform(Pose(self.center, self.pose.R))
             self.actuals[display].opacity = self.opacity
+        for child in self.children:
+            try:
+                child.update_visualization()
+            except AttributeError:
+                pass
+
+    def toggle_planes(self): pass
 
 
 class SceneObject(Posable, Visualizable):
@@ -238,6 +284,17 @@ class SceneObject(Posable, Visualizable):
                 plane.visible = True
         self._planes_view = not self._planes_view
 
+    def update_visualization(self):
+        """\
+        Update this object's visualization.
+        """
+        Visualizable.update_visualization(self)
+        for child in self.children:
+            try:
+                child.update_visualization()
+            except AttributeError:
+                pass
+
 
 class Robot(Posable):
     """\
@@ -298,6 +355,8 @@ class Robot(Posable):
                 self._mount_pose = \
                     self.generate_joint_pose(self.joints[i], position)
             self._config[i] = position
+        for child in self.children:
+            child._pose_changed_hook()
 
     @property
     def visible(self):
@@ -365,6 +424,11 @@ class Robot(Posable):
         """
         for piece in self.pieces:
             piece.update_visualization()
+        for child in self.children:
+            try:
+                child.update_visualization()
+            except AttributeError:
+                pass
         
     def toggle_planes(self):
         """\
