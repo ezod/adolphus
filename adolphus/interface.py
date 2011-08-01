@@ -98,14 +98,14 @@ class Display(visual.display):
                                  'center': tuple(self.center),
                                  'fov': self.fov,
                                  'range': self.range}
-            self.center = camera.pose.map((0, 0, camera.params['zS']))
+            self.center = camera.pose.map((0, 0, camera.getparam('zS')))
             self.forward = camera.pose.R.rotate((0, 0, 1))
             self.up = camera.pose.R.rotate((0, -1, 0))
             self.fov = max(camera.fov['ah'], camera.fov['av'])
             # FIXME: zoom still isn't exactly right
             self.range = max(camera.fov['sahl'], camera.fov['sahr'],
                              camera.fov['savb'], camera.fov['savt']) \
-                         * camera.params['zS'] * 1.2
+                         * camera.getparam('zS') * 1.2
             self.cdot.pos = self.center
             self._messagebox.pos = self.center
         else:
