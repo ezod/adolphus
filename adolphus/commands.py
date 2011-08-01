@@ -12,6 +12,7 @@ from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 import cython
 from .geometry import Point, DirectionalPoint
 from .visualization import visual, Sprite
+from .posable import Robot
 
 
 def cmd_sc(ex, args):
@@ -143,6 +144,20 @@ def cmd_active(ex, args):
             cmd_active(ex, [camera])
     except KeyError:
         ex.display.message('Invalid camera name.')
+
+def cmd_config(ex, args):
+    """name config"""
+    try:
+        assert isinstance(ex.model.scene[args[0]], Robot)
+        if len(args) > 1:
+            ex.model.scene[args[0]].config = [float(arg) for arg in args[1:]]
+            ex.model.scene[args[0]].update_visualization()
+        else:
+            ex.display.message(str(ex.model.scene[args[0]].config))
+    except AssertionError:
+        ex.display.message('Not a robot.')
+    except KeyError:
+        ex.display.message('Invalid robot name.')
 
 def cmd_coverage(ex, args):
     """ocular name*"""
