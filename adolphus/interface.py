@@ -38,7 +38,7 @@ class Display(visual.display):
         @param foreground: The default foreground color of the scene.
         @type foreground: C{tuple}
         """
-        visual.display.__init__(self, title='Adolphus', center=center,
+        super(Display, self).__init__(title='Adolphus', center=center,
             background=background, foreground=foreground)
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)

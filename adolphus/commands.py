@@ -13,6 +13,7 @@ import cython
 from .geometry import Point, DirectionalPoint
 from .visualization import visual, Sprite
 from .posable import Robot
+from .robotpanel import RobotPanel
 
 
 def cmd_sc(ex, args):
@@ -146,7 +147,7 @@ def cmd_active(ex, args):
         ex.display.message('Invalid camera name.')
 
 def cmd_config(ex, args):
-    """name config"""
+    """robot [config]"""
     try:
         assert isinstance(ex.model.scene[args[0]], Robot)
         if len(args) > 1:
@@ -158,6 +159,18 @@ def cmd_config(ex, args):
         ex.display.message('Not a robot.')
     except KeyError:
         ex.display.message('Invalid robot name.')
+
+def cmd_panel(ex, args):
+    """[robot]"""
+    try:
+        assert isinstance(ex.model.scene[args[0]], Robot)
+        ex._panel = RobotPanel(ex.model.scene[args[0]])
+        ex._panel.start()
+    except IndexError:
+        ex._panel.quit = True
+        ex._panel.join()
+    except AssertionError:
+        ex.display.message('Not a robot.')
 
 def cmd_coverage(ex, args):
     """ocular name*"""
