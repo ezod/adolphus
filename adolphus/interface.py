@@ -15,7 +15,7 @@ import cython
 import commands
 from .geometry import Point, Rotation
 from .coverage import MultiCamera
-from .visualization import visual, VisualizationError, Sprite, Visualizable
+from .visualization import visual, VisualizationError, Sprite, Visualizable, RATE
 from .yamlparser import YAMLParser
 
 if visual:
@@ -199,7 +199,6 @@ class Experiment(threading.Thread):
         self.display = Display(zoom=zoom)
         Visualizable.displays['main'] = self.display
         self.display.select()
-        self.rate = 50
 
         # model and config functions - can also be used during runtime
         # these should not raise KeyErrors
@@ -310,7 +309,7 @@ class Experiment(threading.Thread):
         self.execute('name')
         # event loop
         while not self.exit:
-            visual.rate(self.rate)
+            visual.rate(RATE)
             # clear mesages after a while
             if self.display._messagebox.visible:
                 msgctr += 1

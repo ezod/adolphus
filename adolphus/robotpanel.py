@@ -10,7 +10,7 @@ Robot panel module.
 import threading
 import visual.controls
 
-from .visualization import visual
+from .visualization import visual, RATE
 
 
 class RobotPanel(threading.Thread):
@@ -38,7 +38,6 @@ class RobotPanel(threading.Thread):
                 joint['limits'][0]) / (joint['limits'][1] - joint['limits'][0])
             self.slider[i].action = lambda: self.update_config()
             offset -= 20
-        visual.controls.button()
         self.quit = False
 
     def run(self):
@@ -46,7 +45,7 @@ class RobotPanel(threading.Thread):
         Run the robot configurator thread.
         """
         while not self.quit: 
-            visual.rate(50)
+            visual.rate(RATE)
             self.panel.interact()
         self.panel.display.visible = False
 

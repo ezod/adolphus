@@ -17,6 +17,9 @@ class VisualizationError(Exception):
     pass
 
 
+RATE = 50
+
+
 class Sprite(visual.frame):
     """\
     Sprite class.
