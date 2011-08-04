@@ -111,7 +111,7 @@ class Plane(Posable, Visualizable):
     """\
     Plane segment (2D subspace of 3D space) class.
     """
-    def __init__(self, pose=None, mount=None, x=None, y=None, z=None):
+    def __init__(self, pose=Pose(), mount=None, x=None, y=None, z=None):
         """\
         Constructor.
 
@@ -119,18 +119,18 @@ class Plane(Posable, Visualizable):
         @type pose: L{Pose}
         """
         Posable.__init__(self, pose=pose, mount=mount)
-        if pose is None:
-            if isinstance(z, Number):
-                self.set_relative_pose(Pose(T=Point((0.0, 0.0, z))))
-                self.x, self.y = [float(n) for n in x], [float(n) for n in y]
-            elif isinstance(y, Number):
-                self.set_relative_pose(Pose(T=Point((0.0, y, 0.0)),
-                    R=Rotation.from_euler('zyx', (-pi / 2.0, 0, 0))))
-                self.x, self.y = [float(n) for n in x], [float(n) for n in z]
-            else:
-                self.set_relative_pose(Pose(T=Point((x, 0.0, 0.0)),
-                    R=Rotation.from_euler('zyx', (0, -pi / 2.0, -pi / 2.0))))
-                self.x, self.y = [float(n) for n in y], [float(n) for n in z]
+        if isinstance(z, Number):
+            self.set_relative_pose(Pose(T=Point((0.0, 0.0, z))) + self._pose)
+            self.x, self.y = [float(n) for n in x], [float(n) for n in y]
+        elif isinstance(y, Number):
+            self.set_relative_pose(Pose(T=Point((0.0, y, 0.0)),
+                R=Rotation.from_euler('zyx', (-pi / 2.0, 0, 0))) + self._pose)
+            self.x, self.y = [float(n) for n in x], [float(n) for n in z]
+        elif isinstance(x, Number):
+            self.set_relative_pose(Pose(T=Point((x, 0.0, 0.0)),
+                R=Rotation.from_euler('zyx', (0, -pi / 2.0, -pi / 2.0))) \
+                + self._pose)
+            self.x, self.y = [float(n) for n in y], [float(n) for n in z]
         else:
             self.x, self.y = [float(n) for n in x], [float(n) for n in y]
         primitives = [{'type':       'box',
@@ -144,7 +144,10 @@ class Plane(Posable, Visualizable):
         """\
         Hook called on pose change.
         """
-        del self._center
+        try:
+            del self._center
+        except AttributeError:
+            pass
         Posable._pose_changed_hook(self)
 
     @property
@@ -246,6 +249,10 @@ class SceneObject(Posable, Visualizable):
         self.planes = set()
         for plane in planes:
             plane['mount'] = self
+            try:
+                plane['pose'] = plane['pose'] - self._mount_pose
+            except KeyError:
+                plane['pose'] = -self._mount_pose
             self.planes.add(Plane(**plane))
         self._planes_view = False
 

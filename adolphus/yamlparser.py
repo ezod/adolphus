@@ -159,7 +159,7 @@ class YAMLParser(object):
             try:
                 pose = self._parse_pose(item['pose'])
             except KeyError:
-                pose = None
+                pose = Pose()
             if 'sprites' in item:
                 try:
                     mount_pose = self._parse_pose(item['mount_pose'])
