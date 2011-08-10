@@ -6,6 +6,8 @@
 Adolphus is a set of tools for modeling and visualizing the coverage of
 multi-camera networks.
 
+See our [screencast] [0] for an introduction.
+
 
 ## Requirements
 
@@ -26,6 +28,7 @@ recommended).
 * A. Mavrinac, J. L. Alarcon Herrera, and X. Chen, "[Evaluating the Fuzzy Coverage Model for 3D Multi-Camera Network Applications] [7]," in *Proc. Intl. Conf. on Intelligent Robotics and Applications*, 2010.
 
 
+[0]: http://www.youtube.com/watch?v=M-l79fkmmmA
 [1]: http://www.python.org
 [2]: http://cython.org
 [3]: http://pyyaml.org
