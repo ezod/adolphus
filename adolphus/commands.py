@@ -23,6 +23,11 @@ if visual:
 
 def cmd_open(ex, args):
     """filename"""
+    cmd_clear(ex, [])
+    cmd_modify(ex, [])
+    cmd_indicate(ex, [])
+    cmd_camview(ex, [])
+    # TODO: clean up other visual stuff
     try:
         del ex.model
     except AttributeError:
@@ -231,7 +236,7 @@ def cmd_coverage(ex, args):
         ex.display.userspin = True
 
 def cmd_clear(ex, args):
-    for key in ex.coverage:
+    for key in ex.coverage.keys():
         del ex.coverage[key]
 
 def cmd_distribute(ex, args):

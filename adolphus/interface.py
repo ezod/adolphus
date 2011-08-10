@@ -195,18 +195,6 @@ class Experiment(threading.Thread):
         Visualizable.displays['main'] = self.display
         self.display.select()
 
-        # interface commands
-        self.commands = {}
-        for function in dir(commands):
-            if function.startswith('cmd_'):
-                self.commands[function[4:]] = getattr(commands, function)
-
-        if model_file:
-            self.commands['open'](self, [model_file])
-        else:
-            self.model = MultiCamera()
-        self.commands['config'](self, [config_file])
-
         self.coverage = {}
         self.fovvis = {}
         self.valvis = {}
@@ -241,6 +229,18 @@ class Experiment(threading.Thread):
 
         self.exit = False
         super(Experiment, self).__init__()
+
+        # interface commands
+        self.commands = {}
+        for function in dir(commands):
+            if function.startswith('cmd_'):
+                self.commands[function[4:]] = getattr(commands, function)
+
+        if model_file:
+            self.commands['open'](self, [model_file])
+        else:
+            self.model = MultiCamera()
+        self.commands['config'](self, [config_file])
 
     def execute(self, cmd):
         """\
