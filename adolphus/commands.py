@@ -7,6 +7,7 @@ Standard library of interface commands.
 @license: GPL-3
 """
 
+import yaml
 from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
 import cython
@@ -14,7 +15,38 @@ from .geometry import Point, DirectionalPoint
 from .visualization import visual, Sprite
 from .posable import Robot
 from .robotpanel import RobotPanel
+from .yamlparser import YAMLParser
 
+if visual:
+    from visual.filedialog import get_file
+
+
+def cmd_open(ex, args):
+    """filename"""
+    try:
+        del ex.model
+    except AttributeError:
+        pass
+    try:
+        ex.model, ex.relevance_models = YAMLParser(args[0]).experiment
+    except IndexError:
+        ex.model, ex.relevance_models = YAMLParser(get_file().name).experiment
+    ex.model.visualize()
+
+def cmd_config(ex, args):
+    """filename"""
+    try:
+        config = yaml.load(open(args[0]))
+    except IndexError:
+        config = yaml.load(get_file())
+    except TypeError:
+        import pkg_resources
+        config = yaml.load(pkg_resources.resource_string(__name__,
+            'resources/config.yaml'))
+    try:
+        ex.keybindings = config['keybindings']
+    except KeyError:
+        ex.keybindings = {}
 
 def cmd_sc(ex, args):
     """x y z"""
@@ -146,8 +178,8 @@ def cmd_active(ex, args):
     except KeyError:
         ex.display.message('Invalid camera name.')
 
-def cmd_config(ex, args):
-    """robot [config]"""
+def cmd_position(ex, args):
+    """robot [position]"""
     try:
         assert isinstance(ex.model.scene[args[0]], Robot)
         if len(args) > 1:

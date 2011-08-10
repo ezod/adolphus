@@ -8,7 +8,6 @@ Visual interface module.
 """
 
 import threading
-import yaml
 from math import copysign
 
 import cython
@@ -16,10 +15,6 @@ import commands
 from .geometry import Point, Rotation
 from .coverage import MultiCamera
 from .visualization import visual, VisualizationError, Sprite, Visualizable, RATE
-from .yamlparser import YAMLParser
-
-if visual:
-    from visual.filedialog import get_file
 
 
 class Display(visual.display):
@@ -200,40 +195,17 @@ class Experiment(threading.Thread):
         Visualizable.displays['main'] = self.display
         self.display.select()
 
-        # model and config functions - can also be used during runtime
-        # these should not raise KeyErrors
-        def cmd_open(args):
-            """filename"""
-            try:
-                del self.model
-            except AttributeError:
-                pass
-            try:
-                self.model, self.relevance_models = YAMLParser(args[0]).experiment
-            except IndexError:
-                self.model, self.relevance_models = YAMLParser(get_file().name).experiment
-            self.model.visualize()
-
-        def cmd_config(args):
-            """filename"""
-            try:
-                config = yaml.load(open(args[0]))
-            except IndexError:
-                config = yaml.load(get_file())
-            except TypeError:
-                import pkg_resources
-                config = yaml.load(pkg_resources.resource_string(__name__,
-                    'resources/config.yaml'))
-            try:
-                self.keybindings = config['keybindings']
-            except KeyError:
-                self.keybindings = {}
+        # interface commands
+        self.commands = {}
+        for function in dir(commands):
+            if function.startswith('cmd_'):
+                self.commands[function[4:]] = getattr(commands, function)
 
         if model_file:
-            cmd_open([model_file])
+            self.commands['open'](self, [model_file])
         else:
             self.model = MultiCamera()
-        cmd_config([config_file])
+        self.commands['config'](self, [config_file])
 
         self.coverage = {}
         self.fovvis = {}
@@ -266,12 +238,6 @@ class Experiment(threading.Thread):
                                'material':      visual.materials.emissive})
         self.modifier = Sprite(primitives)
         self.modifier.visible = False
-
-        # interface commands
-        self.commands = {}
-        for function in dir(commands):
-            if function.startswith('cmd_'):
-                self.commands[function[4:]] = getattr(commands, function)
 
         self.exit = False
         super(Experiment, self).__init__()
