@@ -80,7 +80,10 @@ class Posable(object):
         @param pose: The absolute pose to set.
         @type pose: L{Pose}
         """
-        self._pose = pose - self.mount.mount_pose()
+        try:
+            self._pose = pose - self.mount.mount_pose()
+        except AttributeError:
+            self._pose = pose
         for child in self.children:
             child._pose_changed_hook()
 
@@ -308,9 +311,9 @@ class Robot(Posable):
     Sprite-based robot.
     """
     def __init__(self, pose=Pose(), mount=None, pieces=[], config=None):
-        super(Robot, self).__init__(pose, mount)
+        super(Robot, self).__init__(pose=pose, mount=mount)
         self.pieces = []
-        nextpose = Pose()
+        nextpose = pose
         for i, piece in enumerate(pieces):
             offset = piece['offset']
             try:
@@ -328,7 +331,6 @@ class Robot(Posable):
             self.pieces.append(SceneObject(nextpose, offset, mount, primitives,
                 planes))
             nextpose = self.generate_joint_pose(piece['joint'])
-        self._mount_pose = nextpose
         self.joints = [piece['joint'] for piece in pieces]
         self._config = [joint['home'] for joint in self.joints]
         if config:
@@ -382,7 +384,34 @@ class Robot(Posable):
         @return: The overall tool pose.
         @rtype: L{Pose}
         """
-        return self._mount_pose + self.pieces[-1].mount_pose()
+        return self.pieces[-1].mount_pose()
+
+    @property
+    def pose(self):
+        """\
+        The pose of the robot.
+        """
+        return self.pieces[0].pose
+
+    def set_absolute_pose(self, pose):
+        """\
+        Set the absolute (world frame) pose of the robot.
+
+        @param pose: The absolute pose to set.
+        @type pose: L{Pose}
+        """
+        self.pieces[0].set_absolute_pose(pose)
+        super(Robot, self).set_absolute_pose(pose)
+
+    def set_relative_pose(self, pose):
+        """\
+        Set the relative (mounted) pose of the robot.
+
+        @param pose: The relative pose to set.
+        @type pose: L{Pose}
+        """
+        self.pieces[0].set_relative_pose(pose)
+        super(Robot, self).set_relative_pose(pose)
 
     @staticmethod
     def generate_joint_pose(joint, position=None):
