@@ -7,6 +7,8 @@ Visual interface module.
 @license: GPL-3
 """
 
+import os
+import ctypes
 import threading
 from math import copysign
 
@@ -48,15 +50,21 @@ class Display(visual.display):
             material=visual.materials.emissive, visible=False)
 
         # axes
+        if os.name == 'nt':
+            user32 = ctypes.windll.user32
+            textsize = int((user32.GetSystemMetrics(0) * \
+            user32.GetSystemMetrics(1)) / 100000)
+        else:
+            textsize = 6
         self.axes = visual.frame(visible=False)
         axes = ['X', 'Y', 'Z']
         for axis in range(3):
             visual.arrow(frame=self.axes, shaftwidth=3,
                 color=(0, 0, 1), axis=tuple([i == axis and 150 or 0 \
                 for i in range(3)]))
-            visual.label(frame=self.axes, height=6, color=(1, 1, 1),
-                background=(0, 0, 0), text=axes[axis],
-                pos=tuple([i == axis and 165 or 0 for i in range(3)]))
+            visual.label(frame=self.axes, height=textsize, 
+            color=(1, 1, 1), background=(0, 0, 0), text=axes[axis], 
+            pos=tuple([i == axis and 165 or 0 for i in range(3)]))
 
         # command/message box
         self._messagebox = visual.label(pos=center, height=12,
