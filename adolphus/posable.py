@@ -310,7 +310,8 @@ class Robot(Posable):
     """\
     Sprite-based robot.
     """
-    def __init__(self, pose=Pose(), mount=None, pieces=[], config=None):
+    def __init__(self, pose=Pose(), mount=None, pieces=[], config=None,
+                 occlusion=True):
         super(Robot, self).__init__(pose=pose, mount=mount)
         self.pieces = []
         nextpose = pose
@@ -321,8 +322,9 @@ class Robot(Posable):
             except IndexError:
                 mount = self.mount
             try:
+                assert occlusion
                 planes = piece['planes']
-            except KeyError:
+            except (AssertionError, KeyError):
                 planes = []
             try:
                 primitives = piece['primitives']

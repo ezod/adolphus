@@ -160,6 +160,10 @@ class YAMLParser(object):
                 pose = self._parse_pose(item['pose'])
             except KeyError:
                 pose = Pose()
+            try:
+                occlusion = item['occlusion']
+            except KeyError:
+                occlusion = True
             if 'sprites' in item:
                 try:
                     mount_pose = self._parse_pose(item['mount_pose'])
@@ -168,8 +172,11 @@ class YAMLParser(object):
                 # parse sprites and planes
                 sprites = reduce(lambda a, b: a + b, [self._parse_primitives(sprite) \
                     for sprite in item['sprites']])
-                planes = reduce(lambda a, b: a + b, [self._parse_planes(sprite) \
-                    for sprite in item['sprites']])
+                if occlusion:
+                    planes = reduce(lambda a, b: a + b, [self._parse_planes(sprite) \
+                        for sprite in item['sprites']])
+                else:
+                    planes = []
                 # create object
                 rscene[item['name']] = SceneObject(pose or Pose(), mount_pose,
                     None, sprites, planes)
@@ -180,7 +187,7 @@ class YAMLParser(object):
                 except KeyError:
                     config = None
                 rscene[item['name']] = \
-                    Robot(pose or Pose(), None, pieces, config)
+                    Robot(pose or Pose(), None, pieces, config, occlusion)
             elif 'z' in item:
                 rscene[item['name']] = \
                     Plane(pose, None, item['x'], item['y'], item['z'])
