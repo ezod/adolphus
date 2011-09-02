@@ -102,7 +102,10 @@ class RelevanceModel(Posable):
         """\
         Hook called on pose change.
         """
-        del self._mapped
+        try:
+            del self._mapped
+        except AttributeError:
+            pass
         super(RelevanceModel, self)._pose_changed_hook()
 
     @property
@@ -195,7 +198,10 @@ class Camera(Posable, Visualizable):
         fov = False
         fovvis = False
         if param in ['f', 's', 'dim']:
-            del self._fov
+            try:
+                del self._fov
+            except AttributeError:
+                pass
             fov = True
             fovvis = True
         if fov or param == 'boundary_padding':
