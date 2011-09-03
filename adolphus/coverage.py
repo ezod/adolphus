@@ -376,38 +376,6 @@ class Camera(Posable, Visualizable):
         cp = (-self.pose).map(point)
         return self.Cv(cp) * self.Cr(cp) * self.Cf(cp) * self.Cd(cp)
 
-    def coverage(self, relevance):
-        """\
-        Return the coverage model of this camera with respect to the points in a
-        given relevance model.
-
-        @param relevance: The relevance model.
-        @type relevance: L{RelevanceModel}
-        @return: The coverage model.
-        @rtype: L{PointCache}
-        """
-        coverage = PointCache()
-        for point in relevance.mapped:
-            coverage[point] = self.strength(point)
-        return coverage
-
-    def performance(self, relevance, coverage=None):
-        """\
-        Return the coverage performance of this camera with respect to a given
-        relevance model. If a previously computed coverage cache is provided, it
-        should be for the same point set as used by the relevance model.
-
-        @param relevance: The relevance model.
-        @type relevance: L{RelevanceModel}
-        @param coverage: Previously computed coverage cache for these points.
-        @type coverage: L{PointCache}
-        @return: Performance metric in [0, 1].
-        @rtype: C{float}
-        """
-        coverage = coverage or self.coverage(relevance)
-        return sum((coverage & relevance.mapped).values()) \
-            / sum(relevance.mapped.values())
-
     def update_visualization(self):
         """\
         Update the visualization for camera active state and pose.
@@ -553,7 +521,7 @@ class MultiCamera(dict):
             coverage[point] = self.strength(point, ocular, subset)
         return coverage
 
-    def performance(self, relevance, ocular=1, coverage=None):
+    def performance(self, relevance, ocular=1, subset=None, coverage=None):
         """\
         Return the coverage performance of this multi-camera network with
         respect to a given relevance model. If a previously computed coverage
@@ -564,12 +532,14 @@ class MultiCamera(dict):
         @type relevance: L{RelevanceModel}
         @param ocular: Mutual camera coverage degree.
         @type ocular: C{int}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
         @param coverage: Previously computed coverage cache for these points.
         @type coverage: L{PointCache}
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
-        coverage = coverage or self.coverage(relevance, ocular)
+        coverage = coverage or self.coverage(relevance, ocular, subset)
         return sum((coverage & relevance.mapped).values()) \
             / sum(relevance.mapped.values())
 
