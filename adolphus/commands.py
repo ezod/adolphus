@@ -197,18 +197,6 @@ def cmd_position(ex, args):
     except KeyError:
         ex.display.message('Invalid robot name.')
 
-def cmd_panel(ex, args):
-    """[robot]"""
-    try:
-        assert isinstance(ex.model.scene[args[0]], Robot)
-        ex._panel = RobotPanel(ex.model.scene[args[0]])
-        ex._panel.start()
-    except IndexError:
-        ex._panel.quit = True
-        ex._panel.join()
-    except AssertionError:
-        ex.display.message('Not a robot.')
-
 def cmd_coverage(ex, args):
     """ocular name*"""
     try:
