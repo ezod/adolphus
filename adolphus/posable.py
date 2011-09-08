@@ -51,7 +51,8 @@ class Posable(object):
         """\
         Hook called on pose change.
         """
-        pass
+        for child in self.children:
+            child._pose_changed_hook()
 
     @property
     def mount(self):
