@@ -465,9 +465,9 @@ class MultiCamera(dict):
         """\
         Return a list of active cameras.
 
-        @rtype: C{list}
+        @rtype: C{set}
         """
-        return [key for key in self if self[key].active]
+        return set([key for key in self if self[key].active])
     
     def strength(self, point, ocular=1, subset=None):
         """\
