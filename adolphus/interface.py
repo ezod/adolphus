@@ -401,7 +401,7 @@ class Controller(object):
         self.experiment = experiment
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.bind(('localhost', port))
-        self.sock.listen(20)
+        self.sock.listen(0)
 
     @property
     def port(self):
@@ -423,7 +423,7 @@ class Controller(object):
         client = ''
         while not client.endswith('#'):
             client += channel.recv(256)
-        settings = [bool(int(v)) for v in client]
+        settings = [bool(int(v)) for v in client.strip('#')]
         # pad settings vector for backwards compatibility
         settings += [False] * (1 - len(settings))
         try:
