@@ -14,7 +14,7 @@ import cython
 import commands
 from .geometry import Point, Rotation
 from .coverage import MultiCamera
-from .visualization import visual, VisualizationError, Sprite, Visualizable,
+from .visualization import visual, VisualizationError, Sprite, Visualizable, \
                            vsettings
 
 
