@@ -477,6 +477,12 @@ class Rotation(object):
         """
         self.Q = Q
 
+    def __getstate__(self):
+        return self.Q
+
+    def __setstate__(self, state):
+        self.Q = state
+
     def __repr__(self):
         """\
         Canonical string representation.
@@ -681,6 +687,12 @@ class Pose(object):
         """
         self.T = T
         self.R = R
+
+    def __getstate__(self):
+        return self.T, self.R
+
+    def __setstate__(self, state):
+        self.T, self.R = state
 
     def __add__(self, other):
         """\
