@@ -45,7 +45,7 @@ setup(
     author = "Aaron Mavrinac",
     author_email = "mavrin1@uwindsor.ca",
     url = URL,
-    keywords = "fuzzy vision multicamera model",
+    keywords = "vision camera robotics model",
     packages = [PACKAGE],
     package_data = {PACKAGE: ['resources/*']},
     test_suite = "test",
