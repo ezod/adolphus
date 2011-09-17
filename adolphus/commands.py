@@ -31,10 +31,10 @@ class CommandError(Exception):
 
 def cmd_open(ex, args, pickled):
     """filename"""
-    cmd_clear(ex, [])
-    cmd_modify(ex, [])
-    cmd_indicate(ex, [])
-    cmd_camview(ex, [])
+    cmd_clear(ex, [], False)
+    cmd_modify(ex, [], False)
+    cmd_indicate(ex, [], False)
+    cmd_camview(ex, [], False)
     # TODO: clean up other visual stuff
     try:
         del ex.model
@@ -198,7 +198,7 @@ def cmd_active(ex, args, pickled):
         ex.model[args[0]].update_visualization()
     except IndexError:
         for camera in ex.model:
-            cmd_active(ex, [camera])
+            cmd_active(ex, [camera], False)
     except KeyError:
         raise CommandError('invalid camera name')
 
