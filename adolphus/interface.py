@@ -418,6 +418,8 @@ class Controller(object):
         channel, details = self.sock.accept()
         try:
             while True:
+                if not self.experiment.is_alive():
+                    raise Exception
                 cmd = ''
                 while not cmd.endswith('#'):
                     cmd += channel.recv(256)
@@ -430,5 +432,6 @@ class Controller(object):
         finally:
             channel.close()
             self.sock.close()
-            self.experiment.execute('exit')
+            if self.experiment.is_alive():
+                self.experiment.execute('exit')
             self.experiment.join()
