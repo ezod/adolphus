@@ -14,11 +14,14 @@ import cython
 from .geometry import Point, DirectionalPoint
 from .visualization import visual, Sprite
 from .posable import Robot
-from .robotpanel import RobotPanel
 from .yamlparser import YAMLParser
 
 if visual:
     from visual.filedialog import get_file
+
+
+class CommandError(Exception):
+    pass
 
 
 def cmd_open(ex, args):
