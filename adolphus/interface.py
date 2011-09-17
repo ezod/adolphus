@@ -413,9 +413,19 @@ class Controller(object):
     def main(self):
         """\
         Main loop.
+
+        Client settings are as follows:
+            [0] - Accepts Python pickled responses.
         """
         self.experiment.start()
         channel, details = self.sock.accept()
+        # get client settings
+        client = ''
+        while not client.endswith('#'):
+            client += channel.recv(256)
+        settings = [bool(int(v)) for v in client]
+        # pad settings vector for backwards compatibility
+        settings += [False] * (1 - len(settings))
         try:
             while True:
                 if not self.experiment.is_alive():
@@ -424,7 +434,8 @@ class Controller(object):
                 while not cmd.endswith('#'):
                     cmd += channel.recv(256)
                 try:
-                    rstring = self.experiment.execute(cmd.strip('#'))
+                    rstring = self.experiment.execute(cmd.strip('#'),
+                        pickled=settings[0])
                 except CommandError:
                     pass
                 if rstring:
