@@ -7,8 +7,6 @@ Visual interface module.
 @license: GPL-3
 """
 
-import os
-import ctypes
 import threading
 from math import copysign
 
@@ -16,27 +14,25 @@ import cython
 import commands
 from .geometry import Point, Rotation
 from .coverage import MultiCamera
-from .visualization import visual, VisualizationError, Sprite, Visualizable, RATE
+from .visualization import visual, VisualizationError, Sprite, Visualizable,
+                           vsettings
 
 
 class Display(visual.display):
     """\
     Visual display class.
     """
-    def __init__(self, zoom=False, center=(0, 0, 0), background=(1, 1, 1),
-                 foreground=(0.3, 0.3, 0.3)):
+    def __init__(self, zoom=False, center=(0, 0, 0)):
         """\
         Contstructor.
 
+        @param zoom: Toggle user zoom enable.
+        @type zoom: C{bool}
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
-        @param background: The background color of the scene.
-        @type background: C{tuple}
-        @param foreground: The default foreground color of the scene.
-        @type foreground: C{tuple}
         """
         super(Display, self).__init__(title='Adolphus View', center=center,
-            background=background, foreground=foreground)
+            background=(1, 1, 1), foreground=(0.3, 0.3, 0.3))
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self.userzoom = zoom
@@ -50,25 +46,19 @@ class Display(visual.display):
             material=visual.materials.emissive, visible=False)
 
         # axes
-        if os.name == 'nt':
-            user32 = ctypes.windll.user32
-            textsize = int((user32.GetSystemMetrics(0) * \
-            user32.GetSystemMetrics(1)) / 100000)
-        else:
-            textsize = 6
         self.axes = visual.frame(visible=False)
         axes = ['X', 'Y', 'Z']
         for axis in range(3):
             visual.arrow(frame=self.axes, shaftwidth=3,
                 color=(0, 0, 1), axis=tuple([i == axis and 150 or 0 \
                 for i in range(3)]))
-            visual.label(frame=self.axes, height=textsize, 
+            visual.label(frame=self.axes, height=vsettings['textsize'], 
             color=(1, 1, 1), background=(0, 0, 0), text=axes[axis], 
             pos=tuple([i == axis and 165 or 0 for i in range(3)]))
 
         # command/message box
-        self._messagebox = visual.label(pos=center, height=12,
-            color=(1, 1, 1), background=(0, 0, 0), visible=False)
+        self._messagebox = visual.label(pos=center, background=(0, 0, 0),
+            height=vsettings['textsize'] * 2, color=(1, 1, 1), visible=False)
 
     def shift_center(self, direction=None):
         """\
@@ -283,7 +273,7 @@ class Experiment(threading.Thread):
         self.execute('name')
         # event loop
         while not self.exit:
-            visual.rate(RATE)
+            visual.rate(vsettings['rate'])
             # clear mesages after a while
             if self.display._messagebox.visible:
                 msgctr += 1

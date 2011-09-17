@@ -7,6 +7,9 @@ Visualization helper module.
 @license: GPL-3
 """
 
+import os
+import ctypes
+
 try:
     import visual
 except ImportError:
@@ -17,7 +20,11 @@ class VisualizationError(Exception):
     pass
 
 
-RATE = 50
+vsettings = {'rate': 50, 'textsize': 6}
+if os.name == 'nt':
+    user32 = ctypes.windll.user32
+    vsettings['textsize'] = int((user32.GetSystemMetrics(0) * \
+        user32.GetSystemMetrics(1)) / 100000)
 
 
 class Sprite(visual.frame):
