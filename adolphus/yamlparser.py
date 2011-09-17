@@ -22,7 +22,7 @@ class YAMLParser(object):
     """\
     YAML experiment parser class.
     """
-    def __init__(self, filename, active=True):
+    def __init__(self, filename):
         """\
         Constructor. Parses an experiment from YAML.
 
@@ -34,7 +34,7 @@ class YAMLParser(object):
         self._path = os.path.split(filename)[0]
         self._mounts = {}
         experiment = yaml.load(open(filename))
-        self.model = self._parse_model(experiment['model'], active=active)
+        self.model = self._parse_model(experiment['model'])
         self.relevances = {}
         try:
             for relevance in experiment['relevance']:
@@ -199,14 +199,12 @@ class YAMLParser(object):
             self._mounts[item['name']] = rscene[item['name']]
         return rscene
 
-    def _parse_model(self, model, active=True):
+    def _parse_model(self, model):
         """\
         Parse a multi-camera model from YAML.
 
         @param model: The YAML dict of the multi-camera model.
         @type model: C{dict}
-        @param active: Default active state of cameras (optional).
-        @type active: C{bool}
         @return: The parsed multi-camera model.
         @rtype: L{MultiCamera}
         """
@@ -249,6 +247,11 @@ class YAMLParser(object):
                 _parse_primitives(sprite) for sprite in camera['sprites']])
             sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6,
                 'background': [0, 0, 0], 'text': camera['name']})
+            # parse active state
+            try:
+                active = camera['active']
+            except KeyError:
+                active = True
             # create camera
             rmodel[camera['name']] = Camera(camera, pose, None, sprites,
                 active=active)
