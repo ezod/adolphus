@@ -13,7 +13,6 @@ except ImportError:
     import pickle
 
 import yaml
-from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
 import cython
 from .geometry import Point, DirectionalPoint
@@ -107,16 +106,21 @@ def cmd_pose(ex, args, pickled):
         if pickled:
             return pickle.dumps(pose)
         else:
+            flatpose = tuple(pose.T)
             try:
                 if args[1] == 'quaternion':
                     raise IndexError
                 elif args[1] == 'matrix':
-                    flatpose = pose.T + tuple(pose.R.to_rotation_matrix().flatten())
-                # TODO: other formats
+                    flatpose += tuple(pose.R.to_rotation_matrix().flatten())
+                elif args[1] == 'axis-angle':
+                    axis, angle = pose.R.to_axis_angle()
+                    flatpose += tuple(axis) + (angle,)
+                elif args[1] == 'euler-zyx':
+                    flatpose += tuple(pose.R.to_euler_zyx())
                 else:
                     raise CommandError('invalid rotation format')
             except IndexError:
-                flatpose = pose.T + (pose.R.Q.a,) + tuple(pose.R.Q.v)
+                flatpose += (pose.R.Q.a,) + tuple(pose.R.Q.v)
             return ','.join([str(float(e)) for e in flatpose]) + '#'
     except KeyError:
         raise CommandError('invalid camera name')
