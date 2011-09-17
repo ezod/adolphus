@@ -260,11 +260,11 @@ class Experiment(threading.Thread):
             raise CommandError('invalid command')
         try:
             return self.commands[cmd](self, args, pickled)
-        except Exception as e:
+        except CommandError as e:
+            es = str(e)
             if self.commands[cmd].__doc__:
-                es = str(e)
                 es += '\nusage: %s %s' % (cmd, self.commands[cmd].__doc__)
-                raise CommandError(es)
+            return es
 
     def run(self):
         """\
