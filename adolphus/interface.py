@@ -33,7 +33,7 @@ class Display(visual.display):
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         """
-        super(Display, self).__init__(title='Adolphus View', center=center,
+        super(Display, self).__init__(title='Adolphus Viewer', center=center,
             background=(1, 1, 1), foreground=(0.3, 0.3, 0.3))
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
