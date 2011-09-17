@@ -2,7 +2,7 @@
 
 from optparse import OptionParser
 
-from adolphus import Experiment, Panel
+from adolphus import Experiment
 
 
 def main():
@@ -19,8 +19,8 @@ def main():
         model_file = None
 
     experiment = Experiment(model_file, config_file=opts.conf, zoom=opts.zoom)
-    panel = Panel(experiment=experiment)
-    panel.main()
+    experiment.start()
+    experiment.join()
 
 
 if __name__ == '__main__':
