@@ -7,6 +7,11 @@ Standard library of interface commands.
 @license: GPL-3
 """
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 import yaml
 from hypergraph.orientation import minimum_maximum_weighted_indegree_orientation
 
@@ -24,7 +29,7 @@ class CommandError(Exception):
     pass
 
 
-def cmd_open(ex, args):
+def cmd_open(ex, args, pickled=True):
     """filename"""
     cmd_clear(ex, [])
     cmd_modify(ex, [])
@@ -41,7 +46,7 @@ def cmd_open(ex, args):
         ex.model, ex.relevance_models = YAMLParser(get_file().name).experiment
     ex.model.visualize()
 
-def cmd_config(ex, args):
+def cmd_config(ex, args, pickled=True):
     """filename"""
     try:
         config = yaml.load(open(args[0]))
@@ -56,15 +61,14 @@ def cmd_config(ex, args):
     except KeyError:
         ex.keybindings = {}
 
-def cmd_sc(ex, args):
+def cmd_sc(ex, args, pickled=True):
     """x y z"""
     if ex.display.in_camera_view:
-        ex.display.message('Cannot shift center in camera view.')
-        return
+        raise CommandError('cannot shift center in camera view')
     ex.display.shift_center((float(args[0]), float(args[1]),
         float(args[2])))
 
-def cmd_strength(ex, args):
+def cmd_strength(ex, args, pickled=True):
     """ocular x y z [rho eta]"""
     ocular = int(args.pop(0))
     if len(args) == 3:
@@ -72,54 +76,66 @@ def cmd_strength(ex, args):
     elif len(args) == 5:
         p = DirectionalPoint([float(args[i]) for i in range(5)])
     else:
-        raise ValueError
-    ex.display.message(u'\u03bc%s = %.4f' \
-        % (p, ex.model.strength(p, ocular=ocular)))
+        raise CommandError('invalid point')
+    if pickled:
+        return pickle.dumps(ex.model.strength(p, ocular=ocular))
+    else:
+        return '%f#' % ex.model.strength(p, ocular=ocular)
 
-def cmd_axes(ex, args):
+def cmd_axes(ex, args, pickled=True):
     ex.display.axes.visible = not ex.display.axes.visible
 
-def cmd_cdot(ex, args):
+def cmd_cdot(ex, args, pickled=True):
     ex.display.cdot.visible = not ex.display.cdot.visible
 
-def cmd_planes(ex, args):
+def cmd_planes(ex, args, pickled=True):
     for posable in ex.model.scene:
         ex.model.scene[posable].toggle_planes()
 
-def cmd_name(ex, args):
+def cmd_name(ex, args, pickled=True):
     for camera in ex.model:
         for display in ex.model[camera].actuals:
             for member in ex.model[camera].actuals[display].members:
                 if isinstance(member, visual.label):
                     member.visible = not member.visible
 
-def cmd_pose(ex, args):
-    """name"""
+def cmd_pose(ex, args, pickled=True):
+    """name [rformat]"""
     try:
-        ex.display.message('T: (%.2f, %.2f, %.2f)\n' \
-            % ex.model[args[0]].pose.T + \
-            u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
-            % ex.model[args[0]].pose.R.to_euler_zyx())
+        # TODO: should work for any object - need to flatten namespace
+        pose = ex.model[args[0]].pose
+        if pickled:
+            return pickle.dumps(pose)
+        else:
+            try:
+                if args[1] == 'quaternion':
+                    raise IndexError
+                elif args[1] == 'matrix':
+                    flatpose = pose.T + tuple(pose.R.to_rotation_matrix().flatten())
+                # TODO: other formats
+                else:
+                    raise CommandError('invalid rotation format')
+            except IndexError:
+                flatpose = pose.T + (pose.R.Q.a,) + tuple(pose.R.Q.v)
+            return ','.join([str(float(e)) for e in flatpose]) + '#'
     except KeyError:
-        ex.display.message('Invalid camera name.')
+        raise CommandError('invalid camera name')
 
-def cmd_camview(ex, args):
+def cmd_camview(ex, args, pickled=True):
     """name"""
     if ex.zoom:
-        return
+        raise CommandError('cannot do camera view with external zoom enabled')
     if len(args):
         try:
             ex.display.camera_view(ex.model[args[0]])
             ex.modifier.visible = False
             ex.modifier.parent = None
-            ex.display.message('Camera view %s.' % args[0])
         except KeyError:
-            ex.display.message('Invalid camera name.')
+            raise CommandError('invalid camera name')
     else:
         ex.display.camera_view()
-        ex.display.message()
 
-def cmd_indicate(ex, args):
+def cmd_indicate(ex, args, pickled=True):
     """name"""
     if len(args):
         try:
@@ -127,12 +143,12 @@ def cmd_indicate(ex, args):
             ex.indicator.visible = True
             ex.modifier.parent = ex.model[args[0]]
         except KeyError:
-            ex.display.message('Invalid camera name.')
+            raise CommandError('invalid camera name')
     else:
         ex.indicator.visible = False
         ex.modifier.parent = None
 
-def cmd_modify(ex, args):
+def cmd_modify(ex, args, pickled=True):
     """name"""
     if len(args):
         try:
@@ -140,12 +156,12 @@ def cmd_modify(ex, args):
             ex.modifier.visible = True
             ex.modifier.parent = ex.model[args[0]]
         except KeyError:
-            ex.display.message('Invalid camera name.')
+            raise CommandError('invalid camera name')
     else:
         ex.modifier.visible = False
         ex.modifier.parent = None
 
-def cmd_fov(ex, args):
+def cmd_fov(ex, args, pickled=True):
     """name"""
     if args[0] in ex.fovvis:
         ex.fovvis[args[0]].visible = not ex.fovvis[args[0]].visible
@@ -154,9 +170,9 @@ def cmd_fov(ex, args):
             ex.fovvis[args[0]] = Sprite(ex.model[args[0]].fovvis)
             ex.fovvis[args[0]].frame = ex.model[args[0]].actuals['main']
         except KeyError:
-            ex.display.message('Invalid camera name.')
+            raise CommandError('invalid camera name')
 
-def cmd_showval(ex, args):
+def cmd_showval(ex, args, pickled=True):
     """name [value]"""
     if args[0] in ex.valvis:
         ex.valvis[args[0]].visible = False
@@ -171,11 +187,11 @@ def cmd_showval(ex, args):
         try:
             ex.valvis[args[0]].frame = ex.model[args[0]].actuals['main']
         except KeyError:
-            ex.display.message('Invalid camera name.')
+            raise CommandError('invalid camera name')
     except IndexError:
         pass
 
-def cmd_active(ex, args):
+def cmd_active(ex, args, pickled=True):
     """name"""
     try:
         ex.model[args[0]].active = not ex.model[args[0]].active
@@ -184,9 +200,9 @@ def cmd_active(ex, args):
         for camera in ex.model:
             cmd_active(ex, [camera])
     except KeyError:
-        ex.display.message('Invalid camera name.')
+        raise CommandError('invalid camera name')
 
-def cmd_position(ex, args):
+def cmd_position(ex, args, pickled=True):
     """robot [position]"""
     try:
         assert isinstance(ex.model.scene[args[0]], Robot)
@@ -194,13 +210,17 @@ def cmd_position(ex, args):
             ex.model.scene[args[0]].config = [float(arg) for arg in args[1:]]
             ex.model.scene[args[0]].update_visualization()
         else:
-            ex.display.message(str(ex.model.scene[args[0]].config))
+            if pickled:
+                return pickle.dumps(ex.model.scene[args[0]].config)
+            else:
+                return ','.join([str(e) for e in \
+                    ex.model.scene[args[0]].config]) + '#'
     except AssertionError:
-        ex.display.message('Not a robot.')
+        raise CommandError('not a robot')
     except KeyError:
-        ex.display.message('Invalid robot name.')
+        raise CommandError('invalid robot name')
 
-def cmd_coverage(ex, args):
+def cmd_coverage(ex, args, pickled=True):
     """ocular name*"""
     try:
         ex.display.message('Calculating coverage...')
@@ -217,42 +237,27 @@ def cmd_coverage(ex, args):
             performance[arg] = ex.model.performance(\
                 ex.relevance_models[arg], ocular=ocular,
                 coverage=ex.coverage[arg])
-        ex.display.message('\n'.join(['%s: %.4f' % (key,
-            performance[key]) for key in performance]))
+        if pickled:
+            return pickle.dumps(performance)
+        else:
+            return ','.join(['%s:%f' % (key, performance[key]) \
+                for key in performance]) + '#'
+        
     except KeyError:
-        ex.display.message('Invalid relevance model name.')
+        raise CommandError('invalid relevance model name')
     except ValueError:
-        ex.display.message('Too few active cameras.')
+        raise CommandError('too few active cameras')
     finally:
         ex.display.userspin = True
 
-def cmd_clear(ex, args):
+def cmd_clear(ex, args, pickled=True):
     for key in ex.coverage.keys():
         del ex.coverage[key]
 
-def cmd_distribute(ex, args):
-    """name"""
-    try:
-        ex.display.message('Calculating coverage hypergraph...')
-        ex.display.userspin = False
-        L = minimum_maximum_weighted_indegree_orientation(ex.model.\
-            coverage_hypergraph(ex.relevance_models[args[0]]))
-        D = {}
-        for edge in L.edges:
-            try:
-                D[edge.head].append(frozenset(edge))
-            except KeyError:
-                D[edge.head] = [frozenset(edge)]
-        ex.display.message()
-    except KeyError:
-        ex.display.message('Invalid relevance model name.')
-    finally:
-        ex.display.userspin = True
-
-def cmd_eval(ex, args):
+def cmd_eval(ex, args, pickled=True):
     """code"""
-    ex.display.message(str(eval(' '.join(args))))
+    return str(eval(' '.join(args)))
 
-def cmd_exit(ex, args):
+def cmd_exit(ex, args, pickled=True):
     ex.display.visible = False
     ex.exit = True

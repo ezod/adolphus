@@ -8,10 +8,12 @@ Visual interface module.
 """
 
 import threading
+import socket
 from math import copysign
 
 import cython
 import commands
+from .commands import CommandError
 from .geometry import Point, Rotation
 from .coverage import MultiCamera
 from .visualization import visual, VisualizationError, Sprite, Visualizable, \
@@ -101,6 +103,7 @@ class Display(visual.display):
                          * camera.getparam('zS') * 1.2
             self.cdot.pos = self.center
             self._messagebox.pos = self.center
+            self.message('Camera view.')
         else:
             if not self._stored_view:
                 return
@@ -112,6 +115,7 @@ class Display(visual.display):
             self.cdot.pos = self.center
             self._messagebox.pos = self.center
             self._stored_view = None
+            self.message()
 
     @property
     def in_camera_view(self):
@@ -246,18 +250,19 @@ class Experiment(threading.Thread):
 
         @param cmd: The command string to execute.
         @type cmd: C{str}
+        @return: The return string of the command.
+        @rtype: C{str}
         """
         cmd, args = cmd.split()[0], cmd.split()[1:]
         if cmd not in self.commands:
-            self.display.message('Invalid command.')
-            return
+            raise CommandError('invalid command')
         try:
-            self.commands[cmd](self, args)
+            return self.commands[cmd](self, args)
         except Exception as e:
             if self.commands[cmd].__doc__:
                 es = str(e)
-                es += '\nUsage: %s %s' % (cmd, self.commands[cmd].__doc__)
-                self.display.message(es)
+                es += '\nusage: %s %s' % (cmd, self.commands[cmd].__doc__)
+                raise CommandError(es)
 
     def run(self):
         """\
@@ -375,6 +380,55 @@ class Experiment(threading.Thread):
                 if k == '\n':
                     cmd = self.display.prompt()
                     if cmd:
-                        self.execute(cmd)
+                        self.display.message(self.execute(cmd))
                 elif k in self.keybindings:
-                    self.execute(self.keybindings[k])
+                    self.display.message(self.execute(self.keybindings[k]))
+
+
+class Controller(object):
+    """\
+    Socket-based IPC experiment controller class.
+    """
+    def __init__(self, experiment, port=0):
+        """\
+        Constructor.
+
+        @param experiment: The experiment to control.
+        @type experiment: L{Experiment}
+        @param port: The port to which to bind the socket (optional).
+        @type port: C{int}
+        """
+        self.experiment = experiment
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind(('localhost', port))
+        self.sock.listen(20)
+
+    @property
+    def port(self):
+        """\
+        The port on which the controller is listening.
+        """
+        return self.sock.getsockname()[1]
+
+    def main(self):
+        """\
+        Main loop.
+        """
+        self.experiment.start()
+        channel, details = self.sock.accept()
+        try:
+            while True:
+                cmd = ''
+                while not cmd.endswith('#'):
+                    cmd += channel.recv(256)
+                try:
+                    rstring = self.experiment.execute(cmd.strip('#'))
+                except CommandError:
+                    pass
+                if rstring:
+                    channel.sendall(rstring)
+        finally:
+            channel.close()
+            self.sock.close()
+            self.experiment.execute('exit')
+            self.experiment.join()
