@@ -391,6 +391,9 @@ class Controller(object):
     """\
     Socket-based IPC experiment controller class.
     """
+    class ExperimentDeath(Exception):
+        pass
+
     def __init__(self, experiment, port=0):
         """\
         Constructor.
@@ -420,6 +423,7 @@ class Controller(object):
             [0] - Accepts Python pickled responses.
         """
         self.experiment.start()
+        # TODO: time out and check for experiment death here?
         channel, details = self.sock.accept()
         # get client settings
         client = ''
@@ -429,12 +433,16 @@ class Controller(object):
         # pad settings vector for backwards compatibility
         settings += [False] * (1 - len(settings))
         try:
+            channel.settimeout(0.1)
             while True:
-                if not self.experiment.is_alive():
-                    raise Exception
                 cmd = ''
                 while not cmd.endswith('#'):
-                    cmd += channel.recv(256)
+                    if not self.experiment.is_alive():
+                        raise Controller.ExperimentDeath
+                    try:
+                        cmd += channel.recv(256)
+                    except socket.error:
+                        continue
                 try:
                     rstring = self.experiment.execute(cmd.strip('#'),
                         pickled=settings[0])
@@ -442,6 +450,8 @@ class Controller(object):
                     pass
                 if rstring:
                     channel.sendall(rstring)
+        except Controller.ExperimentDeath:
+            pass
         finally:
             channel.close()
             self.sock.close()
