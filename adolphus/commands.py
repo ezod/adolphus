@@ -29,7 +29,7 @@ class CommandError(Exception):
     pass
 
 
-def cmd_open(ex, args, pickled=True):
+def cmd_open(ex, args, pickled):
     """filename"""
     cmd_clear(ex, [])
     cmd_modify(ex, [])
@@ -46,7 +46,7 @@ def cmd_open(ex, args, pickled=True):
         ex.model, ex.relevance_models = YAMLParser(get_file().name).experiment
     ex.model.visualize()
 
-def cmd_config(ex, args, pickled=True):
+def cmd_config(ex, args, pickled):
     """filename"""
     try:
         config = yaml.load(open(args[0]))
@@ -61,14 +61,14 @@ def cmd_config(ex, args, pickled=True):
     except KeyError:
         ex.keybindings = {}
 
-def cmd_sc(ex, args, pickled=True):
+def cmd_sc(ex, args, pickled):
     """x y z"""
     if ex.display.in_camera_view:
         raise CommandError('cannot shift center in camera view')
     ex.display.shift_center((float(args[0]), float(args[1]),
         float(args[2])))
 
-def cmd_strength(ex, args, pickled=True):
+def cmd_strength(ex, args, pickled):
     """ocular x y z [rho eta]"""
     ocular = int(args.pop(0))
     if len(args) == 3:
@@ -82,24 +82,24 @@ def cmd_strength(ex, args, pickled=True):
     else:
         return '%f#' % ex.model.strength(p, ocular=ocular)
 
-def cmd_axes(ex, args, pickled=True):
+def cmd_axes(ex, args, pickled):
     ex.display.axes.visible = not ex.display.axes.visible
 
-def cmd_cdot(ex, args, pickled=True):
+def cmd_cdot(ex, args, pickled):
     ex.display.cdot.visible = not ex.display.cdot.visible
 
-def cmd_planes(ex, args, pickled=True):
+def cmd_planes(ex, args, pickled):
     for posable in ex.model.scene:
         ex.model.scene[posable].toggle_planes()
 
-def cmd_name(ex, args, pickled=True):
+def cmd_name(ex, args, pickled):
     for camera in ex.model:
         for display in ex.model[camera].actuals:
             for member in ex.model[camera].actuals[display].members:
                 if isinstance(member, visual.label):
                     member.visible = not member.visible
 
-def cmd_pose(ex, args, pickled=True):
+def cmd_pose(ex, args, pickled):
     """name [rformat]"""
     try:
         # TODO: should work for any object - need to flatten namespace
@@ -121,7 +121,7 @@ def cmd_pose(ex, args, pickled=True):
     except KeyError:
         raise CommandError('invalid camera name')
 
-def cmd_camview(ex, args, pickled=True):
+def cmd_camview(ex, args, pickled):
     """name"""
     if ex.zoom:
         raise CommandError('cannot do camera view with external zoom enabled')
@@ -135,7 +135,7 @@ def cmd_camview(ex, args, pickled=True):
     else:
         ex.display.camera_view()
 
-def cmd_indicate(ex, args, pickled=True):
+def cmd_indicate(ex, args, pickled):
     """name"""
     if len(args):
         try:
@@ -148,7 +148,7 @@ def cmd_indicate(ex, args, pickled=True):
         ex.indicator.visible = False
         ex.modifier.parent = None
 
-def cmd_modify(ex, args, pickled=True):
+def cmd_modify(ex, args, pickled):
     """name"""
     if len(args):
         try:
@@ -161,7 +161,7 @@ def cmd_modify(ex, args, pickled=True):
         ex.modifier.visible = False
         ex.modifier.parent = None
 
-def cmd_fov(ex, args, pickled=True):
+def cmd_fov(ex, args, pickled):
     """name"""
     if args[0] in ex.fovvis:
         ex.fovvis[args[0]].visible = not ex.fovvis[args[0]].visible
@@ -172,7 +172,7 @@ def cmd_fov(ex, args, pickled=True):
         except KeyError:
             raise CommandError('invalid camera name')
 
-def cmd_showval(ex, args, pickled=True):
+def cmd_showval(ex, args, pickled):
     """name [value]"""
     if args[0] in ex.valvis:
         ex.valvis[args[0]].visible = False
@@ -191,7 +191,7 @@ def cmd_showval(ex, args, pickled=True):
     except IndexError:
         pass
 
-def cmd_active(ex, args, pickled=True):
+def cmd_active(ex, args, pickled):
     """name"""
     try:
         ex.model[args[0]].active = not ex.model[args[0]].active
@@ -202,7 +202,7 @@ def cmd_active(ex, args, pickled=True):
     except KeyError:
         raise CommandError('invalid camera name')
 
-def cmd_position(ex, args, pickled=True):
+def cmd_position(ex, args, pickled):
     """robot [position]"""
     try:
         assert isinstance(ex.model.scene[args[0]], Robot)
@@ -220,7 +220,7 @@ def cmd_position(ex, args, pickled=True):
     except KeyError:
         raise CommandError('invalid robot name')
 
-def cmd_coverage(ex, args, pickled=True):
+def cmd_coverage(ex, args, pickled):
     """ocular name*"""
     try:
         ex.display.message('Calculating coverage...')
@@ -250,14 +250,14 @@ def cmd_coverage(ex, args, pickled=True):
     finally:
         ex.display.userspin = True
 
-def cmd_clear(ex, args, pickled=True):
+def cmd_clear(ex, args, pickled):
     for key in ex.coverage.keys():
         del ex.coverage[key]
 
-def cmd_eval(ex, args, pickled=True):
+def cmd_eval(ex, args, pickled):
     """code"""
     return str(eval(' '.join(args)))
 
-def cmd_exit(ex, args, pickled=True):
+def cmd_exit(ex, args, pickled):
     ex.display.visible = False
     ex.exit = True
