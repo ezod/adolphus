@@ -239,17 +239,19 @@ class Experiment(threading.Thread):
                 self.commands[function[4:]] = getattr(commands, function)
 
         if model_file:
-            self.commands['open'](self, [model_file])
+            self.commands['open'](self, [model_file], False)
         else:
             self.model = MultiCamera()
-        self.commands['config'](self, [config_file])
+        self.commands['config'](self, [config_file], False)
 
-    def execute(self, cmd):
+    def execute(self, cmd, pickled=False):
         """\
-        Execute an interface command.
+        Execute a command.
 
         @param cmd: The command string to execute.
         @type cmd: C{str}
+        @param pickled: Toggle client accepts pickled output.
+        @type pickled: C{bool}
         @return: The return string of the command.
         @rtype: C{str}
         """
@@ -257,7 +259,7 @@ class Experiment(threading.Thread):
         if cmd not in self.commands:
             raise CommandError('invalid command')
         try:
-            return self.commands[cmd](self, args)
+            return self.commands[cmd](self, args, pickled)
         except Exception as e:
             if self.commands[cmd].__doc__:
                 es = str(e)
