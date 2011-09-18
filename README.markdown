@@ -3,8 +3,8 @@
 
 ## Overview
 
-Adolphus is a set of tools for modeling and visualizing the coverage of multi-
-camera networks.
+Adolphus is a set of tools for modeling and visualizing the coverage of
+multi-camera networks.
 
 See our [screencast] [screencast] for an introduction.
 
