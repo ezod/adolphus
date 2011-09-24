@@ -49,6 +49,7 @@ class Sprite(visual.frame):
             primitive['frame'] = self
             self.members.append(getattr(visual, primitive['type'])(**primitive))
         self._opacity = 1.0
+        self._highlighted = False
         self.parent = parent
 
     @property
@@ -60,12 +61,38 @@ class Sprite(visual.frame):
 
     @opacity.setter
     def opacity(self, value):
-        for i in range(len(self.members)):
+        for i, member in enumerate(self.members):
             try:
-                self.members[i].opacity = self.primitives[i]['opacity'] * value
+                member.opacity = self.primitives[i]['opacity'] * value
             except KeyError:
-                self.members[i].opacity = value
+                member.opacity = value
         self._opacity = value
+
+    def highlight(self, color=(0, 1, 0)):
+        """\
+        Highlight this sprite with a bright uniform color.
+
+        @param color: The color of the highlight.
+        @type color: C{tuple}
+        """
+        for i, member in enumerate(self.members):
+            if not self._highlighted:
+                self.primitives[i]['color'] = member.color
+                self.primitives[i]['material'] = member.material
+                member.material = visual.materials.emissive
+            member.color = color
+        self._highlighted = True
+
+    def unhighlight(self):
+        """\
+        Unhighlight this sprite (if highlighted).
+        """
+        if not self._highlighted:
+            return
+        for i, member in enumerate(self.members):
+            member.color = self.primitives[i]['color']
+            member.material = self.primitives[i]['material']
+        self._highlighted = False
 
     def transform(self, pose):
         """\
@@ -119,6 +146,23 @@ class Visualizable(object):
         for display in self.actuals:
             self.actuals[display].visible = value
         self._visible = value
+
+    def highlight(self, color=(0, 1, 0)):
+        """\
+        Highlight this visualizable with a bright uniform color.
+
+        @param color: The color of the highlight.
+        @type color: C{tuple}
+        """
+        for display in self.actuals:
+            self.actuals[display].highlight(color)
+
+    def unhighlight(self):
+        """\
+        Unhighlight this visualizable (if highlighted).
+        """
+        for display in self.actuals:
+            self.actuals[display].unhighlight()
 
     def visualize(self):
         """\
