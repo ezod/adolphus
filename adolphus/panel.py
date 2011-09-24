@@ -34,13 +34,13 @@ class Panel(gtk.Window):
 
         # basics
         self.set_title('Adolphus Panel')
-        self.set_border_width(5)
         self.connect('delete_event', self._delete_event)
         self.connect('destroy', self._destroy)
         vbox = gtk.VBox()
         self.add(vbox)
 
         menubar = gtk.MenuBar()
+        menubar.set_border_width(5)
         vbox.pack_start(menubar, expand=False)
         menuc = gtk.MenuItem('File')
         menu = gtk.Menu()
@@ -56,21 +56,14 @@ class Panel(gtk.Window):
         menubar.add(menuc)
 
         vpaned = gtk.VPaned()
-        vbox.pack_start(vpaned, True, True)
         vpaned.set_border_width(5)
-        hpaned = gtk.HPaned()
-        vpaned.add1(hpaned)
+        vbox.pack_start(vpaned, True, True)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
-        hpaned.add1(frame)
+        vpaned.add1(frame)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
-        hpaned.add2(frame)
-        hpaned = gtk.HPaned()
-        vpaned.add2(hpaned)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
-        hpaned.add1(frame)
+        vpaned.add2(frame)
 
         # show panel
         self.show_all()
