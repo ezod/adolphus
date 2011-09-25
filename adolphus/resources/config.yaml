@@ -1,13 +1,13 @@
 keybindings:
     f2:           coverage
-    f5:           planes
-    f6:           name
+    f5:           showplanes
+    f6:           cameranames
     f7:           axes
-    f8:           cdot
-    f11:          camview
-    left:         sc -30 0 0
-    right:        sc 30 0 0
-    down:         sc 0 -30 0
-    up:           sc 0 30 0
-    page down:    sc 0 0 -30
-    page up:      sc 0 0 30
+    f8:           centerdot
+    f11:          cameraview
+    left:         shiftcenter -30 0 0
+    right:        shiftcenter 30 0 0
+    down:         shiftcenter 0 -30 0
+    up:           shiftcenter 0 30 0
+    page down:    shiftcenter 0 0 -30
+    page up:      shiftcenter 0 0 30

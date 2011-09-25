@@ -201,14 +201,6 @@ class Experiment(threading.Thread):
         self.fovvis = {}
         self.valvis = {}
 
-        # camera indicator
-        self.indicator = Sprite([{'type':       'ring',
-                                  'radius':     90,
-                                  'thickness':  6,
-                                  'color':      [1, 1, 0],
-                                  'material':   visual.materials.emissive}])
-        self.indicator.visible = False
-
         # camera modifier
         primitives = []
         for arrow in [(90, 0, 0), (-90, 0, 0), (0, 90, 0),
@@ -239,10 +231,10 @@ class Experiment(threading.Thread):
                 self.commands[function[4:]] = getattr(commands, function)
 
         if model_file:
-            self.commands['open'](self, [model_file], False)
+            self.commands['loadmodel'](self, [model_file], False)
         else:
             self.model = MultiCamera()
-        self.commands['config'](self, [config_file], False)
+        self.commands['loadconfig'](self, [config_file], False)
 
     def execute(self, cmd, pickled=False):
         """\
