@@ -39,6 +39,9 @@ def cmd_loadmodel(ex, args, pickled):
         pass
     ex.model, ex.relevance_models = YAMLParser(args[0]).experiment
     ex.model.visualize()
+    ex._cam_vis = [primitive for objects in \
+        [ex.model[cam].actuals['main'].objects for cam in ex.model] \
+        for primitive in objects]
     cmd_cameranames(ex, [], pickled)
 
 def cmd_loadconfig(ex, args, pickled):

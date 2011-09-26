@@ -197,6 +197,8 @@ class Experiment(threading.Thread):
         self.fovvis = {}
         self.valvis = {}
 
+        self._cam_vis = []
+
         # camera modifier
         primitives = []
         for arrow in [(90, 0, 0), (-90, 0, 0), (0, 90, 0),
@@ -255,9 +257,6 @@ class Experiment(threading.Thread):
         """\
         Run this experiment.
         """
-        cam_vis = [primitive for objects in \
-            [self.model[cam].actuals['main'].objects for cam in self.model] \
-            for primitive in objects]
         zoom = False
         moving = None
         rotating = None
@@ -280,7 +279,7 @@ class Experiment(threading.Thread):
                     lastpos = m.pos
                 elif m.drop == 'middle':
                     zoom = False
-                elif m.click == 'left' and m.pick in cam_vis:
+                elif m.click == 'left' and m.pick in self._cam_vis:
                     if m.ctrl:
                         for camera in self.model:
                             if m.pick.frame.parent == self.model[camera]:
