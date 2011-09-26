@@ -13,7 +13,10 @@ from math import sqrt, sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
 
-from hypergraph import Hypergraph, Edge
+try:
+    import hypergraph
+except ImportError:
+    hypergraph = None
 
 import cython
 from .geometry import Point, DirectionalPoint, Pose
@@ -569,9 +572,11 @@ class MultiCamera(dict):
         @param K: A set of possible hyperedge sizes.
         @type K: C{list} of C{int}
         @return: The coverage hypergraph.
-        @rtype: L{Hypergraph}
+        @rtype: L{hypergraph.Hypergraph}
         """
-        H = Hypergraph(vertices=self.keys())
+        if not hypergraph:
+            raise ImportError('hypergraph module not loaded')
+        H = hypergraph.Hypergraph(vertices=self.keys())
         if K is None:
             K = range(2, len(self) + 1)
         else:
@@ -583,7 +588,7 @@ class MultiCamera(dict):
             cache[subset] = self.coverage(relevance, subset=subset)
             weight = sum(cache[subset].values())
             if weight:
-                H.add_edge(Edge(subset), weight=weight)
+                H.add_edge(hypergraph.Edge(subset), weight=weight)
         pk = 1
         for k in K:
             if k < 2:
@@ -602,7 +607,7 @@ class MultiCamera(dict):
                     cache[subset] &= cache[frozenset([ec.pop()])]
                 weight = sum(cache[subset].values())
                 if weight > 1e-4:
-                    H.add_edge(Edge(subset), weight=weight)
+                    H.add_edge(hypergraph.Edge(subset), weight=weight)
                 else:
                     del cache[subset]
             pk = k
