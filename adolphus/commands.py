@@ -45,7 +45,7 @@ def cmd_loadconfig(ex, args, pickled):
     """filename"""
     try:
         config = yaml.load(open(args[0]))
-    except IOError:
+    except (IndexError, IOError):
         import pkg_resources
         config = yaml.load(pkg_resources.resource_string(__name__,
             'resources/config.yaml'))

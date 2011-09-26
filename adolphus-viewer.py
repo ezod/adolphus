@@ -17,13 +17,10 @@ def main():
         action='store_true', help='disable camera view and use visual zoom')
 
     opts, args = parser.parse_args()
-    try:
-        model_file = args[0]
-    except IndexError:
-        model_file = None
 
     experiment = Experiment(zoom=opts.zoom)
-    experiment.execute('loadmodel %s' % model_file)
+    if args:
+        experiment.execute('loadmodel %s' % args[0])
     experiment.execute('loadconfig %s' % opts.conf)
     if opts.socket:
         controller = Controller(experiment, port=opts.port)
