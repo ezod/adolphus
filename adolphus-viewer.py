@@ -22,7 +22,9 @@ def main():
     except IndexError:
         model_file = None
 
-    experiment = Experiment(model_file, config_file=opts.conf, zoom=opts.zoom)
+    experiment = Experiment(zoom=opts.zoom)
+    experiment.execute('loadmodel %s' % model_file)
+    experiment.execute('loadconfig %s' % opts.conf)
     if opts.socket:
         controller = Controller(experiment, port=opts.port)
         print('Listening on port %d.' % controller.port)

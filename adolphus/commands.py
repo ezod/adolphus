@@ -39,12 +39,13 @@ def cmd_loadmodel(ex, args, pickled):
         pass
     ex.model, ex.relevance_models = YAMLParser(args[0]).experiment
     ex.model.visualize()
+    cmd_cameranames(ex, [], pickled)
 
 def cmd_loadconfig(ex, args, pickled):
     """filename"""
     try:
         config = yaml.load(open(args[0]))
-    except TypeError:
+    except IOError:
         import pkg_resources
         config = yaml.load(pkg_resources.resource_string(__name__,
             'resources/config.yaml'))

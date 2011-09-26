@@ -177,14 +177,10 @@ class Experiment(threading.Thread):
     """\
     Experiment class.
     """
-    def __init__(self, model_file=None, config_file=None, zoom=False):
+    def __init__(self, zoom=False):
         """\
         Constructor.
 
-        @param model_file: The YAML file for the model.
-        @type model_file: C{str}
-        @param config_file: The YAML configuration file.
-        @type config_file: C{str}
         @param zoom: Use Visual's userzoom (disables camera view).
         @type zoom: C{bool}
         """
@@ -230,11 +226,8 @@ class Experiment(threading.Thread):
             if function.startswith('cmd_'):
                 self.commands[function[4:]] = getattr(commands, function)
 
-        if model_file:
-            self.commands['loadmodel'](self, [model_file], False)
-        else:
-            self.model = MultiCamera()
-        self.commands['loadconfig'](self, [config_file], False)
+        self.model = MultiCamera()
+        self.keybindings = {}
 
     def execute(self, cmd, pickled=False):
         """\
@@ -269,7 +262,6 @@ class Experiment(threading.Thread):
         moving = None
         rotating = None
         msgctr = 0
-        self.execute('name')
         # event loop
         while not self.exit:
             visual.rate(vsettings['rate'])
