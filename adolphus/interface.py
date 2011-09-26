@@ -293,7 +293,7 @@ class Experiment(threading.Thread):
                         try:
                             for camera in self.model:
                                 if m.pick.frame.parent == self.model[camera]:
-                                    self.execute('camview %s' % camera)
+                                    self.execute('cameraview %s' % camera)
                         except VisualizationError:
                             pass
                     elif m.shift:
