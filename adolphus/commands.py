@@ -1,6 +1,16 @@
 """\
 Standard library of interface commands.
 
+Commands are functions prefixed with 'cmd_' and taking two positional
+arguments -- a reference to the experiment object and a list of strings
+comprising the command arguments -- as well as (optionally) a 'response'
+keyword argument specifying the response string format. Possible values for the
+response format are:
+
+  - C{pickle} - pickled Python object generated with C{pickle.dumps()}
+  - C{csv} - comma-delimited values terminated with hash (C{#}) character
+  - C{text} - human-readable text format (can include newlines)
+
 @author: Aaron Mavrinac
 @organization: University of Windsor
 @contact: mavrin1@uwindsor.ca
@@ -27,11 +37,15 @@ class CommandError(Exception):
 
 ### File Operations
 
-def cmd_loadmodel(ex, args, pickled):
-    """filename"""
-    cmd_clear(ex, [], False)
-    cmd_modify(ex, [], False)
-    cmd_cameraview(ex, [], False)
+def cmd_loadmodel(ex, args):
+    """\
+    Load a model from a YAML file.
+
+    usage: %s filename
+    """
+    cmd_clear(ex, [])
+    cmd_modify(ex, [])
+    cmd_cameraview(ex, [])
     # TODO: clean up other visual stuff
     try:
         del ex.model
@@ -42,10 +56,14 @@ def cmd_loadmodel(ex, args, pickled):
     ex._cam_vis = [primitive for objects in \
         [ex.model[cam].actuals['main'].objects for cam in ex.model] \
         for primitive in objects]
-    cmd_cameranames(ex, [], pickled)
+    cmd_cameranames(ex, [])
 
-def cmd_loadconfig(ex, args, pickled):
-    """filename"""
+def cmd_loadconfig(ex, args):
+    """\
+    Load viewer configuration from a YAML file.
+
+    usage: %s filename
+    """
     try:
         config = yaml.load(open(args[0]))
     except (IndexError, IOError):
@@ -57,42 +75,80 @@ def cmd_loadconfig(ex, args, pickled):
     except KeyError:
         ex.keybindings = {}
 
-def cmd_exit(ex, args, pickled):
+def cmd_exit(ex, args):
+    """\
+    Exit the viewer.
+    """
     ex.display.visible = False
     ex.exit = True
 
 ### Visualization
 
-def cmd_clear(ex, args, pickled):
+def cmd_clear(ex, args):
+    """\
+    Clear all point coverage visualizations.
+    """
     for key in ex.coverage.keys():
         del ex.coverage[key]
 
-def cmd_axes(ex, args, pickled):
+def cmd_axes(ex, args):
+    """\
+    Toggle display of 3D axes.
+    """
     ex.display.axes.visible = not ex.display.axes.visible
 
-def cmd_centerdot(ex, args, pickled):
+def cmd_centerdot(ex, args):
+    """\
+    Toggle display of a center indicator dot.
+    """
     ex.display.cdot.visible = not ex.display.cdot.visible
 
-def cmd_shiftcenter(ex, args, pickled):
-    """x y z"""
+def cmd_setcenter(ex, args):
+    """\
+    Set the position of the display center.
+
+    usage: %s x y z
+    """
+    if ex.display.in_camera_view:
+        raise CommandError('cannot set center in camera view')
+    ex.display.set_center((float(args[0]), float(args[1]), float(args[2])))
+
+def cmd_shiftcenter(ex, args):
+    """\
+    Shift the display center from its current position by the amount specified.
+
+    usage: %s x y z
+    """
     if ex.display.in_camera_view:
         raise CommandError('cannot shift center in camera view')
-    ex.display.shift_center((float(args[0]), float(args[1]),
-        float(args[2])))
+    pos = list(ex.display.center)
+    for i in range(3):
+        pos[i] += float(args[i])
+    ex.display.set_center(tuple(pos))
 
-def cmd_planes(ex, args, pickled):
+def cmd_planes(ex, args):
+    """\
+    Toggle display of occluding planes.
+    """
     for posable in ex.model.scene:
         ex.model.scene[posable].toggle_planes()
 
-def cmd_cameranames(ex, args, pickled):
+def cmd_cameranames(ex, args):
+    """\
+    Toggle display of camera identifiers.
+    """
     for camera in ex.model:
         for display in ex.model[camera].actuals:
             for member in ex.model[camera].actuals[display].members:
                 if isinstance(member, visual.label):
                     member.visible = not member.visible
 
-def cmd_cameraview(ex, args, pickled):
-    """name"""
+def cmd_cameraview(ex, args):
+    """\
+    Switch to camera view for the specified camera.
+    
+    usage: %s name
+    """
     if ex.zoom:
         raise CommandError('cannot do camera view with external zoom enabled')
     if len(args):
@@ -105,8 +161,12 @@ def cmd_cameraview(ex, args, pickled):
     else:
         ex.display.camera_view()
 
-def cmd_fov(ex, args, pickled):
-    """name"""
+def cmd_fov(ex, args):
+    """\
+    Toggle display of the viewing frustum for the specified camera.
+    
+    usage: %s name
+    """
     if args[0] in ex.fovvis:
         ex.fovvis[args[0]].visible = not ex.fovvis[args[0]].visible
     else:
@@ -118,14 +178,18 @@ def cmd_fov(ex, args, pickled):
 
 ### Geometric
 
-def cmd_pose(ex, args, pickled):
-    """name [rformat]"""
+def cmd_pose(ex, args, response='pickle'):
+    """\
+    Return the (absolute) pose of an object.
+    
+    usage: %s name [rformat]
+    """
     try:
         # TODO: should work for any object - need to flatten namespace
         pose = ex.model[args[0]].pose
-        if pickled:
+        if response == 'pickle':
             return pickle.dumps(pose)
-        else:
+        elif response == 'csv':
             flatpose = tuple(pose.T)
             try:
                 if args[1] == 'quaternion':
@@ -142,11 +206,17 @@ def cmd_pose(ex, args, pickled):
             except IndexError:
                 flatpose += (pose.R.Q.a,) + tuple(pose.R.Q.v)
             return ','.join([str(float(e)) for e in flatpose]) + '#'
+        # TODO: reinstate 'text' format
     except KeyError:
         raise CommandError('invalid camera name')
 
-def cmd_modify(ex, args, pickled):
-    """name"""
+def cmd_modify(ex, args):
+    """\
+    Enable interactive pose modification for the specified object, or disable
+    modification if no object is specified.
+    
+    usage: %s [name]
+    """
     if len(args):
         try:
             # TODO: should work for any object - need to flatten namespace
@@ -159,19 +229,26 @@ def cmd_modify(ex, args, pickled):
         ex.modifier.visible = False
         ex.modifier.parent = None
 
-def cmd_position(ex, args, pickled):
-    """robot [position]"""
+def cmd_position(ex, args, response='pickle'):
+    """\
+    Set the position of the specified robot, or return its position if no new
+    position is specified.
+
+    usage: %s robot [position]
+    """
     try:
         assert isinstance(ex.model.scene[args[0]], Robot)
         if len(args) > 1:
             ex.model.scene[args[0]].config = [float(arg) for arg in args[1:]]
             ex.model.scene[args[0]].update_visualization()
         else:
-            if pickled:
+            if response == 'pickle':
                 return pickle.dumps(ex.model.scene[args[0]].config)
-            else:
+            elif response == 'csv':
                 return ','.join([str(e) for e in \
                     ex.model.scene[args[0]].config]) + '#'
+            elif response == 'text':
+                return str(ex.model.scene[args[0]].config)
     except AssertionError:
         raise CommandError('not a robot')
     except KeyError:
@@ -179,7 +256,7 @@ def cmd_position(ex, args, pickled):
 
 ### Coverage Operations
 
-def cmd_active(ex, args, pickled):
+def cmd_active(ex, args):
     """name"""
     try:
         ex.model[args[0]].active = not ex.model[args[0]].active
@@ -190,8 +267,13 @@ def cmd_active(ex, args, pickled):
     except KeyError:
         raise CommandError('invalid camera name')
 
-def cmd_strength(ex, args, pickled):
-    """ocular x y z [rho eta]"""
+def cmd_strength(ex, args, response='pickle'):
+    """\
+    Return the k-ocular coverage strength of the specified point.
+    
+    usage: %s ocular x y z [rho eta]
+    """
+    # TODO: support 1-camera subsets without requiring deactivation?
     ocular = int(args.pop(0))
     if len(args) == 3:
         p = Point([float(args[i]) for i in range(3)])
@@ -199,13 +281,21 @@ def cmd_strength(ex, args, pickled):
         p = DirectionalPoint([float(args[i]) for i in range(5)])
     else:
         raise CommandError('invalid point')
-    if pickled:
-        return pickle.dumps(ex.model.strength(p, ocular=ocular))
-    else:
-        return '%f#' % ex.model.strength(p, ocular=ocular)
+    strength = ex.model.strength(p, ocular=ocular)
+    if response == 'pickle':
+        return pickle.dumps(strength)
+    elif response == 'csv':
+        return '%f#' % strength
+    elif response == 'text':
+        return '%f' % strength
 
-def cmd_coverage(ex, args, pickled):
-    """ocular name*"""
+def cmd_coverage(ex, args, response='pickle'):
+    """
+    Return the k-ocular coverage performance for the specified relevance
+    model(s).
+
+    usage: %s ocular name*
+    """
     try:
         ex.display.message('Calculating coverage...')
         ex.display.userspin = False
@@ -221,12 +311,14 @@ def cmd_coverage(ex, args, pickled):
             performance[arg] = ex.model.performance(\
                 ex.relevance_models[arg], ocular=ocular,
                 coverage=ex.coverage[arg])
-        if pickled:
+        if response == 'pickle':
             return pickle.dumps(performance)
-        else:
+        elif response == 'csv':
             return ','.join(['%s:%f' % (key, performance[key]) \
                 for key in performance]) + '#'
-        
+        elif response == 'text':
+            return '\n'.join(['%s: %.4f' % (key, performance[key]) \
+                for key in performance])
     except KeyError:
         raise CommandError('invalid relevance model name')
     except ValueError:
@@ -234,8 +326,13 @@ def cmd_coverage(ex, args, pickled):
     finally:
         ex.display.userspin = True
 
-def cmd_showval(ex, args, pickled):
-    """name [value]"""
+def cmd_showval(ex, args):
+    """
+    Display a value in [0, 1] in 'bar graph' style next to the specified camera,
+    or remove the display if no value is specified.
+    
+    usage: %s name [value]
+    """
     if args[0] in ex.valvis:
         ex.valvis[args[0]].visible = False
         del ex.valvis[args[0]]
@@ -255,6 +352,10 @@ def cmd_showval(ex, args, pickled):
 
 ### Debug
 
-def cmd_eval(ex, args, pickled):
-    """code"""
+def cmd_eval(ex, args):
+    """\
+    Execute arbitrary code.
+    
+    usage: %s code
+    """
     return str(eval(' '.join(args)))

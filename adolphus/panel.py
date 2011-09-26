@@ -90,7 +90,7 @@ class Panel(gtk.Window):
         @type port: C{int}
         """
         self.sock.connect((host or 'localhost', port))
-        self.sock.send('1#')
+        self.sock.send('pickle#')
 
     def ad_command(self, cmd):
         """\

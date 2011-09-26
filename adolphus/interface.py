@@ -10,6 +10,7 @@ Visual interface module.
 import threading
 import socket
 from math import copysign
+from inspect import getargspec
 
 import cython
 import commands
@@ -62,16 +63,14 @@ class Display(visual.display):
         self._messagebox = visual.label(pos=center, background=(0, 0, 0),
             height=vsettings['textsize'] * 2, color=(1, 1, 1), visible=False)
 
-    def shift_center(self, direction=None):
+    def set_center(self, pos=(0, 0, 0)):
         """\
-        Shift the center of the view.
+        Set the center of the view.
 
-        @param direction: The vector by which to shift the center.
+        @param direction: The position of the center.
         @type direction: L{visual.vector}
         """
-        if direction is None:
-            direction = -self.center
-        self.center += visual.vector(direction)
+        self.center = visual.vector(pos)
         self.cdot.pos = self.center
         self._messagebox.pos = self.center
 
@@ -231,14 +230,14 @@ class Experiment(threading.Thread):
         self.model = MultiCamera()
         self.keybindings = {}
 
-    def execute(self, cmd, pickled=False):
+    def execute(self, cmd, response='pickle'):
         """\
         Execute a command.
 
         @param cmd: The command string to execute.
         @type cmd: C{str}
-        @param pickled: Toggle client accepts pickled output.
-        @type pickled: C{bool}
+        @param response: Response format for client (see commands.py).
+        @type response: C{str}
         @return: The return string of the command.
         @rtype: C{str}
         """
@@ -246,11 +245,17 @@ class Experiment(threading.Thread):
         if cmd not in self.commands:
             raise CommandError('invalid command')
         try:
-            return self.commands[cmd](self, args, pickled)
+            if 'response' in getargspec(self.commands[cmd]).args:
+                return self.commands[cmd](self, args, response=response)
+            else:
+                return self.commands[cmd](self, args)
         except CommandError as e:
             es = str(e)
             if self.commands[cmd].__doc__:
-                es += '\nusage: %s %s' % (cmd, self.commands[cmd].__doc__)
+                for line in self.commands[cmd].__doc__:
+                    if line.startswith('usage'):
+                        es += '\n' + line % cmd
+                        break
             return es
 
     def run(self):
@@ -365,9 +370,10 @@ class Experiment(threading.Thread):
                 if k == '\n':
                     cmd = self.display.prompt()
                     if cmd:
-                        self.display.message(self.execute(cmd))
+                        self.display.message(self.execute(cmd, response='text'))
                 elif k in self.keybindings:
-                    self.display.message(self.execute(self.keybindings[k]))
+                    self.display.message(self.execute(self.keybindings[k],
+                        response='text'))
 
 
 class Controller(object):
@@ -401,20 +407,15 @@ class Controller(object):
     def main(self):
         """\
         Main loop.
-
-        Client settings are as follows:
-            [0] - Accepts Python pickled responses.
         """
         self.experiment.start()
         # TODO: time out and check for experiment death here?
         channel, details = self.sock.accept()
-        # get client settings
+        # get client response format
         client = ''
         while not client.endswith('#'):
             client += channel.recv(256)
-        settings = [bool(int(v)) for v in client.strip('#')]
-        # pad settings vector for backwards compatibility
-        settings += [False] * (1 - len(settings))
+        response = client.strip('#')
         try:
             channel.settimeout(0.1)
             while True:
@@ -428,7 +429,7 @@ class Controller(object):
                         continue
                 try:
                     rstring = self.experiment.execute(cmd.strip('#'),
-                        pickled=settings[0])
+                        response=response)
                 except CommandError:
                     pass
                 if rstring:
