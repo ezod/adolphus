@@ -180,7 +180,9 @@ def cmd_fov(ex, args):
 
 def cmd_pose(ex, args, response='pickle'):
     """\
-    Return the (absolute) pose of an object.
+    Return the (absolute) pose of an object. If using CSV or text response,
+    a rotation format may be specified (one of 'quaternion', 'matrix',
+    'axis-angle', or 'euler-zyx').
     
     usage: %s name [rformat]
     """
@@ -206,7 +208,30 @@ def cmd_pose(ex, args, response='pickle'):
             except IndexError:
                 flatpose += (pose.R.Q.a,) + tuple(pose.R.Q.v)
             return ','.join([str(float(e)) for e in flatpose]) + '#'
-        # TODO: reinstate 'text' format
+        elif response == 'text':
+            tstr = 'T: (%.2f, %.2f, %.2f)\n' % ex.model[args[0]].pose.T
+            try:
+                if args[1] == 'quaternion':
+                    raise IndexError
+                elif args[1] == 'matrix':
+                    return tstr + \
+                        ('R:\t%.4f\t%.4f\t%.4f\n' \
+                        + '\t%.4f\t%.4f\t%.4f\n' \
+                        + '\t%.4f\t%.4f\t%.4f') \
+                        % tuple(pose.R.to_rotation_matrix().flatten())
+                elif args[1] == 'axis-angle':
+                    axis, angle = pose.R.to_axis_angle()
+                    return tstr + \
+                        u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' \
+                        % ((angle,) + axis)
+                elif args[1] == 'euler-zyx':
+                    return tstr + \
+                        u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
+                        % pose.R.to_euler_zyx()
+                else:
+                    raise CommandError('invalid rotation format')
+            except IndexError:
+                return tstr + 'R: %s' % (pose.R.Q,)
     except KeyError:
         raise CommandError('invalid camera name')
 
