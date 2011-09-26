@@ -15,7 +15,7 @@ from inspect import getargspec
 import cython
 import commands
 from .commands import CommandError
-from .geometry import Point, Rotation
+from .geometry import Point, Rotation, Pose
 from .coverage import MultiCamera
 from .visualization import visual, VisualizationError, Sprite, Visualizable, \
                            vsettings
@@ -326,13 +326,10 @@ class Experiment(threading.Thread):
                 newpos = self.display.mouse.project(normal=self.display.forward,
                     point=self.modifier.pos)
                 if newpos != lastpos:
-                    if self.modifier.parent.mount:
-                        self.modifier.parent._pose.T += \
-                            (-self.modifier.parent.mount.mount_pose()).R.rotate\
-                            (moving * (newpos * moving - lastpos * moving))
-                    else:
-                        self.modifier.parent._pose.T += \
-                            moving * (newpos * moving - lastpos * moving)
+                    newpose = Pose(self.modifier.parent._pose.T + moving * \
+                        (newpos * moving - lastpos * moving),
+                        self.modifier.parent._pose.R)
+                    self.modifier.parent.set_relative_pose(newpose)
                     self.modifier.pos = self.modifier.parent.pose.T
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
@@ -345,9 +342,11 @@ class Experiment(threading.Thread):
                     zdiff = (lastpos - newpos).proj(planey)
                     if zdiff.mag < self.display.rmin / 10.0:
                         continue
-                    self.modifier.parent._pose.R += Rotation.from_axis_angle(\
+                    newpose = Pose(self.modifier.parent._pose.T, self.modifier.\
+                        parent._pose.R + Rotation.from_axis_angle(\
                         copysign(zdiff.mag, zdiff.z) * 0.01,
-                        (-self.modifier.parent.pose).R.rotate(rotating))
+                        (-self.modifier.parent.pose).R.rotate(rotating)))
+                    self.modifier.parent.set_relative_pose(newpose)
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif zoom:

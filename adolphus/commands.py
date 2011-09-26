@@ -321,6 +321,7 @@ def cmd_coverage(ex, args, response='pickle'):
 
     usage: %s ocular name*
     """
+    cmd_clear(ex, [])
     try:
         ex.display.message('Calculating coverage...')
         ex.display.userspin = False

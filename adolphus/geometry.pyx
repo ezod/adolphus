@@ -674,7 +674,7 @@ class Pose(object):
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
-    __slots__ = ['T', 'R', '_inverse']
+    __slots__ = ['_T', '_R', '_inverse']
 
     def __init__(self, T=Point(), R=Rotation()):
         """\
@@ -685,14 +685,22 @@ class Pose(object):
         @param R: The 3x3 rotation matrix.
         @type R: L{Rotation}
         """
-        self.T = T
-        self.R = R
+        self._T = T
+        self._R = R
+    
+    @property
+    def T(self):
+        return self._T
+
+    @property
+    def R(self):
+        return self._R
 
     def __getstate__(self):
-        return self.T, self.R
+        return self._T, self._R
 
     def __setstate__(self, state):
-        self.T, self.R = state
+        self._T, self._R = state
 
     def __add__(self, other):
         """\
