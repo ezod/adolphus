@@ -1,0 +1,298 @@
+description:    Mitsubishi RV-1A 6-Axis Robotic Arm
+
+pieces:
+    # base
+    - joint:
+          name:         J1
+          type:         revolute
+          axis:         [0, 0, 1]
+          limits:       [-150, 150]
+          home:         0
+      offset:
+          T:            [0, 0, 165]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+      primitives:
+        - type:         box
+          pos:          [-43, 0, 7.5]
+          length:       250
+          height:       188
+          width:        15
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         box
+          pos:          [-81.75, 0, 77.5]
+          length:       163.5
+          height:       155
+          width:        125
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, 0, 15]
+          radius:       77.5
+          axis:         [0, 0, 150]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+      planes:
+        - x:            77.5
+          y:            [-77.5, 77.5]
+          z:            [0, 225]
+        - x:            [-163.5, 77.5]
+          y:            -77.5
+          z:            [0, 225]
+        - x:            [-163.5, 77.5]
+          y:            77.5
+          z:            [0, 225]
+
+    # shoulder
+    - joint:
+          name:         J2
+          type:         revolute
+          axis:         [0, 1, 0]
+          limits:       [-60, 120]
+          home:         0
+      offset:
+          T:            [0, 0, 135]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+      primitives:
+        - type:         cylinder
+          radius:       77.5
+          axis:         [0, 0, 60]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         box
+          pos:          [0, 0, 97.5]
+          length:       130
+          height:       86
+          width:        75
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, -43, 135]
+          radius:       65
+          axis:         [0, 86, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+      planes:
+        - x:            0
+          y:            [-77.5, 77.5]
+          z:            [60, 200]
+
+    # upper arm
+    - joint:
+          name:         J3
+          type:         revolute
+          axis:         [0, 1, 0]
+          limits:       [60, 155]
+          home:         90
+      offset:
+          T:            [0, 0, 250]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+      primitives:
+        - type:         box
+          pos:          [0, 0, 145]
+          length:       96
+          height:       86
+          width:        140
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, -43, 0]
+          radius:       48
+          axis:         [0, -30, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, 43, 0]
+          radius:       48
+          axis:         [0, 30, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         box
+          pos:          [0, -58, 125]
+          length:       96
+          height:       30
+          width:        250
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         box
+          pos:          [0, 58, 125]
+          length:       96
+          height:       30
+          width:        250
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, -43, 250]
+          radius:       48
+          axis:         [0, -30, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, 43, 250]
+          radius:       48
+          axis:         [0, 30, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+      planes:
+        - x:            0
+          y:            [-77.5, 77.5]
+          z:            [-48, 298]
+        - x:            [-48, 48]
+          y:            -73
+          z:            [-48, 298]
+        - x:            [-48, 48]
+          y:            73
+          z:            [-48, 298]
+
+    # elbow
+    - joint:
+          name:         J4
+          type:         revolute
+          axis:         [0, 0, 1]
+          limits:       [-160, 160]
+          home:         0
+      offset:
+          T:            [-90, 0, 43]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+      primitives:
+        - type:         box
+          pos:          [-21, 0, -58.5]
+          length:       42
+          height:       86
+          width:        203
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         box
+          pos:          [-90, 0, -58.5]
+          length:       96
+          height:       116
+          width:        203
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+      planes:
+        - x:            -138
+          y:            [-58, 58]
+          z:            [-160, 43]
+        - x:            [-138, 0]
+          y:            -58
+          z:            [-160, 43]
+        - x:            [-138, 0]
+          y:            58
+          z:            [-160, 43]
+    
+    # forearm
+    - joint:
+          name:         J5
+          type:         revolute
+          axis:         [0, 1, 0]
+          limits:       [-90, 90]
+          home:         0
+      offset:
+          T:            [0, 0, 117]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+      primitives:
+        - type:         box
+          pos:          [0, 0, 42]
+          length:       96
+          height:       116
+          width:        84
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         box
+          pos:          [0, -44, 99.5]
+          length:       96
+          height:       28
+          width:        35
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         box
+          pos:          [0, 44, 99.5]
+          length:       96
+          height:       28
+          width:        35
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, -30, 117]
+          radius:       48
+          axis:         [0, -28, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, 30, 117]
+          radius:       48
+          axis:         [0, 28, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+      planes:
+        - x:            -48
+          y:            [-58, 58]
+          z:            [0, 144]
+        - x:            [-48, 48]
+          y:            -58
+          z:            [0, 144]
+        - x:            [-48, 48]
+          y:            58
+          z:            [0, 144]
+    
+    # wrist
+    - joint:
+          name:         J6
+          type:         revolute
+          axis:         [0, 0, 1]
+          limits:       [-200, 200]
+          home:         0
+      offset:
+          T:            [0, 0, 52.7]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+      primitives:
+        - type:         box
+          pos:          [0, 0, 26.35]
+          length:       56
+          height:       46
+          width:        52.7
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, -23, 0]
+          radius:       28
+          axis:         [0, 46, 0]
+          color:        [0.9, 0.9, 0.9]
+          material:     plastic
+      planes:
+        - x:            0
+          y:            [-35, 35]
+          z:            [0, 75.3]
+        - x:            [-35, 35]
+          y:            0
+          z:            [0, 75.3]
+
+    # flange (tool length)
+    - joint:
+          name:         T
+          type:         prismatic
+          axis:         [0, 0, 1]
+          limits:       [0, 1000]
+          home:         0
+      offset:
+          T:            [0, 0, 19.3]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+      primitives:
+        - type:         cylinder
+          radius:       35
+          axis:         [0, 0, 12.8]
+          color:        [0.7, 0.7, 0.7]
+          material:     plastic
+        - type:         cylinder
+          pos:          [0, 0, 12.8]
+          radius:       15.75
+          axis:         [0, 0, 6.5]
+          color:        [0.7, 0.7, 0.7]
+          material:     plastic

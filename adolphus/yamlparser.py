@@ -9,6 +9,7 @@ YAML parser module.
 
 import os
 import yaml
+import pkg_resources
 from math import pi
 from functools import reduce
 
@@ -50,6 +51,21 @@ class YAMLParser(object):
         experiment.
         """
         return self.model, self.relevances
+
+    def _load_external(self, filename):
+        """\
+        Load an external YAML file specified inside a YAML model.
+
+        @param filename: The external YAML file to load.
+        @type filename: C{str}
+        @return: The loaded YAML dict.
+        @rtype: C{dict}
+        """
+        try:
+            return yaml.load(open(os.path.join(self._path, filename)))
+        except IOError:
+            return yaml.load(pkg_resources.resource_string(__name__,
+                'resources/' + filename))
     
     @staticmethod
     def _parse_pose(pose):
@@ -96,7 +112,7 @@ class YAMLParser(object):
         tpath = self._path
         if isinstance(sprite, str):
             tpath = os.path.split(os.path.join(self._path, sprite))[0]
-            sprite = yaml.load(open(os.path.join(self._path, sprite)))
+            sprite = self._load_external(sprite)
         try:
             for primitive in sprite['primitives']:
                 if 'texture' in primitive:
@@ -116,7 +132,7 @@ class YAMLParser(object):
         @rtype: C{list} of C{dict}
         """
         if isinstance(sprite, str):
-            sprite = yaml.load(open(os.path.join(self._path, sprite)))
+            sprite = self._load_external(sprite)
         try:
             planes = sprite['planes']
             for plane in planes:
@@ -138,7 +154,7 @@ class YAMLParser(object):
         @rtype: C{list}
         """
         if isinstance(robot, str):
-            robot = yaml.load(open(os.path.join(self._path, robot)))
+            robot = self._load_external(robot)
         pieces = robot['pieces']
         for piece in pieces:
             piece['offset'] = self._parse_pose(piece['offset'])
