@@ -152,6 +152,14 @@ class Plane(Posable, Visualizable):
             del self._center
         except AttributeError:
             pass
+        try:
+            del self._corners
+        except AttributeError:
+            pass
+        try:
+            del self._normal
+        except AttributeError:
+            pass
         Posable._pose_changed_hook(self)
 
     @property
@@ -181,6 +189,20 @@ class Plane(Posable, Visualizable):
             self._corners = [self.pose.map(Point((x, y, 0.0))) \
                 for x in self.x for y in self.y]
             return self._corners
+
+    @property
+    def normal(self):
+        """\
+        Return a vector normal to the plane.
+
+        @rtype: L{Point}
+        """
+        try:
+            return self._normal
+        except AttributeError:
+            self._normal = ((self.corners[2] - self.corners[0]) \
+                ** (self.corners[1] - self.corners[0])).normal
+            return self._normal
 
     def intersection(self, pa, pb):
         """\
