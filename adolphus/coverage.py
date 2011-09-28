@@ -20,7 +20,7 @@ except ImportError:
 
 import cython
 from .geometry import Point, DirectionalPoint, Pose
-from .posable import Posable
+from .posable import Posable, SceneObject
 from .visualization import Visualizable
 
 
@@ -145,11 +145,11 @@ class RelevanceModel(Posable):
         self.mapped.visualize()
 
 
-class Camera(Posable, Visualizable):
+class Camera(SceneObject):
     """\
     Single-camera coverage strength model.
     """
-    def __init__(self, params, pose=Pose(), mount=None, sprites=[],
+    def __init__(self, params, pose=Pose(), mount=None, primitives=[],
                  active=True):
         """\
         Constructor.
@@ -160,13 +160,12 @@ class Camera(Posable, Visualizable):
         @type pose: L{Pose}
         @param mount: Mount object for the camera (optional).
         @type mount: C{object}
-        @param sprites: Sprite primitives for the object.
-        @type sprites: C{dict}
+        @param primitives: Sprite primitives for the camera.
+        @type primitives: C{dict}
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
         """
-        Posable.__init__(self, pose=pose, mount=mount)
-        Visualizable.__init__(self, sprites)
+        super(Camera, self).__init__(pose=pose, mount=mount, primitives=primitives)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self._params = params
@@ -400,7 +399,7 @@ class Camera(Posable, Visualizable):
         Update the visualization for camera active state and pose.
         """
         self.opacity = self.active and 1.0 or 0.2
-        Visualizable.update_visualization(self)
+        super(Camera, self).update_visualization()
         
 
 class Scene(dict):
