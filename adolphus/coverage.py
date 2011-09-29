@@ -395,9 +395,7 @@ class Camera(SceneObject):
         sign = cmp((-plane.pose).map(hull.pop()).z, 0)
         for point in hull:
             if cmp((-plane.pose).map(point).z, 0) != sign:
-                print('true')
                 return True
-        print('false')
         return False
 
     def strength(self, point):
