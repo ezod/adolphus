@@ -54,7 +54,7 @@ def cmd_loadmodel(ex, args):
     ex.model, ex.relevance_models = YAMLParser(args[0]).experiment
     ex.model.visualize()
     ex._cam_vis = [primitive for objects in \
-        [ex.model[cam].actuals['main'].objects for cam in ex.model] \
+        [ex.model[cam].actuals['main'].objects for cam in ex.model.cameras] \
         for primitive in objects]
     cmd_cameranames(ex, [])
 
@@ -130,14 +130,14 @@ def cmd_planes(ex, args):
     """\
     Toggle display of occluding planes.
     """
-    for posable in ex.model.scene:
-        ex.model.scene[posable].toggle_planes()
+    for sceneobject in ex.model:
+        ex.model[sceneobject].toggle_planes()
 
 def cmd_cameranames(ex, args):
     """\
     Toggle display of camera identifiers.
     """
-    for camera in ex.model:
+    for camera in ex.model.cameras:
         for display in ex.model[camera].actuals:
             for member in ex.model[camera].actuals[display].members:
                 if isinstance(member, visual.label):
@@ -262,18 +262,18 @@ def cmd_position(ex, args, response='pickle'):
     usage: %s robot [position]
     """
     try:
-        assert isinstance(ex.model.scene[args[0]], Robot)
+        assert isinstance(ex.model[args[0]], Robot)
         if len(args) > 1:
-            ex.model.scene[args[0]].config = [float(arg) for arg in args[1:]]
-            ex.model.scene[args[0]].update_visualization()
+            ex.model[args[0]].config = [float(arg) for arg in args[1:]]
+            ex.model[args[0]].update_visualization()
         else:
             if response == 'pickle':
-                return pickle.dumps(ex.model.scene[args[0]].config)
+                return pickle.dumps(ex.model[args[0]].config)
             elif response == 'csv':
                 return ','.join([str(e) for e in \
-                    ex.model.scene[args[0]].config]) + '#'
+                    ex.model[args[0]].config]) + '#'
             elif response == 'text':
-                return str(ex.model.scene[args[0]].config)
+                return str(ex.model[args[0]].config)
     except AssertionError:
         raise CommandError('not a robot')
     except KeyError:
@@ -287,7 +287,7 @@ def cmd_active(ex, args):
         ex.model[args[0]].active = not ex.model[args[0]].active
         ex.model[args[0]].update_visualization()
     except IndexError:
-        for camera in ex.model:
+        for camera in ex.model.cameras:
             cmd_active(ex, [camera], False)
     except KeyError:
         raise CommandError('invalid camera name')

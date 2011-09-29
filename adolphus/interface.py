@@ -16,7 +16,7 @@ import cython
 import commands
 from .commands import CommandError
 from .geometry import Point, Rotation, Pose
-from .coverage import MultiCamera
+from .coverage import Model
 from .visualization import visual, VisualizationError, Sprite, Visualizable, \
                            vsettings
 
@@ -227,7 +227,7 @@ class Experiment(threading.Thread):
             if function.startswith('cmd_'):
                 self.commands[function[4:]] = getattr(commands, function)
 
-        self.model = MultiCamera()
+        self.model = Model()
         self.keybindings = {}
 
     def execute(self, cmd, response='pickle'):

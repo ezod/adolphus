@@ -14,7 +14,7 @@ from math import pi
 from functools import reduce
 
 import cython
-from .coverage import PointCache, RelevanceModel, Scene, Camera, MultiCamera
+from .coverage import PointCache, RelevanceModel, Camera, Model
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import Plane, SceneObject, Robot
 
@@ -160,17 +160,62 @@ class YAMLParser(object):
             piece['offset'] = self._parse_pose(piece['offset'])
         return pieces
 
-    def _parse_scene(self, scene):
+    def _parse_model(self, model):
         """\
-        Parse a scene model from YAML.
+        Parse a multi-camera model from YAML.
 
-        @param scene: The YAML dict of the scene model.
-        @type scene: C{dict}
-        @return: The parsed scene model.
-        @rtype: L{Scene}
+        @param model: The YAML dict of the multi-camera model.
+        @type model: C{dict}
+        @return: The parsed multi-camera model.
+        @rtype: L{MultiCamera}
         """
-        rscene = Scene()
-        for item in scene:
+        rmodel = Model()
+        # complete and sanitize task paramters
+        tp_defaults = {'boundary_padding': 0.0,
+                       'res_max_ideal': float('inf'),
+                       'res_max_acceptable': float('inf'),
+                       'res_min_ideal': 0.0,
+                       'res_min_acceptable': 0.0,
+                       'blur_max_ideal': 1.0,
+                       'blur_max_acceptable': 1.0,
+                       'angle_max_ideal': pi / 2.0,
+                       'angle_max_acceptable': pi / 2.0}
+        for tp in tp_defaults:
+            if not tp in model:
+                model[tp] = tp_defaults[tp]
+        model['res_max_ideal'] = \
+            min(model['res_max_ideal'], model['res_max_acceptable'])
+        model['res_min_ideal'] = \
+            max(model['res_min_ideal'], model['res_min_acceptable'])
+        model['blur_max_ideal'] = \
+            min(model['blur_max_ideal'], model['blur_max_acceptable'])
+        model['angle_max_ideal'] = \
+            min(model['angle_max_ideal'], model['angle_max_acceptable'])
+        # parse cameras
+        for camera in model['cameras']:
+            for tp in tp_defaults:
+                camera[tp] = model[tp]
+            # parse pose
+            try:
+                pose = self._parse_pose(camera['pose'])
+            except KeyError:
+                pose = Pose()
+            # parse sprites
+            sprites = reduce(lambda a, b: a + b, [self.\
+                _parse_primitives(sprite) for sprite in camera['sprites']])
+            sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6,
+                'background': [0, 0, 0], 'text': camera['name']})
+            # parse active state
+            try:
+                active = camera['active']
+            except KeyError:
+                active = True
+            # create camera
+            rmodel[camera['name']] = Camera(camera, pose, None, sprites,
+                active=active)
+            self._mounts[camera['name']] = rmodel[camera['name']]
+        # parse scene
+        for item in model['scene']:
             # parse pose
             try:
                 pose = self._parse_pose(item['pose'])
@@ -194,7 +239,7 @@ class YAMLParser(object):
                 else:
                     planes = []
                 # create object
-                rscene[item['name']] = SceneObject(pose or Pose(), mount_pose,
+                rmodel[item['name']] = SceneObject(pose or Pose(), mount_pose,
                     None, sprites, planes)
             elif 'robot' in item:
                 pieces = self._parse_robot(item['robot'])
@@ -202,83 +247,22 @@ class YAMLParser(object):
                     config = item['config']
                 except KeyError:
                     config = None
-                rscene[item['name']] = \
+                rmodel[item['name']] = \
                     Robot(pose or Pose(), None, pieces, config, occlusion)
             elif 'z' in item:
-                rscene[item['name']] = \
+                rmodel[item['name']] = \
                     Plane(pose, None, item['x'], item['y'], item['z'])
             elif 'x' in item:
-                rscene[item['name']] = Plane(pose, None, item['x'], item['y'])
+                rmodel[item['name']] = Plane(pose, None, item['x'], item['y'])
             else:
-                rscene[item['name']] = \
+                rmodel[item['name']] = \
                     SceneObject(pose or Pose(), mount_pose, None, [])
-            self._mounts[item['name']] = rscene[item['name']]
-        return rscene
-
-    def _parse_model(self, model):
-        """\
-        Parse a multi-camera model from YAML.
-
-        @param model: The YAML dict of the multi-camera model.
-        @type model: C{dict}
-        @return: The parsed multi-camera model.
-        @rtype: L{MultiCamera}
-        """
-        global MOUNTS
-        if 'scene' in model:
-            scene = self._parse_scene(model['scene'])
-        else:
-            scene = Scene()
-        rmodel = MultiCamera(model['name'], scene)
-        tp_defaults = {'boundary_padding': 0.0,
-                       'res_max_ideal': float('inf'),
-                       'res_max_acceptable': float('inf'),
-                       'res_min_ideal': 0.0,
-                       'res_min_acceptable': 0.0,
-                       'blur_max_ideal': 1.0,
-                       'blur_max_acceptable': 1.0,
-                       'angle_max_ideal': pi / 2.0,
-                       'angle_max_acceptable': pi / 2.0}
-        for tp in tp_defaults:
-            if not tp in model:
-                model[tp] = tp_defaults[tp]
-        model['res_max_ideal'] = \
-            min(model['res_max_ideal'], model['res_max_acceptable'])
-        model['res_min_ideal'] = \
-            max(model['res_min_ideal'], model['res_min_acceptable'])
-        model['blur_max_ideal'] = \
-            min(model['blur_max_ideal'], model['blur_max_acceptable'])
-        model['angle_max_ideal'] = \
-            min(model['angle_max_ideal'], model['angle_max_acceptable'])
-        for camera in model['cameras']:
-            for tp in tp_defaults:
-                camera[tp] = model[tp]
-            # parse pose
-            try:
-                pose = self._parse_pose(camera['pose'])
-            except KeyError:
-                pose = Pose()
-            # parse sprites
-            sprites = reduce(lambda a, b: a + b, [self.\
-                _parse_primitives(sprite) for sprite in camera['sprites']])
-            sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6,
-                'background': [0, 0, 0], 'text': camera['name']})
-            # parse active state
-            try:
-                active = camera['active']
-            except KeyError:
-                active = True
-            # create camera
-            rmodel[camera['name']] = Camera(camera, pose, None, sprites,
-                active=active)
-            self._mounts[camera['name']] = rmodel[camera['name']]
+            self._mounts[item['name']] = rmodel[item['name']]
         # parse mounts after to avoid ordering issues
-        try:
-            for item in model['scene']:
-                if 'mount' in item:
-                    rmodel.scene[item['name']].mount = self._mounts[item['mount']]
-        except KeyError:
-            pass
+        # FIXME: does mounting need to be this complicated anymore?
+        for item in model['scene']:
+            if 'mount' in item:
+                rmodel[item['name']].mount = self._mounts[item['mount']]
         for camera in model['cameras']:
             if 'mount' in camera:
                 rmodel[camera['name']].mount = self._mounts[camera['mount']]

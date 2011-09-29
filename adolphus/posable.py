@@ -34,6 +34,7 @@ class Posable(object):
         self._pose = pose
         self._mount_pose = mount_pose
         self.children = set()
+        self.posecallbacks = set()
         self._mount = None
         self.mount = mount
 
@@ -53,6 +54,8 @@ class Posable(object):
         """
         for child in self.children:
             child._pose_changed_hook()
+        for callback in self.posecallbacks:
+            callback()
 
     @property
     def mount(self):
@@ -85,8 +88,7 @@ class Posable(object):
             self._pose = pose - self.mount.mount_pose()
         except AttributeError:
             self._pose = pose
-        for child in self.children:
-            child._pose_changed_hook()
+        self._pose_changed_hook()
 
     def set_relative_pose(self, pose):
         """\
@@ -96,8 +98,7 @@ class Posable(object):
         @type pose: L{Pose}
         """
         self._pose = pose
-        for child in self.children:
-            child._pose_changed_hook()
+        self._pose_changed_hook()
 
     def mount_pose(self):
         """\
@@ -140,8 +141,7 @@ class Plane(Posable, Visualizable):
         primitives = [{'type':       'box',
                        'length':     self.x[1] - self.x[0],
                        'height':     self.y[1] - self.y[0],
-                       'width':      1,
-                       'material':   'wood'}]
+                       'width':      1}]
         Visualizable.__init__(self, primitives)
 
     def _pose_changed_hook(self):
@@ -247,6 +247,10 @@ class Plane(Posable, Visualizable):
             except AttributeError:
                 pass
 
+    @property
+    def planes(self):
+        return set([self])
+
     def toggle_planes(self): pass
 
 
@@ -272,34 +276,21 @@ class SceneObject(Posable, Visualizable):
         """
         Posable.__init__(self, pose, mount_pose, mount)
         Visualizable.__init__(self, primitives)
-        self.planes = set()
-        for plane in planes:
-            plane['mount'] = self
-            try:
-                plane['pose'] = plane['pose'] - self._mount_pose
-            except KeyError:
-                plane['pose'] = -self._mount_pose
-            self.planes.add(Plane(**plane))
-        self._planes_view = False
+        try:
+            self.planes = set()
+        except AttributeError:
+            # child class has defined a custom planes property
+            pass
+        else:
+            for plane in planes:
+                plane['mount'] = self
+                try:
+                    plane['pose'] = plane['pose'] - self._mount_pose
+                except KeyError:
+                    plane['pose'] = -self._mount_pose
+                self.planes.add(Plane(**plane))
+            self._planes_view = False
 
-    def intersection(self, pa, pb):
-        """\
-        Return the 3D point of intersection (if any) of the line segment
-        between the two specified points and this object.
-
-        @param pa: The first vertex of the line segment.
-        @type pa: L{Point}
-        @param pb: The second vertex of the line segment.
-        @type pb: L{Point}
-        @return: The point of intersection with the object.
-        @rtype: L{Point}
-        """
-        for plane in self.planes:
-            intersection = plane.intersection(pa, pb)
-            if intersection:
-                return intersection
-        return None
-        
     def toggle_planes(self):
         """\
         Toggle display of occluding planes in the visualization.
@@ -389,8 +380,7 @@ class Robot(SceneObject):
                 self._mount_pose = \
                     self.generate_joint_pose(self.joints[i], position)
             self._config[i] = position
-        for child in self.children:
-            child._pose_changed_hook()
+        self._pose_changed_hook()
 
     @property
     def visible(self):
@@ -470,23 +460,13 @@ class Robot(SceneObject):
         else:
             raise ValueError('invalid joint type')
 
-    def intersection(self, pa, pb):
+    @property
+    def planes(self):
         """\
-        Return the 3D point of intersection (if any) of the line segment
-        between the two specified points and this robot.
-
-        @param pa: The first vertex of the line segment.
-        @type pa: L{Point}
-        @param pb: The second vertex of the line segment.
-        @type pb: L{Point}
-        @return: The point of intersection with the robot.
-        @rtype: L{Point}
+        Occluding planes.
         """
-        for piece in self.pieces:
-            intersection = piece.intersection(pa, pb)
-            if intersection:
-                return intersection
-        return None
+        return reduce(lambda a, b: a | b,
+            [piece.planes for piece in self.pieces])
 
     def visualize(self):
         """\

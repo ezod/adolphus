@@ -176,6 +176,13 @@ class Camera(SceneObject):
         self._generate_fovvis()
         self.active = active
 
+    def _pose_changed_hook(self):
+        try:
+            del self._fov_hull
+        except AttributeError:
+            pass
+        super(Camera, self)._pose_changed_hook()
+
     def getparam(self, param):
         """\
         Retrieve a camera parameter from this camera.
@@ -300,19 +307,6 @@ class Camera(SceneObject):
             return cdval(p.rho, terma, termb)
         self.Cd = Cd
 
-    def _generate_fovvis(self):
-        hull = []
-        for z in [max(self._zn, self._zrmaxa), min(self._zf, self._zrmina)]:
-            hull += [(self.fov['sahl'] * z, self.fov['savt'] * z, z),
-                     (self.fov['sahl'] * z, self.fov['savb'] * z, z),
-                     (self.fov['sahr'] * z, self.fov['savb'] * z, z),
-                     (self.fov['sahr'] * z, self.fov['savt'] * z, z)]
-        self.fovvis = \
-            [{'type': 'curve', 'color': (1, 0, 0),
-              'pos': hull[i:i + 4] + hull[i:i + 1]} for i in range(0, 16, 4)] +\
-            [{'type': 'curve', 'color': (1, 0, 0),
-              'pos': [hull[i], hull[i + 4]]} for i in range(4)]
-
     @property
     def fov(self):
         """\
@@ -346,6 +340,26 @@ class Camera(SceneObject):
             self._fov['sav'] = self._fov['savb'] - self._fov['savt']
             return self._fov
 
+    @property
+    def fov_hull(self):
+        try:
+            return self._fov_hull
+        except AttributeError:
+            self._fov_hull = []
+            for z in [max(self._zn, self._zrmaxa), min(self._zf, self._zrmina)]:
+                self._fov_hull += \
+                    [Point((self.fov['sahl'] * z, self.fov['savt'] * z, z)),
+                     Point((self.fov['sahl'] * z, self.fov['savb'] * z, z)),
+                     Point((self.fov['sahr'] * z, self.fov['savb'] * z, z)),
+                     Point((self.fov['sahr'] * z, self.fov['savt'] * z, z))]
+            return self._fov_hull
+
+    def _generate_fovvis(self):
+        self.fovvis = [{'type': 'curve', 'color': (1, 0, 0), 'pos': \
+            self.fov_hull[i:i + 4] + self.fov_hull[i:i + 1]} for i in \
+            range(0, 16, 4)] + [{'type': 'curve', 'color': (1, 0, 0),
+            'pos': [self.fov_hull[i], self.fov_hull[i + 4]]} for i in range(4)]
+
     def zc(self, c):
         """\
         Return the depth values at which a circle of confusion of a given size
@@ -365,6 +379,19 @@ class Camera(SceneObject):
         if r[1] < 0:
             r[1] = float('inf')
         return tuple(r)
+
+    def occluded_by(self, plane):
+        """\
+        Return whether this camera's field of view is occluded (in part) by the
+        specified plane.
+
+        @param plane: The plane to check.
+        @type plane: L{Plane}
+        @return: True if occluded.
+        @rtype: C{bool}
+        """
+        # FIXME: actually check for intersection here
+        return True
 
     def strength(self, point):
         """\
@@ -402,81 +429,38 @@ class Camera(SceneObject):
         super(Camera, self).update_visualization()
         
 
-class Scene(dict):
+class Model(dict):
     """\
-    Discrete spatial-directional range with occlusion class.
+    Multi-camera n-ocular coverage strength model.
     """
     def __init__(self):
         """\
         Constructor.
         """
         dict.__init__(self)
-        self._visible = False
+        self.cameras = set()
+        self._occlusion_cache = {}
+        self._oc_updated = {}
+        self._oc_needs_update = True
 
-    @property
-    def visible(self):
-        return self._visible
+    def __setitem__(self, key, value):
+        self._oc_updated[key] = False
+        def callback():
+            self._oc_updated[key] = False
+            self._oc_needs_update = True
+        value.posecallbacks.add(callback)
+        if isinstance(value, Camera):
+            self.cameras.add(key)
+        super(Model, self).__setitem__(key, value)
 
-    @visible.setter
-    def visible(self, value):
-        self._visible = value
-        for posable in self:
-            self[posable].visible = value
-
-    def occluded(self, p, cam=Point()):
-        """\
-        Return whether the specified point is occluded from the camera
-        viewpoint (by opaque scene planes).
-        """
-        for posable in self:
-            pr = self[posable].intersection(p, cam)
-            if pr is not None and pr.euclidean(p) > 1e-4:
-                return True
-        return False
-
-    def visualize(self):
-        """\
-        Visualize the scene objects.
-        """
-        for posable in self:
-            try:
-                self[posable].visualize()
-            except AttributeError:
-                pass
-        self._visible = True
-
-    def update_visualization(self):
-        """\
-        Update the visualizations of the scene objects.
-        """
-        for posable in self:
-            try:
-                self[posable].update_visualization()
-            except AttributeError:
-                pass
-
-
-class MultiCamera(dict):
-    """\
-    Multi-camera n-ocular coverage strength model.
-    """
-    def __init__(self, name='Untitled', scene=Scene()):
-        """\
-        Constructor.
-   
-        @param name: The name of this model.
-        @type name: C{str}
-        @param scene: The discrete scene model.
-        @type scene: L{Scene}
-        """
-        dict.__init__(self)
-        self.name = name
-        self.scene = scene
+    def __delitem__(self, key):
+        self[key].visible = False
+        self.cameras.discard(key)
+        super(Model, self).__delitem__(key)
 
     def __del__(self):
-        self.scene.visible = False
-        for camera in self:
-            self[camera].visible = False
+        for sceneobject in self:
+            self[sceneobject].visible = False
 
     @property
     def active_cameras(self):
@@ -485,7 +469,51 @@ class MultiCamera(dict):
 
         @rtype: C{set}
         """
-        return set([key for key in self if self[key].active])
+        return set([key for key in self.cameras if self[key].active])
+
+    def _update_occlusion_cache(self):
+        """\
+        Update the occlusion cache.
+        """
+        if not self._oc_needs_update:
+            return
+        remainder = set(self.cameras)
+        for camera in self.cameras:
+            if not self._oc_updated[camera]:
+                remainder.remove(camera)
+                self._occlusion_cache[camera] = {}
+                for sceneobject in self:
+                    self._occlusion_cache[camera][sceneobject] = \
+                        set([plane for plane in self[sceneobject].planes \
+                             if self[camera].occluded_by(plane)])
+        for sceneobject in self:
+            if not self._oc_updated[sceneobject]:
+                for camera in remainder:
+                    self._occlusion_cache[camera][sceneobject] = \
+                        set([plane for plane in self[sceneobject].planes \
+                             if self[camera].occluded_by(plane)])
+                self._oc_updated[sceneobject] = True
+        self._oc_needs_update = False
+
+    def occluded(self, point, camera):
+        """\
+        Return whether the specified point is occluded with respect to the
+        specified camera, using the occlusion cache planes.
+
+        @param point: The point to check.
+        @type point: L{Point}
+        @param camera: The camera ID to check.
+        @type camera: C{str}
+        @return: True if occluded.
+        @rtype: C{bool}
+        """
+        for plane in set([plane for plane in \
+            [self._occlusion_cache[camera][sceneobject] \
+            for sceneobject in self] for plane in plane]):
+            intersection = plane.intersection(point, self[camera].pose.T)
+            if intersection is not None and intersection.euclidean(point) > 1e-4:
+                return True
+        return False
     
     def strength(self, point, ocular=1, subset=None):
         """\
@@ -502,6 +530,7 @@ class MultiCamera(dict):
         @rtype: C{float}
         """
         active_cameras = subset or self.active_cameras
+        self._update_occlusion_cache()
         if len(active_cameras) < ocular:
             raise ValueError('network has too few active cameras')
         maxstrength = 0.0
@@ -513,8 +542,7 @@ class MultiCamera(dict):
                     minstrength = 0.0
                     break
                 elif strength < minstrength:
-                    minstrength = strength * (not self.scene.occluded(point,
-                        self[camera].pose.T))
+                    minstrength = strength * (not self.occluded(point, camera))
             if minstrength > 1.0:
                 minstrength = 0.0
             maxstrength = max(maxstrength, minstrength)
@@ -620,14 +648,12 @@ class MultiCamera(dict):
         @return: True if the visualization was initialized for the first time.
         @rtype: C{bool}
         """
-        self.scene.visualize()
-        for camera in self:
-            self[camera].visualize()
+        for sceneobject in self:
+            self[sceneobject].visualize()
 
     def update_visualization(self):
         """\
         Update the visualization.
         """
-        self.scene.update_visualization()
-        for camera in self:
-            self[camera].update_visualization()
+        for sceneobject in self:
+            self[sceneobject].update_visualization()
