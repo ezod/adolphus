@@ -81,7 +81,43 @@ class TestPlane(unittest.TestCase):
         self.assertEqual(plane.intersection(pose.map(self.pa), pose.map(self.pb)), pose.map(A.geometry.Point()))
         self.assertEqual(plane.intersection(pose.map(self.pa), pose.map(self.pc)), pose.map(A.geometry.Point()))
         self.assertEqual(plane.intersection(pose.map(self.pb), pose.map(self.pc)), None)
-        
+
+
+class TestModel01(unittest.TestCase):
+    """\
+    Test model 01.
+    """
+    def setUp(self):
+        self.model, self.relevance_models = A.YAMLParser('test/test01.yaml').experiment
+
+    def test_strength(self):
+        p1 = A.Point((0, 0, 1000))
+        p2 = A.Point((0, 0, 1200))
+        self.assertEqual(self.model.strength(p1), self.model['C'].strength(p1))
+        self.assertTrue(self.model.strength(p1))
+        self.assertFalse(self.model.strength(p2))
+        self.model['C'].set_absolute_pose(A.Pose(T=A.Point((1000, 0, 0))))
+        self.assertFalse(self.model.strength(p1))
+        self.model['C'].set_absolute_pose(A.Pose(R=A.Rotation.from_axis_angle(pi, A.Point((1, 0, 0)))))
+        self.assertFalse(self.model.strength(p1))
+
+    def test_performance(self):
+        self.assertEqual(self.model.performance(self.relevance_models['R1']), 1.0)
+        self.assertEqual(self.model.performance(self.relevance_models['R2']), 0.0)
+
+    def test_occlusion_cache(self):
+        self.model._update_occlusion_cache()
+        self.assertTrue(self.model._occlusion_cache['C']['P1'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2'])
+        self.model['C'].set_absolute_pose(A.Pose(R=A.Rotation.from_axis_angle(-pi / 2.0, A.Point((1, 0, 0)))))
+        self.model._update_occlusion_cache()
+        self.assertFalse(self.model._occlusion_cache['C']['P1'])
+        self.assertTrue(self.model._occlusion_cache['C']['P2'])
+        self.model['C'].set_absolute_pose(A.Pose(R=A.Rotation.from_axis_angle(pi, A.Point((1, 0, 0)))))
+        self.model._update_occlusion_cache()
+        self.assertFalse(self.model._occlusion_cache['C']['P1'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2'])
+
 
 if __name__ == '__main__':
     unittest.main()

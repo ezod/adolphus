@@ -1,0 +1,42 @@
+model:
+    name:           Test Model 01
+
+    boundary_padding:       20.0
+    res_min_ideal:          3.0
+    res_min_acceptable:     0.5
+    blur_max_acceptable:    5.0
+    angle_max_ideal:        1.3
+
+    cameras:
+        - name:         C
+          sprites:      [cameras/prosilicaec1350.yaml, lenses/computarm3z1228cmp.yaml]
+          A:            4.5
+          f:            12
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           1200
+          pose:
+              T:            [0, 0, 0]
+              R:            [0, 0, 0]
+              Rformat:      euler-zyx-deg
+
+    scene:
+        - name:         P1
+          x:            [-100, 100]
+          y:            [-80, 80]
+          z:            1100
+        - name:         P2
+          x:            [-100, 100]
+          y:            1100
+          z:            [-80, 80]
+
+relevance:
+    - name:         R1
+      points:
+        - point:        [0, 0, 1000]
+          strength:     0.5
+    - name:         R2
+      points:
+        - point:        [0, 0, 1200]
+          strength:     0.5
