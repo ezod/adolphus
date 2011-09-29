@@ -329,7 +329,7 @@ class SceneObject(Posable, Visualizable):
                 pass
 
 
-class Robot(Posable):
+class Robot(SceneObject):
     """\
     Sprite-based robot.
     """
@@ -401,6 +401,23 @@ class Robot(Posable):
         self._visible = value
         for piece in self.pieces:
             piece.visible = value
+
+    def highlight(self, color=(0, 1, 0)):
+        """\
+        Highlight this robot with a bright uniform color.
+
+        @param color: The color of the highlight.
+        @type color: C{tuple}
+        """
+        for piece in self.pieces:
+            piece.highlight(color)
+
+    def unhighlight(self):
+        """\
+        Unhighlight this robot (if highlighted).
+        """
+        for piece in self.pieces:
+            piece.unhighlight()
 
     def mount_pose(self):
         """\
@@ -484,6 +501,7 @@ class Robot(Posable):
         Update this robot's visualization.
         """
         for piece in self.pieces:
+            piece.opacity = self.opacity
             piece.update_visualization()
         for child in self.children:
             try:
@@ -497,3 +515,4 @@ class Robot(Posable):
         """
         for piece in self.pieces:
             piece.toggle_planes()
+        self.opacity = self.pieces[0].opacity
