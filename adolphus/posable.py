@@ -122,6 +122,14 @@ class Plane(Posable, Visualizable):
 
         @param pose: The pose of the plane normal (from z-hat).
         @type pose: L{Pose}
+        @param mount: The mount of the plane (optional).
+        @type mount: L{Posable}
+        @param x: The x coordinate or range.
+        @type x: C{float} or C{tuple} of C{float}
+        @param y: The y coordinate or range.
+        @type y: C{float} or C{tuple} of C{float}
+        @param z: The z coordinate or range.
+        @type z: C{float} or C{tuple} of C{float}
         """
         Posable.__init__(self, pose=pose, mount=mount)
         if isinstance(z, Number):
@@ -247,22 +255,18 @@ class Plane(Posable, Visualizable):
             except AttributeError:
                 pass
 
-    @property
-    def planes(self):
-        return set([self])
-
-    def toggle_planes(self): pass
-
 
 class SceneObject(Posable, Visualizable):
     """\
     Sprite-based scene object.
     """
-    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None,
+    def __init__(self, name, pose=Pose(), mount_pose=Pose(), mount=None,
                  primitives=[], planes=[]):
         """\
         Constructor.
 
+        @param name: The name of the object.
+        @type name: C{str}
         @param pose: The pose of the object (optional).
         @type pose: L{Pose}
         @param mount_pose: The transformation to the mounting end (optional).
@@ -274,8 +278,9 @@ class SceneObject(Posable, Visualizable):
         @param planes: The opaque planes associated with this object (optional).
         @type planes: C{list} of L{Plane}
         """
-        Posable.__init__(self, pose, mount_pose, mount)
-        Visualizable.__init__(self, primitives)
+        self.name = name
+        Posable.__init__(self, pose=pose, mount_pose=mount_pose, mount=mount)
+        Visualizable.__init__(self, primitives=primitives)
         try:
             self.planes = set()
         except AttributeError:
@@ -320,13 +325,25 @@ class SceneObject(Posable, Visualizable):
                 pass
 
 
+class ScenePlane(SceneObject):
+    def __init__(self, name, pose=Pose(), mount_pose=Pose(), mount=None, x=None,
+                 y=None, z=None):
+        """\
+        TODO
+        """
+        plane = Plane(x=x, y=y, z=z)
+        super(ScenePlane, self).__init__(name, pose=pose, nount_pose=mount_pose,
+            mount=mount, primitives=plane.primitives, planes=[plane])
+        
+
+
 class Robot(SceneObject):
     """\
     Sprite-based robot.
     """
-    def __init__(self, pose=Pose(), mount=None, pieces=[], config=None,
+    def __init__(self, name, pose=Pose(), mount=None, pieces=[], config=None,
                  occlusion=True):
-        super(Robot, self).__init__(pose=pose, mount=mount)
+        super(Robot, self).__init__(name, pose=pose, mount=mount)
         self.pieces = []
         nextpose = pose
         for i, piece in enumerate(pieces):
@@ -344,8 +361,9 @@ class Robot(SceneObject):
                 primitives = piece['primitives']
             except KeyError:
                 primitives = []
-            self.pieces.append(SceneObject(nextpose, offset, mount, primitives,
-                planes))
+            self.pieces.append(SceneObject('%s-%i' % (name, i), pose=nextpose,
+                mount_pose=offset, mount=mount, primitives=primitives,
+                planes=planes))
             nextpose = self.generate_joint_pose(piece['joint'])
         self.joints = [piece['joint'] for piece in pieces]
         self._config = [joint['home'] for joint in self.joints]

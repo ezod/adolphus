@@ -149,11 +149,13 @@ class Camera(SceneObject):
     """\
     Single-camera coverage strength model.
     """
-    def __init__(self, params, pose=Pose(), mount=None, primitives=[],
+    def __init__(self, name, params, pose=Pose(), mount=None, primitives=[],
                  active=True):
         """\
         Constructor.
 
+        @param name: The name of the camera.
+        @type name: C{str}
         @param params: Dictionary of application parameters.
         @type params: C{dict}
         @param pose: Pose of the camera in space (optional).
@@ -165,7 +167,8 @@ class Camera(SceneObject):
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
         """
-        super(Camera, self).__init__(pose=pose, mount=mount, primitives=primitives)
+        super(Camera, self).__init__(name, pose=pose, mount=mount,
+            primitives=primitives)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self._params = params

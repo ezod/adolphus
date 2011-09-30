@@ -16,7 +16,7 @@ from functools import reduce
 import cython
 from .coverage import PointCache, RelevanceModel, Camera, Model
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
-from .posable import Plane, SceneObject, Robot
+from .posable import SceneObject, ScenePlane, Robot
 
 
 class YAMLParser(object):
@@ -211,8 +211,8 @@ class YAMLParser(object):
             except KeyError:
                 active = True
             # create camera
-            rmodel[camera['name']] = Camera(camera, pose, None, sprites,
-                active=active)
+            rmodel[camera['name']] = Camera(camera['name'], camera, pose=pose,
+                mount=None, primitives=sprites, active=active)
             self._mounts[camera['name']] = rmodel[camera['name']]
         # parse scene
         for item in model['scene']:
@@ -231,32 +231,37 @@ class YAMLParser(object):
                 except KeyError:
                     mount_pose = Pose()
                 # parse sprites and planes
-                sprites = reduce(lambda a, b: a + b, [self._parse_primitives(sprite) \
+                sprites = reduce(lambda a, b: a + b,
+                    [self._parse_primitives(sprite) \
                     for sprite in item['sprites']])
                 if occlusion:
-                    planes = reduce(lambda a, b: a + b, [self._parse_planes(sprite) \
+                    planes = reduce(lambda a, b: a + b,
+                        [self._parse_planes(sprite) \
                         for sprite in item['sprites']])
                 else:
                     planes = []
                 # create object
-                rmodel[item['name']] = SceneObject(pose or Pose(), mount_pose,
-                    None, sprites, planes)
+                rmodel[item['name']] = SceneObject(item['name'],
+                    pose=(pose or Pose()), mount_pose=mount_pose, mount=None,
+                    primitives=sprites, planes=planes)
             elif 'robot' in item:
                 pieces = self._parse_robot(item['robot'])
                 try:
                     config = item['config']
                 except KeyError:
                     config = None
-                rmodel[item['name']] = \
-                    Robot(pose or Pose(), None, pieces, config, occlusion)
+                rmodel[item['name']] = Robot(item['name'],
+                    pose=(pose or Pose()), mount=None, pieces=pieces,
+                    config=config, occlusion=occlusion)
             elif 'z' in item:
-                rmodel[item['name']] = \
-                    Plane(pose, None, item['x'], item['y'], item['z'])
+                rmodel[item['name']] = ScenePlane(item['name'], pose=pose,
+                    mount=None, x=item['x'], y=item['y'], z=item['z'])
             elif 'x' in item:
-                rmodel[item['name']] = Plane(pose, None, item['x'], item['y'])
+                rmodel[item['name']] = ScenePlane(item['name'], pose=pose,
+                    mount=None, x=item['x'], y=item['y'])
             else:
-                rmodel[item['name']] = \
-                    SceneObject(pose or Pose(), mount_pose, None, [])
+                rmodel[item['name']] = SceneObject(item['name'],
+                    pose=(pose or Pose()), mount_pose=mount_pose)
             self._mounts[item['name']] = rmodel[item['name']]
         # parse mounts after to avoid ordering issues
         # FIXME: does mounting need to be this complicated anymore?
