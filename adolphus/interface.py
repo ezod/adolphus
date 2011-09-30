@@ -252,11 +252,12 @@ class Experiment(threading.Thread):
         except CommandError as e:
             es = str(e)
             if self.commands[cmd].__doc__:
-                for line in self.commands[cmd].__doc__:
+                for line in self.commands[cmd].__doc__.split('\n'):
+                    line = line.strip(' ')
                     if line.startswith('usage'):
                         es += '\n' + line % cmd
                         break
-            return es
+            raise CommandError(es)
 
     def run(self):
         """\
@@ -369,10 +370,17 @@ class Experiment(threading.Thread):
                 if k == '\n':
                     cmd = self.display.prompt()
                     if cmd:
-                        self.display.message(self.execute(cmd, response='text'))
+                        try:
+                            self.display.message(self.execute(cmd,
+                                response='text'))
+                        except CommandError as e:
+                            self.display.message(str(e))
                 elif k in self.keybindings:
-                    self.display.message(self.execute(self.keybindings[k],
-                        response='text'))
+                    try:
+                        self.display.message(self.execute(self.keybindings[k],
+                            response='text'))
+                    except CommandError as e:
+                        self.display.message(str(e))
 
 
 class Controller(object):

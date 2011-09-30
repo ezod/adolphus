@@ -288,7 +288,7 @@ def cmd_active(ex, args):
         ex.model[args[0]].update_visualization()
     except IndexError:
         for camera in ex.model.cameras:
-            cmd_active(ex, [camera], False)
+            cmd_active(ex, [camera])
     except KeyError:
         raise CommandError('invalid camera name')
 
@@ -298,8 +298,10 @@ def cmd_strength(ex, args, response='pickle'):
     
     usage: %s ocular x y z [rho eta]
     """
-    # TODO: support 1-camera subsets without requiring deactivation?
-    ocular = int(args.pop(0))
+    try:
+        ocular = int(args.pop(0))
+    except IndexError:
+        raise CommandError('incorrect arguments')
     if len(args) == 3:
         p = Point([float(args[i]) for i in range(3)])
     elif len(args) == 5:
@@ -326,7 +328,10 @@ def cmd_coverage(ex, args, response='pickle'):
         ex.display.message('Calculating coverage...')
         ex.display.userspin = False
         performance = {}
-        ocular = int(args.pop(0))
+        try:
+            ocular = int(args.pop(0))
+        except IndexError:
+            raise CommandError('incorrect arguments')
         if not args:
             args = ex.relevance_models.keys()
         for arg in args:
