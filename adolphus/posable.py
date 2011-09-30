@@ -288,12 +288,16 @@ class SceneObject(Posable, Visualizable):
             pass
         else:
             for plane in planes:
-                plane['mount'] = self
-                try:
-                    plane['pose'] = plane['pose'] - self._mount_pose
-                except KeyError:
-                    plane['pose'] = -self._mount_pose
-                self.planes.add(Plane(**plane))
+                if isinstance(plane, Plane):
+                    self.planes.add(plane)
+                else:
+                    # FIXME: this case seems "unnatural" - move to yamlparser?
+                    plane['mount'] = self
+                    try:
+                        plane['pose'] = plane['pose'] - self._mount_pose
+                    except KeyError:
+                        plane['pose'] = -self._mount_pose
+                    self.planes.add(Plane(**plane))
             self._planes_view = False
 
     def toggle_planes(self):
@@ -332,7 +336,7 @@ class ScenePlane(SceneObject):
         TODO
         """
         plane = Plane(x=x, y=y, z=z)
-        super(ScenePlane, self).__init__(name, pose=pose, nount_pose=mount_pose,
+        super(ScenePlane, self).__init__(name, pose=pose, mount_pose=mount_pose,
             mount=mount, primitives=plane.primitives, planes=[plane])
         
 
