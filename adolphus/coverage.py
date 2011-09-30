@@ -419,17 +419,17 @@ class Camera(SceneObject):
 
     def image(self, point):
         """\
-        Return the projected pixel coordinates of the specified 3D point.
+        Return the projected subpixel coordinates of the specified 3D point.
 
         @param point: The point to project.
         @type point: L{Point}
-        @return: The pixel coordinates of the point (if any).
-        @rtype: C{tuple} of C{int}
+        @return: The subpixel coordinates of the point (if any).
+        @rtype: C{tuple} of C{float}
         """
         cp = (-self.pose).map(point)
         if self.Cv(cp):
-            return tuple([int((self.getparam('f') / self.getparam('s')[i]) * \
-                (cp[i] / cp.z) + self.getparam('o')[i]) for i in range(2)])
+            return tuple([(self.getparam('f') / self.getparam('s')[i]) * \
+                (cp[i] / cp.z) + self.getparam('o')[i] for i in range(2)])
         else:
             return None
 
