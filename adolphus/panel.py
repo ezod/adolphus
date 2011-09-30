@@ -32,6 +32,8 @@ class Panel(gtk.Window):
         except AttributeError:
             self.connect('destroy', lambda *w: gtk.main_quit())
 
+        self.connected = False
+
         # basics
         self.set_title('Adolphus Panel')
         self.connect('delete_event', self._delete_event)
@@ -60,6 +62,16 @@ class Panel(gtk.Window):
         vbox.pack_start(vpaned, True, True)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
+        self.objecttreeview = gtk.TreeView()
+        tvcolumn = gtk.TreeViewColumn('Object')
+        self.objecttreeview.append_column(tvcolumn)
+        cell = gtk.CellRendererText()
+        tvcolumn.pack_start(cell, True)
+        tvcolumn.add_attribute(cell, 'text', 0)
+        self.objecttreeview.set_search_column(0)
+        tvcolumn.set_sort_column_id(0)
+        self.objecttreeview.set_reorderable(True)
+        frame.add(self.objecttreeview)
         vpaned.add1(frame)
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_IN)
@@ -72,6 +84,8 @@ class Panel(gtk.Window):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if port:
             self.ad_connect(host, port)
+
+        self.populate_object_tree()
 
     @staticmethod
     def main():
@@ -91,6 +105,8 @@ class Panel(gtk.Window):
         """
         self.sock.connect((host or 'localhost', port))
         self.sock.send('pickle#')
+        self.sock.settimeout(0.1)
+        self.connected = True
 
     def ad_command(self, cmd):
         """\
@@ -98,9 +114,45 @@ class Panel(gtk.Window):
 
         @param cmd: The command to send.
         @type cmd: C{str}
+        @return: The result of the command.
+        @rtype: C{str}
         """
+        response = ''
         self.sock.send('%s#' % cmd)
-        self.sock.recv(256)
+        while True:
+            try:
+                response += self.sock.recv(256)
+            except socket.error:
+                pass
+            try:
+                robj = pickle.loads(response)
+                break
+            except (EOFError, IndexError):
+                continue
+        if isinstance(robj, Exception):
+            raise robj
+        else:
+            return robj
+
+    def populate_object_tree(self):
+        if not self.connected:
+            return
+        hierarchy = self.ad_command('objecthierarchy')
+        objecttree = gtk.TreeStore(str)
+        hiter = {}
+        while hierarchy:
+            for sceneobject in hierarchy.keys():
+                if not hierarchy[sceneobject]:
+                    hiter[sceneobject] = objecttree.append(None, [sceneobject])
+                    del hierarchy[sceneobject]
+                else:
+                    try:
+                        hiter[sceneobject] = objecttree.append(hiter[hierarchy[sceneobject]], [sceneobject])
+                    except KeyError:
+                        continue
+                    else:
+                        del hierarchy[sceneobject]
+        self.objecttreeview.set_model(objecttree)
 
     def _delete_event(self, widget, data=None):
         return False
