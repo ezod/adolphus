@@ -7,6 +7,11 @@ Visual interface module.
 @license: GPL-3
 """
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 import threading
 import socket
 from math import copysign
@@ -437,10 +442,12 @@ class Controller(object):
                 try:
                     rstring = self.experiment.execute(cmd.strip('#'),
                         response=response)
-                except CommandError:
-                    pass
+                except CommandError as e:
+                    channel.sendall(pickle.dumps(e))
                 if rstring:
                     channel.sendall(rstring)
+                else:
+                    channel.sendall(pickle.dumps(None))
         except Controller.ExperimentDeath:
             pass
         finally:
