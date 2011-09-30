@@ -333,7 +333,7 @@ class ScenePlane(SceneObject):
     def __init__(self, name, pose=Pose(), mount_pose=Pose(), mount=None, x=None,
                  y=None, z=None):
         """\
-        TODO
+        Plain plane directly in the scene.
         """
         plane = Plane(x=x, y=y, z=z)
         super(ScenePlane, self).__init__(name, pose=pose, mount_pose=mount_pose,

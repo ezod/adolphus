@@ -40,7 +40,7 @@ class Sprite(visual.frame):
         @param parent: The parent object of this sprite.
         @type parent: C{object}
         @param frame: The parent frame for the sprite.
-        @type frame: L{visual.frame}
+        @type frame: L{frame<visual.frame>}
         """
         super(Sprite, self).__init__(frame=frame)
         self.primitives = primitives
@@ -99,7 +99,7 @@ class Sprite(visual.frame):
         Execute a 3D transformation on this sprite.
 
         @param pose: The pose.
-        @type pose: L{geometry.Pose}
+        @type pose: L{Pose}
         """
         self.pos = pose.T
         self.axis = (1, 0, 0)

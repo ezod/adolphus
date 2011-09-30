@@ -72,8 +72,8 @@ class Display(visual.display):
         """\
         Set the center of the view.
 
-        @param direction: The position of the center.
-        @type direction: L{visual.vector}
+        @param pos: The position of the center.
+        @type pos: C{tuple} of C{float}
         """
         self.center = visual.vector(pos)
         self.cdot.pos = self.center

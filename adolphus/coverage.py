@@ -1,6 +1,6 @@
 """\
 Coverage model module. Contains the coverage strength model classes for single
-cameras and multi-camera networks, as well as the scene and relevance map
+cameras and multi-camera networks, as well as point cache and relevance model
 classes.
 
 @author: Aaron Mavrinac
@@ -134,7 +134,7 @@ class RelevanceModel(Posable):
     @property
     def pose(self):
         """\
-        The pose of the object.
+        The pose of the relevance model.
         """
         if self.mount:
             return self._pose + self.mount.mount_pose()
@@ -142,6 +142,9 @@ class RelevanceModel(Posable):
             return self._pose
 
     def visualize(self):
+        """\
+        Visualize the relevance model.
+        """
         self.mapped.visualize()
 
 
@@ -313,7 +316,8 @@ class Camera(SceneObject):
     @property
     def fov(self):
         """\
-        Pre-computed angles of view and the size of the field of view at z = 1.
+        Pre-computed angles of view and the size of the field of view at
+        M{z = 1}.
 
         @rtype: C{dict}
         """
@@ -439,7 +443,7 @@ class Camera(SceneObject):
 
 class Model(dict):
     """\
-    Multi-camera n-ocular coverage strength model.
+    Multi-camera I{n}-ocular coverage strength model.
     """
     def __init__(self):
         """\
@@ -599,15 +603,15 @@ class Model(dict):
 
     def coverage_hypergraph(self, relevance, K=None):
         """\
-        Return the coverage hypergraph of this multi-camera network. If K is
-        specified, return the K-coverage hypergraph.
+        Return the coverage hypergraph of this multi-camera network. If C{K} is
+        specified, return the I{K}-coverage hypergraph.
 
         @param relevance: The relevance model.
         @type relevance: L{RelevanceModel}
         @param K: A set of possible hyperedge sizes.
         @type K: C{list} of C{int}
         @return: The coverage hypergraph.
-        @rtype: L{hypergraph.Hypergraph}
+        @rtype: L{Hypergraph<hypergraph.Hypergraph>}
         """
         if not hypergraph:
             raise ImportError('hypergraph module not loaded')

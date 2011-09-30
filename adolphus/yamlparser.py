@@ -29,8 +29,6 @@ class YAMLParser(object):
 
         @param filename: The YAML file to load from.
         @type filename: C{str}
-        @param active: Default active state of cameras (optional).
-        @type active: C{bool}
         """
         self._path = os.path.split(filename)[0]
         self._mounts = {}
@@ -167,7 +165,7 @@ class YAMLParser(object):
         @param model: The YAML dict of the multi-camera model.
         @type model: C{dict}
         @return: The parsed multi-camera model.
-        @rtype: L{MultiCamera}
+        @rtype: L{Model}
         """
         rmodel = Model()
         # complete and sanitize task paramters

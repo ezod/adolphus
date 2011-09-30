@@ -15,7 +15,7 @@ from functools import reduce
 
 class Angle(float):
     """\
-    Angle class. All operations are modulo 2 * pi.
+    Angle class. All operations are modulo 2S{pi}.
     """
     def __new__(cls, arg=0.0):
         return float.__new__(cls, float(arg) % (2 * pi))
@@ -93,7 +93,7 @@ class Point(tuple):
 
     def __mul__(self, p):
         """\
-        Scalar multiplication (if p is a scalar) or dot product (if p is a
+        Scalar multiplication (if C{p} is a scalar) or dot product (if C{p} is a
         vector).
 
         @param p: The operand scalar or vector.
@@ -109,7 +109,7 @@ class Point(tuple):
 
     def __rmul__(self, p):
         """\
-        Scalar multiplication (if p is a scalar) or dot product (if p is a
+        Scalar multiplication (if C{p} is a scalar) or dot product (if C{p} is a
         vector).
 
         @param p: The operand scalar or vector.
@@ -586,7 +586,7 @@ class Rotation(object):
         """\
         Generate the internal quaternion representation from Euler angles.
 
-        @param convention: The convention to use (e.g. 'zyx').
+        @param convention: The convention to use (e.g. C{zyx}).
         @type convention: C{str}
         @param angles: The angles of rotation.
         @type angles: C{tuple} of L{Angle}
@@ -598,7 +598,6 @@ class Rotation(object):
             return copysign(1, index) * reduce(lambda a, b: a * b,
                 [(bit and sin or cos)(angles[i] / 2.0) \
                 for i, bit in enumerate(bin(abs(index)))])
-        # TODO: can these be generated from the convention?
         eulerquat = {'xyx': [0, -5, 1, 4, 2, 7, 3, -6],
                      'xyz': [0, -7, 1, 6, 2, -5, 3, 4],
                      'xzx': [0, -5, 1, 4, -3, 6, 2, 7],
@@ -704,7 +703,7 @@ class Pose(object):
 
     def __add__(self, other):
         """\
-        Pose composition: PB(PA(x)) = (PA + PB)(x).
+        Pose composition: M{PB(PA(x)) = (PA + PB)(x)}.
 
         @param other: The other pose transformation.
         @type other: L{Pose}
