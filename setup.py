@@ -6,7 +6,6 @@ VERSION = "%s.%s.%s" % __version__[0:3]
 from setuptools import setup
 from distutils.cmd import Command
 from shutil import rmtree
-from glob import glob
 import os
 import sys
 
@@ -30,7 +29,7 @@ class GenerateDoc(Command):
 
     def run(self):
         if not doc:
-            raise ImportError("Epydoc is not available")
+            raise ImportError('Epydoc is not available')
         rmtree('doc', ignore_errors=True)
         os.mkdir('doc')
         sys.argv = ['epydoc', '-v', '--name', NAME, '--url', URL, '-o', 'doc', PACKAGE]
@@ -40,14 +39,14 @@ class GenerateDoc(Command):
 setup(
     name = NAME,
     version = VERSION,
-    license = "GPL",
-    description = "Multi-camera network coverage modeling suite.",
-    author = "Aaron Mavrinac",
-    author_email = "mavrin1@uwindsor.ca",
+    license = 'GPL',
+    description = 'Multi-camera network coverage modeling suite.',
+    author = 'Aaron Mavrinac',
+    author_email = 'mavrin1@uwindsor.ca',
     url = URL,
-    keywords = "vision camera robotics model",
+    keywords = 'vision camera robotics model',
     packages = [PACKAGE],
     package_data = {PACKAGE: ['resources/*']},
-    test_suite = "test",
+    test_suite = 'test',
     cmdclass = {'doc': GenerateDoc},
 )
