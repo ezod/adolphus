@@ -292,23 +292,17 @@ class Experiment(threading.Thread):
                     zoom = False
                 elif m.click == 'left' and m.pick in self._cam_vis:
                     if m.ctrl:
-                        for camera in self.model:
-                            if m.pick.frame.parent == self.model[camera]:
-                                self.execute('fov %s' % camera)
+                        self.execute('fov %s' % m.pick.frame.parent.name)
                     elif m.alt:
                         try:
-                            for camera in self.model:
-                                if m.pick.frame.parent == self.model[camera]:
-                                    self.execute('cameraview %s' % camera)
+                            self.execute('cameraview %s' % m.pick.frame.parent.name)
                         except VisualizationError:
                             pass
                     elif m.shift:
                         if self.modifier.parent == m.pick.frame.parent:
                             self.execute('modify')
                         else:
-                            for camera in self.model:
-                                if m.pick.frame.parent == self.model[camera]:
-                                    self.execute('modify %s' % camera)
+                            self.execute('modify %s' % m.pick.frame.parent.name)
                     else:
                         m.pick.frame.parent.active = \
                             not m.pick.frame.parent.active
