@@ -381,6 +381,19 @@ def cmd_showval(ex, args):
     except IndexError:
         pass
 
+### Information
+
+def cmd_objecthierarchy(ex, args, response='pickle'):
+    if response != 'pickle':
+        raise CommandError('command cannot return %s response' % response)
+    hierarchy = {}
+    for sceneobject in ex.model:
+        try:
+            hierarchy[sceneobject] = ex.model[sceneobject].mount.name
+        except AttributeError:
+            hierarchy[sceneobject] = None
+    return pickle.dumps(hierarchy)
+
 ### Debug
 
 def cmd_eval(ex, args):
