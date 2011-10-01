@@ -55,7 +55,7 @@ class ObjectTreeView(gtk.TreeView):
                 else:
                     try:
                         hiter[sceneobject] = objecttree.append(hiter[hierarchy\
-                            [sceneobject]], (None, sceneobject))
+                            [sceneobject][0]], (None, sceneobject))
                     except KeyError:
                         continue
                     else:
@@ -163,7 +163,7 @@ class Panel(gtk.Window):
             try:
                 robj = pickle.loads(response)
                 break
-            except (EOFError, IndexError):
+            except Exception:
                 continue
         if isinstance(robj, Exception):
             raise robj

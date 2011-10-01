@@ -384,12 +384,18 @@ def cmd_showval(ex, args):
 ### Information
 
 def cmd_objecthierarchy(ex, args, response='pickle'):
+    """\
+    Return a scene object hierarchy in the form C{{'object': (parent, type)}}.
+
+    usage: %s
+    """
     if response != 'pickle':
         raise CommandError('command cannot return %s response' % response)
     hierarchy = {}
     for sceneobject in ex.model:
         try:
-            hierarchy[sceneobject] = ex.model[sceneobject].mount.name
+            hierarchy[sceneobject] = (ex.model[sceneobject].mount.name,
+                str(ex.model[sceneobject].__class__))
         except AttributeError:
             hierarchy[sceneobject] = None
     return pickle.dumps(hierarchy)
