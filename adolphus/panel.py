@@ -15,7 +15,52 @@ except ImportError:
 import pygtk
 pygtk.require('2.0')
 import gtk
+import gobject
 import socket
+
+
+class ObjectTreeView(gtk.TreeView):
+    """\
+    Object tree view.
+    """
+    def __init__(self):
+        """\
+        Constructor.
+        """
+        super(ObjectTreeView, self).__init__()
+        col = gtk.TreeViewColumn('Object')
+        pixbuf = gtk.CellRendererPixbuf()
+        col.pack_start(pixbuf, expand=False)
+        col.add_attribute(pixbuf, 'pixbuf', 0)
+        cell = gtk.CellRendererText()
+        col.pack_start(cell, expand=True)
+        col.add_attribute(cell, 'text', 1)
+        col.set_sort_column_id(0)
+        self.append_column(col)
+        self.set_search_column(0)
+        self.set_reorderable(True)
+
+    def populate(self, hierarchy):
+        """\
+        TODO
+        """
+        objecttree = gtk.TreeStore(gtk.gdk.Pixbuf, gobject.TYPE_STRING)
+        hiter = {}
+        while hierarchy:
+            for sceneobject in hierarchy.keys():
+                if not hierarchy[sceneobject]:
+                    hiter[sceneobject] = objecttree.append(None, (None,
+                        sceneobject))
+                    del hierarchy[sceneobject]
+                else:
+                    try:
+                        hiter[sceneobject] = objecttree.append(hiter[hierarchy\
+                            [sceneobject]], (None, sceneobject))
+                    except KeyError:
+                        continue
+                    else:
+                        del hierarchy[sceneobject]
+        self.set_model(objecttree)
 
 
 class Panel(gtk.Window):
@@ -60,22 +105,14 @@ class Panel(gtk.Window):
         vpaned = gtk.VPaned()
         vpaned.set_border_width(5)
         vbox.pack_start(vpaned, True, True)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
-        self.objecttreeview = gtk.TreeView()
-        tvcolumn = gtk.TreeViewColumn('Object')
-        self.objecttreeview.append_column(tvcolumn)
-        cell = gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        self.objecttreeview.set_search_column(0)
-        tvcolumn.set_sort_column_id(0)
-        self.objecttreeview.set_reorderable(True)
-        frame.add(self.objecttreeview)
-        vpaned.add1(frame)
-        frame = gtk.Frame()
-        frame.set_shadow_type(gtk.SHADOW_IN)
-        vpaned.add2(frame)
+        sw = gtk.ScrolledWindow()
+        sw.set_shadow_type(gtk.SHADOW_IN)
+        self.objecttreeview = ObjectTreeView()
+        sw.add(self.objecttreeview)
+        vpaned.add1(sw)
+        sw = gtk.Frame()
+        sw.set_shadow_type(gtk.SHADOW_IN)
+        vpaned.add2(sw)
 
         # show panel
         self.show_all()
@@ -84,8 +121,6 @@ class Panel(gtk.Window):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if port:
             self.ad_connect(host, port)
-
-        self.populate_object_tree()
 
     @staticmethod
     def main():
@@ -107,6 +142,7 @@ class Panel(gtk.Window):
         self.sock.send('pickle#')
         self.sock.settimeout(0.1)
         self.connected = True
+        self.populate_object_tree()
 
     def ad_command(self, cmd):
         """\
@@ -137,22 +173,7 @@ class Panel(gtk.Window):
     def populate_object_tree(self):
         if not self.connected:
             return
-        hierarchy = self.ad_command('objecthierarchy')
-        objecttree = gtk.TreeStore(str)
-        hiter = {}
-        while hierarchy:
-            for sceneobject in hierarchy.keys():
-                if not hierarchy[sceneobject]:
-                    hiter[sceneobject] = objecttree.append(None, [sceneobject])
-                    del hierarchy[sceneobject]
-                else:
-                    try:
-                        hiter[sceneobject] = objecttree.append(hiter[hierarchy[sceneobject]], [sceneobject])
-                    except KeyError:
-                        continue
-                    else:
-                        del hierarchy[sceneobject]
-        self.objecttreeview.set_model(objecttree)
+        self.objecttreeview.populate(self.ad_command('objecthierarchy'))
 
     def _delete_event(self, widget, data=None):
         return False
@@ -166,7 +187,8 @@ class Panel(gtk.Window):
         gtk.main_quit()
 
     def _connect(self, widget, data=None):
-        dialog = gtk.Dialog('Connect to Adolphus', self, 0, (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        dialog = gtk.Dialog('Connect to Adolphus', self, 0, (gtk.STOCK_OK,
+            gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
         dialog.set_border_width(5)
         table = gtk.Table(2, 2)
         table.set_row_spacings(5)
