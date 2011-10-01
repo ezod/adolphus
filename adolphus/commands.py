@@ -392,12 +392,18 @@ def cmd_objecthierarchy(ex, args, response='pickle'):
     if response != 'pickle':
         raise CommandError('command cannot return %s response' % response)
     hierarchy = {}
-    for sceneobject in ex.model:
+    for so in ex.model:
         try:
-            hierarchy[sceneobject] = (ex.model[sceneobject].mount.name,
-                str(ex.model[sceneobject].__class__))
+            hierarchy[so] = (ex.model[so].mount.name,
+                str(ex.model[so].__class__))
         except AttributeError:
-            hierarchy[sceneobject] = None
+            hierarchy[so] = (None, str(ex.model[so].__class__))
+    for rm in ex.relevance_models:
+        try:
+            hierarchy[rm] = (ex.relevance_models[rm].mount.name,
+                str(ex.relevance_models[rm].__class__))
+        except AttributeError:
+            hierarchy[rm] = (None, str(ex.relevance_models[rm].__class__))
     return pickle.dumps(hierarchy)
 
 ### Debug

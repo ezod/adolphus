@@ -47,19 +47,18 @@ class ObjectTreeView(gtk.TreeView):
         objecttree = gtk.TreeStore(gtk.gdk.Pixbuf, gobject.TYPE_STRING)
         hiter = {}
         while hierarchy:
-            for sceneobject in hierarchy.keys():
-                if not hierarchy[sceneobject]:
-                    hiter[sceneobject] = objecttree.append(None, (None,
-                        sceneobject))
-                    del hierarchy[sceneobject]
+            for obj in hierarchy.keys():
+                if not hierarchy[obj][0]:
+                    hiter[obj] = objecttree.append(None, (None, obj))
+                    del hierarchy[obj]
                 else:
                     try:
-                        hiter[sceneobject] = objecttree.append(hiter[hierarchy\
-                            [sceneobject][0]], (None, sceneobject))
+                        hiter[obj] = objecttree.append(hiter[hierarchy[obj][0]],
+                            (None, obj))
                     except KeyError:
                         continue
                     else:
-                        del hierarchy[sceneobject]
+                        del hierarchy[obj]
         self.set_model(objecttree)
 
 
