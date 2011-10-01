@@ -1,45 +1,47 @@
 description:    SICK IVP Ranger E/D
 primitives:
+    # camera body
     - type:         box
-      pos:          [0, 6.5, -44]
+      pos:          [0, 6.5, -53]
       length:       49
       height:       37
       width:        106
       color:        [1, 1, 1]
       material:     plastic
     - type:         box
-      pos:          [0, -18.5, -44]
+      pos:          [0, -18.5, -53]
       length:       23
       height:       13
       width:        106
       color:        [1, 1, 1]
       material:     plastic
     - type:         cylinder
-      pos:          [-11.5, -12, 9]
+      pos:          [-11.5, -12, 0]
       radius:       13
       axis:         [0, 0, -106]
       color:        [1, 1, 1]
       material:     plastic
     - type:         cylinder
-      pos:          [11.5, -12, 9]
+      pos:          [11.5, -12, 0]
       radius:       13
       axis:         [0, 0, -106]
       color:        [1, 1, 1]
       material:     plastic
+    # connectors
     - type:         cylinder
-      pos:          [13.5, -9.5, -97]
+      pos:          [13.5, -9.5, -106]
       radius:       6
       axis:         [0, 0, -15]
       color:        [0.8, 0.8, 0.8]
       material:     plastic
     - type:         cylinder
-      pos:          [13.5, 9, -97]
+      pos:          [13.5, 9, -106]
       radius:       5
       axis:         [0, 0, -12]
       color:        [0.8, 0.8, 0.8]
       material:     plastic
     - type:         box
-      pos:          [-7, 3, -98]
+      pos:          [-7, 3, -107]
       length:       18
       height:       22
       width:        2
