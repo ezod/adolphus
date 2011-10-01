@@ -197,6 +197,8 @@ class Experiment(threading.Thread):
         Visualizable.displays['main'] = self.display
         self.display.select()
 
+        self.selected = None
+
         self.coverage = {}
         self.fovvis = {}
         self.valvis = {}
@@ -234,6 +236,19 @@ class Experiment(threading.Thread):
 
         self.model = Model()
         self.keybindings = {}
+
+    def select(self, selection=None):
+        """\
+        Select an object in the scene.
+        
+        @param selection: The object to select.
+        @type selection: L{SceneObject}
+        """
+        if self.selected:
+            self.selected.unhighlight()
+        if selection:
+            selection.highlight()
+        self.selected = selection
 
     def execute(self, cmd, response='pickle'):
         """\

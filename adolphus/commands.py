@@ -406,6 +406,20 @@ def cmd_objecthierarchy(ex, args, response='pickle'):
             hierarchy[rm] = (None, str(ex.relevance_models[rm].__class__))
     return pickle.dumps(hierarchy)
 
+def cmd_select(ex, args):
+    """\
+    Select a scene object.
+
+    usage: %s [object]
+    """
+    if not args:
+        ex.select()
+    else:
+        try:
+            ex.select(ex.model[args[0]])
+        except KeyError:
+            raise CommandError('invalid object')
+
 ### Debug
 
 def cmd_eval(ex, args):
