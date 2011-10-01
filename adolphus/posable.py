@@ -335,10 +335,16 @@ class ScenePlane(SceneObject):
         """\
         Plain plane directly in the scene.
         """
-        plane = Plane(x=x, y=y, z=z)
-        super(ScenePlane, self).__init__(name, pose=pose, mount_pose=mount_pose,
-            mount=mount, primitives=plane.primitives, planes=[plane])
-        
+        self.plane = Plane(pose=pose, mount=mount, x=x, y=y, z=z)
+        super(ScenePlane, self).__init__(name, pose=self.plane.pose,
+            mount_pose=mount_pose, mount=mount, primitives=[],
+            planes=[self.plane])
+
+    def toggle_planes(self): pass
+
+    def visualize(self): self.plane.visualize()
+
+    def update_visualization(self): self.plane.update_visualization()
 
 
 class Robot(SceneObject):
