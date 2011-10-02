@@ -35,9 +35,9 @@ class ObjectTreeView(gtk.TreeView):
         cell = gtk.CellRendererText()
         col.pack_start(cell, expand=True)
         col.add_attribute(cell, 'text', 1)
-        col.set_sort_column_id(0)
+        col.set_sort_column_id(1)
         self.append_column(col)
-        self.set_search_column(0)
+        self.set_search_column(1)
         self.set_reorderable(True)
 
     def populate(self, hierarchy):
@@ -107,6 +107,8 @@ class Panel(gtk.Window):
         sw = gtk.ScrolledWindow()
         sw.set_shadow_type(gtk.SHADOW_IN)
         self.objecttreeview = ObjectTreeView()
+        self.objecttreeview.get_selection().connect('changed',
+            self._select_object)
         sw.add(self.objecttreeview)
         vpaned.add1(sw)
         sw = gtk.Frame()
@@ -211,3 +213,8 @@ class Panel(gtk.Window):
         if response == gtk.RESPONSE_OK:
             self.ad_connect(host.get_text(), int(port.get_text()))
         dialog.destroy()
+
+    def _select_object(self, widget, data=None):
+        model, selected = widget.get_selected_rows()
+        self.ad_command('select %s' % \
+            model.get_value(model.get_iter(selected[0]), 1))
