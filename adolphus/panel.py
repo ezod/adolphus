@@ -16,6 +16,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import gobject
+import pkg_resources
 import socket
 
 
@@ -49,17 +50,30 @@ class ObjectTreeView(gtk.TreeView):
         while hierarchy:
             for obj in hierarchy.keys():
                 if not hierarchy[obj][0]:
-                    hiter[obj] = objecttree.append(None, (None, obj))
+                    hiter[obj] = objecttree.append(None,
+                        (self.get_icon_pixbuf(hierarchy[obj][1]), obj))
                     del hierarchy[obj]
                 else:
                     try:
                         hiter[obj] = objecttree.append(hiter[hierarchy[obj][0]],
-                            (None, obj))
+                            (self.get_icon_pixbuf(hierarchy[obj][1]), obj))
                     except KeyError:
                         continue
                     else:
                         del hierarchy[obj]
         self.set_model(objecttree)
+
+    def get_icon_pixbuf(self, objtype):
+        """\
+        TODO
+        """
+        print(objtype)
+        try:
+            return gtk.gdk.pixbuf_new_from_file_at_size(\
+                pkg_resources.resource_filename(__name__, 'resources/icons/' \
+                + objtype.lower() + '.png'), 16, 16)
+        except Exception:
+            return None
 
 
 class Panel(gtk.Window):

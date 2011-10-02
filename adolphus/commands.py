@@ -395,15 +395,15 @@ def cmd_objecthierarchy(ex, args, response='pickle'):
     for so in ex.model:
         try:
             hierarchy[so] = (ex.model[so].mount.name,
-                str(ex.model[so].__class__))
+                ex.model[so].__class__.__name__)
         except AttributeError:
-            hierarchy[so] = (None, str(ex.model[so].__class__))
+            hierarchy[so] = (None, ex.model[so].__class__.__name__)
     for rm in ex.relevance_models:
         try:
             hierarchy[rm] = (ex.relevance_models[rm].mount.name,
-                str(ex.relevance_models[rm].__class__))
+                ex.relevance_models[rm].__class__.__name__)
         except AttributeError:
-            hierarchy[rm] = (None, str(ex.relevance_models[rm].__class__))
+            hierarchy[rm] = (None, ex.relevance_models[rm].__class__.__name__)
     return pickle.dumps(hierarchy)
 
 def cmd_select(ex, args):
