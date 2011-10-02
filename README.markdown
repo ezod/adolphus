@@ -1,10 +1,10 @@
-# Adolphus - Multi-Camera Network Coverage Modeling Suite
+# Adolphus - Multi-Camera System Coverage Modeling Suite
 
 
 ## Overview
 
 Adolphus is a set of tools for modeling and visualizing the coverage of
-multi-camera networks.
+multi-camera systems.
 
 See our [screencast] [screencast] for an introduction.
 
