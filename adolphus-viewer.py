@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 from optparse import OptionParser
 
 from adolphus import Experiment, Controller
@@ -25,6 +26,7 @@ def main():
     if opts.socket:
         controller = Controller(experiment, port=opts.port)
         print('Listening on port %d.' % controller.port)
+        sys.stdout.flush()
         controller.main()
     else:
         experiment.start()
