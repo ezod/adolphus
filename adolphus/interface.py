@@ -235,6 +235,7 @@ class Experiment(threading.Thread):
                 self.commands[function[4:]] = getattr(commands, function)
 
         self.model = Model()
+        self.relevance_models = {}
         self.keybindings = {}
 
     def select(self, selection=None):
