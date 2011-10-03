@@ -363,6 +363,10 @@ class ScenePlane(SceneObject):
 
     def toggle_planes(self): pass
 
+    def highlight(self, color=(0, 1, 0)): self.plane.highlight(color)
+
+    def unhighlight(self): self.plane.unhighlight()
+
     def visualize(self): self.plane.visualize()
 
     def update_visualization(self): self.plane.update_visualization()
