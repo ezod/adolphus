@@ -67,7 +67,6 @@ class ObjectTreeView(gtk.TreeView):
         """\
         TODO
         """
-        print(objtype)
         try:
             return gtk.gdk.pixbuf_new_from_file_at_size(\
                 pkg_resources.resource_filename(__name__, 'resources/icons/' \
@@ -230,5 +229,8 @@ class Panel(gtk.Window):
 
     def _select_object(self, widget, data=None):
         model, selected = widget.get_selected_rows()
-        self.ad_command('select %s' % \
-            model.get_value(model.get_iter(selected[0]), 1))
+        try:
+            self.ad_command('select %s' % \
+                model.get_value(model.get_iter(selected[0]), 1))
+        except IndexError:
+            self.ad_command('select')
