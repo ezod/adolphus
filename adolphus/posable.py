@@ -340,6 +340,27 @@ class ScenePlane(SceneObject):
             mount_pose=mount_pose, mount=mount, primitives=[],
             planes=[self.plane])
 
+    @property
+    def mount(self):
+        """\
+        The mount of this scene plane.
+        """
+        return self._mount
+
+    @mount.setter
+    def mount(self, value):
+        """\
+        Set the mount of this scene plane.
+        """
+        if self._mount:
+            self._mount.children.discard(self)
+        self._mount = value
+        if value:
+            value.children.add(self)
+        for child in self.children:
+            child._pose_changed_hook()
+        self.plane.mount = value
+
     def toggle_planes(self): pass
 
     def visualize(self): self.plane.visualize()
