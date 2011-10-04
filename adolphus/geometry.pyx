@@ -845,15 +845,16 @@ class Triangle(object):
         det = self._edge[0] * P
         if det > -1e-4 and det < 1e-4:
             return False
+        inv_det = 1.0 / det
         T = origin - self.vertices[0]
-        u = (T * P)
-        if u < 0 or u > det:
+        u = (T * P) * inv_det
+        if u < 0 or u > 1.0:
             return False
         Q = T ** self._edge[0]
-        v = (direction * Q)
-        if v < 0 or u + v > det:
+        v = (direction * Q) * inv_det
+        if v < 0 or u + v > 1.0:
             return False
-        t = (self._edge[1] * Q) / det
+        t = (self._edge[1] * Q) * inv_det
         if t < 1e-04 or t > origin.euclidean(end) - 1e-04:
             return False
         return True
