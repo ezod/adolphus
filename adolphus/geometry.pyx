@@ -809,10 +809,24 @@ class Triangle(object):
         self.v = v
         self._edge = (v[1] - v[0], v[2] - v[0])
 
+    @property
+    def normal(self):
+        """\
+        Normal vector to this triangle.
+        """
+        try:
+            return self._normal
+        except AttributeError:
+            self._normal = self._edge[0] ** self._edge[1]
+            return self._normal
+
     def intersection(self, origin, end):
         """\
         Return the point of intersection of the line segment between the two
         given points with this triangle.
+
+            - T. Möller and B. Trumbore, "Fast, Minimum Storage Ray/Triangle
+              Intersection," J. Graphics Tools, vol. 2, no. 1, pp. 21-28, 1997.
         
         @param origin: The origin of the segment.
         @type origin: L{Point}
