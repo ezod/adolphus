@@ -35,12 +35,9 @@ class YAMLParser(object):
         experiment = yaml.load(open(filename))
         self.model = self._parse_model(experiment['model'])
         self.relevances = {}
-        try:
-            for relevance in experiment['relevance']:
-                self.relevances[relevance['name']] = \
-                    self._parse_relevance(relevance)
-        except KeyError:
-            pass
+        for relevance in experiment['relevance']:
+            self.relevances[relevance['name']] = \
+                self._parse_relevance(relevance)
 
     @property
     def experiment(self):
