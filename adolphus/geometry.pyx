@@ -854,6 +854,6 @@ class Triangle(object):
         if v < 0 or u + v > det:
             return False
         t = (self._edge[1] * Q) / det
-        if t < 0 or t > origin.euclidean(end):
+        if t < 1e-04 or t > origin.euclidean(end) - 1e-04:
             return False
         return True

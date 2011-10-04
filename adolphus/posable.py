@@ -136,6 +136,28 @@ class OcclusionTriangle(Posable, Visualizable):
                        'shape':     polygon}]
         Visualizable.__init__(self, primitives)
 
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        try:
+            del self._mapped_triangle
+        except AttributeError:
+            pass
+        super(OcclusionTriangle, self)._pose_changed_hook()
+
+    @property
+    def mapped_triangle(self):
+        """\
+        Pose-mapped triangle.
+        """
+        try:
+            return self._mapped_triangle
+        except AttributeError:
+            self._mapped_triangle = Triangle([self.pose.map(v) \
+                for v in self._triangle.vertices])
+            return self._mapped_triangle
+
     def intersection(self, pa, pb):
         """\
         Return the intersection of a line segment with this triangle.
@@ -147,8 +169,7 @@ class OcclusionTriangle(Posable, Visualizable):
         @return: True if intersection exists.
         @rtype: C{bool}
         """
-        return self._triangle.intersection((-self.pose).map(pa),
-            (-self.pose).map(pb))
+        return self.mapped_triangle.intersection(pa, pb)
 
     def update_visualization(self):
         """\
