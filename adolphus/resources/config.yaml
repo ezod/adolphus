@@ -1,6 +1,6 @@
 keybindings:
     f2:           coverage
-    f5:           planes
+    f5:           triangles
     f6:           cameranames
     f7:           axes
     f8:           centerdot
