@@ -8,7 +8,6 @@ geometric descriptor functions for features.
 @license: GPL-3
 """
 
-import numpy
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 from functools import reduce
 
@@ -181,19 +180,6 @@ class Point(tuple):
     @property
     def z(self):
         return self[2]
-
-    @property
-    def array(self):
-        """\
-        Return a NumPy array of this vector.
-
-        @rtype: C{numpy.ndarray}
-        """
-        try:
-            return self._array
-        except AttributeError:
-            self._array = numpy.array([[self[0]], [self[1]], [self[2]]])
-            return self._array
 
     @property
     def magnitude(self):
@@ -549,7 +535,7 @@ class Rotation(object):
         Generate the internal quaternion representation from a rotation matrix.
 
         @param R: The rotation matrix.
-        @type R: C{numpy.ndarray}
+        @type R: C{list} of C{list}
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
@@ -623,20 +609,19 @@ class Rotation(object):
         representation.
 
         @return: Rotation matrix.
-        @rtype: C{numpy.ndarray}
+        @rtype: C{list} of C{list}
         """
         a = self.Q[0]
         b, c, d = self.Q[1]
-        R = numpy.ndarray((3, 3))
-        R[0][0] = a ** 2 + b ** 2 - c ** 2 - d ** 2
-        R[0][1] = 2.0 * b * c - 2.0 * a * d
-        R[0][2] = 2.0 * b * d + 2.0 * a * c
-        R[1][0] = 2.0 * b * c + 2.0 * a * d
-        R[1][1] = a ** 2 - b ** 2 + c ** 2 - d ** 2
-        R[1][2] = 2.0 * c * d - 2.0 * a * b
-        R[2][0] = 2.0 * b * d - 2.0 * a * c
-        R[2][1] = 2.0 * c * d + 2.0 * a * b
-        R[2][2] = a ** 2 - b ** 2 - c ** 2 + d ** 2
+        R = [[a ** 2 + b ** 2 - c ** 2 - d ** 2,
+              2.0 * b * c - 2.0 * a * d,
+              2.0 * b * d + 2.0 * a * c],
+             [2.0 * b * c + 2.0 * a * d,
+              a ** 2 - b ** 2 + c ** 2 - d ** 2,
+              2.0 * c * d - 2.0 * a * b],
+             [2.0 * b * d - 2.0 * a * c,
+              2.0 * c * d + 2.0 * a * b,
+              a ** 2 - b ** 2 - c ** 2 + d ** 2]]
         return R
 
     def to_axis_angle(self):

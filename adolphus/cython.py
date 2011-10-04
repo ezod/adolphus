@@ -10,15 +10,10 @@ Adapted from http://wiki.cython.org/InstallingOnWindows.
 """
 
 import os
-import numpy
 import pyximport
 
 
 if os.name == 'nt':
-    try:
-        os.environ['CPATH'] += numpy.get_include()
-    except KeyError:
-        os.environ['CPATH'] = numpy.get_include()
     if os.path.exists('C:\MinGW'):
         try:
             os.environ['PATH'] += ';C:\MinGW\bin'
@@ -29,8 +24,4 @@ if os.name == 'nt':
     else:
         pyximport.install()
 elif os.name == 'posix':
-    try:
-        os.environ['CFLAGS'] += ' -I' + numpy.get_include()
-    except KeyError:
-        os.environ['CFLAGS'] = ' -I' + numpy.get_include()
     pyximport.install()

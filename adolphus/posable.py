@@ -8,8 +8,6 @@ Posable objects module.
 """
 
 from math import pi
-from numbers import Number
-import numpy
 
 import cython
 from .geometry import Point, Pose, Rotation, Triangle
