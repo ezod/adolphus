@@ -791,3 +791,51 @@ class Pose(object):
             return DirectionalPoint(tuple(q) + (rho, eta)) + self.T
         except AttributeError:
             return q + self.T
+
+
+class Triangle(object):
+    """\
+    Triangle class.
+    """
+    __slots__ = ['v', '_edge']
+
+    def __init__(self, v):
+        """\
+        Constructor.
+
+        @param v: Vertices.
+        @type v: C{tuple} of L{Point}
+        """
+        self.v = v
+        self._edge = (v[1] - v[0], v[2] - v[0])
+
+    def intersection(self, origin, end):
+        """\
+        Return the point of intersection of the line segment between the two
+        given points with this triangle.
+        
+        @param origin: The origin of the segment.
+        @type origin: L{Point}
+        @param end: The end of the segment.
+        @type end: L{Point}
+        @return: The point of intersection.
+        @rtype: L{Point}
+        """
+        direction = (end - origin).normal
+        P = direction ** self._edge[1]
+        det = self._edge[0] * P
+        if det > -1e-4 and det < 1e-4:
+            return None
+        inv_det = 1.0 / det
+        T = origin - self.v[0]
+        u = (T * P) * inv_det
+        if u < 0 or u > 1.0:
+            return None
+        Q = T ** self._edge[0]
+        v = (direction * Q) * inv_det
+        if v < 0 or u + v > 1.0:
+            return None
+        t = (self._edge[1] * Q) * inv_det
+        if t < 0 or t > origin.euclidean(end):
+            return None
+        return origin + t * direction
