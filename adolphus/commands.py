@@ -126,12 +126,12 @@ def cmd_shiftcenter(ex, args):
         pos[i] += float(args[i])
     ex.display.set_center(tuple(pos))
 
-def cmd_planes(ex, args):
+def cmd_triangles(ex, args):
     """\
-    Toggle display of occluding planes.
+    Toggle display of occluding triangles.
     """
     for sceneobject in ex.model:
-        ex.model[sceneobject].toggle_planes()
+        ex.model[sceneobject].toggle_triangles()
 
 def cmd_cameranames(ex, args):
     """\

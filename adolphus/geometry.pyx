@@ -797,17 +797,17 @@ class Triangle(object):
     """\
     Triangle class.
     """
-    __slots__ = ['v', '_edge']
+    __slots__ = ['vertices', '_edge', '_normal', '_planing_pose']
 
-    def __init__(self, v):
+    def __init__(self, vertices):
         """\
         Constructor.
 
         @param v: Vertices.
         @type v: C{tuple} of L{Point}
         """
-        self.v = v
-        self._edge = (v[1] - v[0], v[2] - v[0])
+        self.vertices = vertices
+        self._edge = (vertices[1] - vertices[0], vertices[2] - vertices[0])
 
     @property
     def normal(self):
@@ -817,8 +817,28 @@ class Triangle(object):
         try:
             return self._normal
         except AttributeError:
-            self._normal = self._edge[0] ** self._edge[1]
+            self._normal = (self._edge[0] ** self._edge[1]).normal
             return self._normal
+
+    @property
+    def planing_pose(self):
+        """\
+        Pose which transforms this triangle into the x-y plane, with the first
+        vertex at the origin.
+
+        @rtype: L{Pose}
+        """
+        try:
+            return self._planing_pose
+        except AttributeError:
+            angle = self.normal.angle(Point((0, 0, 1)))
+            axis = self.normal ** Point((0, 0, 1))
+            try:
+                R = Rotation.from_axis_angle(angle, axis)
+            except ValueError:
+                R = Rotation()
+            self._planing_pose = Pose(T=-R.rotate(self.vertices[0]), R=R)
+            return self._planing_pose
 
     def intersection(self, origin, end):
         """\
@@ -841,7 +861,7 @@ class Triangle(object):
         if det > -1e-4 and det < 1e-4:
             return None
         inv_det = 1.0 / det
-        T = origin - self.v[0]
+        T = origin - self.vertices[0]
         u = (T * P) * inv_det
         if u < 0 or u > 1.0:
             return None

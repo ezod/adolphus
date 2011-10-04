@@ -12,8 +12,8 @@ from numbers import Number
 import numpy
 
 import cython
-from .geometry import Point, Pose, Rotation
-from .visualization import Visualizable
+from .geometry import Point, Pose, Rotation, Triangle
+from .visualization import visual, Visualizable
 
 
 class Posable(object):
@@ -112,148 +112,60 @@ class Posable(object):
         return self._mount_pose + self.pose
 
 
-class Plane(Posable, Visualizable):
+class OcclusionTriangle(Posable, Visualizable):
     """\
-    Plane segment (2D subspace of 3D space) class.
+    Triangle in 3D space used for polyhedral occlusion.
     """
-    def __init__(self, pose=Pose(), mount=None, x=None, y=None, z=None):
+    def __init__(self, vertices, pose=Pose(), mount=None):
         """\
         Constructor.
 
-        @param pose: The pose of the plane normal (from z-hat).
+        @param vertices: The vertices of the triangle.
+        @type vertices: C{tuple} of L{Point}
+        @param pose: The pose of the triangle normal (from z-hat).
         @type pose: L{Pose}
-        @param mount: The mount of the plane (optional).
+        @param mount: The mount of the triangle (optional).
         @type mount: L{Posable}
-        @param x: The x coordinate or range.
-        @type x: C{float} or C{tuple} of C{float}
-        @param y: The y coordinate or range.
-        @type y: C{float} or C{tuple} of C{float}
-        @param z: The z coordinate or range.
-        @type z: C{float} or C{tuple} of C{float}
         """
         Posable.__init__(self, pose=pose, mount=mount)
-        if isinstance(z, Number):
-            self.set_relative_pose(Pose(T=Point((0.0, 0.0, z))) + self._pose)
-            self.x, self.y = [float(n) for n in x], [float(n) for n in y]
-        elif isinstance(y, Number):
-            self.set_relative_pose(Pose(T=Point((0.0, y, 0.0)),
-                R=Rotation.from_euler('zyx', (-pi / 2.0, 0, 0))) + self._pose)
-            self.x, self.y = [float(n) for n in x], [float(n) for n in z]
-        elif isinstance(x, Number):
-            self.set_relative_pose(Pose(T=Point((x, 0.0, 0.0)),
-                R=Rotation.from_euler('zyx', (0, -pi / 2.0, -pi / 2.0))) \
-                + self._pose)
-            self.x, self.y = [float(n) for n in y], [float(n) for n in z]
-        else:
-            self.x, self.y = [float(n) for n in x], [float(n) for n in y]
-        primitives = [{'type':       'box',
-                       'length':     self.x[1] - self.x[0],
-                       'height':     self.y[1] - self.y[0],
-                       'width':      1}]
+        vertices = [Point(vertex) for vertex in vertices]
+        self._triangle = Triangle(vertices)
+        polygon = visual.Polygon([(self._triangle.planing_pose.map(p).x,
+                                   self._triangle.planing_pose.map(p).y) \
+                                  for p in self._triangle.vertices])
+        primitives = [{'type':      'extrusion',
+                       'pos':       [(0, 0, 0.5), (0, 0, -0.5)],
+                       'shape':     polygon}]
         Visualizable.__init__(self, primitives)
-
-    def _pose_changed_hook(self):
-        """\
-        Hook called on pose change.
-        """
-        try:
-            del self._center
-        except AttributeError:
-            pass
-        try:
-            del self._corners
-        except AttributeError:
-            pass
-        try:
-            del self._normal
-        except AttributeError:
-            pass
-        Posable._pose_changed_hook(self)
-
-    @property
-    def center(self):
-        """\
-        Return the absolute 3D point at the center of this plane segment.
-
-        @rtype: L{Point}
-        """
-        try:
-            return self._center
-        except AttributeError:
-            self._center = self.pose.map(Point(((self.x[1] - self.x[0]) / 2.0 \
-                + self.x[0], (self.y[1] - self.y[0]) / 2.0 + self.y[0], 0)))
-            return self._center
-
-    @property
-    def corners(self):
-        """\
-        Return the corners of the plane.
-
-        @rtype: C{list} of L{Point}
-        """
-        try:
-            return self._corners
-        except AttributeError:
-            self._corners = [self.pose.map(Point((x, y, 0.0))) \
-                for x in self.x for y in self.y]
-            return self._corners
-
-    @property
-    def normal(self):
-        """\
-        Return a vector normal to the plane.
-
-        @rtype: L{Point}
-        """
-        try:
-            return self._normal
-        except AttributeError:
-            self._normal = ((self.corners[2] - self.corners[0]) \
-                ** (self.corners[1] - self.corners[0])).normal
-            return self._normal
 
     def intersection(self, pa, pb):
         """\
-        Return the 3D point of intersection (if any) of the line segment
-        between the two specified points and this plane.
+        Return the intersection of a line segment with this triangle.
 
-        @param pa: The first vertex of the line segment.
+        @param pa: The first point.
         @type pa: L{Point}
-        @param pb: The second vertex of the line segment.
+        @param pb: The second point.
         @type pb: L{Point}
-        @return: The point of intersection with the plane.
+        @return: The point of intersection.
         @rtype: L{Point}
         """
-        c = self.corners
-        M = numpy.array([[pa[0] - pb[0], c[1][0] - c[0][0], c[2][0] - c[0][0]],
-                         [pa[1] - pb[1], c[1][1] - c[0][1], c[2][1] - c[0][1]],
-                         [pa[2] - pb[2], c[1][2] - c[0][2], c[2][2] - c[0][2]]])
-        try:
-            t = numpy.dot(numpy.linalg.inv(M), (pa - c[0]).array)[0][0]
-        except numpy.linalg.linalg.LinAlgError:
+        # TODO: get rid of self.pose.map and return a bool for speed?
+        intersection = self._triangle.intersection((-self.pose).map(pa),
+            (-self.pose).map(pb))
+        if intersection:
+            return self.pose.map(intersection)
+        else:
             return None
-        if t <= 0 or t >= 1:
-            return None
-        pr = pa + t * (pb - pa)
-        spr = (-self.pose).map(pr)
-        if spr[0] < self.x[0] or spr[0] > self.x[1] \
-        or spr[1] < self.y[0] or spr[1] > self.y[1]:
-            return None
-        return pr
 
     def update_visualization(self):
         """\
-        Update the visualization. Use a slightly different pose definition to
-        account for possible off-center true center.
+        Update the visualization of this triangle.
         """
         for display in self.actuals:
-            self.actuals[display].transform(Pose(self.center, self.pose.R))
+            print self._triangle.planing_pose
+            self.actuals[display].transform(-self._triangle.planing_pose \
+                + self.pose)
             self.actuals[display].opacity = self.opacity
-        for child in self.children:
-            try:
-                child.update_visualization()
-            except AttributeError:
-                pass
 
 
 class SceneObject(Posable, Visualizable):
@@ -261,7 +173,7 @@ class SceneObject(Posable, Visualizable):
     Sprite-based scene object.
     """
     def __init__(self, name, pose=Pose(), mount_pose=Pose(), mount=None,
-                 primitives=[], planes=[]):
+                 primitives=[], triangles=[]):
         """\
         Constructor.
 
@@ -275,47 +187,47 @@ class SceneObject(Posable, Visualizable):
         @type mount: L{Posable}
         @param primitives: A list of sprite primitive sets (optional).
         @type primitives: C{list} of C{dict}
-        @param planes: The opaque planes associated with this object (optional).
-        @type planes: C{list} of L{Plane}
+        @param triangles: The opaque triangles of this object (optional).
+        @type triangles: C{list} of L{OcclusionTriangle}
         """
         self.name = name
         Posable.__init__(self, pose=pose, mount_pose=mount_pose, mount=mount)
         Visualizable.__init__(self, primitives=primitives)
         try:
-            self.planes = set()
+            self.triangles = set()
         except AttributeError:
-            # child class has defined a custom planes property
+            # child class has defined a custom triangles property
             pass
         else:
-            for plane in planes:
-                if isinstance(plane, Plane):
-                    self.planes.add(plane)
+            for triangle in triangles:
+                if isinstance(triangle, OcclusionTriangle):
+                    self.triangles.add(triangle)
                 else:
                     # FIXME: this case seems "unnatural" - move to yamlparser?
-                    plane['mount'] = self
+                    triangle['mount'] = self
                     try:
-                        plane['pose'] = plane['pose'] - self._mount_pose
+                        triangle['pose'] = triangle['pose'] - self._mount_pose
                     except KeyError:
-                        plane['pose'] = -self._mount_pose
-                    self.planes.add(Plane(**plane))
-            self._planes_view = False
+                        triangle['pose'] = -self._mount_pose
+                    self.triangles.add(OcclusionTriangle(**triangle))
+            self._triangles_view = False
 
-    def toggle_planes(self):
+    def toggle_triangles(self):
         """\
-        Toggle display of occluding planes in the visualization.
+        Toggle display of occluding triangles in the visualization.
         """
-        if self._planes_view:
+        if self._triangles_view:
             self.opacity = 1.0
             self.update_visualization()
-            for plane in self.planes:
-                plane.visible = False
+            for triangle in self.triangles:
+                triangle.visible = False
         else:
             self.opacity = 0.1
             self.update_visualization()
-            for plane in self.planes:
-                plane.visualize()
-                plane.visible = True
-        self._planes_view = not self._planes_view
+            for triangle in self.triangles:
+                triangle.visualize()
+                triangle.visible = True
+        self._triangles_view = not self._triangles_view
 
     def update_visualization(self):
         """\
@@ -329,28 +241,28 @@ class SceneObject(Posable, Visualizable):
                 pass
 
 
-class ScenePlane(SceneObject):
-    def __init__(self, name, pose=Pose(), mount_pose=Pose(), mount=None, x=None,
-                 y=None, z=None):
+class SceneTriangle(SceneObject):
+    def __init__(self, name, vertices, pose=Pose(), mount_pose=Pose(),
+                 mount=None):
         """\
-        Plain plane directly in the scene.
+        Plain triangle directly in the scene.
         """
-        self.plane = Plane(pose=pose, mount=mount, x=x, y=y, z=z)
-        super(ScenePlane, self).__init__(name, pose=self.plane.pose,
+        self.triangle = OcclusionTriangle(vertices, pose=pose, mount=mount)
+        super(SceneTriangle, self).__init__(name, pose=self.triangle.pose,
             mount_pose=mount_pose, mount=mount, primitives=[],
-            planes=[self.plane])
+            triangles=[self.triangle])
 
     @property
     def mount(self):
         """\
-        The mount of this scene plane.
+        The mount of this scene triangle.
         """
         return self._mount
 
     @mount.setter
     def mount(self, value):
         """\
-        Set the mount of this scene plane.
+        Set the mount of this scene triangle.
         """
         if self._mount:
             self._mount.children.discard(self)
@@ -359,17 +271,17 @@ class ScenePlane(SceneObject):
             value.children.add(self)
         for child in self.children:
             child._pose_changed_hook()
-        self.plane.mount = value
+        self.triangle.mount = value
 
-    def toggle_planes(self): pass
+    def toggle_triangles(self): pass
 
-    def highlight(self, color=(0, 1, 0)): self.plane.highlight(color)
+    def highlight(self, color=(0, 1, 0)): self.triangle.highlight(color)
 
-    def unhighlight(self): self.plane.unhighlight()
+    def unhighlight(self): self.triangle.unhighlight()
 
-    def visualize(self): self.plane.visualize()
+    def visualize(self): self.triangle.visualize()
 
-    def update_visualization(self): self.plane.update_visualization()
+    def update_visualization(self): self.triangle.update_visualization()
 
 
 class Robot(SceneObject):
@@ -389,16 +301,16 @@ class Robot(SceneObject):
                 mount = self.mount
             try:
                 assert occlusion
-                planes = piece['planes']
+                triangles = piece['triangles']
             except (AssertionError, KeyError):
-                planes = []
+                triangles = []
             try:
                 primitives = piece['primitives']
             except KeyError:
                 primitives = []
             self.pieces.append(SceneObject('%s-%i' % (name, i), pose=nextpose,
                 mount_pose=offset, mount=mount, primitives=primitives,
-                planes=planes))
+                triangles=triangles))
             nextpose = self.generate_joint_pose(piece['joint'])
         self.joints = [piece['joint'] for piece in pieces]
         self._config = [joint['home'] for joint in self.joints]
@@ -514,12 +426,12 @@ class Robot(SceneObject):
             raise ValueError('invalid joint type')
 
     @property
-    def planes(self):
+    def triangles(self):
         """\
-        Occluding planes.
+        Occluding triangles.
         """
         return reduce(lambda a, b: a | b,
-            [piece.planes for piece in self.pieces])
+            [piece.triangles for piece in self.pieces])
 
     def visualize(self):
         """\
@@ -542,10 +454,10 @@ class Robot(SceneObject):
             except AttributeError:
                 pass
         
-    def toggle_planes(self):
+    def toggle_triangles(self):
         """\
-        Toggle display of occluding planes in the visualization.
+        Toggle display of occluding triangles in the visualization.
         """
         for piece in self.pieces:
-            piece.toggle_planes()
+            piece.toggle_triangles()
         self.opacity = self.pieces[0].opacity

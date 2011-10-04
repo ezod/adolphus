@@ -63,9 +63,12 @@ class Sprite(visual.frame):
     def opacity(self, value):
         for i, member in enumerate(self.members):
             try:
-                member.opacity = self.primitives[i]['opacity'] * value
-            except KeyError:
-                member.opacity = value
+                try:
+                    member.opacity = self.primitives[i]['opacity'] * value
+                except KeyError:
+                    member.opacity = value
+            except RuntimeError:
+                pass
         self._opacity = value
 
     def highlight(self, color=(0, 1, 0)):

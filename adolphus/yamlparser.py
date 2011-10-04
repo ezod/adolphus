@@ -16,7 +16,7 @@ from functools import reduce
 import cython
 from .coverage import PointCache, RelevanceModel, Camera, Model
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
-from .posable import SceneObject, ScenePlane, Robot
+from .posable import SceneObject, SceneTriangle, Robot
 
 
 class YAMLParser(object):
@@ -120,25 +120,25 @@ class YAMLParser(object):
         except KeyError:
             return []
 
-    def _parse_planes(self, sprite):
+    def _parse_triangles(self, sprite):
         """\
-        Parse the opaque plane segments of a posable.
+        Parse the opaque triangles of a posable.
 
         @param sprite: The YAML dict or filename of the sprite/posable.
         @type sprite: C{dict} or C{str}
-        @return: The planes list with parsed pose.
+        @return: The triangle list with parsed pose.
         @rtype: C{list} of C{dict}
         """
         if isinstance(sprite, str):
             sprite = self._load_external(sprite)
         try:
-            planes = sprite['planes']
-            for plane in planes:
+            triangles = sprite['triangles']
+            for triangle in triangles:
                 try:
-                    plane['pose'] = self._parse_pose(plane['pose'])
+                    triangle['pose'] = self._parse_pose(triangle['pose'])
                 except KeyError:
                     pass
-            return planes
+            return triangles
         except KeyError:
             return []
 
@@ -228,20 +228,20 @@ class YAMLParser(object):
                     mount_pose = self._parse_pose(item['mount_pose'])
                 except KeyError:
                     mount_pose = Pose()
-                # parse sprites and planes
+                # parse sprites and triangles
                 sprites = reduce(lambda a, b: a + b,
                     [self._parse_primitives(sprite) \
                     for sprite in item['sprites']])
                 if occlusion:
-                    planes = reduce(lambda a, b: a + b,
-                        [self._parse_planes(sprite) \
+                    triangles = reduce(lambda a, b: a + b,
+                        [self._parse_triangles(sprite) \
                         for sprite in item['sprites']])
                 else:
-                    planes = []
+                    triangles = []
                 # create object
                 rmodel[item['name']] = SceneObject(item['name'],
                     pose=(pose or Pose()), mount_pose=mount_pose, mount=None,
-                    primitives=sprites, planes=planes)
+                    primitives=sprites, triangles=triangles)
             elif 'robot' in item:
                 pieces = self._parse_robot(item['robot'])
                 try:
@@ -251,12 +251,9 @@ class YAMLParser(object):
                 rmodel[item['name']] = Robot(item['name'],
                     pose=(pose or Pose()), mount=None, pieces=pieces,
                     config=config, occlusion=occlusion)
-            elif 'z' in item:
-                rmodel[item['name']] = ScenePlane(item['name'], pose=pose,
-                    mount=None, x=item['x'], y=item['y'], z=item['z'])
-            elif 'x' in item:
-                rmodel[item['name']] = ScenePlane(item['name'], pose=pose,
-                    mount=None, x=item['x'], y=item['y'])
+            elif 'vertices' in item:
+                rmodel[item['name']] = SceneTriangle(item['name'],
+                    item['vertices'], pose=pose, mount=None)
             else:
                 rmodel[item['name']] = SceneObject(item['name'],
                     pose=(pose or Pose()), mount_pose=mount_pose)

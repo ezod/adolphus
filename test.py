@@ -59,36 +59,6 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(triangle.intersection(A.Point((5, 5, 3)), A.Point((5, 5, 1))), None)
 
 
-class TestPlane(unittest.TestCase):
-    """\
-    Tests for plane intersections.
-    """
-    def setUp(self):
-        self.pa = A.geometry.Point((0, 0, -10))
-        self.pb = A.geometry.Point((0, 0, 10))
-        self.pc = A.geometry.Point((0, 0, 20))
-        self.corners = [A.geometry.Point((-10, -10, 0)),
-                        A.geometry.Point((-10, 10, 0)),
-                        A.geometry.Point((10, -10, 0)),
-                        A.geometry.Point((10, 10, 0))]
-
-    def test_orthogonal(self):
-        plane = A.posable.Plane(x=[-10,10], y=[-10,10], z=0)
-        self.assertEqual(plane.corners, self.corners)
-        self.assertEqual(plane.intersection(self.pa, self.pb), A.geometry.Point())
-        self.assertEqual(plane.intersection(self.pa, self.pc), A.geometry.Point())
-        self.assertEqual(plane.intersection(self.pb, self.pc), None)
-
-    def test_posed(self):
-        pose = A.geometry.Pose(T=A.geometry.Point((12, -4, 5)),
-            R=A.geometry.Rotation.from_euler('zyx', (0.3, 1.2, 0.1)))
-        plane = A.posable.Plane(pose=pose, x=[-10,10], y=[-10,10])
-        self.assertEqual(plane.corners, [pose.map(c) for c in self.corners])
-        self.assertEqual(plane.intersection(pose.map(self.pa), pose.map(self.pb)), pose.map(A.geometry.Point()))
-        self.assertEqual(plane.intersection(pose.map(self.pa), pose.map(self.pc)), pose.map(A.geometry.Point()))
-        self.assertEqual(plane.intersection(pose.map(self.pb), pose.map(self.pc)), None)
-
-
 class TestModel01(unittest.TestCase):
     """\
     Test model 01.
@@ -113,16 +83,22 @@ class TestModel01(unittest.TestCase):
 
     def test_occlusion_cache(self):
         self.model._update_occlusion_cache()
-        self.assertTrue(self.model._occlusion_cache['C']['P1'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2'])
+        self.assertTrue(self.model._occlusion_cache['C']['P1a'])
+        self.assertTrue(self.model._occlusion_cache['C']['P1b'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2a'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2b'])
         self.model['C'].set_absolute_pose(A.Pose(R=A.Rotation.from_axis_angle(-pi / 2.0, A.Point((1, 0, 0)))))
         self.model._update_occlusion_cache()
-        self.assertFalse(self.model._occlusion_cache['C']['P1'])
-        self.assertTrue(self.model._occlusion_cache['C']['P2'])
+        self.assertFalse(self.model._occlusion_cache['C']['P1a'])
+        self.assertFalse(self.model._occlusion_cache['C']['P1b'])
+        self.assertTrue(self.model._occlusion_cache['C']['P2a'])
+        self.assertTrue(self.model._occlusion_cache['C']['P2b'])
         self.model['C'].set_absolute_pose(A.Pose(R=A.Rotation.from_axis_angle(pi, A.Point((1, 0, 0)))))
         self.model._update_occlusion_cache()
-        self.assertFalse(self.model._occlusion_cache['C']['P1'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2'])
+        self.assertFalse(self.model._occlusion_cache['C']['P1a'])
+        self.assertFalse(self.model._occlusion_cache['C']['P1b'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2a'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2b'])
 
 
 if __name__ == '__main__':

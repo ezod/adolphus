@@ -387,23 +387,18 @@ class Camera(SceneObject):
             r[1] = float('inf')
         return tuple(r)
 
-    def occluded_by(self, plane):
+    def occluded_by(self, triangle):
         """\
         Return whether this camera's field of view is occluded (in part) by the
-        specified plane.
+        specified triangle.
 
-        @param plane: The plane to check.
-        @type plane: L{Plane}
+        @param triangle: The triangle to check.
+        @type triangle: L{OcclusionTriangle}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        # FIXME: check for bounded plane intersection with viewing frustum
-        hull = set([self.pose.map(point) for point in self.fov_hull])
-        sign = cmp((-plane.pose).map(hull.pop()).z, 0)
-        for point in hull:
-            if cmp((-plane.pose).map(point).z, 0) != sign:
-                return True
-        return False
+        # TODO: check for bounded triangle intersection with viewing frustum
+        return True
 
     def strength(self, point):
         """\
@@ -496,21 +491,23 @@ class Model(dict):
                 self._occlusion_cache[camera] = {}
                 for sceneobject in self:
                     self._occlusion_cache[camera][sceneobject] = \
-                        set([plane for plane in self[sceneobject].planes \
-                             if self[camera].occluded_by(plane)])
+                        set([triangle for triangle \
+                            in self[sceneobject].triangles \
+                            if self[camera].occluded_by(triangle)])
         for sceneobject in self:
             if not self._oc_updated[sceneobject]:
                 for camera in remainder:
                     self._occlusion_cache[camera][sceneobject] = \
-                        set([plane for plane in self[sceneobject].planes \
-                             if self[camera].occluded_by(plane)])
+                        set([triangle for triangle \
+                            in self[sceneobject].triangles \
+                            if self[camera].occluded_by(triangle)])
                 self._oc_updated[sceneobject] = True
         self._oc_needs_update = False
 
     def occluded(self, point, camera):
         """\
         Return whether the specified point is occluded with respect to the
-        specified camera, using the occlusion cache planes.
+        specified camera, using the occlusion cache triangles.
 
         @param point: The point to check.
         @type point: L{Point}
@@ -519,10 +516,9 @@ class Model(dict):
         @return: True if occluded.
         @rtype: C{bool}
         """
-        for plane in set([plane for plane in \
-            [self._occlusion_cache[camera][sceneobject] \
-            for sceneobject in self] for plane in plane]):
-            intersection = plane.intersection(point, self[camera].pose.T)
+        for triangle in set([t for ts in [self._occlusion_cache[camera]\
+            [sceneobject] for sceneobject in self] for t in ts]):
+            intersection = triangle.intersection(point, self[camera].pose.T)
             if intersection is not None and intersection.euclidean(point) > 1e-4:
                 return True
         return False
