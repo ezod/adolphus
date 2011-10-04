@@ -160,7 +160,6 @@ class OcclusionTriangle(Posable, Visualizable):
         Update the visualization of this triangle.
         """
         for display in self.actuals:
-            print self._triangle.planing_pose
             self.actuals[display].transform(-self._triangle.planing_pose \
                 + self.pose)
             self.actuals[display].opacity = self.opacity
