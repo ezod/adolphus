@@ -144,16 +144,11 @@ class OcclusionTriangle(Posable, Visualizable):
         @type pa: L{Point}
         @param pb: The second point.
         @type pb: L{Point}
-        @return: The point of intersection.
-        @rtype: L{Point}
+        @return: True if intersection exists.
+        @rtype: C{bool}
         """
-        # TODO: get rid of self.pose.map and return a bool for speed?
-        intersection = self._triangle.intersection((-self.pose).map(pa),
+        return self._triangle.intersection((-self.pose).map(pa),
             (-self.pose).map(pb))
-        if intersection:
-            return self.pose.map(intersection)
-        else:
-            return None
 
     def update_visualization(self):
         """\

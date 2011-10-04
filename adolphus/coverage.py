@@ -518,8 +518,7 @@ class Model(dict):
         """
         for triangle in set([t for ts in [self._occlusion_cache[camera]\
             [sceneobject] for sceneobject in self] for t in ts]):
-            intersection = triangle.intersection(point, self[camera].pose.T)
-            if intersection is not None and intersection.euclidean(point) > 1e-4:
+            if triangle.intersection(self[camera].pose.T, point):
                 return True
         return False
     

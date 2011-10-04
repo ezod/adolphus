@@ -827,8 +827,8 @@ class Triangle(object):
 
     def intersection(self, origin, end):
         """\
-        Return the point of intersection of the line segment between the two
-        given points with this triangle.
+        Return whether the line segment between the two given points intersects
+        with this triangle.
 
             - T. Möller and B. Trumbore, "Fast, Minimum Storage Ray/Triangle
               Intersection," J. Graphics Tools, vol. 2, no. 1, pp. 21-28, 1997.
@@ -837,24 +837,23 @@ class Triangle(object):
         @type origin: L{Point}
         @param end: The end of the segment.
         @type end: L{Point}
-        @return: The point of intersection.
-        @rtype: L{Point}
+        @return: True if intersection exists.
+        @rtype: C{bool}
         """
         direction = (end - origin).normal
         P = direction ** self._edge[1]
         det = self._edge[0] * P
         if det > -1e-4 and det < 1e-4:
-            return None
-        inv_det = 1.0 / det
+            return False
         T = origin - self.vertices[0]
-        u = (T * P) * inv_det
-        if u < 0 or u > 1.0:
-            return None
+        u = (T * P)
+        if u < 0 or u > det:
+            return False
         Q = T ** self._edge[0]
-        v = (direction * Q) * inv_det
-        if v < 0 or u + v > 1.0:
-            return None
-        t = (self._edge[1] * Q) * inv_det
+        v = (direction * Q)
+        if v < 0 or u + v > det:
+            return False
+        t = (self._edge[1] * Q) / det
         if t < 0 or t > origin.euclidean(end):
-            return None
-        return origin + t * direction
+            return False
+        return True
