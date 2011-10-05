@@ -19,7 +19,7 @@ except ImportError:
     hypergraph = None
 
 import cython
-from .geometry import Point, DirectionalPoint, Pose
+from .geometry import Point, DirectionalPoint, Pose, Face, which_side
 from .posable import Posable, SceneObject
 from .visualization import Visualizable
 
@@ -185,6 +185,9 @@ class Camera(SceneObject):
     def _pose_changed_hook(self):
         try:
             del self._fov_hull
+            del self._fov_hull_vertices
+            del self._fov_hull_edges
+            del self._fov_hull_faces
         except AttributeError:
             pass
         super(Camera, self)._pose_changed_hook()
@@ -360,6 +363,40 @@ class Camera(SceneObject):
                      Point((self.fov['sahr'] * z, self.fov['savb'] * z, z)),
                      Point((self.fov['sahr'] * z, self.fov['savt'] * z, z))]
             return self._fov_hull
+    
+    @property
+    def fov_hull_vertices(self):
+        try:
+            return self._fov_hull_vertices
+        except AttributeError:
+            self._fov_hull_vertices = [self.pose.map(v) for v in self.fov_hull]
+            return self._fov_hull_vertices
+
+    @property
+    def fov_hull_edges(self):
+        try:
+            return self._fov_hull_edges
+        except AttributeError:
+            H = self.fov_hull_vertices
+            self._fov_hull_edges = \
+                [(H[(i + 1) % 4] - H[i], H[i]) for i in range(4)] + \
+                [(H[(i + 4)] - H[i], H[i]) for i in range(4)] + \
+                [(H[4 + (i + 1) % 4] - H[4 + i], H[4 + i]) for i in range(4)]
+            return self._fov_hull_edges
+
+    @property
+    def fov_hull_faces(self):
+        try:
+            return self._fov_hull_faces
+        except AttributeError:
+            H = self.fov_hull_vertices
+            self._fov_hull_faces = [Face(H[0:3]),
+                                    Face([H[7], H[6], H[5], H[4]]),
+                                    Face([H[6], H[7], H[3], H[2]]),
+                                    Face([H[1], H[0], H[4], H[5]]),
+                                    Face([H[5], H[6], H[2], H[1]]),
+                                    Face([H[7], H[4], H[0], H[3]])]
+            return self._fov_hull_faces
 
     def _generate_fovvis(self):
         self.fovvis = [{'type': 'curve', 'color': (1, 0, 0), 'pos': \
@@ -392,12 +429,33 @@ class Camera(SceneObject):
         Return whether this camera's field of view is occluded (in part) by the
         specified triangle.
 
+            - D. Eberly, "Intersection of Convex Objects: The Method of
+              Separating Axes," 2008.
+
         @param triangle: The triangle to check.
         @type triangle: L{OcclusionTriangle}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        # TODO: check for bounded triangle intersection with viewing frustum
+        for face in self.fov_hull_faces:
+            if which_side(triangle.mapped_triangle.vertices, face.normal,
+                face.vertices[0]) > 0:
+                return False
+        if which_side(self.fov_hull_vertices, triangle.mapped_triangle.normal,
+            triangle.mapped_triangle.vertices[0]) > 0:
+            return False
+        for fedge, fvertex in self.fov_hull_edges:
+            for i in range(3):
+                direction = fedge ** triangle.mapped_triangle.edges[i]
+                side0 = which_side(self.fov_hull_vertices, direction, fvertex)
+                if side0 == 0:
+                    continue
+                side1 = which_side(triangle.mapped_triangle.vertices, direction,
+                    fvertex)
+                if side1 == 0:
+                    continue
+                if side0 * side1 < 0:
+                    return False
         return True
 
     def strength(self, point):

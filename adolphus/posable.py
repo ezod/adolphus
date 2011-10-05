@@ -127,10 +127,10 @@ class OcclusionTriangle(Posable, Visualizable):
         """
         Posable.__init__(self, pose=pose, mount=mount)
         vertices = [Point(vertex) for vertex in vertices]
-        self._triangle = Triangle(vertices)
-        polygon = visual.Polygon([(self._triangle.planing_pose.map(p).x,
-                                   self._triangle.planing_pose.map(p).y) \
-                                  for p in self._triangle.vertices])
+        self.triangle = Triangle(vertices)
+        polygon = visual.Polygon([(self.triangle.planing_pose.map(p).x,
+                                   self.triangle.planing_pose.map(p).y) \
+                                  for p in self.triangle.vertices])
         primitives = [{'type':      'extrusion',
                        'pos':       [(0, 0, 0.5), (0, 0, -0.5)],
                        'shape':     polygon}]
@@ -155,7 +155,7 @@ class OcclusionTriangle(Posable, Visualizable):
             return self._mapped_triangle
         except AttributeError:
             self._mapped_triangle = Triangle([self.pose.map(v) \
-                for v in self._triangle.vertices])
+                for v in self.triangle.vertices])
             return self._mapped_triangle
 
     def intersection(self, pa, pb):
@@ -176,7 +176,7 @@ class OcclusionTriangle(Posable, Visualizable):
         Update the visualization of this triangle.
         """
         for display in self.actuals:
-            self.actuals[display].transform(-self._triangle.planing_pose \
+            self.actuals[display].transform(-self.triangle.planing_pose \
                 + self.pose)
             self.actuals[display].opacity = self.opacity
 

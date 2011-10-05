@@ -778,21 +778,22 @@ class Pose(object):
             return q + self.T
 
 
-class Triangle(object):
+class Face(object):
     """\
-    Triangle class.
+    Face class.
     """
-    __slots__ = ['vertices', '_edge', '_normal', '_planing_pose']
+    __slots__ = ['vertices', 'edges', '_normal', '_planing_pose']
 
     def __init__(self, vertices):
         """\
         Constructor.
 
-        @param v: Vertices.
+        @param v: Vertices (in counterclockwise order looking at the face).
         @type v: C{tuple} of L{Point}
         """
         self.vertices = vertices
-        self._edge = (vertices[1] - vertices[0], vertices[2] - vertices[0])
+        self.edges = [vertices[(i + 1) % len(vertices)] - vertices[i] \
+            for i in range(len(vertices))]
 
     @property
     def normal(self):
@@ -802,13 +803,13 @@ class Triangle(object):
         try:
             return self._normal
         except AttributeError:
-            self._normal = (self._edge[0] ** self._edge[1]).normal
+            self._normal = (self.edges[0] ** self.edges[1]).normal
             return self._normal
 
     @property
     def planing_pose(self):
         """\
-        Pose which transforms this triangle into the x-y plane, with the first
+        Pose which transforms this face into the x-y plane, with the first
         vertex at the origin.
 
         @rtype: L{Pose}
@@ -824,6 +825,22 @@ class Triangle(object):
                 R = Rotation()
             self._planing_pose = Pose(T=-R.rotate(self.vertices[0]), R=R)
             return self._planing_pose
+
+
+class Triangle(Face):
+    """\
+    Triangle class.
+    """
+    __slots__ = ['vertices', 'edges', '_normal', '_planing_pose']
+
+    def __init__(self, vertices):
+        """\
+        Constructor.
+
+        @param v: Vertices.
+        @type v: C{tuple} of L{Point}
+        """
+        super(Triangle, self).__init__(vertices)
 
     def intersection(self, origin, end):
         """\
@@ -841,8 +858,8 @@ class Triangle(object):
         @rtype: C{bool}
         """
         direction = (end - origin).normal
-        P = direction ** self._edge[1]
-        det = self._edge[0] * P
+        P = direction ** -self.edges[2]
+        det = self.edges[0] * P
         if det > -1e-4 and det < 1e-4:
             return False
         inv_det = 1.0 / det
@@ -850,11 +867,43 @@ class Triangle(object):
         u = (T * P) * inv_det
         if u < 0 or u > 1.0:
             return False
-        Q = T ** self._edge[0]
+        Q = T ** self.edges[0]
         v = (direction * Q) * inv_det
         if v < 0 or u + v > 1.0:
             return False
-        t = (self._edge[1] * Q) * inv_det
+        t = (-self.edges[2] * Q) * inv_det
         if t < 1e-04 or t > origin.euclidean(end) - 1e-04:
             return False
         return True
+
+
+def which_side(points, direction, vertex):
+    """\
+    Check which side of the projection of the given vertex onto the given
+    direction the projections of the given points lie upon.
+
+        - D. Eberly, "Intersection of Convex Objects: The Method of Separating
+          Axes," 2008.
+
+    @param points: The points to check.
+    @type points: C{list} of L{Point}
+    @param direction: The direction upon which to project.
+    @type direction: L{Point}
+    @param vertex: The criterion vertex.
+    @type vertex: L{Point}
+    @return: 0 if positive side, -1 if negative side, 0 if both.
+    @rtype: C{int}
+    """
+    positive, negative = 0, 0
+    for point in points:
+        t = direction * (point - vertex)
+        if t > 0:
+            positive += 1
+        elif t < 0:
+            negative += 1
+        if positive and negative:
+            return 0
+    if positive:
+        return 1
+    else:
+        return -1
