@@ -369,7 +369,8 @@ class Camera(SceneObject):
         try:
             return self._fov_hull_vertices
         except AttributeError:
-            self._fov_hull_vertices = [self.pose.map(v) for v in self.fov_hull]
+            self._fov_hull_vertices = [self.pose.T] + \
+                [self.pose.map(v) for v in self.fov_hull[4:]]
             return self._fov_hull_vertices
 
     @property
@@ -378,10 +379,8 @@ class Camera(SceneObject):
             return self._fov_hull_edges
         except AttributeError:
             H = self.fov_hull_vertices
-            self._fov_hull_edges = \
-                [(H[(i + 1) % 4] - H[i], H[i]) for i in range(4)] + \
-                [(H[(i + 4)] - H[i], H[i]) for i in range(4)] + \
-                [(H[4 + (i + 1) % 4] - H[4 + i], H[4 + i]) for i in range(4)]
+            self._fov_hull_edges = [(H[i] - H[0], H[0]) for i in range(1, 5)] \
+                + [(H[(i + 1) % 4 + 1] - H[i + 1], H[i + 1]) for i in range(4)]
             return self._fov_hull_edges
 
     @property
@@ -390,12 +389,8 @@ class Camera(SceneObject):
             return self._fov_hull_faces
         except AttributeError:
             H = self.fov_hull_vertices
-            self._fov_hull_faces = [Face(H[0:3]),
-                                    Face([H[7], H[6], H[5], H[4]]),
-                                    Face([H[6], H[7], H[3], H[2]]),
-                                    Face([H[1], H[0], H[4], H[5]]),
-                                    Face([H[5], H[6], H[2], H[1]]),
-                                    Face([H[7], H[4], H[0], H[3]])]
+            self._fov_hull_faces = [Face([H[4], H[3], H[2], H[1]])] \
+                + [Face([H[0], H[i + 1], H[(i + 1) % 4 + 1]]) for i in range(4)]
             return self._fov_hull_faces
 
     def _generate_fovvis(self):
