@@ -12,9 +12,10 @@ import yaml
 import pkg_resources
 from math import pi
 from functools import reduce
+from copy import copy
 
 import cython
-from .coverage import PointCache, RelevanceModel, Camera, Model
+from .coverage import PointCache, RelevanceModel, Camera, Model, TP_DEFAULTS
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import SceneObject, SceneTriangle, Robot
 
@@ -164,20 +165,10 @@ class YAMLParser(object):
         @return: The parsed multi-camera model.
         @rtype: L{Model}
         """
-        rmodel = Model()
         # complete and sanitize task paramters
-        tp_defaults = {'boundary_padding': 0.0,
-                       'res_max_ideal': float('inf'),
-                       'res_max_acceptable': float('inf'),
-                       'res_min_ideal': 0.0,
-                       'res_min_acceptable': 0.0,
-                       'blur_max_ideal': 1.0,
-                       'blur_max_acceptable': 1.0,
-                       'angle_max_ideal': pi / 2.0,
-                       'angle_max_acceptable': pi / 2.0}
-        for tp in tp_defaults:
+        for tp in TP_DEFAULTS:
             if not tp in model:
-                model[tp] = tp_defaults[tp]
+                model[tp] = TP_DEFAULTS[tp]
         model['res_max_ideal'] = \
             min(model['res_max_ideal'], model['res_max_acceptable'])
         model['res_min_ideal'] = \
@@ -186,10 +177,18 @@ class YAMLParser(object):
             min(model['blur_max_ideal'], model['blur_max_acceptable'])
         model['angle_max_ideal'] = \
             min(model['angle_max_ideal'], model['angle_max_acceptable'])
+        model['baseline_min_ideal'] = \
+            max(model['baseline_min_ideal'], model['baseline_min_acceptable'])
+        # create model
+        task_params = {}
+        for param in TP_DEFAULTS:
+            try:
+                task_params[param] = model[param]
+            except KeyError:
+                pass
+        rmodel = Model(task_params=task_params)
         # parse cameras
         for camera in model['cameras']:
-            for tp in tp_defaults:
-                camera[tp] = model[tp]
             # parse pose
             try:
                 pose = self._parse_pose(camera['pose'])

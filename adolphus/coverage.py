@@ -24,6 +24,19 @@ from .posable import Posable, SceneObject
 from .visualization import Visualizable
 
 
+TP_DEFAULTS = {'boundary_padding': 0.0,
+               'res_max_ideal': float('inf'),
+               'res_max_acceptable': float('inf'),
+               'res_min_ideal': 0.0,
+               'res_min_acceptable': 0.0,
+               'blur_max_ideal': 1.0,
+               'blur_max_acceptable': 1.0,
+               'angle_max_ideal': pi / 2.0,
+               'angle_max_acceptable': pi / 2.0,
+               'baseline_min_acceptable': 0.0,
+               'baseline_min_ideal': 0.0}
+
+
 class PointCache(dict):
     """\
     Point cache class.
@@ -201,7 +214,10 @@ class Camera(SceneObject):
         @return: The value of the parameter.
         @rtype: C{object}
         """
-        return self._params[param]
+        try:
+            return self._params[param]
+        except KeyError:
+            return TP_DEFAULTS[param]
 
     def setparam(self, param, value):
         """\
@@ -212,6 +228,8 @@ class Camera(SceneObject):
         @param value: The value to which to set the parameter.
         @type value: C{object}
         """
+        if not param in self._params and not param in TP_DEFAULTS:
+            raise KeyError('invalid parameter %s' % param)
         self._params[param] = value
         fov = False
         fovvis = False
@@ -493,15 +511,19 @@ class Model(dict):
     """\
     Multi-camera I{n}-ocular coverage strength model.
     """
-    def __init__(self):
+    def __init__(self, task_params=dict()):
         """\
         Constructor.
+
+        @param task_parameters: Task parameters.
+        @type task_parameters: C{dict}
         """
         dict.__init__(self)
         self.cameras = set()
         self._occlusion_cache = {}
         self._oc_updated = {}
         self._oc_needs_update = True
+        self._task_params = task_params
 
     def __setitem__(self, key, value):
         self._oc_updated[key] = False
@@ -511,6 +533,8 @@ class Model(dict):
         value.posecallbacks.add(callback)
         if isinstance(value, Camera):
             self.cameras.add(key)
+            for param in self._task_params:
+                value.setparam(param, self._task_params[param])
         super(Model, self).__setitem__(key, value)
 
     def __delitem__(self, key):
@@ -521,6 +545,35 @@ class Model(dict):
     def __del__(self):
         for sceneobject in self:
             self[sceneobject].visible = False
+
+    def getparam(self, param):
+        """\
+        Retrieve a task parameter from this model.
+
+        @param param: The name of the task parameter to retrieve.
+        @type param: C{str}
+        @return: The value of the parameter.
+        @rtype: C{object}
+        """
+        try:
+            return self._task_params[param]
+        except KeyError:
+            return TP_DEFAULTS[param]
+
+    def setparam(self, param, value):
+        """\
+        Set a task parameter on this model.
+
+        @param param: The name of the task paramater to set.
+        @type param: C{str}
+        @param value: The value to which to set the parameter.
+        @type value: C{object}
+        """
+        if not param in TP_DEFAULTS:
+            raise KeyError('invalid parameter')
+        self._task_params[param] = value
+        for camera in self.cameras:
+            self[camera].setparam(param, value)
 
     @property
     def active_cameras(self):
