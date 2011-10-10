@@ -509,7 +509,7 @@ class Camera(SceneObject):
 
 class Model(dict):
     """\
-    Multi-camera I{n}-ocular coverage strength model.
+    Multi-camera I{k}-ocular coverage strength model.
     """
     def __init__(self, task_params=dict()):
         """\
@@ -578,11 +578,23 @@ class Model(dict):
     @property
     def active_cameras(self):
         """\
-        Return a list of active cameras.
+        Return a set of active cameras.
 
         @rtype: C{set}
         """
         return set([key for key in self.cameras if self[key].active])
+
+    def views(self, ocular=1):
+        """\
+        Return a set of I{k}-ocular views from the active cameras.
+
+        @param ocular: The value of I{k}.
+        @type ocular: C{int}
+        @return: All I{k}-ocular views.
+        @rtype: C{set}
+        """
+        return set([frozenset(view) \
+            for view in combinations(self.active_cameras, ocular)])
 
     def _update_occlusion_cache(self):
         """\
@@ -645,7 +657,7 @@ class Model(dict):
         active_cameras = subset or self.active_cameras
         self._update_occlusion_cache()
         if len(active_cameras) < ocular:
-            raise ValueError('network has too few active cameras')
+            raise ValueError('too few active cameras')
         maxstrength = 0.0
         for combination in combinations(active_cameras, ocular):
             minstrength = float('inf')
