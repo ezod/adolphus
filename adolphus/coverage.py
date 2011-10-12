@@ -715,37 +715,35 @@ class Model(dict):
             / sum(relevance.mapped.values())
 
     def best_view(self, relevance, ocular=1, current=None, threshold=0,
-                  vision_graph=None):
+                  candidates=None):
         """\
         Return the best I{k}-view of the given relevance model. If the current
         (or previous) best view is specified, the hysteresis threshold adds some
-        bias to that view to smooth the transition sequence. Additionally, if a
-        vision graph is specified, only views composed of vision graph neighbors
-        are added to the candidate set.
+        bias to that view to smooth the transition sequence. A restricted set of
+        candidate views may be specified.
 
         @param relevance: The relevance model.
         @type relevance: L{RelevanceModel}
         @param ocular: Mutual camera coverage degree.
         @type ocular: C{int}
-        @param current: The current (previous) best view.
+        @param current: The current (previous) best view (optional).
         @type current: C{str}
         @param threshold: The hysteresis threshold in [0, 1] for transition.
         @type threshold: C{float}
-        @type vision_graph: C{Hypergraph}
+        @param candidates: The set of candidate views (optional).
+        @type candidates: C{set} of C{frozenset} of C{str}
         @return: The best view.
-        @rtype: C{set} of C{str}
+        @rtype: C{frozenset} of C{str}
         """
-        if current and vision_graph:
-            # TODO: what about a vision graph of k-views?
-            candidates = dict.fromkeys(combinations(\
-                vision_graph.neighbors(current) | set([current]), ocular))
+        if candidates:
+            scores = dict.fromkeys(candidates)
         else:
-            candidates = dict.fromkeys(self.views(ocular=ocular))
-        for view in candidates:
-            candidates[view] = self.performance(relevance, subset=view)
+            scores = dict.fromkeys(self.views(ocular=ocular))
+        for view in scores:
+            scores[view] = self.performance(relevance, subset=view)
         if current:
-            candidates[current] += threshold
-        return sorted(candidates.keys(), key=candidates.__getitem__)[-1]
+            scores[current] += threshold
+        return sorted(scores.keys(), key=scores.__getitem__)[-1]
 
     def coverage_hypergraph(self, relevance, K=None):
         """\
