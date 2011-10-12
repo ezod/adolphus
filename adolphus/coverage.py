@@ -515,8 +515,8 @@ class Model(dict):
         """\
         Constructor.
 
-        @param task_parameters: Task parameters.
-        @type task_parameters: C{dict}
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
         """
         dict.__init__(self)
         self.cameras = set()
@@ -591,7 +591,7 @@ class Model(dict):
         @param ocular: The value of I{k}.
         @type ocular: C{int}
         @return: All I{k}-ocular views.
-        @rtype: C{set}
+        @rtype: C{set} of C{frozenset} of C{str}
         """
         return set([frozenset(view) \
             for view in combinations(self.active_cameras, ocular)])
@@ -714,6 +714,39 @@ class Model(dict):
         return sum((coverage & relevance.mapped).values()) \
             / sum(relevance.mapped.values())
 
+    def best_view(self, relevance, ocular=1, current=None, threshold=0,
+                  vision_graph=None):
+        """\
+        Return the best I{k}-view of the given relevance model. If the current
+        (or previous) best view is specified, the hysteresis threshold adds some
+        bias to that view to smooth the transition sequence. Additionally, if a
+        vision graph is specified, only views composed of vision graph neighbors
+        are added to the candidate set.
+
+        @param relevance: The relevance model.
+        @type relevance: L{RelevanceModel}
+        @param ocular: Mutual camera coverage degree.
+        @type ocular: C{int}
+        @param current: The current (previous) best view.
+        @type current: C{str}
+        @param threshold: The hysteresis threshold in [0, 1] for transition.
+        @type threshold: C{float}
+        @type vision_graph: C{Hypergraph}
+        @return: The best view.
+        @rtype: C{set} of C{str}
+        """
+        if current and vision_graph:
+            # TODO: what about a vision graph of k-views?
+            candidates = dict.fromkeys(combinations(\
+                vision_graph.neighbors(current) | set([current]), ocular))
+        else:
+            candidates = dict.fromkeys(self.views(ocular=ocular))
+        for view in candidates:
+            candidates[view] = self.performance(relevance, subset=view)
+        if current:
+            candidates[current] += threshold
+        return sorted(candidates.keys(), key=candidates.__getitem__)[-1]
+
     def coverage_hypergraph(self, relevance, K=None):
         """\
         Return the coverage hypergraph of this multi-camera network. If C{K} is
@@ -724,7 +757,7 @@ class Model(dict):
         @param K: A set of possible hyperedge sizes.
         @type K: C{list} of C{int}
         @return: The coverage hypergraph.
-        @rtype: L{Hypergraph<hypergraph.Hypergraph>}
+        @rtype: C{Hypergraph}
         """
         if not hypergraph:
             raise ImportError('hypergraph module not loaded')
