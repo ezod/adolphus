@@ -195,14 +195,22 @@ class Camera(SceneObject):
         self._generate_fovvis()
         self.active = active
 
-    def _pose_changed_hook(self):
+    def _delete_fov_data(self):
         try:
-            del self._fov_hull
             del self._fov_hull_vertices
+        except AttributeError:
+            pass
+        try:
             del self._fov_hull_edges
+        except AttributeError:
+            pass
+        try:
             del self._fov_hull_faces
         except AttributeError:
             pass
+
+    def _pose_changed_hook(self):
+        self._delete_fov_data()
         super(Camera, self)._pose_changed_hook()
 
     def getparam(self, param):
@@ -251,6 +259,11 @@ class Camera(SceneObject):
         if param.startswith('angle'):
             self._generate_cd()
         if fovvis:
+            try:
+                del self._fov_hull
+            except AttributeError:
+                pass
+            self._delete_fov_data()
             self._generate_fovvis()
 
     def _generate_cv(self):
