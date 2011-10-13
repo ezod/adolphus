@@ -1,0 +1,15 @@
+description:    Generic Large Camera
+primitives:
+    - type:         box
+      pos:          [0, 0, -200]
+      length:       400
+      height:       400
+      width:        400
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [0, 0, 0]
+      axis:         [0, 0, 200]
+      radius:       150
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
