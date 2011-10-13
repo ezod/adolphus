@@ -149,9 +149,9 @@ def cmd_cameraview(ex, args):
     
     usage: %s name
     """
-    if ex.zoom:
-        raise CommandError('cannot do camera view with external zoom enabled')
     if len(args):
+        if ex.zoom:
+            raise CommandError('no camera view with external zoom enabled')
         try:
             ex.display.camera_view(ex.model[args[0]])
             ex.modifier.visible = False
