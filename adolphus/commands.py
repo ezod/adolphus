@@ -75,6 +75,12 @@ def cmd_loadconfig(ex, args):
     except KeyError:
         ex.keybindings = {}
 
+def cmd_event(ex, args):
+    """\
+    Set the generic experiment event.
+    """
+    ex.event.set()
+
 def cmd_exit(ex, args):
     """\
     Exit the viewer.

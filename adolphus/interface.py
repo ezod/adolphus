@@ -195,6 +195,8 @@ class Experiment(threading.Thread):
         self.display.select()
         self.altdisplays = []
 
+        self.event = threading.Event()
+
         self.selected = None
 
         self.coverage = {}
