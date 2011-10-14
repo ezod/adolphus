@@ -40,7 +40,7 @@ class Display(visual.display):
         @type center: C{tuple} of C{float}
         """
         super(Display, self).__init__(title='Adolphus Viewer', center=center,
-            background=(1, 1, 1), foreground=(0.3, 0.3, 0.3))
+            background=(1, 1, 1), foreground=(0.3, 0.3, 0.3), visible=False)
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
         self.userzoom = zoom
@@ -294,6 +294,9 @@ class Experiment(threading.Thread):
         """\
         Run this experiment.
         """
+        self.display.visible = True
+        for display in self.altdisplays:
+            display.visible = True
         zoom = False
         moving = None
         rotating = None
