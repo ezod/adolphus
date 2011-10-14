@@ -1,25 +1,27 @@
 description:    Fisher Price Person
 primitives:
     - type:         sphere
-      pos:          [0, 0, 1550]
+      pos:          [0, 1550, 0]
       radius:       410
       color:        [0.82,0.65,0.69]
-      material:     plastic
+      #material:     plastic
+      texture:      fisherpriceperson
+      mapping:      spherical
     - type:         cylinder
-      pos:          [0, 0, 1220]
+      pos:          [0, 1220, 0]
       radius:       400
-      axis:         [0, 0, -800]
+      axis:         [0, -800, 0]
       color:        [0.02, 0.55, 0.23]
       material:     plastic
     - type:         cylinder
-      pos:          [0, 0, 420]
+      pos:          [0, 420, 0]
       radius:       440
-      axis:         [0, 0, -50]
+      axis:         [0, -50, 0]
       color:        [0.02, 0.55, 0.23]
       material:     plastic
     - type:         cylinder
-      pos:          [0, 0, 370]
+      pos:          [0, 370, 0]
       radius:       350
-      axis:         [0, 0, -320]
+      axis:         [0, -320, 0]
       color:        [0.02, 0.55, 0.23]
       material:     plastic
