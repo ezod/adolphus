@@ -105,15 +105,21 @@ class YAMLParser(object):
         @return: The primitives list.
         @rtype: C{list} of C{dict}
         """
-        tpath = self._path
+        tpath = ''
         if isinstance(sprite, str):
-            tpath = os.path.split(os.path.join(self._path, sprite))[0]
+            tpath = os.path.split(sprite)[0]
             sprite = self._load_external(sprite)
         try:
             for primitive in sprite['primitives']:
                 if 'texture' in primitive:
-                    primitive['texture'] = os.path.join(tpath,
-                        primitive['texture'])
+                    if os.path.exists(os.path.join(self._path, tpath,
+                        primitive['texture'] + '.tga')):
+                        primitive['texture'] = os.path.join(self._path, tpath,
+                            primitive['texture'])
+                    else:
+                        primitive['texture'] = pkg_resources.resource_filename(\
+                            __name__, os.path.join('resources/', tpath,
+                            primitive['texture']))
             return sprite['primitives']
         except KeyError:
             return []
