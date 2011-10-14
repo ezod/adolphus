@@ -79,6 +79,8 @@ def cmd_exit(ex, args):
     """\
     Exit the viewer.
     """
+    for display in ex.altdisplays:
+        display.visible = False
     ex.display.visible = False
     ex.exit = True
 
@@ -170,6 +172,7 @@ def cmd_fov(ex, args):
     if args[0] in ex.fovvis:
         ex.fovvis[args[0]].visible = not ex.fovvis[args[0]].visible
     else:
+        ex.display.select()
         try:
             ex.fovvis[args[0]] = Sprite(ex.model[args[0]].fovvis)
             ex.fovvis[args[0]].frame = ex.model[args[0]].actuals['main']

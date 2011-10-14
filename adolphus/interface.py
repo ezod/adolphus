@@ -87,11 +87,11 @@ class Display(visual.display):
         @param camera: The camera object.
         @type camera: L{coverage.Camera}
         """
+        # FIXME: need to make camera invisible in this display only
         if camera:
             if self._stored_view:
-                raise VisualizationError('already in a camera view')
+                self.camera_view()
             self.userspin = False
-            camera.visible = False
             self._stored_view = {'camera': camera,
                                  'forward': tuple(self.forward),
                                  'center': tuple(self.center),
@@ -107,19 +107,16 @@ class Display(visual.display):
                          * camera.getparam('zS') * 1.2
             self.cdot.pos = self.center
             self._messagebox.pos = self.center
-            self.message('Camera view.')
         else:
             if not self._stored_view:
                 return
             for key in self._stored_view:
                 self.__setattr__(key, self._stored_view[key])
             self.up = (0, 0, 1)
-            self._stored_view['camera'].visible = True
             self.userspin = True
             self.cdot.pos = self.center
             self._messagebox.pos = self.center
             self._stored_view = None
-            self.message()
 
     @property
     def in_camera_view(self):
@@ -196,6 +193,7 @@ class Experiment(threading.Thread):
         self.display = Display(zoom=zoom)
         Visualizable.displays['main'] = self.display
         self.display.select()
+        self.altdisplays = []
 
         self.selected = None
 
@@ -237,6 +235,18 @@ class Experiment(threading.Thread):
         self.model = Model()
         self.relevance_models = {}
         self.keybindings = {}
+
+    def add_display(self, zoom=False):
+        """\
+        Add an alternate display to this experiment.
+
+        @param zoom: Use Visual's userzoom (disables camera view).
+        @type zoom: C{bool}
+        """
+        self.altdisplays.append(Display(zoom=zoom))
+        Visualizable.displays['alt%d' % (len(self.altdisplays) - 1)] = \
+            self.altdisplays[-1]
+        self.display.select()
 
     def select(self, selection=None):
         """\
