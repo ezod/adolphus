@@ -34,6 +34,9 @@ Conf. Advanced Intelligent Mechatronics*, 2011, pp. 838-843.
 * A. Mavrinac and X. Chen, "[Optimizing Load Distribution in Camera Networks
 with a Hypergraph Model of Coverage Topology] [m11_load]," in *Proc 5th ACM/IEEE
 Int. Conf. Distributed Smart Cameras*, 2011.
+* A. Mavrinac, D. Rajan, and X. Chen, "Task-Oriented Optimal View Selection in
+a Calibrated Multi-Camera System," submitted to *Proc. IEEE Int. Conf. Robotics
+and Automation*, 2012.
 
 
 [python]: http://www.python.org
