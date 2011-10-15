@@ -775,6 +775,8 @@ class Model(dict):
         H = hypergraph.Hypergraph(vertices=self.keys())
         if K is None:
             K = range(2, len(self) + 1)
+        elif isinstance(K, int):
+            K = [K]
         else:
             K.sort()
         active_cameras = self.active_cameras
