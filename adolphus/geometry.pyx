@@ -9,7 +9,7 @@ geometric descriptor functions for features.
 """
 
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
-from functools import reduce
+from random import uniform
 
 
 class Angle(float):
@@ -907,3 +907,37 @@ def which_side(points, direction, vertex):
         return 1
     else:
         return -1
+
+
+def random_unit_vector():
+    """\
+    Return a random unit vector, uniformly distributed over the locus of the
+    unit sphere.
+
+    @return: Random unit vector.
+    @rtype: L{Point}
+    """
+    while True:
+        rv = Point((uniform(-1, 1), uniform(-1, 1), uniform(-1, 1)))
+        if rv.magnitude < 1:
+            return rv.normal
+
+
+def random_pose_error(pose, terror, rerror):
+    """\
+    Introduce random error of specified magnitude to a pose and return the
+    resulting pose.
+
+    @param pose: The original pose.
+    @type pose: L{Pose}
+    @param terror: The translation error in units of distance.
+    @type terror: C{float}
+    @param rerror: The rotation error in radians.
+    @type rerror: L{Angle}
+    @return: The pose with introduced random error.
+    @rtype: L{Pose}
+    """
+    T, R = pose.T, pose.R
+    T += terror * random_unit_vector()
+    R = Rotation.from_axis_angle(rerror, random_unit_vector()) + R
+    return Pose(T=T, R=R)
