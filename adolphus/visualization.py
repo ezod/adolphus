@@ -125,10 +125,12 @@ class Visualizable(object):
         @type primitives: C{list} of C{dict}
         """
         for primitive in primitives:
-            if 'material' in primitive:
+            if 'material' in primitive \
+            and isinstance(primitive['material'], str):
                 primitive['material'] = \
                     getattr(visual.materials, primitive['material'])
-            elif 'texture' in primitive:
+            elif 'texture' in primitive \
+            and isinstance(primitive['texture'], str):
                 primitive['material'] = visual.materials.texture(data=\
                     visual.materials.loadTGA(primitive['texture']),
                     mapping=primitive['mapping'])
