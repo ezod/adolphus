@@ -9,13 +9,14 @@ multi-camera systems.
 See our [screencast] [screencast] for an introduction.
 
 
-## Requirements
+## Dependencies
 
 Adolphus requires [Python] [python] 2.6 or later, [Cython] [cython] 0.14 or
 later, and [PyYAML] [pyyaml] 3.09 or later.
 
-[Visual] [visual] is required for 3D visualization and interaction (optional).
-[PyGTK] [pygtk] is required for the interactive tool panel (optional).
+[Visual] [visual] 5.4 or later is required for 3D visualization and interaction
+(optional, recommended). [PyGTK] [pygtk] 2.22 or later is required for the
+interactive tool panel (optional).
 
 [Epydoc] [epydoc] is required for generating API documentation (optional).
 
