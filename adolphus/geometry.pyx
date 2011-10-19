@@ -782,7 +782,7 @@ class Face(object):
     """\
     Face class.
     """
-    __slots__ = ['vertices', 'edges', '_normal', '_planing_pose']
+    __slots__ = ['vertices', '_edges', '_normal', '_planing_pose']
 
     def __init__(self, vertices):
         """\
@@ -792,13 +792,29 @@ class Face(object):
         @type v: C{tuple} of L{Point}
         """
         self.vertices = vertices
-        self.edges = [vertices[(i + 1) % len(vertices)] - vertices[i] \
-            for i in range(len(vertices))]
+
+    def __getstate__(self):
+        return self.vertices
+
+    def __setstate__(self, state):
+        self.vertices = state
+
+    @property
+    def edges(self):
+        """\
+        Edges of this face.
+        """
+        try:
+            return self._edges
+        except AttributeError:
+            self._edges = [self.vertices[(i + 1) % len(self.vertices)] \
+                - self.vertices[i] for i in range(len(self.vertices))]
+            return self._edges
 
     @property
     def normal(self):
         """\
-        Normal vector to this triangle.
+        Normal vector to this face.
         """
         try:
             return self._normal
@@ -831,7 +847,7 @@ class Triangle(Face):
     """\
     Triangle class.
     """
-    __slots__ = ['vertices', 'edges', '_normal', '_planing_pose']
+    __slots__ = ['vertices', '_edges', '_normal', '_planing_pose']
 
     def __init__(self, vertices):
         """\
