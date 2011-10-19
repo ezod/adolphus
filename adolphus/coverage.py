@@ -756,7 +756,7 @@ class Model(dict):
             scores[view] = self.performance(relevance, subset=view)
         if current and scores[current]:
             scores[current] += threshold
-        best = sorted(scores.keys(), key=scores.__getitem__)[-1]
+        best = max(scores.keys(), key=scores.__getitem__)
         if current and not scores[best]:
             return current
         return best
