@@ -754,9 +754,12 @@ class Model(dict):
             scores = dict.fromkeys(self.views(ocular=ocular))
         for view in scores:
             scores[view] = self.performance(relevance, subset=view)
-        if current:
+        if current and scores[current]:
             scores[current] += threshold
-        return sorted(scores.keys(), key=scores.__getitem__)[-1]
+        best = sorted(scores.keys(), key=scores.__getitem__)[-1]
+        if current and not scores[best]:
+            return current
+        return best
 
     def coverage_hypergraph(self, relevance, K=None):
         """\
