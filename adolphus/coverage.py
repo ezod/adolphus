@@ -745,8 +745,8 @@ class Model(dict):
         @type threshold: C{float}
         @param candidates: The set of candidate views (optional).
         @type candidates: C{set} of C{frozenset} of C{str}
-        @return: The best view.
-        @rtype: C{frozenset} of C{str}
+        @return: The best view and its score.
+        @rtype: C{frozenset} of C{str}, C{float}
         """
         if candidates:
             scores = dict.fromkeys(candidates)
@@ -758,8 +758,8 @@ class Model(dict):
             scores[current] += threshold
         best = max(scores.keys(), key=scores.__getitem__)
         if current and not scores[best]:
-            return current
-        return best
+            return current, 0.0
+        return best, scores[best] - (best == current and threshold or 0)
 
     def coverage_hypergraph(self, relevance, K=None):
         """\
