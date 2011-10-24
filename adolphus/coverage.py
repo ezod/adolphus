@@ -775,14 +775,14 @@ class Model(dict):
         """
         if not hypergraph:
             raise ImportError('hypergraph module not loaded')
-        H = hypergraph.Hypergraph(vertices=self.keys())
+        active_cameras = self.active_cameras
+        H = hypergraph.Hypergraph(vertices=active_cameras)
         if K is None:
             K = range(2, len(self) + 1)
         elif isinstance(K, int):
             K = [K]
         else:
             K.sort()
-        active_cameras = self.active_cameras
         cache = {}
         for camera in active_cameras:
             subset = frozenset([camera])
