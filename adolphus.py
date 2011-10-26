@@ -7,10 +7,10 @@ import subprocess
 
 def main():
     argviewer = [os.path.join(os.path.dirname(sys.argv[0]),
-        'adolphus-viewer.py'), '-s'] + sys.argv[1:]
+        'adolphusviewer.py'), '-s'] + sys.argv[1:]
     viewer = subprocess.Popen(argviewer, stdout=subprocess.PIPE)
     port = viewer.stdout.readline().rstrip().strip('.').split(' ')[3]
-    argpanel = [os.path.join(os.path.dirname(sys.argv[0]), 'adolphus-panel.py'),
+    argpanel = [os.path.join(os.path.dirname(sys.argv[0]), 'adolphuspanel.py'),
         '-H', 'localhost', '-p', port]
     panel = subprocess.Popen(argpanel)
     viewer.wait()
