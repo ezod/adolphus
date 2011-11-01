@@ -6,9 +6,9 @@ from optparse import OptionParser
 from adolphus import Experiment, Controller
 
 
-def viewer_main(modelfile, config=None, zoom=False, port=None):
+def viewer_main(modelfile=None, config=None, zoom=False, port=None):
     experiment = Experiment(zoom=zoom)
-    if args:
+    if modelfile:
         experiment.execute('loadmodel %s' % modelfile)
     experiment.execute('loadconfig %s' % config)
     if port is not None:
@@ -32,5 +32,5 @@ if __name__ == '__main__':
     parser.add_option('-z', '--zoom', dest='zoom', default=False,
         action='store_true', help='disable camera view and use visual zoom')
     opts, args = parser.parse_args()
-    viewer_main(args[0], config=opts.conf, zoom=opts.zoom,
-        port=(opts.socket and opts.port or None))
+    viewer_main(modelfile=(args and args[0] or None), config=opts.conf,
+        zoom=opts.zoom, port=(opts.socket and opts.port or None))
