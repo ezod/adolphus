@@ -22,6 +22,10 @@ from .geometry import *
 from .posable import *
 from .coverage import *
 from .interface import *
-from .panel import *
 from .visualization import *
 from .yamlparser import *
+
+try:
+    from .panel import *
+except ImportError:
+    pass
