@@ -36,6 +36,8 @@ class YAMLParser(object):
         experiment = yaml.load(open(filename))
         self.model = self._parse_model(experiment['model'])
         self.relevances = {}
+        if not 'relevance' in experiment:
+            experiment['relevance'] = []
         for relevance in experiment['relevance']:
             self.relevances[relevance['name']] = \
                 self._parse_relevance(relevance)
@@ -215,6 +217,8 @@ class YAMLParser(object):
                 mount=None, primitives=sprites, active=active)
             self._mounts[camera['name']] = rmodel[camera['name']]
         # parse scene
+        if not 'scene' in model:
+            model['scene'] = []
         for item in model['scene']:
             # parse pose
             try:
@@ -225,11 +229,11 @@ class YAMLParser(object):
                 occlusion = item['occlusion']
             except KeyError:
                 occlusion = True
+            try:
+                mount_pose = self._parse_pose(item['mount_pose'])
+            except KeyError:
+                mount_pose = Pose()
             if 'sprites' in item:
-                try:
-                    mount_pose = self._parse_pose(item['mount_pose'])
-                except KeyError:
-                    mount_pose = Pose()
                 # parse sprites and triangles
                 sprites = reduce(lambda a, b: a + b,
                     [self._parse_primitives(sprite) \
