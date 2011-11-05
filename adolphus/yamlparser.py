@@ -205,8 +205,6 @@ class YAMLParser(object):
             # parse sprites
             sprites = reduce(lambda a, b: a + b, [self.\
                 _parse_primitives(sprite) for sprite in camera['sprites']])
-            sprites.append({'type': 'label', 'color': [1, 1, 1], 'height': 6,
-                'background': [0, 0, 0], 'text': camera['name']})
             # parse active state
             try:
                 active = camera['active']

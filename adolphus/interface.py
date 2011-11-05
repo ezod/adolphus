@@ -198,6 +198,7 @@ class Experiment(threading.Thread):
         self.event = threading.Event()
 
         self.selected = None
+        self._camera_names = False
 
         self.coverage = {}
         self.fovvis = {}
@@ -248,6 +249,10 @@ class Experiment(threading.Thread):
         self.altdisplays.append(Display(zoom=zoom))
         Visualizable.displays['alt%d' % (len(self.altdisplays) - 1)] = \
             self.altdisplays[-1]
+        if self.is_alive():
+            self.altdisplays[-1].visible = True
+            for sceneobject in self.model:
+                self.model[sceneobject].visualize()
         self.display.select()
 
     def select(self, selection=None):
@@ -262,6 +267,23 @@ class Experiment(threading.Thread):
         if selection:
             selection.highlight()
         self.selected = selection
+
+    def camera_names(self):
+        """\
+        Toggle display of camera names.
+        """
+        if not self.is_alive():
+            return
+        self._camera_names = not self._camera_names
+        for camera in self.model.cameras:
+            try:
+                self.model[camera].nametag.visible = self._camera_names
+            except AttributeError:
+                self.model[camera].nametag = Sprite([{'type': 'label',
+                    'color': [1, 1, 1], 'height': 6, 'background': [0, 0, 0],
+                    'text': camera}])
+                self.model[camera].nametag.frame = \
+                    self.model[camera].actuals['main']
 
     def execute(self, cmd, response='pickle'):
         """\

@@ -56,7 +56,6 @@ def cmd_loadmodel(ex, args):
     ex._cam_vis = [primitive for objects in \
         [ex.model[cam].actuals['main'].objects for cam in ex.model.cameras] \
         for primitive in objects]
-    cmd_cameranames(ex, [])
 
 def cmd_loadconfig(ex, args):
     """\
@@ -145,11 +144,7 @@ def cmd_cameranames(ex, args):
     """\
     Toggle display of camera identifiers.
     """
-    for camera in ex.model.cameras:
-        for display in ex.model[camera].actuals:
-            for member in ex.model[camera].actuals[display].members:
-                if isinstance(member, visual.label):
-                    member.visible = not member.visible
+    ex.camera_names()
 
 def cmd_cameraview(ex, args):
     """\
