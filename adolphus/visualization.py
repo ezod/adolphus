@@ -30,6 +30,12 @@ if os.name == 'nt':
 class Sprite(visual.frame):
     """\
     Sprite class.
+
+    A L{Sprite} object is a frame bound to a single Visual display containing
+    one or more primitives. Normally, this is used by the L{Visualizable} class
+    to handle manifestations across multiple displays, but it can also be
+    instantiated directly to produce visualization elements in one particular
+    display.
     """
     def __init__(self, primitives, parent=None, frame=None):
         """\
@@ -99,7 +105,8 @@ class Sprite(visual.frame):
 
     def transform(self, pose):
         """\
-        Execute a 3D transformation on this sprite.
+        Execute a 3D transformation on this sprite. This sets the absolute pose
+        of the sprite to the specified pose.
 
         @param pose: The pose.
         @type pose: L{Pose}
@@ -114,6 +121,11 @@ class Sprite(visual.frame):
 class Visualizable(object):
     """\
     Visualizable abstract base class.
+
+    A L{Visualizable} object is a higher-level visual representation manager
+    which instantiates one or more L{Sprite} objects (one per Visual display).
+    The class itself maintains a dictionary of active displays, while each
+    instance maintains its own set of "actuals" (visualized sprites).
     """
     displays = {}
 
@@ -144,6 +156,9 @@ class Visualizable(object):
 
     @property
     def visible(self):
+        """\
+        Visibility of this visualizable.
+        """
         return self._visible
 
     @visible.setter
@@ -171,7 +186,8 @@ class Visualizable(object):
 
     def visualize(self):
         """\
-        Visualize this visualizable.
+        Visualize this visualizable. Creates sprites in any "new" displays,
+        and updates the visualization in all displays.
         """
         if not visual:
             raise VisualizationError('visual module not loaded')
@@ -185,7 +201,9 @@ class Visualizable(object):
 
     def update_visualization(self):
         """\
-        Update this visualizable.
+        Update this visualizable in all displays. If it has a pose (i.e.
+        subclasses or ducktypes L{Posable}), transforms its sprites to the
+        current pose.
         """
         for display in self.actuals:
             try:

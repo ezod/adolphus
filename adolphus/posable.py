@@ -17,6 +17,14 @@ from .visualization import visual, Visualizable
 class Posable(object):
     """\
     Posable base class.
+
+    A L{Posable} is a geometric object which may be queried for its 3D L{Pose}.
+    In the simplest case, the pose is absolute with respect to the world
+    coordinate system. Alternatively, the object may be mounted on another
+    L{Posable}; in this case, the stored pose is relative, and the absolute
+    pose is computed by composition with the pose (and mount pose) of the object
+    on which it is mounted. The mount pose is a pose relative to the object
+    describing the "starting point" of the pose of a mounted object.
     """
     def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None):
         """\
@@ -64,9 +72,6 @@ class Posable(object):
 
     @mount.setter
     def mount(self, value):
-        """\
-        Set the mount of this posable.
-        """
         if self._mount:
             self._mount.children.discard(self)
         self._mount = value
@@ -77,7 +82,9 @@ class Posable(object):
 
     def set_absolute_pose(self, pose):
         """\
-        Set the absolute (world frame) pose of the object.
+        Set the absolute (world frame) pose of the object. If the object is
+        mounted, this computes the necessary relative pose to achieve the
+        specified absolute pose.
 
         @param pose: The absolute pose to set.
         @type pose: L{Pose}
@@ -113,6 +120,11 @@ class Posable(object):
 class OcclusionTriangle(Posable, Visualizable):
     """\
     Triangle in 3D space used for polyhedral occlusion.
+
+    This is essentially a wrapper around the basic L{Triangle} object allowing
+    it to be posed and visualized. Usually, this class is instantiated based on
+    occluding triangle definitions in L{SceneObject} sprites, or somewhat more
+    directly by a L{SceneTriangle} object.
     """
     def __init__(self, vertices, pose=Pose(), mount=None):
         """\
@@ -183,7 +195,13 @@ class OcclusionTriangle(Posable, Visualizable):
 
 class SceneObject(Posable, Visualizable):
     """\
-    Sprite-based scene object.
+    Sprite-based scene object class.
+
+    A L{SceneObject} is a L{Posable}-L{Visualizable} base class for regular
+    objects in the scene. Beyond the basic functionality of the parent classes,
+    it allows a set of occluding triangles to be defined, which in general
+    defines an occluding polyhedral solid, and maintains a public set of
+    L{OcclusionTriangle} objects.
     """
     def __init__(self, name, pose=Pose(), mount_pose=Pose(), mount=None,
                  primitives=[], triangles=[]):
@@ -227,7 +245,8 @@ class SceneObject(Posable, Visualizable):
 
     def toggle_triangles(self):
         """\
-        Toggle display of occluding triangles in the visualization.
+        Toggle display of occluding triangles in the visualization. This fades
+        the object sprites so that the opaque triangles can be seen clearly.
         """
         if self._triangles_view:
             self.opacity = 1.0
@@ -258,7 +277,11 @@ class SceneTriangle(SceneObject):
     def __init__(self, name, vertices, pose=Pose(), mount_pose=Pose(),
                  mount=None):
         """\
-        Plain triangle directly in the scene.
+        Scene triangle class.
+
+        A L{SceneTriangle} object is a very basic L{SceneObject} with no
+        explicit sprites and only a single occluding triangle (which acts
+        implicitly as its sprite).
         """
         self.triangle = OcclusionTriangle(vertices, pose=pose, mount=mount)
         super(SceneTriangle, self).__init__(name, pose=self.triangle.pose,
@@ -274,9 +297,6 @@ class SceneTriangle(SceneObject):
 
     @mount.setter
     def mount(self, value):
-        """\
-        Set the mount of this scene triangle.
-        """
         if self._mount:
             self._mount.children.discard(self)
         self._mount = value
@@ -299,7 +319,17 @@ class SceneTriangle(SceneObject):
 
 class Robot(SceneObject):
     """\
-    Sprite-based robot.
+    Sprite-based robot class.
+
+    A L{Robot} object is a composite L{SceneObject}. Externally, it mimics the
+    basic L{SceneObject} interface. Internally, it is composed of a number of
+    sub-objects called "pieces" mounted sequentially; the overall pose affects
+    the base (first piece), and the mount pose is taken from the end effector
+    (last piece). The configuration of the pieces is dictated by each piece's
+    pose and mount pose, which are essentially joints and offsets of forward
+    kinematics, although the poses are arbitrary. The joint configuration
+    string induces a set of such poses based on its definition (a range of
+    possible joint values and whether the joint is revolute or prismatic).
     """
     def __init__(self, name, pose=Pose(), mount=None, pieces=[], config=None,
                  occlusion=True):
@@ -334,7 +364,7 @@ class Robot(SceneObject):
     @property
     def config(self):
         """\
-        The configuration of the robot.
+        The configuration of this robot.
 
         @rtype: C{list} of C{float}
         """
@@ -342,12 +372,6 @@ class Robot(SceneObject):
 
     @config.setter
     def config(self, value):
-        """\
-        Set the configuration of the robot.
-
-        @param value: The configuration of the robot.
-        @type value: C{list} of C{float}
-        """
         if not len(value) == len(self.pieces):
             raise ValueError('incorrect configuration length')
         for i, position in enumerate(value):
@@ -362,6 +386,9 @@ class Robot(SceneObject):
 
     @property
     def visible(self):
+        """\
+        Visibility of this robot.
+        """
         return self._visible
 
     @visible.setter
@@ -389,9 +416,9 @@ class Robot(SceneObject):
 
     def mount_pose(self):
         """\
-        Return the overall pose transformation to the tool end.
+        Return the overall pose transformation to the end effector.
 
-        @return: The overall tool pose.
+        @return: The overall end effector pose.
         @rtype: L{Pose}
         """
         return self.pieces[-1].mount_pose()
@@ -425,6 +452,18 @@ class Robot(SceneObject):
 
     @staticmethod
     def generate_joint_pose(joint, position=None):
+        """\
+        Generate the pose of the piece required to effect the forward kinematic
+        transformation induced by the position value subject to joint
+        properties.
+
+        @param joint: The joint description.
+        @type joint: C{dict}
+        @param position: The position to set (if None, use home position).
+        @type position: C{float}
+        @return: The pose induced by the forward kinematic transformation.
+        @rtype: L{Pose}
+        """
         if position is None:
             position = joint['home']
         else:
@@ -432,7 +471,8 @@ class Robot(SceneObject):
                 raise ValueError('position out of joint range')
         if joint['type'] == 'revolute':
             position *= pi / 180.0
-            return Pose(R=Rotation.from_axis_angle(position, Point(joint['axis'])))
+            return Pose(R=Rotation.from_axis_angle(position,
+                Point(joint['axis'])))
         elif joint['type'] == 'prismatic':
             return Pose(T=(position * Point(joint['axis'])))
         else:
