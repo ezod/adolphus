@@ -40,6 +40,11 @@ TP_DEFAULTS = {'boundary_padding': 0.0,
 class PointCache(dict):
     """\
     Point cache class.
+
+    The L{PointCache} object attempts to improve the efficiency of operations
+    involving relevance models and discrete coverage functions. It provides the
+    equivalent of standard fuzzy intersection and union via the C{&} and C{|}
+    operators, respectively. It also provides a visualization method.
     """
     def __or__(self, other):
         if len(self) < len(other):
@@ -83,9 +88,14 @@ class PointCache(dict):
         except AttributeError:
             pass
 
-    def visualize(self):
+    def visualize(self, color=(1, 0, 0), scale=1.0):
         """\
         Visualize the point cache, with opacity representing coverage strength.
+
+        @param color: The color of the points.
+        @type color: C{tuple} of C{float}
+        @param scale: The relative scale of the points.
+        @type scale: C{float}
         """
         try:
             self.visual.visible = False
@@ -94,11 +104,11 @@ class PointCache(dict):
             pass
         primitives = []
         for point in set([point for point in self if self[point]]):
-            primitives.append({'type': 'sphere', 'pos': point[:3], 'radius': 3,
-                'color': [1, 0, 0], 'opacity': self[point]})
+            primitives.append({'type': 'sphere', 'pos': point[:3],
+                'radius': 3 * scale, 'color': color, 'opacity': self[point]})
             try:
                 primitives.append({'type': 'arrow', 'pos': point[:3],
-                    'axis': point.direction_unit * 30, 'color': [1, 0, 0],
+                    'axis': point.direction_unit * 30 * scale, 'color': color,
                     'opacity': self[point]})
             except AttributeError:
                 pass
@@ -109,8 +119,22 @@ class PointCache(dict):
 class RelevanceModel(Posable):
     """\
     Relevance model class.
+
+    A L{RelevanceModel} object is functionally a posable set of discrete
+    relevance function points. In practice it manages two L{PointCache}
+    objects: a static original and a volatile version mapped through the pose.
     """
     def __init__(self, original, pose=Pose(), mount=None):
+        """\
+        Constructor.
+
+        @param original: The original set of relevance model points.
+        @type original: L{PointCache}
+        @param pose: The pose of this relevance model.
+        @type pose: L{Pose}
+        @param mount: The mount of this relevance model.
+        @type mount: L{SceneObject}
+        """
         super(RelevanceModel, self).__init__(pose=pose, mount=mount)
         self._original = original
 
@@ -164,6 +188,10 @@ class RelevanceModel(Posable):
 class Camera(SceneObject):
     """\
     Single-camera coverage strength model.
+
+    A L{Camera} object implements the coverage function for a single camera
+    based on camera and task parameters. Being a L{SceneObject} itself, it also
+    provides the usual functionality of pose, visualization, and occlusion.
     """
     def __init__(self, name, params, pose=Pose(), mount=None, primitives=[],
                  active=True):
@@ -210,6 +238,9 @@ class Camera(SceneObject):
             pass
 
     def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
         self._delete_fov_data()
         super(Camera, self)._pose_changed_hook()
 
@@ -351,7 +382,7 @@ class Camera(SceneObject):
     def fov(self):
         """\
         Pre-computed angles of view and the size of the field of view at
-        M{z = 1}.
+        M{z = 1}. These are cached for efficiency.
 
         @rtype: C{dict}
         """
@@ -383,6 +414,10 @@ class Camera(SceneObject):
 
     @property
     def fov_hull(self):
+        """\
+        Vertices of the viewing frustum (region of 3-space in which coverage is
+        nonzero before occlusion).
+        """
         try:
             return self._fov_hull
         except AttributeError:
@@ -486,7 +521,9 @@ class Camera(SceneObject):
 
     def strength(self, point):
         """\
-        Return the coverage strength for a directional point.
+        Return the coverage strength for a directional point. Note that since
+        the L{Camera} object is not internally aware of the scene it inhabits,
+        occlusion is computed in the L{Model} object instead.
     
         @param point: The (directional) point to test.
         @type point: L{Point}
@@ -523,6 +560,10 @@ class Camera(SceneObject):
 class Model(dict):
     """\
     Multi-camera I{k}-ocular coverage strength model.
+
+    A L{Model} object, at its core, is a dictionary of the scene, including the
+    cameras. It maintains a set of keys which identify cameras, and provides a
+    variety of coverage-related functions.
     """
     def __init__(self, task_params=dict()):
         """\
@@ -591,7 +632,7 @@ class Model(dict):
     @property
     def active_cameras(self):
         """\
-        Return a set of active cameras.
+        Return the set of active cameras.
 
         @rtype: C{set}
         """
@@ -599,7 +640,7 @@ class Model(dict):
 
     def views(self, ocular=1):
         """\
-        Return a set of I{k}-ocular views from the active cameras.
+        Return the set of I{k}-ocular views from the active cameras.
 
         @param ocular: The value of I{k}.
         @type ocular: C{int}
@@ -610,9 +651,6 @@ class Model(dict):
             for view in combinations(self.active_cameras, ocular)])
 
     def _update_occlusion_cache(self):
-        """\
-        Update the occlusion cache.
-        """
         if not self._oc_needs_update:
             return
         remainder = set(self.cameras)
