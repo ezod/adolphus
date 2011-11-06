@@ -26,7 +26,7 @@ import yaml
 
 import cython
 from .geometry import Point, DirectionalPoint
-from .visualization import visual, Sprite
+from .visualization import Sprite
 from .posable import Robot
 from .yamlparser import YAMLParser
 
@@ -102,13 +102,13 @@ def cmd_axes(ex, args):
     """\
     Toggle display of 3D axes.
     """
-    ex.display.axes.visible = not ex.display.axes.visible
+    ex.axes.visible = not ex.axes.visible
 
 def cmd_centerdot(ex, args):
     """\
     Toggle display of a center indicator dot.
     """
-    ex.display.cdot.visible = not ex.display.cdot.visible
+    ex.centerdot.visible = not ex.centerdot.visible
 
 def cmd_setcenter(ex, args):
     """\
@@ -118,7 +118,9 @@ def cmd_setcenter(ex, args):
     """
     if ex.display.in_camera_view:
         raise CommandError('cannot set center in camera view')
-    ex.display.set_center((float(args[0]), float(args[1]), float(args[2])))
+    pos = (float(args[0]), float(args[1]), float(args[2]))
+    ex.display.set_center(pos)
+    ex.centerdot.pos = pos
 
 def cmd_shiftcenter(ex, args):
     """\
@@ -132,6 +134,7 @@ def cmd_shiftcenter(ex, args):
     for i in range(3):
         pos[i] += float(args[i])
     ex.display.set_center(tuple(pos))
+    ex.centerdot.pos = tuple(pos)
 
 def cmd_triangles(ex, args):
     """\

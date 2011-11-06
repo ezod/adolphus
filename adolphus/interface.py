@@ -49,21 +49,6 @@ class Display(visual.display):
         self.rmax = 18000
         self._stored_view = None
 
-        # center marker
-        self.cdot = visual.sphere(pos=self.center, radius=5, color=(0, 0, 1),
-            material=visual.materials.emissive, visible=False)
-
-        # axes
-        self.axes = visual.frame(visible=False)
-        axes = ['X', 'Y', 'Z']
-        for axis in range(3):
-            visual.arrow(frame=self.axes, shaftwidth=3,
-                color=(0, 0, 1), axis=tuple([i == axis and 150 or 0 \
-                for i in range(3)]))
-            visual.label(frame=self.axes, height=vsettings['textsize'], 
-            color=(1, 1, 1), background=(0, 0, 0), text=axes[axis], 
-            pos=tuple([i == axis and 165 or 0 for i in range(3)]))
-
         # command/message box
         self._messagebox = visual.label(pos=center, background=(0, 0, 0),
             height=vsettings['textsize'] * 2, color=(1, 1, 1), visible=False)
@@ -76,7 +61,6 @@ class Display(visual.display):
         @type pos: C{tuple} of C{float}
         """
         self.center = visual.vector(pos)
-        self.cdot.pos = self.center
         self._messagebox.pos = self.center
 
     def camera_view(self, camera=None):
@@ -105,7 +89,6 @@ class Display(visual.display):
             self.range = max(camera.fov['sahl'], camera.fov['sahr'],
                              camera.fov['savb'], camera.fov['savt']) \
                          * camera.getparam('zS') * 1.2
-            self.cdot.pos = self.center
             self._messagebox.pos = self.center
         else:
             if not self._stored_view:
@@ -114,7 +97,6 @@ class Display(visual.display):
                 self.__setattr__(key, self._stored_view[key])
             self.up = (0, 0, 1)
             self.userspin = True
-            self.cdot.pos = self.center
             self._messagebox.pos = self.center
             self._stored_view = None
 
@@ -205,6 +187,33 @@ class Experiment(threading.Thread):
         self.valvis = {}
 
         self._cam_vis = []
+
+        # center marker
+        self.centerdot = Sprite([{'type':       'sphere',
+                                  'radius':     5,
+                                  'color':      [0, 0, 1],
+                                  'material':   visual.materials.emissive}])
+        self.centerdot.visible = False
+        
+        # axes
+        primitives = []
+        for i, axname in enumerate(['X', 'Y', 'Z']):
+            axis = [0, 0, 0]
+            axis[i] += 150
+            primitives.append({'type':          'arrow',
+                               'axis':          axis,
+                               'shaftwidth':    3,
+                               'color':         [0, 0, 1],
+                               'material':      visual.materials.emissive})
+            axis[i] += 15
+            primitives.append({'type':          'label',
+                               'pos':           axis,
+                               'text':          axname,
+                               'height':        vsettings['textsize'],
+                               'color':         [1, 1, 1],
+                               'background':    [0, 0, 0]})
+        self.axes = Sprite(primitives)
+        self.axes.visible = False
 
         # camera modifier
         primitives = []
