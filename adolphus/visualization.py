@@ -41,8 +41,13 @@ class Sprite(visual.frame):
         """\
         Constructor.
 
-        @param primitives: A formatted list of visual primitives.
-        @type primitives: C{dict}
+        @param primitives: A formatted list of visual primitives. Each element
+                           of the list is a dictionary; C{type} keys the Visual
+                           object class, and the remainder of the keys are
+                           passed as keyword arguments to its constructor.
+                           Materials and textures are dereferenced from strings
+                           if necessary.
+        @type primitives: C{list} of C{dict}
         @param parent: The parent object of this sprite.
         @type parent: C{object}
         @param frame: The parent frame for the sprite.
@@ -52,6 +57,15 @@ class Sprite(visual.frame):
         self.primitives = primitives
         self.members = []
         for primitive in self.primitives:
+            if 'material' in primitive \
+            and isinstance(primitive['material'], str):
+                primitive['material'] = \
+                    getattr(visual.materials, primitive['material'])
+            elif 'texture' in primitive \
+            and isinstance(primitive['texture'], str):
+                primitive['material'] = visual.materials.texture(data=\
+                    visual.materials.loadTGA(primitive['texture']),
+                    mapping=primitive['mapping'])
             primitive['frame'] = self
             self.members.append(getattr(visual, primitive['type'])(**primitive))
         self._opacity = 1.0
@@ -133,19 +147,9 @@ class Visualizable(object):
         """\
         Constructor.
 
-        @param primitives: A list of sprite primitive sets.
+        @param primitives: A formatted list of visual primitives.
         @type primitives: C{list} of C{dict}
         """
-        for primitive in primitives:
-            if 'material' in primitive \
-            and isinstance(primitive['material'], str):
-                primitive['material'] = \
-                    getattr(visual.materials, primitive['material'])
-            elif 'texture' in primitive \
-            and isinstance(primitive['texture'], str):
-                primitive['material'] = visual.materials.texture(data=\
-                    visual.materials.loadTGA(primitive['texture']),
-                    mapping=primitive['mapping'])
         self.primitives = primitives
         self.actuals = {}
         self.opacity = 1.0
