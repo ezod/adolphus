@@ -171,6 +171,10 @@ class Display(visual.display):
 class Experiment(threading.Thread):
     """\
     Experiment class.
+
+    An L{Experiment} object is the main interface component of Adolphus. It
+    manages a L{Model} along with any relevance models, and provides one or
+    more Visual displays and command-based interaction.
     """
     def __init__(self, zoom=False):
         """\
@@ -182,23 +186,28 @@ class Experiment(threading.Thread):
         if not visual:
             raise VisualizationError('visual module not loaded')
 
-        # main display
-        self.zoom = zoom
+        # displays
         self.display = Display(zoom=zoom)
         Visualizable.displays['main'] = self.display
         self.display.select()
         self.altdisplays = []
 
+        # generic event flag
         self.event = threading.Event()
 
+        # state variables
         self.selected = None
         self._camera_names = False
-
         self.coverage = {}
         self.fovvis = {}
         self.valvis = {}
+        self.exit = False
 
+        # model and configuration data
+        self.model = Model()
         self._cam_vis = []
+        self.relevance_models = {}
+        self.keybindings = {}
 
         # center marker
         self.centerdot = Sprite([{'type':       'sphere',
@@ -247,18 +256,13 @@ class Experiment(threading.Thread):
         self.modifier = Sprite(primitives)
         self.modifier.visible = False
 
-        self.exit = False
-        super(Experiment, self).__init__()
-
         # interface commands
         self.commands = {}
         for function in dir(commands):
             if function.startswith('cmd_'):
                 self.commands[function[4:]] = getattr(commands, function)
 
-        self.model = Model()
-        self.relevance_models = {}
-        self.keybindings = {}
+        super(Experiment, self).__init__()
 
     def add_display(self, zoom=False):
         """\
@@ -359,7 +363,7 @@ class Experiment(threading.Thread):
             if self.display.mouse.events:
                 m = self.display.mouse.getevent()
                 if m.drag == 'middle' and not self.display.in_camera_view \
-                and not self.zoom:
+                and not self.display.userzoom:
                     zoom = True
                     lastpos = m.pos
                 elif m.drop == 'middle':
@@ -438,6 +442,7 @@ class Experiment(threading.Thread):
                     if self.display.rmin < newrange < self.display.rmax:
                         self.display.range = newrange
                         lastpos = scaling * newpos
+            # process keyboard events
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
                 if k == '\n':
