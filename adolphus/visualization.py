@@ -51,7 +51,7 @@ class Sprite(visual.frame):
         @param parent: The parent object of this sprite.
         @type parent: C{object}
         @param frame: The parent frame for the sprite.
-        @type frame: L{frame<visual.frame>}
+        @type frame: C{visual.frame}
         """
         super(Sprite, self).__init__(frame=frame)
         self.primitives = primitives
