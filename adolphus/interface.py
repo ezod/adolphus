@@ -29,17 +29,21 @@ from .visualization import visual, VisualizationError, Sprite, Visualizable, \
 class Display(visual.display):
     """\
     Visual display class.
+
+    The L{Display} class is a Visual display with some default properties, a few
+    useful methods for controlling the view, and some messaging and prompting
+    functionality.
     """
-    def __init__(self, zoom=False, center=(0, 0, 0)):
+    def __init__(self, zoom=False, center=(0, 0, 0), title='Adolphus Viewer'):
         """\
-        Contstructor.
+        Constructor.
 
         @param zoom: Toggle user zoom enable.
         @type zoom: C{bool}
         @param center: Location of the center point.
         @type center: C{tuple} of C{float}
         """
-        super(Display, self).__init__(title='Adolphus Viewer', center=center,
+        super(Display, self).__init__(title=title, center=center,
             background=(1, 1, 1), foreground=(0.3, 0.3, 0.3), visible=False)
         self.forward = (-1, -1, -1)
         self.up = (0, 0, 1)
@@ -71,11 +75,15 @@ class Display(visual.display):
         @param camera: The camera object.
         @type camera: L{coverage.Camera}
         """
-        # FIXME: need to make camera invisible in this display only
+        if self.userzoom:
+            raise RuntimeError('zoom must be disabled for camera view')
         if camera:
             if self._stored_view:
                 self.camera_view()
             self.userspin = False
+            for display in camera.actuals:
+                if Visualizable.displays[display] == self:
+                    camera.actuals[display].visible = False
             self._stored_view = {'camera': camera,
                                  'forward': tuple(self.forward),
                                  'center': tuple(self.center),
@@ -93,6 +101,10 @@ class Display(visual.display):
         else:
             if not self._stored_view:
                 return
+            for display in self._stored_view['camera'].actuals:
+                if Visualizable.displays[display] == self:
+                    self._stored_view['camera'].actuals[display].visible = True
+            del self._stored_view['camera']
             for key in self._stored_view:
                 self.__setattr__(key, self._stored_view[key])
             self.up = (0, 0, 1)
