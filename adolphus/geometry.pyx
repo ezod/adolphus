@@ -939,21 +939,26 @@ def random_unit_vector():
             return rv.normal
 
 
-def random_pose_error(pose, terror, rerror):
+def pose_error(pose, taxis, terror, raxis, rerror):
     """\
-    Introduce random error of specified magnitude to a pose and return the
+    Introduce translation error of a specified magnitude and direction and
+    rotation error of a specified angle about a specified axis, and return the
     resulting pose.
 
     @param pose: The original pose.
     @type pose: L{Pose}
+    @param taxis: The axis (direction) of the translation error.
+    @type taxis: L{Point}
     @param terror: The translation error in units of distance.
     @type terror: C{float}
+    @param raxis: The axis of the rotation error.
+    @type raxis: L{Point}
     @param rerror: The rotation error in radians.
     @type rerror: L{Angle}
-    @return: The pose with introduced random error.
+    @return: The pose with introduced error.
     @rtype: L{Pose}
     """
     T, R = pose.T, pose.R
-    T += terror * random_unit_vector()
-    R = Rotation.from_axis_angle(rerror, random_unit_vector()) + R
+    T += terror * taxis.normal
+    R = Rotation.from_axis_angle(rerror, raxis.normal) + R
     return Pose(T=T, R=R)
