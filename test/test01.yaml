@@ -16,18 +16,12 @@ model:
           o:            [680, 512]
           dim:          [1360, 1024]
           zS:           1200
-          pose:
-              T:            [0, 0, 0]
-              R:            [1, [0, 0, 0]]
-              Rformat:      quaternion
 
     scene:
         - name:         RV1A
           robot:        robots/mitsubishirv1a.yaml
           pose:
               T:            [0, -500, 0]
-              R:            [1, [0, 0, 0]]
-              Rformat:      quaternion
         - name:         P1a
           vertices:
             - [-100, -80, 1100]

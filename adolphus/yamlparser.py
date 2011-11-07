@@ -75,27 +75,33 @@ class YAMLParser(object):
         @return: The parsed pose.
         @rtype: L{Pose}
         """
-        T = Point(pose['T'])
-        if pose['Rformat'] == 'quaternion':
-            R = Rotation(Quaternion(pose['R']))
-        elif pose['Rformat'] == 'matrix':
-            R = Rotation.from_rotation_matrix(pose['R'])
-        elif pose['Rformat'].startswith('axis-angle'):
-            unit = pose['Rformat'].split('-')[2]
-            if unit == 'deg':
-                angle = pose['R'][0] * pi / 180.0
-            else:
-                angle = pose['R'][0]
-            R = Rotation.from_axis_angle(angle, Point(pose['R'][1]))
-        elif pose['Rformat'].startswith('euler'):
-            convention, unit = pose['Rformat'].split('-')[1:]
-            if unit == 'deg':
-                R = [r * pi / 180.0 for r in pose['R']]
-            else:
-                R = pose['R']
-            R = Rotation.from_euler(convention, (R[0], R[1], R[2]))
+        if 'T' in pose:
+            T = Point(pose['T'])
         else:
-            raise ValueError('unrecognized rotation format')
+            T = Point()
+        if 'R' in pose:
+            if pose['Rformat'] == 'quaternion':
+                R = Rotation(Quaternion(pose['R']))
+            elif pose['Rformat'] == 'matrix':
+                R = Rotation.from_rotation_matrix(pose['R'])
+            elif pose['Rformat'].startswith('axis-angle'):
+                unit = pose['Rformat'].split('-')[2]
+                if unit == 'deg':
+                    angle = pose['R'][0] * pi / 180.0
+                else:
+                    angle = pose['R'][0]
+                R = Rotation.from_axis_angle(angle, Point(pose['R'][1]))
+            elif pose['Rformat'].startswith('euler'):
+                convention, unit = pose['Rformat'].split('-')[1:]
+                if unit == 'deg':
+                    R = [r * pi / 180.0 for r in pose['R']]
+                else:
+                    R = pose['R']
+                R = Rotation.from_euler(convention, (R[0], R[1], R[2]))
+            else:
+                raise ValueError('unrecognized rotation format')
+        else:
+            R = Rotation()
         return Pose(T, R)
 
     def _parse_primitives(self, sprite):
