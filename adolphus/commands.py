@@ -206,8 +206,8 @@ def cmd_pose(ex, args, response='pickle'):
                 elif args[1] == 'matrix':
                     flatpose += tuple(pose.R.to_rotation_matrix().flatten())
                 elif args[1] == 'axis-angle':
-                    axis, angle = pose.R.to_axis_angle()
-                    flatpose += tuple(axis) + (angle,)
+                    angle, axis = pose.R.to_axis_angle()
+                    flatpose += (angle,) + tuple(axis)
                 elif args[1] == 'euler-zyx':
                     flatpose += tuple(pose.R.to_euler_zyx())
                 else:
@@ -227,7 +227,7 @@ def cmd_pose(ex, args, response='pickle'):
                         + '\t%.4f\t%.4f\t%.4f') \
                         % tuple(pose.R.to_rotation_matrix().flatten())
                 elif args[1] == 'axis-angle':
-                    axis, angle = pose.R.to_axis_angle()
+                    angle, axis = pose.R.to_axis_angle()
                     return tstr + \
                         u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' \
                         % ((angle,) + axis)

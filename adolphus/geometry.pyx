@@ -630,13 +630,13 @@ class Rotation(object):
         representation.
 
         @return: Axis and angle rotation form.
-        @rtype: C{tuple} of L{Point} and L{Angle}
+        @rtype: C{tuple} of L{Angle} and L{Point}
         """
         theta = Angle(copysign(2.0 * acos(self.Q.a), self.Q.v.magnitude))
         try:
-            return (self.Q.v.normal, theta)
+            return (theta, self.Q.v.normal)
         except ValueError:
-            return (Point((1.0, 0.0, 0.0)), theta)
+            return (theta, Point((1.0, 0.0, 0.0)))
 
     def to_euler_zyx(self):
         """\
