@@ -46,7 +46,9 @@ def cmd_loadmodel(ex, args):
     cmd_clear(ex, [])
     cmd_modify(ex, [])
     cmd_cameraview(ex, [])
-    # TODO: clean up other visual stuff
+    cmd_cameranames(ex, [])
+    for sceneobject in ex.model:
+        ex.model[sceneobject].visible = False
     try:
         del ex.model
     except AttributeError:
@@ -56,6 +58,7 @@ def cmd_loadmodel(ex, args):
     ex._cam_vis = [primitive for objects in \
         [ex.model[cam].actuals['main'].objects for cam in ex.model.cameras] \
         for primitive in objects]
+    ex.display.select()
 
 def cmd_loadconfig(ex, args):
     """\
