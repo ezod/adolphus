@@ -168,7 +168,10 @@ def cmd_cameraview(ex, args):
         except KeyError:
             raise CommandError('invalid camera name')
     else:
-        ex.display.camera_view()
+        try:
+            ex.display.camera_view()
+        except RuntimeError:
+            pass
 
 def cmd_fov(ex, args):
     """\
