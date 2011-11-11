@@ -50,10 +50,9 @@ def cmd_loadmodel(ex, args):
     for sceneobject in ex.model:
         ex.model[sceneobject].visible = False
     try:
-        del ex.model
-    except AttributeError:
-        pass
-    ex.model, ex.relevance_models = YAMLParser(args[0]).experiment
+        ex.model, ex.relevance_models = YAMLParser(args[0]).experiment
+    except IOError, e:
+        raise CommandError(e)
     ex.model.visualize()
     ex._cam_vis = [primitive for objects in \
         [ex.model[cam].actuals['main'].objects for cam in ex.model.cameras] \
@@ -68,7 +67,9 @@ def cmd_loadconfig(ex, args):
     """
     try:
         config = yaml.load(open(args[0]))
-    except (IndexError, IOError):
+    except IOError, e:
+        raise CommandError(e)
+    except IndexError:
         import pkg_resources
         config = yaml.load(pkg_resources.resource_string(__name__,
             'resources/config.yaml'))
