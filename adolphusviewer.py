@@ -32,5 +32,9 @@ if __name__ == '__main__':
     parser.add_option('-z', '--zoom', dest='zoom', default=False,
         action='store_true', help='disable camera view and use visual zoom')
     opts, args = parser.parse_args()
+    if opts.socket:
+        port = opts.port
+    else:
+        port = None
     viewer_main(modelfile=(args and args[0] or None), config=opts.conf,
-        zoom=opts.zoom, port=(opts.socket and opts.port or None))
+        zoom=opts.zoom, port=port)
