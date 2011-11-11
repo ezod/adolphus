@@ -6,7 +6,7 @@ from optparse import OptionParser
 from adolphus import Experiment, Controller
 
 
-def viewer_main(modelfile=None, config=None, zoom=False, port=None):
+def viewer_main(modelfile=None, config='', zoom=False, port=None):
     experiment = Experiment(zoom=zoom)
     if modelfile:
         experiment.execute('loadmodel %s' % modelfile)
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         action='store_true', help='enable socket controller')
     parser.add_option('-p', '--port', dest='port', default=0, type=int,
         help='port for the socket controller to listen on')
-    parser.add_option('-c', '--conf', dest='conf', default=None, 
+    parser.add_option('-c', '--conf', dest='conf', default='', 
         help='custom configuration file to load')
     parser.add_option('-z', '--zoom', dest='zoom', default=False,
         action='store_true', help='disable camera view and use visual zoom')
