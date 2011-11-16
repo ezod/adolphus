@@ -2,28 +2,34 @@ description:    NET iCube NS Camera
 primitives:
     # lens mount
     - type:         cylinder
-      pos:          [0, 0, -2]
+      pos:          [0, 0, -4]
+      radius:       14.75
+      axis:         [0, 0, 4]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [0, 0, -6]
       radius:       13
       axis:         [0, 0, 2]
       color:        [0.1, 0.1, 0.1]
       material:     plastic
     # camera body
     - type:         box
-      pos:          [0, 0, -4]
+      pos:          [0, 0, -8]
       length:       30
       height:       30.5
       width:        4
       color:        [0.1, 0.1, 0.1]
       material:     plastic
     - type:         box
-      pos:          [0, 0, -19.5]
+      pos:          [0, 0, -23.5]
       length:       30
       height:       30.5
       width:        27
       color:        [1, 1, 1]
       material:     plastic
     - type:         box
-      pos:          [0, 0, -34]
+      pos:          [0, 0, -38]
       length:       30
       height:       30.5
       width:        2

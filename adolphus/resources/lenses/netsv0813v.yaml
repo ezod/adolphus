@@ -1,0 +1,27 @@
+description:    NET SV-0813V
+primitives:
+    - type:         cylinder
+      pos:          [0, 0, 0]
+      radius:       14.75
+      axis:         [0, 0, 26]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [0, 0, 26]
+      radius:       14
+      axis:         [0, 0, 8]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [0, 0, 34]
+      radius:       13
+      axis:         [0, 0, 2]
+      color:        [0.3, 0.7, 0.8]
+      opacity:      0.5
+      material:     plastic
+    - type:         ring
+      pos:          [0, 0, 35]
+      radius:       13
+      axis:         [0, 0, 1]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
