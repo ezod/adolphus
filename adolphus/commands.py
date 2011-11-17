@@ -201,7 +201,6 @@ def cmd_pose(ex, args, response='pickle'):
     usage: %s name [rformat]
     """
     try:
-        # TODO: should work for any object - need to flatten namespace
         pose = ex.model[args[0]].pose
         if response == 'pickle':
             return pickle.dumps(pose)
@@ -247,7 +246,7 @@ def cmd_pose(ex, args, response='pickle'):
             except IndexError:
                 return tstr + 'R: %s' % (pose.R.Q,)
     except KeyError:
-        raise CommandError('invalid camera name')
+        raise CommandError('invalid object name')
 
 def cmd_modify(ex, args):
     """\
@@ -258,12 +257,11 @@ def cmd_modify(ex, args):
     """
     if len(args):
         try:
-            # TODO: should work for any object - need to flatten namespace
             ex.modifier.pos = ex.model[args[0]].pose.T
             ex.modifier.visible = True
             ex.modifier.parent = ex.model[args[0]]
         except KeyError:
-            raise CommandError('invalid camera name')
+            raise CommandError('invalid object name')
     else:
         ex.modifier.visible = False
         ex.modifier.parent = None
