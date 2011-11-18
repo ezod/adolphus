@@ -356,26 +356,21 @@ class Camera(SceneObject):
         self._zn, self._zf = zn, zf
 
     def _generate_cd(self):
-        ama = self.getparam('angle_max_acceptable')
+        aa = cos(self.getparam('angle_max_acceptable'))
         if self.getparam('angle_max_ideal') == \
            self.getparam('angle_max_acceptable'):
-            cdval = lambda rho, a, b: float(float(rho) - (a * b) - pi + ama > 0)
+            cdval = lambda sigma: float(sigma > aa)
         else:
-            ami = self.getparam('angle_max_ideal')
-            cdval = lambda rho, a, b: min(max((float(rho) - (a * b) - pi + ama) / (ama - ami), 0.0), 1.0)
+            ai = cos(self.getparam('angle_max_ideal'))
+            cdval = lambda sigma: min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
         def Cd(p):
-            if not isinstance(p, DirectionalPoint):
+            try:
+                sigma = cos(p.direction_unit.angle(-p))
+            except (ValueError, AttributeError):
+                # p is at origin or not a directional point
                 return 1.0
-            r = sqrt(p.x ** 2 + p.y ** 2)
-            try:
-                terma = (p.y / r) * sin(p.eta) + (p.x / r) * cos(p.eta)
-            except ZeroDivisionError:
-                terma = 1.0
-            try:
-                termb = atan(r / p.z)
-            except ZeroDivisionError:
-                termb = pi / 2.0
-            return cdval(p.rho, terma, termb)
+            else:
+                return cdval(sigma)
         self.Cd = Cd
 
     @property
