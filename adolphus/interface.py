@@ -356,7 +356,7 @@ class Experiment(threading.Thread):
             # clear mesages after a while
             if self.display._messagebox.visible:
                 msgctr += 1
-            if msgctr > 10 * len(self.display._messagebox.text):
+            if msgctr > 10 * max(len(self.display._messagebox.text), 10):
                 self.display.message()
                 msgctr = 0
             # process mouse events
