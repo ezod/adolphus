@@ -364,8 +364,8 @@ def cmd_coverage(ex, args, response='pickle'):
                 for key in performance])
     except KeyError:
         raise CommandError('invalid relevance model name')
-    except ValueError:
-        raise CommandError('too few active cameras')
+    except Exception, e:
+        raise CommandError(e)
     finally:
         ex.display.userspin = True
 
