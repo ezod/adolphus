@@ -16,6 +16,7 @@ from copy import copy
 
 import cython
 from .coverage import PointCache, RelevanceModel, Camera, Model, TP_DEFAULTS
+from .laser import LineLaser
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import SceneObject, SceneTriangle, Robot
 
@@ -201,6 +202,9 @@ class YAMLParser(object):
             except KeyError:
                 pass
         rmodel = Model(task_params=task_params)
+        for objecttype in ['cameras', 'lasers', 'scene']:
+            if not objecttype in model:
+                model[objecttype] = []
         # parse cameras
         for camera in model['cameras']:
             # parse pose
@@ -220,9 +224,21 @@ class YAMLParser(object):
             rmodel[camera['name']] = Camera(camera['name'], camera, pose=pose,
                 mount=None, primitives=sprites, active=active)
             self._mounts[camera['name']] = rmodel[camera['name']]
+        # parse lasers
+        for laser in model['lasers']:
+            # parse pose
+            try:
+                pose = self._parse_pose(laser['pose'])
+            except KeyError:
+                pose = Pose()
+            # parse sprites
+            sprites = reduce(lambda a, b: a + b, [self.\
+                _parse_primitives(sprite) for sprite in laser['sprites']])
+            # create laser
+            rmodel[laser['name']] = LineLaser(laser['name'], laser['fan'],
+                laser['depth'], pose=pose, mount=None, primitives=sprites)
+            self._mounts[laser['name']] = rmodel[laser['name']]
         # parse scene
-        if not 'scene' in model:
-            model['scene'] = []
         for item in model['scene']:
             # parse pose
             try:
