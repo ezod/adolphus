@@ -178,8 +178,8 @@ class OcclusionTriangle(Posable, Visualizable):
         @type pa: L{Point}
         @param pb: The second point.
         @type pb: L{Point}
-        @return: True if intersection exists.
-        @rtype: C{bool}
+        @return: The point of intersection.
+        @rtype: L{Point}
         """
         return self.mapped_triangle.intersection(pa, pb)
 
