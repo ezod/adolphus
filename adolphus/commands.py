@@ -385,6 +385,38 @@ def cmd_coverage(ex, args, response='pickle'):
     finally:
         ex.display.userspin = True
 
+def cmd_rangecoverage(ex, args, response='pickle'):
+    """
+    usage: %s ocular laser target pitch
+    """
+    cmd_clear(ex, [])
+    try:
+        ex.display.message('Calculating range imaging coverage...')
+        ex.display.userspin = False
+        try:
+            ocular, laser, target, pitch = \
+                int(args[0]), args[1], args[2], float(args[3])
+        except IndexError:
+            raise CommandError('incorrect arguments')
+        relevance = ex.model[laser].project(ex.model[target], pitch)
+        cid = '%s-%s-%g' % (laser, target, pitch)
+        ex.coverage[cid] = ex.model.coverage(relevance, ocular=ocular)
+        ex.coverage[cid].visualize()
+        performance = ex.model.performance(relevance, ocular=ocular,
+            coverage=ex.coverage[cid])
+        if response == 'pickle':
+            return pickle.dumps(performance)
+        elif response == 'csv':
+            return '%s:%f#' % (cid, performance)
+        elif response == 'text':
+            return '%s: %.4f' % (cid, performance)
+    except KeyError:
+        raise CommandError('invalid laser or target name')
+    except Exception, e:
+        raise CommandError(e)
+    finally:
+        ex.display.userspin = True
+
 def cmd_showval(ex, args):
     """
     Display a value in [0, 1] in 'bar graph' style next to the specified camera,
