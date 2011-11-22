@@ -100,7 +100,10 @@ class Sprite(visual.frame):
         """
         for i, member in enumerate(self.members):
             if not self._highlighted:
-                self.primitives[i]['color'] = member.color
+                if isinstance(member.color, tuple):
+                    self.primitives[i]['color'] = tuple(member.color)
+                else:
+                    self.primitives[i]['color'] = tuple(member.color[0])
                 self.primitives[i]['material'] = member.material
                 member.material = visual.materials.emissive
             member.color = color
