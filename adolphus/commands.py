@@ -271,16 +271,16 @@ def cmd_modify(ex, args):
     
     usage: %s [name]
     """
-    if len(args):
-        try:
-            ex.modifier.pos = ex.model[args[0]].pose.T
-            ex.modifier.visible = True
-            ex.modifier.parent = ex.model[args[0]]
-        except KeyError:
-            raise CommandError('invalid object name')
-    else:
-        ex.modifier.visible = False
-        ex.modifier.parent = None
+    try:
+        if len(args) and not ex.modifier.parent == ex.model[args[0]]:
+                ex.modifier.pos = ex.model[args[0]].pose.T
+                ex.modifier.visible = True
+                ex.modifier.parent = ex.model[args[0]]
+        else:
+            ex.modifier.visible = False
+            ex.modifier.parent = None
+    except KeyError:
+        raise CommandError('invalid object name')
 
 def cmd_position(ex, args, response='pickle'):
     """\
