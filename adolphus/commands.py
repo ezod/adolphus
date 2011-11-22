@@ -54,8 +54,8 @@ def cmd_loadmodel(ex, args):
     except IOError, e:
         raise CommandError(e)
     ex.model.visualize()
-    ex._cam_vis = [primitive for objects in \
-        [ex.model[cam].actuals['main'].objects for cam in ex.model.cameras] \
+    ex._sceneobject_vis = [primitive for objects in \
+        [ex.model[obj].actuals['main'].objects for obj in ex.model] \
         for primitive in objects]
     ex.display.select()
 
@@ -189,6 +189,22 @@ def cmd_fov(ex, args):
             ex.fovvis[args[0]].frame = ex.model[args[0]].actuals['main']
         except KeyError:
             raise CommandError('invalid camera name')
+
+def cmd_laser(ex, args):
+    """\
+    Toggle display of the laser sheet for the specified line laser.
+
+    usage: %s name
+    """
+    if args[0] in ex.laservis:
+        ex.laservis[args[0]].visible = not ex.laservis[args[0]].visible
+    else:
+        ex.display.select()
+        try:
+            ex.laservis[args[0]] = Sprite(ex.model[args[0]].laservis)
+            ex.laservis[args[0]].frame = ex.model[args[0]].actuals['main']
+        except KeyError:
+            raise CommandError('invalid laser name')
 
 ### Geometric
 

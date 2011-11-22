@@ -242,6 +242,7 @@ class SceneObject(Posable, Visualizable):
                         triangle['pose'] = -self._mount_pose
                     self.triangles.add(OcclusionTriangle(**triangle))
             self._triangles_view = False
+        self.click_actions = {'shift':  'modify %s' % name}
 
     def toggle_triangles(self):
         """\

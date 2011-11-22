@@ -43,6 +43,8 @@ class LineLaser(SceneObject):
         self._fan = Angle(fan)
         self._depth = depth
         self._generate_laservis()
+        self.click_actions = {'ctrl':   'laser %s' % name,
+                              'shift':  'modify %s' % name}
 
     @property
     def fan(self):
@@ -60,8 +62,9 @@ class LineLaser(SceneObject):
 
     def _generate_laservis(self):
         width = self.depth * tan(self.fan / 2.0)
-        self.laservis = [{'type': 'curve', 'color': (1, 0, 0), 'pos': \
-            [(0, 0, 0), (-width, 0, self.depth), (width, 0, self.depth)]}]
+        self.laservis = [{'type': 'curve', 'color': (1, 0, 0),
+            'pos': [(0, 0, 0), (-width, 0, self.depth),
+                    (width, 0, self.depth), (0, 0, 0)]}]
 
     def project(self, target, pitch):
         """\
