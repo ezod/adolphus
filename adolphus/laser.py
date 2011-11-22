@@ -96,7 +96,7 @@ class LineLaser(SceneObject):
                 elif not cp or ip.z < cp.z:
                     cp = Point(ip)
             if cp:
-                points[DirectionalPoint(cp + (pi / 2.0, pi / 2.0))] = 1.0
-                points[DirectionalPoint(cp + (pi / 2.0, -pi / 2.0))] = 1.0
+                points[DirectionalPoint(tuple(cp) + (pi / 2.0, pi / 2.0))] = 1.0
+                points[DirectionalPoint(tuple(cp) + (pi / 2.0, -pi / 2.0))] = 1.0
             x += pitch
         return RelevanceModel(points, mount=self)
