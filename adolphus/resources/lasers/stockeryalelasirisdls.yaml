@@ -1,0 +1,14 @@
+description:    StockerYale Lasiris DLS
+primitives:
+    - type:         cylinder
+      pos:          [0, 0, 0]
+      radius:       9.32
+      axis:         [0, 0, -8]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [0, 0, -8]
+      radius:       9.525
+      axis:         [0, 0, -58.17]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic

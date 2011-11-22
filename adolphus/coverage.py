@@ -222,6 +222,10 @@ class Camera(SceneObject):
         self._generate_cd()
         self._generate_fovvis()
         self.active = active
+        self.click_actions = {'none':   'active %s' % name,
+                              'ctrl':   'fov %s' % name,
+                              'alt':    'cameraview %s' % name,
+                              'shift':  'modify %s' % name}
 
     def _delete_fov_data(self):
         try:

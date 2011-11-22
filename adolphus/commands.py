@@ -54,8 +54,8 @@ def cmd_loadmodel(ex, args):
     except IOError, e:
         raise CommandError(e)
     ex.model.visualize()
-    ex._cam_vis = [primitive for objects in \
-        [ex.model[cam].actuals['main'].objects for cam in ex.model.cameras] \
+    ex._sceneobject_vis = [primitive for objects in \
+        [ex.model[obj].actuals['main'].objects for obj in ex.model] \
         for primitive in objects]
     ex.display.select()
 
@@ -190,6 +190,22 @@ def cmd_fov(ex, args):
         except KeyError:
             raise CommandError('invalid camera name')
 
+def cmd_laser(ex, args):
+    """\
+    Toggle display of the laser sheet for the specified line laser.
+
+    usage: %s name
+    """
+    if args[0] in ex.laservis:
+        ex.laservis[args[0]].visible = not ex.laservis[args[0]].visible
+    else:
+        ex.display.select()
+        try:
+            ex.laservis[args[0]] = Sprite(ex.model[args[0]].laservis)
+            ex.laservis[args[0]].frame = ex.model[args[0]].actuals['main']
+        except KeyError:
+            raise CommandError('invalid laser name')
+
 ### Geometric
 
 def cmd_pose(ex, args, response='pickle'):
@@ -255,16 +271,16 @@ def cmd_modify(ex, args):
     
     usage: %s [name]
     """
-    if len(args):
-        try:
-            ex.modifier.pos = ex.model[args[0]].pose.T
-            ex.modifier.visible = True
-            ex.modifier.parent = ex.model[args[0]]
-        except KeyError:
-            raise CommandError('invalid object name')
-    else:
-        ex.modifier.visible = False
-        ex.modifier.parent = None
+    try:
+        if len(args) and not ex.modifier.parent == ex.model[args[0]]:
+                ex.modifier.pos = ex.model[args[0]].pose.T
+                ex.modifier.visible = True
+                ex.modifier.parent = ex.model[args[0]]
+        else:
+            ex.modifier.visible = False
+            ex.modifier.parent = None
+    except KeyError:
+        raise CommandError('invalid object name')
 
 def cmd_position(ex, args, response='pickle'):
     """\
@@ -364,6 +380,38 @@ def cmd_coverage(ex, args, response='pickle'):
                 for key in performance])
     except KeyError:
         raise CommandError('invalid relevance model name')
+    except Exception, e:
+        raise CommandError(e)
+    finally:
+        ex.display.userspin = True
+
+def cmd_rangecoverage(ex, args, response='pickle'):
+    """
+    usage: %s ocular laser target pitch
+    """
+    cmd_clear(ex, [])
+    try:
+        ex.display.message('Calculating range imaging coverage...')
+        ex.display.userspin = False
+        try:
+            ocular, laser, target, pitch = \
+                int(args[0]), args[1], args[2], float(args[3])
+        except IndexError:
+            raise CommandError('incorrect arguments')
+        relevance = ex.model[laser].project(ex.model[target], pitch)
+        cid = '%s-%s-%g' % (laser, target, pitch)
+        ex.coverage[cid] = ex.model.coverage(relevance, ocular=ocular)
+        ex.coverage[cid].visualize()
+        performance = ex.model.performance(relevance, ocular=ocular,
+            coverage=ex.coverage[cid])
+        if response == 'pickle':
+            return pickle.dumps(performance)
+        elif response == 'csv':
+            return '%s:%f#' % (cid, performance)
+        elif response == 'text':
+            return '%s: %.4f' % (cid, performance)
+    except KeyError:
+        raise CommandError('invalid laser or target name')
     except Exception, e:
         raise CommandError(e)
     finally:

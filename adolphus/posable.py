@@ -178,8 +178,8 @@ class OcclusionTriangle(Posable, Visualizable):
         @type pa: L{Point}
         @param pb: The second point.
         @type pb: L{Point}
-        @return: True if intersection exists.
-        @rtype: C{bool}
+        @return: The point of intersection.
+        @rtype: L{Point}
         """
         return self.mapped_triangle.intersection(pa, pb)
 
@@ -242,6 +242,7 @@ class SceneObject(Posable, Visualizable):
                         triangle['pose'] = -self._mount_pose
                     self.triangles.add(OcclusionTriangle(**triangle))
             self._triangles_view = False
+        self.click_actions = {'shift':  'modify %s' % name}
 
     def toggle_triangles(self):
         """\
@@ -284,6 +285,7 @@ class SceneTriangle(SceneObject):
         implicitly as its sprite).
         """
         self.triangle = OcclusionTriangle(vertices, pose=pose, mount=mount)
+        self.triangle.click_actions = {'shift':  'modify %s' % name}
         super(SceneTriangle, self).__init__(name, pose=self.triangle.pose,
             mount_pose=mount_pose, mount=mount, primitives=[],
             triangles=[self.triangle])
@@ -305,6 +307,10 @@ class SceneTriangle(SceneObject):
         for child in self.children:
             child._pose_changed_hook()
         self.triangle.mount = value
+
+    @property
+    def actuals(self):
+        return self.triangle.actuals
 
     def toggle_triangles(self): pass
 

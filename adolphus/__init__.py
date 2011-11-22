@@ -21,6 +21,7 @@ import cython
 from .geometry import *
 from .posable import *
 from .coverage import *
+from .laser import *
 from .interface import *
 from .visualization import *
 from .yamlparser import *

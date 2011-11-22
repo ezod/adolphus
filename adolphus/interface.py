@@ -200,12 +200,13 @@ class Experiment(threading.Thread):
         self._camera_names = False
         self.coverage = {}
         self.fovvis = {}
+        self.laservis = {}
         self.valvis = {}
         self.exit = False
 
         # model and configuration data
         self.model = Model()
-        self._cam_vis = []
+        self._sceneobject_vis = []
         self.relevance_models = {}
         self.keybindings = {}
 
@@ -368,23 +369,18 @@ class Experiment(threading.Thread):
                     lastpos = m.pos
                 elif m.drop == 'middle':
                     zoom = False
-                elif m.click == 'left' and m.pick in self._cam_vis:
-                    if m.ctrl:
-                        self.execute('fov %s' % m.pick.frame.parent.name)
-                    elif m.alt:
-                        try:
-                            self.execute('cameraview %s' % m.pick.frame.parent.name)
-                        except VisualizationError:
-                            pass
-                    elif m.shift:
-                        if self.modifier.parent == m.pick.frame.parent:
-                            self.execute('modify')
+                elif m.click == 'left' and m.pick in self._sceneobject_vis:
+                    try:
+                        if m.ctrl:
+                            self.execute(m.pick.frame.parent.click_actions['ctrl'])
+                        elif m.alt:
+                            self.execute(m.pick.frame.parent.click_actions['alt'])
+                        elif m.shift:
+                            self.execute(m.pick.frame.parent.click_actions['shift'])
                         else:
-                            self.execute('modify %s' % m.pick.frame.parent.name)
-                    else:
-                        m.pick.frame.parent.active = \
-                            not m.pick.frame.parent.active
-                        m.pick.frame.parent.update_visualization()
+                            self.execute(m.pick.frame.parent.click_actions['none'])
+                    except KeyError:
+                        pass
                 elif m.drag == 'left' and m.pick in self.modifier.objects:
                     m.pick.color = (0, 1, 0)
                     if isinstance(m.pick, visual.arrow):
