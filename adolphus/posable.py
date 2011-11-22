@@ -285,6 +285,7 @@ class SceneTriangle(SceneObject):
         implicitly as its sprite).
         """
         self.triangle = OcclusionTriangle(vertices, pose=pose, mount=mount)
+        self.triangle.click_actions = {'shift':  'modify %s' % name}
         super(SceneTriangle, self).__init__(name, pose=self.triangle.pose,
             mount_pose=mount_pose, mount=mount, primitives=[],
             triangles=[self.triangle])
@@ -306,6 +307,10 @@ class SceneTriangle(SceneObject):
         for child in self.children:
             child._pose_changed_hook()
         self.triangle.mount = value
+
+    @property
+    def actuals(self):
+        return self.triangle.actuals
 
     def toggle_triangles(self): pass
 

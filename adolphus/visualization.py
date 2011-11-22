@@ -151,9 +151,12 @@ class Visualizable(object):
         @type primitives: C{list} of C{dict}
         """
         self.primitives = primitives
-        self.actuals = {}
         self.opacity = 1.0
         self._visible = True
+        try:
+            self.actuals = {}
+        except AttributeError:
+            pass
 
     def __del__(self):
         self.visible = False
