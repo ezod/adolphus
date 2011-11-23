@@ -12,12 +12,12 @@ from math import pi, tan
 
 import cython
 from .geometry import Angle, Pose, Point, DirectionalPoint
-from .coverage import PointCache, RelevanceModel
+from .coverage import PointCache, RelevanceModel, Camera
 from .posable import SceneObject
 
 
 class LineLaser(SceneObject):
-    """
+    """\
     Line laser class.
     """
     def __init__(self, name, fan, depth, pose=Pose(), mount=None,
@@ -96,7 +96,6 @@ class LineLaser(SceneObject):
                 elif not cp or ip.z < cp.z:
                     cp = Point(ip)
             if cp:
-                points[DirectionalPoint(tuple(cp) + (pi / 2.0, pi / 2.0))] = 1.0
-                points[DirectionalPoint(tuple(cp) + (pi / 2.0, -pi / 2.0))] = 1.0
+                points[DirectionalPoint(tuple(cp) + (0, 0))] = 1.0
             x += pitch
         return RelevanceModel(points, mount=self)

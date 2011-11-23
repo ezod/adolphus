@@ -207,6 +207,8 @@ class YAMLParser(object):
                 model[objecttype] = []
         # parse cameras
         for camera in model['cameras']:
+            if not 'features' in camera:
+                camera['features'] = []
             # parse pose
             try:
                 pose = self._parse_pose(camera['pose'])
@@ -221,8 +223,9 @@ class YAMLParser(object):
             except KeyError:
                 active = True
             # create camera
-            rmodel[camera['name']] = Camera(camera['name'], camera, pose=pose,
-                mount=None, primitives=sprites, active=active)
+            rmodel[camera['name']] = Camera(camera['name'], camera,
+                camera['features'], pose=pose, mount=None, primitives=sprites,
+                active=active)
             self._mounts[camera['name']] = rmodel[camera['name']]
         # parse lasers
         for laser in model['lasers']:
