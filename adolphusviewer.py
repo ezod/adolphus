@@ -3,7 +3,7 @@
 import sys
 from optparse import OptionParser
 
-from adolphus import Experiment, Controller
+from adolphus.interface import Experiment, Controller
 
 
 def viewer_main(modelfile=None, config='', zoom=False, port=None):

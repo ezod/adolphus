@@ -17,7 +17,6 @@ import socket
 from math import copysign
 from inspect import getargspec
 
-import cython
 import commands
 from .commands import CommandError
 from .geometry import Point, Rotation, Pose

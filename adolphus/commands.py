@@ -24,7 +24,6 @@ except ImportError:
 
 import yaml
 
-import cython
 from .geometry import Point, DirectionalPoint
 from .visualization import Sprite
 from .posable import Robot

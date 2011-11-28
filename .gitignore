@@ -1,6 +1,8 @@
 *.pyc
 *.pyo
 *.swp
-coverage/fuzz
-doc/
 adolphus.egg-info/
+doc/
+build/
+adolphus/geometry.c
+*.so

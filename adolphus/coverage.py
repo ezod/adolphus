@@ -18,7 +18,6 @@ try:
 except ImportError:
     hypergraph = None
 
-import cython
 from .geometry import Point, DirectionalPoint, Pose, Face, which_side
 from .posable import Posable, SceneObject
 from .visualization import Visualizable

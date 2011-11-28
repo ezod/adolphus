@@ -2,7 +2,7 @@
 
 from optparse import OptionParser
 
-from adolphus import Panel
+from adolphus.panel import Panel
 
 
 def panel_main(host, port):

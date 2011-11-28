@@ -16,17 +16,3 @@ if os.path.exists(module):
 
 __import__('pkg_resources').declare_namespace(__name__)
 __version__ = (0, 0, 0)
-
-import cython
-from .geometry import *
-from .posable import *
-from .coverage import *
-from .laser import *
-from .interface import *
-from .visualization import *
-from .yamlparser import *
-
-try:
-    from .panel import *
-except ImportError:
-    pass

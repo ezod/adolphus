@@ -9,7 +9,6 @@ Posable objects module.
 
 from math import pi
 
-import cython
 from .geometry import Point, Pose, Rotation, Triangle
 from .visualization import visual, Visualizable
 

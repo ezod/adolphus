@@ -14,7 +14,6 @@ from math import pi
 from functools import reduce
 from copy import copy
 
-import cython
 from .coverage import PointCache, RelevanceModel, Camera, Model, TP_DEFAULTS
 from .laser import LineLaser
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion

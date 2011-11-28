@@ -21,6 +21,13 @@ interactive tool panel (optional).
 [Epydoc] [epydoc] is required for generating API documentation (optional).
 
 
+## Development
+
+For in-place use, it is necessary to build the geometry module using Cython. This can be done by issuing the following command in the repository root:
+
+    python setup.py build_ext --inplace
+
+
 ## Related Publications
 
 * A. Mavrinac, J. L. Alarcon Herrera, and X. Chen, "[A Fuzzy Model for Coverage

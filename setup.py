@@ -5,6 +5,8 @@ VERSION = "%s.%s.%s" % __version__[0:3]
 
 from setuptools import setup
 from distutils.cmd import Command
+from Cython.Distutils import build_ext
+from Cython.Build import cythonize
 from shutil import rmtree
 import os
 import sys
@@ -48,5 +50,6 @@ setup(
     packages = [PACKAGE],
     package_data = {PACKAGE: ['resources/*']},
     test_suite = 'test',
-    cmdclass = {'doc': GenerateDoc},
+    cmdclass = {'doc': GenerateDoc, 'build_ext': build_ext},
+    ext_modules = cythonize([os.path.join(PACKAGE, 'geometry.pyx')]),
 )

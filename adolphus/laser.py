@@ -10,7 +10,6 @@ modeling laser line based range imaging cameras.
 
 from math import pi, tan
 
-import cython
 from .geometry import Angle, Pose, Point, DirectionalPoint
 from .coverage import PointCache, RelevanceModel, Camera
 from .posable import SceneObject
