@@ -3,10 +3,7 @@
 from adolphus import __version__
 VERSION = "%s.%s.%s" % __version__[0:3]
 
-from setuptools import setup
-from distutils.cmd import Command
-from Cython.Distutils import build_ext
-from Cython.Build import cythonize
+from setuptools import setup, Command, Extension
 from shutil import rmtree
 import os
 import sys
@@ -42,7 +39,7 @@ setup(
     name = NAME,
     version = VERSION,
     license = 'GPL',
-    description = 'Multi-camera network coverage modeling suite.',
+    description = 'Multi-camera system coverage modeling suite.',
     author = 'Aaron Mavrinac',
     author_email = 'mavrin1@uwindsor.ca',
     url = URL,
@@ -50,6 +47,6 @@ setup(
     packages = [PACKAGE],
     package_data = {PACKAGE: ['resources/*']},
     test_suite = 'test',
-    cmdclass = {'doc': GenerateDoc, 'build_ext': build_ext},
-    ext_modules = cythonize([os.path.join(PACKAGE, 'geometry.pyx')]),
+    cmdclass = {'doc': GenerateDoc},
+    ext_modules = [Extension('%s.geometry' % NAME, ['%s/geometry.c' % NAME])],
 )
