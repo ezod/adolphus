@@ -191,6 +191,10 @@ class Camera(SceneObject):
     A L{Camera} object implements the coverage function for a single camera
     based on camera and task parameters. Being a L{SceneObject} itself, it also
     provides the usual functionality of pose, visualization, and occlusion.
+
+    The possible options for the C{features} parameter are:
+
+        - C{range}: enable triangulation-based range camera coverage model.
     """
     def __init__(self, name, params, features, pose=Pose(), mount=None,
                  primitives=[], active=True):

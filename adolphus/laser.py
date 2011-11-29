@@ -27,7 +27,7 @@ class LineLaser(SceneObject):
         @param name: The name of the laser.
         @type name: C{str}
         @param fan: Fan angle of the laser line.
-        @type params: L{Angle}
+        @type fan: L{Angle}
         @param depth: Projection depth of the laser line.
         @type depth: C{float}
         @param pose: Pose of the laser in space (optional).
