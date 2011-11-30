@@ -3,13 +3,27 @@ Coverage model module. Contains the coverage strength model classes for single
 cameras and multi-camera networks, as well as point cache and relevance model
 classes.
 
+The available task parameters are:
+
+    - C{boundary_padding}: width of degradation boundary around image (pixels).
+    - C{res_max_ideal}: upper limit of ideal resolution range (mm/pixel).
+    - C{res_max_acceptable}: maximum acceptable resolution (mm/pixel).
+    - C{res_min_ideal}: lower limit of ideal resolution range (mm/pixel).
+    - C{res_min_acceptable}: minimum acceptable resolution (mm/pixel).
+    - C{blur_max_ideal}: ideal maximum blur circle diameter (pixels).
+    - C{blur_max_acceptable}: maximum acceptable blur circle diameter (pixels).
+    - C{angle_max_ideal}: ideal maximum view angle (radians).
+    - C{angle_max_acceptable}: maximum acceptable view angle (radians).
+
+See L{TP_DEFAULTS} for default (permissive) task parameter values.
+
 @author: Aaron Mavrinac
 @organization: University of Windsor
 @contact: mavrin1@uwindsor.ca
 @license: GPL-3
 """
 
-from math import sqrt, sin, cos, atan, pi
+from math import sin, cos, atan, pi
 from numbers import Number
 from itertools import combinations
 
@@ -18,7 +32,7 @@ try:
 except ImportError:
     hypergraph = None
 
-from .geometry import Point, DirectionalPoint, Pose, Face, which_side
+from .geometry import Point, Pose, Face, which_side
 from .posable import Posable, SceneObject
 from .visualization import Visualizable
 
@@ -31,9 +45,7 @@ TP_DEFAULTS = {'boundary_padding': 0.0,
                'blur_max_ideal': 1.0,
                'blur_max_acceptable': 1.0,
                'angle_max_ideal': pi / 2.0,
-               'angle_max_acceptable': pi / 2.0,
-               'baseline_min_acceptable': 0.0,
-               'baseline_min_ideal': 0.0}
+               'angle_max_acceptable': pi / 2.0}
 
 
 class PointCache(dict):
