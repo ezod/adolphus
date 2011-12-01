@@ -191,8 +191,6 @@ class YAMLParser(object):
             min(model['blur_max_ideal'], model['blur_max_acceptable'])
         model['angle_max_ideal'] = \
             min(model['angle_max_ideal'], model['angle_max_acceptable'])
-        model['baseline_min_ideal'] = \
-            max(model['baseline_min_ideal'], model['baseline_min_acceptable'])
         # create model
         task_params = {}
         for param in TP_DEFAULTS:
