@@ -243,6 +243,40 @@ class SceneObject(Posable, Visualizable):
             self._triangles_view = False
         self.click_actions = {'shift':  'modify %s' % name}
 
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        try:
+            del self._bounding_box
+        except AttributeError:
+            pass
+        super(SceneObject, self)._pose_changed_hook()
+
+    @property
+    def bounding_box(self):
+        """\
+        Axis-aligned bounding box of occluding triangles.
+        """
+        try:
+            return self._bounding_box
+        except AttributeError:
+            if not self.triangles:
+                self._bounding_box = None
+            else:
+                vertices = set([self.pose.map(vertex) for triangles in \
+                    [[v for v in t.triangle.vertices] for t in self.triangles] \
+                    for vertex in triangles])
+                p = vertices.pop()
+                self._bounding_box = [[p.x, p.x], [p.y, p.y], [p.z, p.z]]
+                for p in vertices:
+                    for i in range(3):
+                        if p[i] < self._bounding_box[i][0]:
+                            self._bounding_box[i][0] = p[i]
+                        elif p[i] > self._bounding_box[i][1]:
+                            self._bounding_box[i][1] = p[i]
+            return self._bounding_box
+
     def toggle_triangles(self):
         """\
         Toggle display of occluding triangles in the visualization. This fades
