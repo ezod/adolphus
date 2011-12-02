@@ -863,7 +863,7 @@ class Triangle(Face):
         Return the point of intersection of the line segment between the two
         given points with this triangle.
 
-            - T. Möller and B. Trumbore, "Fast, Minimum Storage Ray/Triangle
+            - T. Moller and B. Trumbore, "Fast, Minimum Storage Ray/Triangle
               Intersection," J. Graphics Tools, vol. 2, no. 1, pp. 21-28, 1997.
         
         @param origin: The origin of the segment.
