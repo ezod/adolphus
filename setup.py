@@ -4,7 +4,9 @@ from adolphus import __version__
 VERSION = "%s.%s.%s" % __version__[0:3]
 
 from setuptools import setup, Command, Extension
+from setuptools.command.sdist import sdist
 from shutil import rmtree
+from stat import ST_MTIME
 import os
 import sys
 
@@ -16,6 +18,7 @@ except ImportError:
 NAME = 'adolphus'
 URL = 'http://github.com/ezod/adolphus'
 PACKAGE = 'adolphus'
+
 
 class GenerateDoc(Command):
     user_options = []
@@ -35,6 +38,24 @@ class GenerateDoc(Command):
         options, names = doc.parse_arguments()
         doc.main(options, names)
 
+
+class CheckSdist(sdist):
+    def initialize_options(self):
+        sdist.initialize_options(self)
+        self._pyxfiles = []
+        for root, dirs, files in os.walk('.'):
+            for f in files:
+                if f.endswith('.pyx'):
+                    self._pyxfiles.append(os.path.join(root, f)[2:])
+
+    def run(self):
+        for pyxfile in self._pyxfiles:
+            cfile = pyxfile[:-3]+'c'
+            assert os.path.isfile(cfile), 'C source file \'%s\' not found, run \'cython %s\' before \'sdist\'.' % (cfile, pyxfile)
+            assert os.stat(cfile)[ST_MTIME] > os.stat(pyxfile)[ST_MTIME], 'C source file \'%s\' is out of date, run \'cython %s\' before \'sdist\'.' % (cfile, pyxfile)
+        sdist.run(self)
+
+
 setup(
     name = NAME,
     version = VERSION,
@@ -45,8 +66,8 @@ setup(
     url = URL,
     keywords = 'vision camera robotics model',
     packages = [PACKAGE],
-    package_data = {PACKAGE: ['resources/*']},
+    package_data = {PACKAGE: ['resources/*.*', 'resources/*/*.*']},
     test_suite = 'test',
-    cmdclass = {'doc': GenerateDoc},
+    cmdclass = {'doc': GenerateDoc, 'sdist': CheckSdist},
     ext_modules = [Extension('%s.geometry' % NAME, ['%s/geometry.c' % NAME])],
 )

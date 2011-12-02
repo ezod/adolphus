@@ -33,9 +33,6 @@ the repository root:
     cython adolphus/geometry.pyx
     python setup.py build_ext --inplace
 
-The updated C source should be committed to the repository along with the Cython
-source so that users do not need Cython installed to build the module.
-
 
 ## Related Publications
 

@@ -4,4 +4,6 @@
 adolphus.egg-info/
 doc/
 build/
+dist/
 *.so
+adolphus/geometry.c
