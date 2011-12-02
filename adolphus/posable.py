@@ -345,6 +345,13 @@ class SceneTriangle(SceneObject):
     def actuals(self):
         return self.triangle.actuals
 
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        self.triangle.set_relative_pose(self._pose)
+        super(SceneObject, self)._pose_changed_hook()
+
     def toggle_triangles(self): pass
 
     def highlight(self, color=(0, 1, 0)): self.triangle.highlight(color)
