@@ -14,10 +14,11 @@ from math import pi
 from functools import reduce
 from copy import copy
 
+from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
+from .posable import SceneObject
 from .coverage import PointCache, RelevanceModel, Camera, Model, TP_DEFAULTS
 from .laser import LineLaser
-from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
-from .posable import SceneObject, SceneTriangle, Robot
+from .robot import Robot
 
 
 class YAMLParser(object):
@@ -277,9 +278,6 @@ class YAMLParser(object):
                 rmodel[item['name']] = Robot(item['name'],
                     pose=(pose or Pose()), mount=None, pieces=pieces,
                     config=config, occlusion=occlusion)
-            elif 'vertices' in item:
-                rmodel[item['name']] = SceneTriangle(item['name'],
-                    item['vertices'], pose=pose, mount=None)
             else:
                 rmodel[item['name']] = SceneObject(item['name'],
                     pose=(pose or Pose()), mount_pose=mount_pose)

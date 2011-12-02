@@ -86,22 +86,16 @@ class TestModel01(unittest.TestCase):
 
     def test_occlusion_cache(self):
         self.model._update_occlusion_cache()
-        self.assertTrue(self.model._occlusion_cache['C']['P1a'])
-        self.assertTrue(self.model._occlusion_cache['C']['P1b'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2a'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2b'])
+        self.assertTrue(self.model._occlusion_cache['C']['P1'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2'])
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(-pi / 2.0, Point((1, 0, 0)))))
         self.model._update_occlusion_cache()
-        self.assertFalse(self.model._occlusion_cache['C']['P1a'])
-        self.assertFalse(self.model._occlusion_cache['C']['P1b'])
-        self.assertTrue(self.model._occlusion_cache['C']['P2a'])
-        self.assertTrue(self.model._occlusion_cache['C']['P2b'])
+        self.assertFalse(self.model._occlusion_cache['C']['P1'])
+        self.assertTrue(self.model._occlusion_cache['C']['P2'])
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(pi, Point((1, 0, 0)))))
         self.model._update_occlusion_cache()
-        self.assertFalse(self.model._occlusion_cache['C']['P1a'])
-        self.assertFalse(self.model._occlusion_cache['C']['P1b'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2a'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2b'])
+        self.assertFalse(self.model._occlusion_cache['C']['P1'])
+        self.assertFalse(self.model._occlusion_cache['C']['P2'])
 
 
 if __name__ == '__main__':

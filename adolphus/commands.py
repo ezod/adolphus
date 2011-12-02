@@ -26,7 +26,7 @@ import yaml
 
 from .geometry import Point, DirectionalPoint
 from .visualization import Sprite
-from .posable import Robot
+from .robot import Robot
 from .yamlparser import YAMLParser
 
 
@@ -53,9 +53,6 @@ def cmd_loadmodel(ex, args):
     except IOError, e:
         raise CommandError(e)
     ex.model.visualize()
-    ex._sceneobject_vis = [primitive for objects in \
-        [ex.model[obj].actuals['main'].objects for obj in ex.model] \
-        for primitive in objects]
     ex.display.select()
 
 def cmd_loadconfig(ex, args):

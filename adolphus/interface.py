@@ -21,6 +21,7 @@ import commands
 from .commands import CommandError
 from .geometry import Point, Rotation, Pose
 from .coverage import Model
+from .posable import SceneObject
 from .visualization import visual, VisualizationError, Sprite, Visualizable, \
                            vsettings
 
@@ -205,7 +206,6 @@ class Experiment(threading.Thread):
 
         # model and configuration data
         self.model = Model()
-        self._sceneobject_vis = []
         self.relevance_models = {}
         self.keybindings = {}
 
@@ -368,16 +368,21 @@ class Experiment(threading.Thread):
                     lastpos = m.pos
                 elif m.drop == 'middle':
                     zoom = False
-                elif m.click == 'left' and m.pick in self._sceneobject_vis:
+                elif m.click == 'left':
+                    try:
+                        obj = m.pick.frame.parent
+                        assert isinstance(obj, SceneObject)
+                    except (AttributeError, AssertionError):
+                        continue
                     try:
                         if m.ctrl:
-                            self.execute(m.pick.frame.parent.click_actions['ctrl'])
+                            self.execute(obj.click_actions['ctrl'])
                         elif m.alt:
-                            self.execute(m.pick.frame.parent.click_actions['alt'])
+                            self.execute(obj.click_actions['alt'])
                         elif m.shift:
-                            self.execute(m.pick.frame.parent.click_actions['shift'])
+                            self.execute(obj.click_actions['shift'])
                         else:
-                            self.execute(m.pick.frame.parent.click_actions['none'])
+                            self.execute(obj.click_actions['none'])
                     except KeyError:
                         pass
                 elif m.drag == 'left' and m.pick in self.modifier.objects:

@@ -7,9 +7,7 @@ Posable objects module.
 @license: GPL-3
 """
 
-from math import pi
-
-from .geometry import Point, Pose, Rotation, Triangle
+from .geometry import Point, Pose, Triangle
 from .visualization import visual, Visualizable
 
 
@@ -122,8 +120,7 @@ class OcclusionTriangle(Posable, Visualizable):
 
     This is essentially a wrapper around the basic L{Triangle} object allowing
     it to be posed and visualized. Usually, this class is instantiated based on
-    occluding triangle definitions in L{SceneObject} sprites, or somewhat more
-    directly by a L{SceneTriangle} object.
+    occluding triangle definitions in L{SceneObject} sprites.
     """
     def __init__(self, vertices, pose=Pose(), mount=None):
         """\
@@ -226,7 +223,7 @@ class SceneObject(Posable, Visualizable):
         try:
             self.triangles = set()
         except AttributeError:
-            # child class has defined a custom triangles property
+            # child class handles triangles separately
             pass
         else:
             for triangle in triangles:
@@ -240,7 +237,12 @@ class SceneObject(Posable, Visualizable):
                     except KeyError:
                         triangle['pose'] = -self._mount_pose
                     self.triangles.add(OcclusionTriangle(**triangle))
-            self._triangles_view = False
+            if not self.primitives:
+                for triangle in self.triangles:
+                    triangle.visualize()
+                self._triangles_view = True
+            else:
+                self._triangles_view = False
         self.click_actions = {'shift':  'modify %s' % name}
 
     def _pose_changed_hook(self):
@@ -282,6 +284,8 @@ class SceneObject(Posable, Visualizable):
         Toggle display of occluding triangles in the visualization. This fades
         the object sprites so that the opaque triangles can be seen clearly.
         """
+        if not self.primitives:
+            return
         if self._triangles_view:
             self.opacity = 1.0
             self.update_visualization()
@@ -305,258 +309,3 @@ class SceneObject(Posable, Visualizable):
                 child.update_visualization()
             except AttributeError:
                 pass
-
-
-class SceneTriangle(SceneObject):
-    def __init__(self, name, vertices, pose=Pose(), mount_pose=Pose(),
-                 mount=None):
-        """\
-        Scene triangle class.
-
-        A L{SceneTriangle} object is a very basic L{SceneObject} with no
-        explicit sprites and only a single occluding triangle (which acts
-        implicitly as its sprite).
-        """
-        self.triangle = OcclusionTriangle(vertices, pose=pose, mount=mount)
-        self.triangle.click_actions = {'shift':  'modify %s' % name}
-        super(SceneTriangle, self).__init__(name, pose=self.triangle.pose,
-            mount_pose=mount_pose, mount=mount, primitives=[],
-            triangles=[self.triangle])
-
-    @property
-    def mount(self):
-        """\
-        The mount of this scene triangle.
-        """
-        return self._mount
-
-    @mount.setter
-    def mount(self, value):
-        if self._mount:
-            self._mount.children.discard(self)
-        self._mount = value
-        if value:
-            value.children.add(self)
-        for child in self.children:
-            child._pose_changed_hook()
-        self.triangle.mount = value
-
-    @property
-    def actuals(self):
-        return self.triangle.actuals
-
-    def _pose_changed_hook(self):
-        """\
-        Hook called on pose change.
-        """
-        self.triangle.set_relative_pose(self._pose)
-        super(SceneObject, self)._pose_changed_hook()
-
-    def toggle_triangles(self): pass
-
-    def highlight(self, color=(0, 1, 0)): self.triangle.highlight(color)
-
-    def unhighlight(self): self.triangle.unhighlight()
-
-    def visualize(self): self.triangle.visualize()
-
-    def update_visualization(self): self.triangle.update_visualization()
-
-
-class Robot(SceneObject):
-    """\
-    Sprite-based robot class.
-
-    A L{Robot} object is a composite L{SceneObject}. Externally, it mimics the
-    basic L{SceneObject} interface. Internally, it is composed of a number of
-    sub-objects called "pieces" mounted sequentially; the overall pose affects
-    the base (first piece), and the mount pose is taken from the end effector
-    (last piece). The configuration of the pieces is dictated by each piece's
-    pose and mount pose, which are essentially joints and offsets of forward
-    kinematics, although the poses are arbitrary. The joint configuration
-    string induces a set of such poses based on its definition (a range of
-    possible joint values and whether the joint is revolute or prismatic).
-    """
-    def __init__(self, name, pose=Pose(), mount=None, pieces=[], config=None,
-                 occlusion=True):
-        super(Robot, self).__init__(name, pose=pose, mount=mount)
-        self.pieces = []
-        nextpose = pose
-        for i, piece in enumerate(pieces):
-            offset = piece['offset']
-            try:
-                mount = self.pieces[i - 1]
-            except IndexError:
-                mount = self.mount
-            try:
-                assert occlusion
-                triangles = piece['triangles']
-            except (AssertionError, KeyError):
-                triangles = []
-            try:
-                primitives = piece['primitives']
-            except KeyError:
-                primitives = []
-            self.pieces.append(SceneObject('%s-%i' % (name, i), pose=nextpose,
-                mount_pose=offset, mount=mount, primitives=primitives,
-                triangles=triangles))
-            nextpose = self.generate_joint_pose(piece['joint'])
-        self.joints = [piece['joint'] for piece in pieces]
-        self._config = [joint['home'] for joint in self.joints]
-        if config:
-            self.config = config
-        self._visible = False
-
-    @property
-    def config(self):
-        """\
-        The configuration of this robot.
-
-        @rtype: C{list} of C{float}
-        """
-        return self._config
-
-    @config.setter
-    def config(self, value):
-        if not len(value) == len(self.pieces):
-            raise ValueError('incorrect configuration length')
-        for i, position in enumerate(value):
-            try:
-                self.pieces[i + 1].set_relative_pose(self.generate_joint_pose(\
-                    self.joints[i], position))
-            except IndexError:
-                self._mount_pose = \
-                    self.generate_joint_pose(self.joints[i], position)
-            self._config[i] = position
-        self._pose_changed_hook()
-
-    @property
-    def visible(self):
-        """\
-        Visibility of this robot.
-        """
-        return self._visible
-
-    @visible.setter
-    def visible(self, value):
-        self._visible = value
-        for piece in self.pieces:
-            piece.visible = value
-
-    def highlight(self, color=(0, 1, 0)):
-        """\
-        Highlight this robot with a bright uniform color.
-
-        @param color: The color of the highlight.
-        @type color: C{tuple}
-        """
-        for piece in self.pieces:
-            piece.highlight(color)
-
-    def unhighlight(self):
-        """\
-        Unhighlight this robot (if highlighted).
-        """
-        for piece in self.pieces:
-            piece.unhighlight()
-
-    def mount_pose(self):
-        """\
-        Return the overall pose transformation to the end effector.
-
-        @return: The overall end effector pose.
-        @rtype: L{Pose}
-        """
-        return self.pieces[-1].mount_pose()
-
-    @property
-    def pose(self):
-        """\
-        The pose of the robot.
-        """
-        return self.pieces[0].pose
-
-    def set_absolute_pose(self, pose):
-        """\
-        Set the absolute (world frame) pose of the robot.
-
-        @param pose: The absolute pose to set.
-        @type pose: L{Pose}
-        """
-        self.pieces[0].set_absolute_pose(pose)
-        super(Robot, self).set_absolute_pose(pose)
-
-    def set_relative_pose(self, pose):
-        """\
-        Set the relative (mounted) pose of the robot.
-
-        @param pose: The relative pose to set.
-        @type pose: L{Pose}
-        """
-        self.pieces[0].set_relative_pose(pose)
-        super(Robot, self).set_relative_pose(pose)
-
-    @staticmethod
-    def generate_joint_pose(joint, position=None):
-        """\
-        Generate the pose of the piece required to effect the forward kinematic
-        transformation induced by the position value subject to joint
-        properties.
-
-        @param joint: The joint description.
-        @type joint: C{dict}
-        @param position: The position to set (if None, use home position).
-        @type position: C{float}
-        @return: The pose induced by the forward kinematic transformation.
-        @rtype: L{Pose}
-        """
-        if position is None:
-            position = joint['home']
-        else:
-            if position < joint['limits'][0] or position > joint['limits'][1]:
-                raise ValueError('position out of joint range')
-        if joint['type'] == 'revolute':
-            position *= pi / 180.0
-            return Pose(R=Rotation.from_axis_angle(position,
-                Point(joint['axis'])))
-        elif joint['type'] == 'prismatic':
-            return Pose(T=(position * Point(joint['axis'])))
-        else:
-            raise ValueError('invalid joint type')
-
-    @property
-    def triangles(self):
-        """\
-        Occluding triangles.
-        """
-        return reduce(lambda a, b: a | b,
-            [piece.triangles for piece in self.pieces])
-
-    def visualize(self):
-        """\
-        Visualize this robot.
-        """
-        for piece in self.pieces:
-            piece.visualize()
-        self._visible = True
-
-    def update_visualization(self):
-        """\
-        Update this robot's visualization.
-        """
-        for piece in self.pieces:
-            piece.opacity = self.opacity
-            piece.update_visualization()
-        for child in self.children:
-            try:
-                child.update_visualization()
-            except AttributeError:
-                pass
-        
-    def toggle_triangles(self):
-        """\
-        Toggle display of occluding triangles in the visualization.
-        """
-        for piece in self.pieces:
-            piece.toggle_triangles()
-        self.opacity = self.pieces[0].opacity
