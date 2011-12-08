@@ -294,7 +294,7 @@ class Camera(SceneObject):
         self._params[param] = value
         fov = False
         fovvis = False
-        if param in ['f', 's', 'dim']:
+        if param in ['f', 's', 'o', 'dim']:
             try:
                 del self._fov
             except AttributeError:
@@ -457,7 +457,7 @@ class Camera(SceneObject):
                      Point((self.fov['sahr'] * z, self.fov['savb'] * z, z)),
                      Point((self.fov['sahr'] * z, self.fov['savt'] * z, z))]
             return self._fov_hull
-    
+
     @property
     def fov_hull_vertices(self):
         try:
@@ -552,7 +552,7 @@ class Camera(SceneObject):
         Return the coverage strength for a directional point. Note that since
         the L{Camera} object is not internally aware of the scene it inhabits,
         occlusion is computed in the L{Model} object instead.
-    
+
         @param point: The (directional) point to test.
         @type point: L{Point}
         @return: The coverage strength of the point.
@@ -583,7 +583,7 @@ class Camera(SceneObject):
         """
         self.opacity = self.active and 1.0 or 0.2
         super(Camera, self).update_visualization()
-        
+
 
 class Model(dict):
     """\
@@ -718,7 +718,7 @@ class Model(dict):
             if triangle.intersection(self[camera].pose.T, point):
                 return True
         return False
-    
+
     def strength(self, point, ocular=1, subset=None):
         """\
         Return the individual coverage strength of a point in the coverage
@@ -869,7 +869,7 @@ class Model(dict):
                 ec = set()
                 for i in range(k - pk):
                     ec.add(sc.pop())
-                cache[subset] = cache[frozenset(sc)] 
+                cache[subset] = cache[frozenset(sc)]
                 while ec:
                     cache[subset] &= cache[frozenset([ec.pop()])]
                 weight = sum(cache[subset].values())
