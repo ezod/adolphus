@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+*.pyd
 *.swp
 adolphus.egg-info/
 doc/
