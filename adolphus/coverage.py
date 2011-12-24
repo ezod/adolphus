@@ -842,7 +842,7 @@ class Model(dict):
         if not hypergraph:
             raise ImportError('hypergraph module not loaded')
         active_cameras = self.active_cameras
-        H = hypergraph.Hypergraph(vertices=active_cameras)
+        H = hypergraph.core.Hypergraph(vertices=active_cameras)
         if K is None:
             K = range(2, len(self) + 1)
         elif isinstance(K, int):
@@ -855,7 +855,7 @@ class Model(dict):
             cache[subset] = self.coverage(relevance, subset=subset)
             weight = sum(cache[subset].values())
             if weight:
-                H.add_edge(hypergraph.Edge(subset), weight=weight)
+                H.add_edge(hypergraph.core.Edge(subset), weight=weight)
         pk = 1
         for k in K:
             if k < 2:
@@ -874,7 +874,7 @@ class Model(dict):
                     cache[subset] &= cache[frozenset([ec.pop()])]
                 weight = sum(cache[subset].values())
                 if weight > 1e-4:
-                    H.add_edge(hypergraph.Edge(subset), weight=weight)
+                    H.add_edge(hypergraph.core.Edge(subset), weight=weight)
                 else:
                     del cache[subset]
             pk = k
