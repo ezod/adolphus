@@ -133,12 +133,11 @@ class OcclusionTriangle(Posable, Visualizable):
         @param mount: The mount of the triangle (optional).
         @type mount: L{Posable}
         """
-        Posable.__init__(self, pose=pose, mount=mount)
         vertices = [Point(vertex) for vertex in vertices]
-        self.triangle = Triangle(vertices)
-        polygon = visual.Polygon([(self.triangle.planing_pose.map(p).x,
-                                   self.triangle.planing_pose.map(p).y) \
-                                  for p in self.triangle.vertices])
+        planing_pose = Triangle(vertices).planing_pose
+        self.triangle = Triangle([planing_pose.map(v) for v in vertices])
+        Posable.__init__(self, pose=(-planing_pose + pose), mount=mount)
+        polygon = visual.Polygon([v[0:2] for v in self.triangle.vertices])
         primitives = [{'type':      'extrusion',
                        'pos':       [(0, 0, 0.5), (0, 0, -0.5)],
                        'shape':     polygon}]
@@ -178,15 +177,6 @@ class OcclusionTriangle(Posable, Visualizable):
         @rtype: L{Point}
         """
         return self.mapped_triangle.intersection(pa, pb)
-
-    def update_visualization(self):
-        """\
-        Update the visualization of this triangle.
-        """
-        for display in self.actuals:
-            self.actuals[display].transform(-self.triangle.planing_pose \
-                + self.pose)
-            self.actuals[display].opacity = self.opacity
 
 
 class SceneObject(Posable, Visualizable):
@@ -259,8 +249,8 @@ class SceneObject(Posable, Visualizable):
             if not self.triangles:
                 self._bounding_box = None
             else:
-                vertices = set([self.pose.map(vertex) for triangles in \
-                    [[v for v in t.triangle.vertices] for t in self.triangles] \
+                vertices = set([vertex for triangles in [[v for v in \
+                    t.mapped_triangle.vertices] for t in self.triangles] \
                     for vertex in triangles])
                 p = vertices.pop()
                 self._bounding_box = [[p.x, p.x], [p.y, p.y], [p.z, p.z]]
