@@ -227,16 +227,9 @@ class SceneObject(Posable, Visualizable):
             pass
         else:
             for triangle in triangles:
-                if isinstance(triangle, OcclusionTriangle):
-                    self.triangles.add(triangle)
-                else:
-                    # FIXME: this case seems "unnatural" - move to yamlparser?
-                    triangle['mount'] = self
-                    try:
-                        triangle['pose'] = triangle['pose'] - self._mount_pose
-                    except KeyError:
-                        triangle['pose'] = -self._mount_pose
-                    self.triangles.add(OcclusionTriangle(**triangle))
+                triangle.set_absolute_pose(triangle.pose - self._mount_pose)
+                triangle.mount = self
+                self.triangles.add(triangle)
             if not self.primitives:
                 for triangle in self.triangles:
                     triangle.visualize()

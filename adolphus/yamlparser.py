@@ -12,10 +12,9 @@ import yaml
 import pkg_resources
 from math import pi
 from functools import reduce
-from copy import copy
 
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
-from .posable import SceneObject
+from .posable import OcclusionTriangle, SceneObject
 from .coverage import PointCache, RelevanceModel, Camera, Model, TP_DEFAULTS
 from .laser import LineLaser
 from .robot import Robot
@@ -140,18 +139,20 @@ class YAMLParser(object):
         @param sprite: The YAML dict or filename of the sprite/posable.
         @type sprite: C{dict} or C{str}
         @return: The triangle list with parsed pose.
-        @rtype: C{list} of C{dict}
+        @rtype: C{list} of L{OcclusionTriangle}
         """
         if isinstance(sprite, str):
             sprite = self._load_external(sprite)
         try:
             triangles = sprite['triangles']
+            parsed_triangles = []
             for triangle in triangles:
                 try:
                     triangle['pose'] = self._parse_pose(triangle['pose'])
                 except KeyError:
                     pass
-            return triangles
+                parsed_triangles.append(OcclusionTriangle(**triangle))
+            return parsed_triangles
         except KeyError:
             return []
 
@@ -169,6 +170,7 @@ class YAMLParser(object):
         pieces = robot['pieces']
         for piece in pieces:
             piece['offset'] = self._parse_pose(piece['offset'])
+            piece['triangles'] = self._parse_triangles(piece)
         return pieces
 
     def _parse_model(self, model):
