@@ -143,6 +143,17 @@ class OcclusionTriangle(Posable, Visualizable):
                        'shape':     polygon}]
         Visualizable.__init__(self, primitives)
 
+    @property
+    def pose(self):
+        """\
+        The pose of the triangle. Triangles ignore the mount pose of the parent
+        object when mounted, to simplify manual definition.
+        """
+        if self.mount:
+            return self._pose + self.mount.pose
+        else:
+            return self._pose
+
     def _pose_changed_hook(self):
         """\
         Hook called on pose change.
@@ -217,7 +228,6 @@ class SceneObject(Posable, Visualizable):
             pass
         else:
             for triangle in triangles:
-                triangle.set_absolute_pose(triangle.pose - self._mount_pose)
                 triangle.mount = self
                 self.triangles.add(triangle)
             if not self.primitives:
