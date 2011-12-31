@@ -799,6 +799,15 @@ class Face(object):
     def __setstate__(self, state):
         self.vertices = state
 
+    def __hash__(self):
+        """\
+        Hash.
+
+        @return: Hash of this pose.
+        @rtype: C{int}
+        """
+        return hash(self.vertices)
+
     @property
     def edges(self):
         """\
