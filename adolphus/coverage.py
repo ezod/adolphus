@@ -37,6 +37,7 @@ from .posable import Posable, SceneObject
 from .visualization import Visualizable
 
 
+# TODO: make this specific to the model class?
 TP_DEFAULTS = {'boundary_padding': 0.0,
                'res_max_ideal': float('inf'),
                'res_max_acceptable': float('inf'),
@@ -203,13 +204,9 @@ class Camera(SceneObject):
     A L{Camera} object implements the coverage function for a single camera
     based on camera and task parameters. Being a L{SceneObject} itself, it also
     provides the usual functionality of pose, visualization, and occlusion.
-
-    The possible options for the C{features} parameter are:
-
-        - C{range}: enable triangulation-based range camera coverage model.
     """
-    def __init__(self, name, params, features, pose=Pose(), mount=None,
-                 primitives=[], active=True):
+    def __init__(self, name, params, pose=Pose(), mount=None, primitives=[],
+                 active=True):
         """\
         Constructor.
 
@@ -217,8 +214,6 @@ class Camera(SceneObject):
         @type name: C{str}
         @param params: Dictionary of application parameters.
         @type params: C{dict}
-        @param features: List of optional features of the camera.
-        @type features: C{list}
         @param pose: Pose of the camera in space (optional).
         @type pose: L{Pose}
         @param mount: Mount object for the camera (optional).
@@ -233,7 +228,6 @@ class Camera(SceneObject):
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self._params = params
-        self._features = features
         self._generate_cv()
         self._generate_cr()
         self._generate_cf()
@@ -319,13 +313,6 @@ class Camera(SceneObject):
             self._delete_fov_data()
             self._generate_fovvis()
 
-    @property
-    def features(self):
-        """\
-        Optional camera features.
-        """
-        return self._features
-
     def _generate_cv(self):
         sahl = self.fov['sahl']
         sahr = self.fov['sahr']
@@ -392,13 +379,9 @@ class Camera(SceneObject):
         else:
             ai = cos(self.getparam('angle_max_ideal'))
             cdval = lambda sigma: min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
-        if 'range' in self.features:
-            sgval = lambda a: sin(a)
-        else:
-            sgval = lambda a: cos(a)
         def Cd(p):
             try:
-                sigma = sgval(p.direction_unit.angle(-p))
+                sigma = cos(p.direction_unit.angle(-p))
             except (ValueError, AttributeError):
                 # p is at origin or not a directional point
                 return 1.0
@@ -593,6 +576,8 @@ class Model(dict):
     cameras. It maintains a set of keys which identify cameras, and provides a
     variety of coverage-related functions.
     """
+    camera_class = Camera
+
     def __init__(self, task_params=dict()):
         """\
         Constructor.

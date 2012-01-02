@@ -383,29 +383,31 @@ def cmd_coverage(ex, args, response='pickle'):
 
 def cmd_rangecoverage(ex, args, response='pickle'):
     """
-    usage: %s ocular laser target pitch
+    Return the monocular range imaging coverage performance based on laser and
+    transport parameters.
+
+    usage: %s laser target lpitch tpitch tx ty tz tstyle
     """
     cmd_clear(ex, [])
     try:
         ex.display.message('Calculating range imaging coverage...')
         ex.display.userspin = False
-        try:
-            ocular, laser, target, pitch = \
-                int(args[0]), args[1], args[2], float(args[3])
-        except IndexError:
-            raise CommandError('incorrect arguments')
-        relevance = ex.model[laser].project(ex.model[target], pitch)
-        cid = '%s-%s-%g' % (laser, target, pitch)
-        ex.coverage[cid] = ex.model.coverage(relevance, ocular=ocular)
-        ex.coverage[cid].visualize()
-        performance = ex.model.performance(relevance, ocular=ocular,
-            coverage=ex.coverage[cid])
+        taxis = Point([float(t) for t in args[4:7]])
+        coverage, relevance = ex.model.range_coverage(ex.model[args[0]],
+            ex.model[args[1]], float(args[2]), float(args[3]), taxis, args[7])
+        ex.coverage['range'] = coverage
+        ex.coverage['range'].visualize()
+        performance = ex.model.performance(relevance, coverage=coverage)
         if response == 'pickle':
             return pickle.dumps(performance)
         elif response == 'csv':
-            return '%s:%f#' % (cid, performance)
+            return 'range:%f#' % performance
         elif response == 'text':
-            return '%s: %.4f' % (cid, performance)
+            return 'range: %.4f' % performance
+    except AttributeError:
+        raise CommandError('not a range model')
+    except IndexError:
+        raise CommandError('incorrect arguments')
     except KeyError:
         raise CommandError('invalid laser or target name')
     except Exception, e:

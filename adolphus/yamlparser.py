@@ -15,8 +15,8 @@ from functools import reduce
 
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import OcclusionTriangle, SceneObject
-from .coverage import PointCache, RelevanceModel, Camera, Model, TP_DEFAULTS
-from .laser import LineLaser
+from .coverage import PointCache, RelevanceModel, Model, TP_DEFAULTS
+from .laser import LineLaser, RangeModel
 from .robot import Robot
 
 
@@ -201,14 +201,18 @@ class YAMLParser(object):
                 task_params[param] = model[param]
             except KeyError:
                 pass
-        rmodel = Model(task_params=task_params)
+        try:
+            if model['type'] == 'range':
+                rmodel = RangeModel(task_params=task_params)
+            else:
+                raise KeyError
+        except KeyError:
+            rmodel = Model(task_params=task_params)
         for objecttype in ['cameras', 'lasers', 'scene']:
             if not objecttype in model:
                 model[objecttype] = []
         # parse cameras
         for camera in model['cameras']:
-            if not 'features' in camera:
-                camera['features'] = []
             # parse pose
             try:
                 pose = self._parse_pose(camera['pose'])
@@ -223,9 +227,8 @@ class YAMLParser(object):
             except KeyError:
                 active = True
             # create camera
-            rmodel[camera['name']] = Camera(camera['name'], camera,
-                camera['features'], pose=pose, mount=None, primitives=sprites,
-                active=active)
+            rmodel[camera['name']] = rmodel.camera_class(camera['name'], camera,
+                pose=pose, mount=None, primitives=sprites, active=active)
             self._mounts[camera['name']] = rmodel[camera['name']]
         # parse lasers
         for laser in model['lasers']:
