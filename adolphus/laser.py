@@ -161,9 +161,9 @@ class RangeModel(Model):
         target motion is based on the original pose and may be linear or rotary.
 
         @param laser: The laser line generator to use.
-        @type laser: L{LineLaser}
+        @type laser: C{str}
         @param target: The target object.
-        @type target: L{SceneObject}
+        @type target: C{str}
         @param lpitch: The horizontal laser projection pitch in distance units.
         @type lpitch: C{float}
         @param tpitch: The transport pitch in distance units or radians.
@@ -178,12 +178,12 @@ class RangeModel(Model):
         @rtype: L{PointCache}, L{RelevanceModel}
         """
         coverage, relevance_original = PointCache(), PointCache()
-        original_pose = target.pose
+        original_pose = self[target].pose
         if tstyle == 'linear':
             # find least and greatest triangle vertices along taxis
             taxis = taxis.normal
             lv, gv = float('inf'), -float('inf')
-            for triangle in target.triangles:
+            for triangle in self[target].triangles:
                 for vertex in triangle.mapped_triangle.vertices:
                     pv = taxis * vertex
                     lv = min(lv, pv)
@@ -191,13 +191,14 @@ class RangeModel(Model):
             steps = int((gv - lv) / float(tpitch))
             for i in range(steps):
                 # get coverage of profile
-                target.set_absolute_pose(original_pose + \
+                self[target].set_absolute_pose(original_pose + \
                     Pose(T=((tpitch * i - gv) * taxis)))
-                prof_relevance = laser.project(target, lpitch)
+                prof_relevance = self[laser].project(self[target], lpitch)
                 prof_coverage = self.coverage(prof_relevance, subset=subset)
                 # add to main coverage result
                 for point in prof_coverage:
-                    original_point = (-target.pose + original_pose).map(point)
+                    original_point = \
+                        (-self[target].pose + original_pose).map(point)
                     coverage[original_point] = prof_coverage[point]
                     relevance_original[original_point] = 1.0
         elif tstyle == 'rotary':
@@ -206,7 +207,7 @@ class RangeModel(Model):
             raise ValueError('rotary transport style not yet implemented')
         else:
             raise ValueError('transport style must be \'linear\' or \'rotary\'')
-        target.set_absolute_pose(original_pose)
+        self[target].set_absolute_pose(original_pose)
         # TODO: for each point in coverage, scale by laser coverage
         relevance = RelevanceModel(relevance_original)
         return coverage, relevance

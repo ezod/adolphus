@@ -393,8 +393,8 @@ def cmd_rangecoverage(ex, args, response='pickle'):
         ex.display.message('Calculating range imaging coverage...')
         ex.display.userspin = False
         taxis = Point([float(t) for t in args[4:7]])
-        coverage, relevance = ex.model.range_coverage(ex.model[args[0]],
-            ex.model[args[1]], float(args[2]), float(args[3]), taxis, args[7])
+        coverage, relevance = ex.model.range_coverage(args[0], args[1],
+            float(args[2]), float(args[3]), taxis, args[7])
         ex.coverage['range'] = coverage
         ex.coverage['range'].visualize()
         performance = ex.model.performance(relevance, coverage=coverage)
