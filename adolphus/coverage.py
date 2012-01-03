@@ -576,7 +576,10 @@ class Model(dict):
     cameras. It maintains a set of keys which identify cameras, and provides a
     variety of coverage-related functions.
     """
+    # class of camera handled by this model class
     camera_class = Camera
+    # object types for which occlusion caching is handled by this class
+    oc_sets = ['cameras']
 
     def __init__(self, task_params=dict()):
         """\
@@ -666,23 +669,24 @@ class Model(dict):
     def _update_occlusion_cache(self):
         if not self._oc_needs_update:
             return
-        remainder = set(self.cameras)
-        for camera in self.cameras:
-            if not self._oc_updated[camera]:
-                remainder.remove(camera)
-                self._occlusion_cache[camera] = {}
+        remainder = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
+            for oc_set in self.oc_sets]))
+        for obj in set(remainder):
+            if not self._oc_updated[obj]:
+                remainder.remove(obj)
+                self._occlusion_cache[obj] = {}
                 for sceneobject in self:
-                    self._occlusion_cache[camera][sceneobject] = \
+                    self._occlusion_cache[obj][sceneobject] = \
                         set([triangle for triangle \
                             in self[sceneobject].triangles \
-                            if self[camera].occluded_by(triangle)])
+                            if self[obj].occluded_by(triangle)])
         for sceneobject in self:
             if not self._oc_updated[sceneobject]:
-                for camera in remainder:
-                    self._occlusion_cache[camera][sceneobject] = \
+                for obj in remainder:
+                    self._occlusion_cache[obj][sceneobject] = \
                         set([triangle for triangle \
                             in self[sceneobject].triangles \
-                            if self[camera].occluded_by(triangle)])
+                            if self[obj].occluded_by(triangle)])
                 self._oc_updated[sceneobject] = True
         self._oc_needs_update = False
 

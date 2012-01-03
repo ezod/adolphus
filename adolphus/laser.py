@@ -10,7 +10,7 @@ modeling laser line based range imaging cameras.
 
 from math import pi, sin, cos, tan
 
-from .geometry import Angle, Pose, Point, DirectionalPoint
+from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
 from .coverage import PointCache, RelevanceModel, Camera, Model
 from .posable import SceneObject
 
@@ -45,6 +45,16 @@ class LineLaser(SceneObject):
         self.click_actions = {'ctrl':   'laser %s' % name,
                               'shift':  'modify %s' % name}
 
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        try:
+            del self._triangle
+        except AttributeError:
+            pass
+        super(LineLaser, self)._pose_changed_hook()
+
     @property
     def fan(self):
         """\
@@ -59,11 +69,37 @@ class LineLaser(SceneObject):
         """
         return self._depth
 
+    @property
+    def triangle(self):
+        """\
+        Triangle defining the laser plane.
+        """
+        try:
+            return self._triangle
+        except AttributeError:
+            width = self.depth * tan(self.fan / 2.0)
+            self._triangle = Triangle((self.pose.T,
+                self.pose.map(Point((-width, 0, self.depth))),
+                self.pose.map(Point((width, 0, self.depth)))))
+            return self._triangle
+
     def _generate_laservis(self):
         width = self.depth * tan(self.fan / 2.0)
         self.laservis = [{'type': 'curve', 'color': (1, 0, 0),
             'pos': [(0, 0, 0), (-width, 0, self.depth),
                     (width, 0, self.depth), (0, 0, 0)]}]
+
+    def occluded_by(self, triangle):
+        """\
+        Return whether this laser's projection plane is occluded (in part) by
+        the specified triangle.
+
+        @param triangle: The triangle to check.
+        @type triangle: L{OcclusionTriangle}
+        @return: True if occluded.
+        @rtype: C{bool}
+        """
+        return self.triangle.overlap(triangle.mapped_triangle)
 
     def project(self, target, pitch):
         """\
@@ -135,7 +171,10 @@ class RangeModel(Model):
     line lasers and laser occlusion, and provides range imaging coverage
     methods.
     """
+    # class of camera handled by this model class
     camera_class = RangeCamera
+    # object types for which occlusion caching is handled by this class
+    oc_sets = ['cameras', 'lasers']
 
     def __init__(self, task_params=dict()):
         self.lasers = set()
@@ -149,8 +188,6 @@ class RangeModel(Model):
     def __delitem__(self, key):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
-
-    # TODO: manage laser occlusions
 
     def range_coverage(self, laser, target, lpitch, tpitch, taxis,
                        tstyle='linear', subset=None):

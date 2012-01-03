@@ -791,7 +791,7 @@ class Face(object):
         @param v: Vertices (in counterclockwise order looking at the face).
         @type v: C{tuple} of L{Point}
         """
-        self.vertices = vertices
+        self.vertices = tuple(vertices)
 
     def __getstate__(self):
         return self.vertices
@@ -900,6 +900,53 @@ class Triangle(Face):
         if t < 1e-04 or t > origin.euclidean(end) - 1e-04:
             return None
         return origin + t * direction
+
+    def overlap(self, other):
+        """\
+        Return whether this triangle intersects another.
+
+            - T. Moller, "A Fast Triangle/Triangle Intersection Test," J.
+              Graphics Tools, vol. 2, no. 2, pp. 25-30, 1997.
+            - E. Haines, "Point in Polygon Strategies," in Graphics Gems IV,
+              P. S. Heckbert, ed., Academic Press Professional, pp. 24-46, 1994.
+
+        @param other: The other triangle.
+        @type other: L{Triangle}
+        @return: True if the triangles intersect one another.
+        @rtype: C{bool}
+        """
+        dvs = {}
+        for one, two in [(self, other), (other, self)]:
+            dvs[two] = [one.normal * two.vertices[i] + \
+                (-one.normal * one.vertices[0]) for i in range(3)]
+            if all([dv > 1e-4 for dv in dvs[two]]) \
+            or all([dv < -1e-4 for dv in dvs[two]]):
+                return False
+        if all([abs(dv) < 1e-4 for dv in dvs[self]]):
+            # TODO: handle coplanar case for completeness
+            # TODO: project both triangles onto axis-aligned plane (which?)
+            # TODO: check edges of self for intersection with edges of other
+            # TODO: check vertex of self for point-in-triangle with other
+            # TODO: and vice versa (Haines 1994)
+            return False
+        else:
+            axis = max(enumerate(self.normal ** other.normal),
+                key=lambda x: x[1])[0]
+            t = {self: [], other: []}
+            for triangle in (self, other):
+                signs = [dv > 0 for dv in dvs[triangle]]
+                odd = signs.index(bool(sum(signs) % 2))
+                for i in range(3):
+                    if i == odd:
+                        continue
+                    t[triangle].append(triangle.vertices[i][axis] + \
+                        (triangle.vertices[odd][axis] - \
+                        triangle.vertices[i][axis]) * (dvs[triangle][i] / \
+                        (dvs[triangle][i] - dvs[triangle][odd])))
+                t[triangle].sort()
+        if t[self][1] < t[other][0] or t[other][1] < t[self][0]:
+            return False
+        return True
 
 
 def which_side(points, direction, vertex):
