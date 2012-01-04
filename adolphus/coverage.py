@@ -690,21 +690,22 @@ class Model(dict):
                 self._oc_updated[sceneobject] = True
         self._oc_needs_update = False
 
-    def occluded(self, point, camera):
+    def occluded(self, point, obj):
         """\
         Return whether the specified point is occluded with respect to the
-        specified camera, using the occlusion cache triangles.
+        specified object, using the occlusion cache triangles.
 
         @param point: The point to check.
         @type point: L{Point}
-        @param camera: The camera ID to check.
-        @type camera: C{str}
+        @param obj: The object ID to check.
+        @type obj: C{str}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        for triangle in set([t for ts in [self._occlusion_cache[camera]\
+        self._update_occlusion_cache()
+        for triangle in set([t for ts in [self._occlusion_cache[obj]\
             [sceneobject] for sceneobject in self] for t in ts]):
-            if triangle.intersection(self[camera].pose.T, point):
+            if triangle.intersection(self[obj].pose.T, point):
                 return True
         return False
 

@@ -187,8 +187,7 @@ class RangeModel(Model):
                     continue
                 elif not cp or ip.z < cp.z:
                     cp = Point(ip)
-            # TODO: handle laser occlusion by non-target objects
-            if cp:
+            if cp and not self.occluded(self[laser].pose.map(cp), laser):
                 points[DirectionalPoint(tuple(cp) + (pi, 0))] = 1.0
             x += lpitch
         return RelevanceModel(points, mount=self[laser])
