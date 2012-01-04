@@ -101,41 +101,6 @@ class LineLaser(SceneObject):
         """
         return self.triangle.overlap(triangle.mapped_triangle)
 
-    def project(self, target, pitch):
-        """\
-        Generate a range imaging relevance model by projecting the laser line
-        onto the target object.
-
-        @param target: The target object.
-        @type target: L{SceneObject}
-        @param pitch: The horizontal pitch of relevance model points.
-        @type pitch: C{float}
-        @return: The generated range imaging relevance model.
-        @rtype: L{RelevanceModel}
-        """
-        # FIXME: this ignores occlusions originating outside target
-        points = PointCache()
-        width = self.depth * tan(self.fan / 2.0)
-        x = int(-width / pitch) * pitch
-        while x < width:
-            cp = None
-            origin = self.pose.map(Point((x, 0, 0)))
-            end = self.pose.map(Point((x, 0, self.depth)))
-            for triangle in target.triangles:
-                ip = triangle.intersection(origin, end)
-                if ip:
-                    ip = (-self.pose).map(ip)
-                else:
-                    continue
-                if abs(ip.x) > ip.z * tan(self.fan / 2.0):
-                    continue
-                elif not cp or ip.z < cp.z:
-                    cp = Point(ip)
-            if cp:
-                points[DirectionalPoint(tuple(cp) + (pi, 0))] = 1.0
-            x += pitch
-        return RelevanceModel(points, mount=self)
-
 
 class RangeCamera(Camera):
     """\
@@ -189,6 +154,45 @@ class RangeModel(Model):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
 
+    def project(self, laser, target, lpitch):
+        """\
+        Generate a range imaging relevance model by projecting the specified
+        laser line onto the target object.
+
+        @param laser: The ID of the laser line generator to use.
+        @type laser: C{str}
+        @param target: The target object ID.
+        @type target: C{str}
+        @param lpitch: The horizontal pitch of relevance model points.
+        @type lpitch: C{float}
+        @return: The generated range imaging relevance model.
+        @rtype: L{RelevanceModel}
+        """
+        if not laser in self.lasers:
+            raise KeyError('invalid laser')
+        points = PointCache()
+        width = self[laser].depth * tan(self[laser].fan / 2.0)
+        x = int(-width / lpitch) * lpitch
+        while x < width:
+            cp = None
+            origin = self[laser].pose.map(Point((x, 0, 0)))
+            end = self[laser].pose.map(Point((x, 0, self[laser].depth)))
+            for triangle in self[target].triangles:
+                ip = triangle.intersection(origin, end)
+                if ip:
+                    ip = (-self[laser].pose).map(ip)
+                else:
+                    continue
+                if abs(ip.x) > ip.z * tan(self[laser].fan / 2.0):
+                    continue
+                elif not cp or ip.z < cp.z:
+                    cp = Point(ip)
+            # TODO: handle laser occlusion by non-target objects
+            if cp:
+                points[DirectionalPoint(tuple(cp) + (pi, 0))] = 1.0
+            x += lpitch
+        return RelevanceModel(points, mount=self[laser])
+
     def range_coverage(self, laser, target, lpitch, tpitch, taxis,
                        tstyle='linear', subset=None):
         """\
@@ -197,9 +201,9 @@ class RangeModel(Model):
         overall coverage and relevance models in the original target pose. The
         target motion is based on the original pose and may be linear or rotary.
 
-        @param laser: The laser line generator to use.
+        @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
-        @param target: The target object.
+        @param target: The target object ID.
         @type target: C{str}
         @param lpitch: The horizontal laser projection pitch in distance units.
         @type lpitch: C{float}
@@ -230,7 +234,7 @@ class RangeModel(Model):
                 # get coverage of profile
                 self[target].set_absolute_pose(original_pose + \
                     Pose(T=((tpitch * i - gv) * taxis)))
-                prof_relevance = self[laser].project(self[target], lpitch)
+                prof_relevance = self.project(laser, target, lpitch)
                 prof_coverage = self.coverage(prof_relevance, subset=subset)
                 # add to main coverage result
                 for point in prof_coverage:
