@@ -61,6 +61,17 @@ class TestGeometry(unittest.TestCase):
         self.assertFalse(triangle.intersection(Point((5, 5, 3)), Point((5, 5, -3))))
         self.assertFalse(triangle.intersection(Point((5, 5, 3)), Point((5, 5, 1))))
 
+    def test_triangle_overlap(self):
+        triangles = [Triangle((Point(), Point((10, 2, 0)), Point((8, 0, 6)))),
+                     Triangle((Point((0, 2, 1)), Point((4, -7, 2)), Point((7, 3, 3)))),
+                     Triangle((Point((-1, -1, -1)), Point((-1, -2, 2)), Point((-5, -1, -1))))]
+        self.assertTrue(triangles[0].overlap(triangles[1]))
+        self.assertTrue(triangles[1].overlap(triangles[0]))
+        self.assertFalse(triangles[0].overlap(triangles[2]))
+        self.assertFalse(triangles[2].overlap(triangles[0]))
+        self.assertFalse(triangles[1].overlap(triangles[2]))
+        self.assertFalse(triangles[2].overlap(triangles[1]))
+
 
 class TestModel01(unittest.TestCase):
     """\
