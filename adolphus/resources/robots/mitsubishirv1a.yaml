@@ -33,31 +33,7 @@ pieces:
           axis:         [0, 0, 150]
           color:        [0.9, 0.9, 0.9]
           material:     plastic
-      triangles:
-        - vertices:
-            - [77.5, -77.5, 0]
-            - [77.5, -77.5, 225]
-            - [77.5, 77.5, 0]
-        - vertices:
-            - [77.5, 77.5, 0]
-            - [77.5, 77.5, 225]
-            - [77.5, -77.5, 225]
-        - vertices:
-            - [-163.5, -77.5, 0]
-            - [-163.5, -77.5, 225]
-            - [77.5, -77.5, 0]
-        - vertices:
-            - [77.5, -77.5, 0]
-            - [77.5, -77.5, 225]
-            - [-163.5, -77.5, 225]
-        - vertices:
-            - [-163.5, 77.5, 0]
-            - [-163.5, 77.5, 225]
-            - [77.5, 77.5, 0]
-        - vertices:
-            - [77.5, 77.5, 0]
-            - [77.5, 77.5, 225]
-            - [-163.5, 77.5, 225]
+      triangles:        'mitsubishirv1a.base.raw'
 
     # shoulder
     - joint:
@@ -89,15 +65,7 @@ pieces:
           axis:         [0, 86, 0]
           color:        [0.9, 0.9, 0.9]
           material:     plastic
-      triangles:
-        - vertices:
-            - [0, -77.5, 60]
-            - [0, 77.5, 60]
-            - [0, 77.5, 200]
-        - vertices:
-            - [0, 77.5, 200]
-            - [0, -77.5, 200]
-            - [0, -77.5, 60]
+      triangles:        'mitsubishirv1a.shoulder.raw'
 
     # upper arm
     - joint:
@@ -156,31 +124,7 @@ pieces:
           axis:         [0, 30, 0]
           color:        [0.9, 0.9, 0.9]
           material:     plastic
-      triangles:
-        - vertices:
-            - [0, -77.5, -48]
-            - [0, 77.5, -48]
-            - [0, 77.5, 298]
-        - vertices:
-            - [0, 77.5, 298]
-            - [0, -77.5, 298]
-            - [0, -77.5, -48]
-        - vertices:
-            - [-48, -73, -48]
-            - [48, -73, -48]
-            - [48, -73, 298]
-        - vertices:
-            - [48, -73, 298]
-            - [-48, -73, 298]
-            - [-48, -73, -48]
-        - vertices:
-            - [-48, 73, -48]
-            - [48, 73, -48]
-            - [48, 73, 298]
-        - vertices:
-            - [48, 73, 298]
-            - [-48, 73, 298]
-            - [-48, 73, -48]
+      triangles:        'mitsubishirv1a.upperarm.raw'
 
     # elbow
     - joint:
@@ -208,31 +152,7 @@ pieces:
           width:        203
           color:        [0.9, 0.9, 0.9]
           material:     plastic
-      triangles:
-        - vertices:
-            - [-138, -58, -160]
-            - [-138, 58, -160]
-            - [-138, 58, 43]
-        - vertices:
-            - [-138, 58, 43]
-            - [-138, -58, 43]
-            - [-138, -58, -160]
-        - vertices:
-            - [-138, -58, -160]
-            - [0, -58, -160]
-            - [0, -58, 43]
-        - vertices:
-            - [0, -58, 43]
-            - [-138, -58, 43]
-            - [-138, -58, -160]
-        - vertices:
-            - [-138, 58, -160]
-            - [0, 58, -160]
-            - [0, 58, 43]
-        - vertices:
-            - [0, 58, 43]
-            - [-138, 58, 43]
-            - [-138, 58, -160]
+      triangles:        'mitsubishirv1a.elbow.raw'
     
     # forearm
     - joint:
@@ -279,31 +199,7 @@ pieces:
           axis:         [0, 28, 0]
           color:        [0.9, 0.9, 0.9]
           material:     plastic
-      triangles:
-        - vertices:
-            - [-48, -58, 0]
-            - [-48, 58, 0]
-            - [-48, 58, 144]
-        - vertices:
-            - [-48, 58, 144]
-            - [-48, -58, 144]
-            - [-48, -58, 0]
-        - vertices:
-            - [-48, -58, 0]
-            - [48, -58, 0]
-            - [48, -58, 144]
-        - vertices:
-            - [48, -58, 144]
-            - [-48, -58, 144]
-            - [-48, -58, 0]
-        - vertices:
-            - [-48, 58, 0]
-            - [48, 58, 0]
-            - [48, 58, 144]
-        - vertices:
-            - [48, 58, 144]
-            - [-48, 58, 144]
-            - [-48, 58, 0]
+      triangles:        'mitsubishirv1a.forearm.raw'
     
     # wrist
     - joint:
@@ -330,23 +226,7 @@ pieces:
           axis:         [0, 46, 0]
           color:        [0.9, 0.9, 0.9]
           material:     plastic
-      triangles:
-        - vertices:
-            - [0, -35, 0]
-            - [0, 35, 0]
-            - [0, 35, 75.3]
-        - vertices:
-            - [0, 35, 75.3]
-            - [0, -35, 75.3]
-            - [0, -35, 0]
-        - vertices:
-            - [-35, 0, 0]
-            - [35, 0, 0]
-            - [35, 0, 75.3]
-        - vertices:
-            - [35, 0, 75.3]
-            - [-35, 0, 75.3]
-            - [-35, 0, 0]
+      triangles:        'mitsubishirv1a.wrist.raw'
 
     # flange (tool length)
     - joint:

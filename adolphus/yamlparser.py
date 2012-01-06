@@ -49,22 +49,26 @@ class YAMLParser(object):
         experiment.
         """
         return self.model, self.relevances
-
-    def _load_external(self, filename):
-        """\
-        Load an external YAML file specified inside a YAML model.
-
-        @param filename: The external YAML file to load.
-        @type filename: C{str}
-        @return: The loaded YAML dict.
-        @rtype: C{dict}
-        """
-        try:
-            return yaml.load(open(os.path.join(self._path, filename)))
-        except IOError:
-            return yaml.load(pkg_resources.resource_string(__name__,
-                'resources/' + filename))
     
+    @staticmethod
+    def _external_path(basepath, filename):
+        """\
+        Return the path to an external file specified inside another file.
+        Defaults to searching the package resources if the file is not found.
+
+        @param basepath: The current base path context.
+        @type basepath: C{str}
+        @param filename: The filename of the external file.
+        @type filename: C{str}
+        @return: The path to the external file.
+        @rtype: C{str}
+        """
+        for path in [os.path.join(basepath, filename),
+            pkg_resources.resource_filename(__name__, 'resources/' + filename)]:
+            if os.path.exists(path):
+                return path
+        raise IOError('external file %s not found' % filename)
+
     @staticmethod
     def _parse_pose(pose):
         """\
@@ -106,45 +110,52 @@ class YAMLParser(object):
 
     def _parse_primitives(self, sprite):
         """\
-        Parse the primitives of a sprite.
+        Parse the primitives of a sprite from YAML.
 
-        @param sprite: The YAML dict or filename of the sprite/posable.
+        @param sprite: The YAML dict or filename of the sprite.
         @type sprite: C{dict} or C{str}
         @return: The primitives list.
         @rtype: C{list} of C{dict}
         """
-        tpath = ''
+        path = self._path
         if isinstance(sprite, str):
-            tpath = os.path.split(sprite)[0]
-            sprite = self._load_external(sprite)
+            sprite_file = self._external_path(path, sprite)
+            sprite = yaml.load(open(sprite_file, 'r'))
+            path = os.path.split(sprite_file)[0]
         try:
             for primitive in sprite['primitives']:
                 if 'texture' in primitive:
-                    if os.path.exists(os.path.join(self._path, tpath,
-                        primitive['texture'] + '.tga')):
-                        primitive['texture'] = os.path.join(self._path, tpath,
-                            primitive['texture'])
-                    else:
-                        primitive['texture'] = pkg_resources.resource_filename(\
-                            __name__, os.path.join('resources/', tpath,
-                            primitive['texture']))
+                    primitive['texture'] = \
+                        self._external_path(path, primitive['texture'] + '.tga')
             return sprite['primitives']
         except KeyError:
             return []
 
-    def _parse_triangles(self, sprite):
+    def _parse_triangles(self, sprite, path):
         """\
-        Parse the opaque triangles of a posable.
+        Parse the triangles of a sprite from YAML.
 
-        @param sprite: The YAML dict or filename of the sprite/posable.
+        @param sprite: The YAML dict or filename of the sprite.
         @type sprite: C{dict} or C{str}
-        @return: The triangle list with parsed pose.
+        @param path: The current path context.
+        @type path: C{str}
+        @return: The triangles list.
         @rtype: C{list} of L{OcclusionTriangle}
         """
         if isinstance(sprite, str):
-            sprite = self._load_external(sprite)
+            sprite_file = self._external_path(path, sprite)
+            sprite = yaml.load(open(sprite_file, 'r'))
+            path = os.path.split(sprite_file)[0]
         try:
             triangles = sprite['triangles']
+            if isinstance(triangles, str):
+                # load from raw ASCII triangle mesh format
+                filename = triangles
+                triangles = []
+                with open(self._external_path(path, filename), 'r') as f:
+                    for line in f.readlines():
+                        triangles.append({'vertices': [[float(c) for c in \
+                        line.split(' ')][i * 3:i * 3 + 3] for i in range(3)]})
             parsed_triangles = []
             for triangle in triangles:
                 try:
@@ -156,21 +167,24 @@ class YAMLParser(object):
         except KeyError:
             return []
 
-    def _parse_robot(self, robot):
+    def _parse_pieces(self, robot):
         """\
-        Parse a robot from YAML.
+        Parse the pieces of a robot from YAML.
 
-        @param robot: The YAML list of the robot pieces.
-        @type robot: C{list}
+        @param robot: The YAML dict or filename of the robot.
+        @type robot: C{dict} or C{str}
         @return: The parsed robot pieces.
         @rtype: C{list}
         """
+        path = self._path
         if isinstance(robot, str):
-            robot = self._load_external(robot)
+            robot_file = self._external_path(path, robot)
+            robot = yaml.load(open(robot_file, 'r'))
+            path = os.path.split(robot_file)[0]
         pieces = robot['pieces']
         for piece in pieces:
             piece['offset'] = self._parse_pose(piece['offset'])
-            piece['triangles'] = self._parse_triangles(piece)
+            piece['triangles'] = self._parse_triangles(piece, path)
         return pieces
 
     def _parse_model(self, model):
@@ -208,93 +222,47 @@ class YAMLParser(object):
                 raise KeyError
         except KeyError:
             rmodel = Model(task_params=task_params)
-        for objecttype in ['cameras', 'lasers', 'scene']:
+        mounts = {}
+        for objecttype in ['cameras', 'lasers', 'robots', 'scene']:
             if not objecttype in model:
-                model[objecttype] = []
-        # parse cameras
-        for camera in model['cameras']:
-            # parse pose
-            try:
-                pose = self._parse_pose(camera['pose'])
-            except KeyError:
-                pose = Pose()
-            # parse sprites
-            sprites = reduce(lambda a, b: a + b, [self.\
-                _parse_primitives(sprite) for sprite in camera['sprites']])
-            # parse active state
-            try:
-                active = camera['active']
-            except KeyError:
-                active = True
-            # create camera
-            rmodel[camera['name']] = rmodel.camera_class(camera['name'], camera,
-                pose=pose, mount=None, primitives=sprites, active=active)
-            self._mounts[camera['name']] = rmodel[camera['name']]
-        # parse lasers
-        for laser in model['lasers']:
-            # parse pose
-            try:
-                pose = self._parse_pose(laser['pose'])
-            except KeyError:
-                pose = Pose()
-            # parse sprites
-            sprites = reduce(lambda a, b: a + b, [self.\
-                _parse_primitives(sprite) for sprite in laser['sprites']])
-            # create laser
-            rmodel[laser['name']] = LineLaser(laser['name'], laser['fan'],
-                laser['depth'], pose=pose, mount=None, primitives=sprites)
-            self._mounts[laser['name']] = rmodel[laser['name']]
-        # parse scene
-        for item in model['scene']:
-            # parse pose
-            try:
-                pose = self._parse_pose(item['pose'])
-            except KeyError:
-                pose = Pose()
-            try:
-                occlusion = item['occlusion']
-            except KeyError:
-                occlusion = True
-            try:
-                mount_pose = self._parse_pose(item['mount_pose'])
-            except KeyError:
-                mount_pose = Pose()
-            if 'sprites' in item:
-                # parse sprites and triangles
-                sprites = reduce(lambda a, b: a + b,
-                    [self._parse_primitives(sprite) \
-                    for sprite in item['sprites']])
-                if occlusion:
+                continue
+            for obj in model[objecttype]:
+                pose = obj.has_key('pose') and \
+                    self._parse_pose(obj['pose']) or Pose()
+                mount_pose = obj.has_key('mount_pose') and \
+                    self._parse_pose(obj['mount_pose']) or Pose()
+                if 'sprites' in obj:
+                    primitives = reduce(lambda a, b: a + b,
+                        [self._parse_primitives(sprite) \
+                        for sprite in obj['sprites']])
+                occlusion = obj.has_key('occlusion') and \
+                    bool(obj['occlusion']) or True
+                if occlusion and 'sprites' in obj:
                     triangles = reduce(lambda a, b: a + b,
-                        [self._parse_triangles(sprite) \
-                        for sprite in item['sprites']])
+                        [self._parse_triangles(sprite, self._path) \
+                        for sprite in obj['sprites']])
+                if objecttype == 'cameras':
+                    active = obj.has_key('active') and obj['active'] or True
+                    rmodel[obj['name']] = rmodel.camera_class(obj['name'], obj,
+                        pose=pose, mount_pose=mount_pose, primitives=primitives,
+                        active=active, triangles=triangles)
+                elif objecttype == 'lasers':
+                    rmodel[obj['name']] = LineLaser(obj['name'], obj['fan'],
+                        obj['depth'], pose=pose, mount_pose=mount_pose,
+                        primitives=primitives, triangles=triangles)
+                elif objecttype == 'robots':
+                    pieces = self._parse_pieces(obj['robot'])
+                    config = obj.has_key('config') and obj['config'] or None
+                    rmodel[obj['name']] = Robot(obj['name'], pose=pose,
+                        pieces=pieces, config=config, occlusion=occlusion)
                 else:
-                    triangles = []
-                # create object
-                rmodel[item['name']] = SceneObject(item['name'],
-                    pose=(pose or Pose()), mount_pose=mount_pose, mount=None,
-                    primitives=sprites, triangles=triangles)
-            elif 'robot' in item:
-                pieces = self._parse_robot(item['robot'])
-                try:
-                    config = item['config']
-                except KeyError:
-                    config = None
-                rmodel[item['name']] = Robot(item['name'],
-                    pose=(pose or Pose()), mount=None, pieces=pieces,
-                    config=config, occlusion=occlusion)
-            else:
-                rmodel[item['name']] = SceneObject(item['name'],
-                    pose=(pose or Pose()), mount_pose=mount_pose)
-            self._mounts[item['name']] = rmodel[item['name']]
-        # parse mounts after to avoid ordering issues
-        # FIXME: does mounting need to be this complicated anymore?
-        for item in model['scene']:
-            if 'mount' in item:
-                rmodel[item['name']].mount = self._mounts[item['mount']]
-        for camera in model['cameras']:
-            if 'mount' in camera:
-                rmodel[camera['name']].mount = self._mounts[camera['mount']]
+                    rmodel[obj['name']] = SceneObject(obj['name'], pose=pose,
+                        mount_pose=mount_pose, primitives=primitives,
+                        triangles=triangles)
+                if 'mount' in obj:
+                    mounts[obj['name']] = obj['mount']
+        for name in mounts:
+            rmodel[name].mount = rmodel[mounts[name]]
         return rmodel
 
     @staticmethod

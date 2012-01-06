@@ -17,11 +17,13 @@ model:
           dim:          [1360, 1024]
           zS:           1200
 
-    scene:
+    robots:
         - name:         RV1A
           robot:        robots/mitsubishirv1a.yaml
           pose:
               T:            [0, -500, 0]
+
+    scene:
         - name:         P1
           sprites:
             - triangles:

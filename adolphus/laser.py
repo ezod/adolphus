@@ -19,8 +19,8 @@ class LineLaser(SceneObject):
     """\
     Line laser class.
     """
-    def __init__(self, name, fan, depth, pose=Pose(), mount=None,
-                 primitives=[]):
+    def __init__(self, name, fan, depth, pose=Pose(), mount_pose=Pose(),
+                 mount=None, primitives=[], triangles=[]):
         """\
         Constructor.
 
@@ -32,13 +32,17 @@ class LineLaser(SceneObject):
         @type depth: C{float}
         @param pose: Pose of the laser in space (optional).
         @type pose: L{Pose}
+        @param mount_pose: The transformation to the mounting end (optional).
+        @type mount_pose: L{Pose}
         @param mount: Mount object for the laser (optional).
         @type mount: C{object}
         @param primitives: Sprite primitives for the laser.
         @type primitives: C{dict}
+        @param triangles: The opaque triangles of this laser (optional).
+        @type triangles: C{list} of L{OcclusionTriangle}
         """
-        super(LineLaser, self).__init__(name, pose=pose, mount=mount,
-            primitives=primitives)
+        super(LineLaser, self).__init__(name, pose=pose, mount_pose=mount_pose,
+            mount=mount, primitives=primitives, triangles=triangles)
         self._fan = Angle(fan)
         self._depth = depth
         self._generate_laservis()

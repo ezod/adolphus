@@ -205,8 +205,8 @@ class Camera(SceneObject):
     based on camera and task parameters. Being a L{SceneObject} itself, it also
     provides the usual functionality of pose, visualization, and occlusion.
     """
-    def __init__(self, name, params, pose=Pose(), mount=None, primitives=[],
-                 active=True):
+    def __init__(self, name, params, pose=Pose(), mount_pose=Pose(), mount=None,
+                 primitives=[], triangles=[], active=True):
         """\
         Constructor.
 
@@ -216,15 +216,19 @@ class Camera(SceneObject):
         @type params: C{dict}
         @param pose: Pose of the camera in space (optional).
         @type pose: L{Pose}
+        @param mount_pose: The transformation to the mounting end (optional).
+        @type mount_pose: L{Pose}
         @param mount: Mount object for the camera (optional).
         @type mount: C{object}
         @param primitives: Sprite primitives for the camera.
         @type primitives: C{dict}
         @param active: Initial active state of camera (optional).
         @type active: C{bool}
+        @param triangles: The opaque triangles of this camera (optional).
+        @type triangles: C{list} of L{OcclusionTriangle}
         """
-        super(Camera, self).__init__(name, pose=pose, mount=mount,
-            primitives=primitives)
+        super(Camera, self).__init__(name, pose=pose, mount_pose=mount_pose,
+            mount=mount, primitives=primitives, triangles=triangles)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self._params = params
