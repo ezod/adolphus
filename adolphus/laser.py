@@ -113,23 +113,32 @@ class RangeCamera(Camera):
     A L{RangeCamera} differed from a L{Camera} in that its directional coverage
     assumes perpendicular projection to quantify height resolution.
     """
-    def _generate_cd(self):
-        aa = cos(self.getparam('angle_max_acceptable'))
-        if self.getparam('angle_max_ideal') == \
-           self.getparam('angle_max_acceptable'):
-            cdval = lambda sigma: float(sigma > aa)
-        else:
-            ai = cos(self.getparam('angle_max_ideal'))
-            cdval = lambda sigma: min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
-        def Cd(p):
-            try:
-                sigma = sin(p.direction_unit.angle(-p))
-            except (ValueError, AttributeError):
-                # p is at origin or not a directional point
-                return 1.0
+    def cd(self, p, tp):
+        """\
+        View angle component of the coverage function. Differs from the base
+        class in that it uses the sine of the view angle with respect to the
+        laser incidence on the surface, rather than the cosine with respect to
+        the point surface normal.
+
+        @param p: The point to test.
+        @type p: L{Point}
+        @param tp: Task parameters.
+        @type tp: C{dict}
+        @return: The view angle coverage component value in M{[0, 1]}.
+        @rtype: C{float}
+        """
+        # TODO: this is related to the camera orientation about local-z
+        try:
+            sigma = sin(p.direction_unit.angle(-p))
+            aa = cos(tp['angle_max_acceptable'])
+            if tp['angle_max_ideal'] == tp['angle_max_acceptable']:
+                return float(sigma > aa)
             else:
-                return cdval(sigma)
-        self.Cd = Cd
+                return min(max((sigma - aa) / \
+                    (cos(tp['angle_max_ideal']) - aa), 0.0), 1.0)
+        except (ValueError, AttributeError):
+            # point is at the origin or is non-directional
+            return 1.0
 
 
 class RangeModel(Model):
