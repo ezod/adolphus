@@ -302,55 +302,32 @@ class YAMLParser(object):
         @return: The parsed task model.
         @rtype: L{Task}
         """
-        # FIXME: this won't work at all yet
-        whole_model = PointCache()
-        try:
-            try:
-                ddiv = task['ddiv']
-            except KeyError:
-                ddiv = None
-            for prange in task['ranges']:
-                try:
-                    strength = prange['strength']
-                except KeyError:
-                    strength = 1.0
-                try:
-                    rhorange = prange['rho']
-                except KeyError:
-                    rhorange = (0.0, pi)
-                try:
-                    etarange = prange['eta']
-                except KeyError:
-                    etarange = (0.0, 2 * pi)
+        subtasks = []
+        for subtask in task['subtasks']:
+            whole_model = PointCache()
+            if 'ranges' in subtask:
+                ddiv = 'ddiv' in subtask and subtask['ddiv'] or None
+                for prange in subtask['ranges']:
+                    if ddiv:
+                        rho = 'rho' in prange and prange['rho'] or (0.0, pi)
+                        eta = 'eta' in prange and prange['eta'] or (0.0, 2 * pi)
+                    part_model = PointCache()
+                    for point in self._pointrange(prange['x'], prange['y'],
+                        prange['z'], subtask['step'], rho, eta, ddiv=ddiv):
+                        part_model[point] = 1.0
+                    whole_model |= part_model
+            if 'points' in subtask:
                 part_model = PointCache()
-                for point in self._pointrange(prange['x'], prange['y'],
-                    prange['z'], task['step'], rhorange, etarange,
-                    ddiv=ddiv):
-                    part_model[point] = strength
+                for point in subtask['points']:
+                    if len(point) == 3:
+                        point = Point(point)
+                    elif len(point) == 5:
+                        point = DirectionalPoint(point)
+                    part_model[point] = 1.0
                 whole_model |= part_model
-        except KeyError:
-            pass
-        try:
-            part_model = PointCache()
-            for point in task['points']:
-                if len(point['point']) == 3:
-                    pointobject = Point(point['point'])
-                elif len(point['point']) == 5:
-                    pointobject = DirectionalPoint(point['point'])
-                try:
-                    strength = point['strength']
-                except KeyError:
-                    strength = 1.0
-                part_model[pointobject] = strength
-            whole_model |= part_model            
-        except KeyError:
-            pass
-        try:
-            pose = self._parse_pose(task['pose'])
-        except KeyError:
-            pose = Pose()
-        if 'mount' in task:
-            mount = self._mounts[task['mount']]
-        else:
-            mount = None
-        return Task(whole_model, pose=pose, mount=mount)
+            params = 'parameters' in subtask and subtask['parameters'] or {}
+            pose = 'pose' in subtask \
+                and self._parse_pose(subtask['pose']) or Pose()
+            mount = 'mount' in subtask and self.model[subtask['mount']] or None
+            subtasks.append(Task(params, whole_model, pose=pose, mount=mount))
+        return subtasks

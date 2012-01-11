@@ -234,17 +234,17 @@ class Task(Posable):
         self._params[param] = value
         prefix = param.split('_')[0]
         if param.endswith('max_ideal'):
-            self.setparam('%s_max_acceptable' % prefix, max(value,
-                self.getparam('%s_max_acceptable' % prefix)))
+            self._params['%s_max_acceptable' % prefix] = \
+                max(value, self.getparam('%s_max_acceptable' % prefix))
         elif param.endswith('max_acceptable'):
-            self.setparam('%s_max_ideal' % prefix, min(value,
-                self.getparam('%s_max_ideal' % prefix)))
+            self._params['%s_max_ideal' % prefix] = \
+                min(value, self.getparam('%s_max_ideal' % prefix))
         elif param.endswith('min_ideal'):
-            self.setparam('%s_min_acceptable' % prefix, min(value,
-                self.getparam('%s_min_acceptable' % prefix)))
+            self._params['%s_min_acceptable' % prefix] = \
+                min(value, self.getparam('%s_min_acceptable' % prefix))
         elif param.endswith('min_acceptable'):
-            self.setparam('%s_min_ideal' % prefix, max(value,
-                self.getparam('%s_min_ideal' % prefix)))
+            self._params['%s_min_ideal' % prefix] = \
+                max(value, self.getparam('%s_min_ideal' % prefix))
 
     def visualize(self):
         """\
@@ -268,7 +268,7 @@ class Camera(SceneObject):
 
         @param name: The name of the camera.
         @type name: C{str}
-        @param params: Dictionary of application parameters.
+        @param params: The intrinsic camera parameters.
         @type params: C{dict}
         @param pose: Pose of the camera in space (optional).
         @type pose: L{Pose}
@@ -288,11 +288,8 @@ class Camera(SceneObject):
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self._params = params
-        self._generate_cv()
-        self._generate_cr()
-        self._generate_cf()
-        self._generate_cd()
-        self._generate_fovvis()
+        # FIXME: reinstate once FOV stuff is fixed
+        #self._generate_fovvis()
         self.active = active
         self.click_actions = {'none':   'active %s' % name,
                               'ctrl':   'fov %s' % name,
@@ -370,82 +367,6 @@ class Camera(SceneObject):
             self._delete_fov_data()
             self._generate_fovvis()
 
-    def _generate_cv(self):
-        sahl = self.fov['sahl']
-        sahr = self.fov['sahr']
-        savt = self.fov['savt']
-        savb = self.fov['savb']
-        if not self.getparam('boundary_padding'):
-            self.Cv = lambda p: p.z > 0 and \
-                float(p.x / p.z > sahl and p.x / p.z < sahr and \
-                      p.y / p.z > savt and p.y / p.z < savb) or 0.0
-        else:
-            gh = (self.getparam('boundary_padding') / float(\
-                self.getparam('dim')[0])) * 2.0 * sin(self.fov['ah'] / 2.0)
-            gv = (self.getparam('boundary_padding') / float(\
-                self.getparam('dim')[1])) * 2.0 * sin(self.fov['av'] / 2.0)
-            self.Cv = lambda p: p.z > 0 and min(min(max((min(p.x / p.z - sahl,
-                sahr - p.x / p.z) / gh), 0.0), 1.0), min(max((min(p.y / p.z \
-                - savt, savb - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
-
-    def _generate_cr(self):
-        mr = min([float(self.getparam('dim')[0]) \
-            / (2 * sin(self.fov['ah'] / 2.0)), float(self.getparam('dim')[1]) \
-            / (2 * sin(self.fov['av'] / 2.0))])
-        zrmaxi = (1.0 / self.getparam('res_max_ideal')) * mr
-        zrmaxa = (1.0 / self.getparam('res_max_acceptable')) * mr
-        try:
-            zrmini = (1.0 / self.getparam('res_min_ideal')) * mr
-        except ZeroDivisionError:
-            zrmini = float('inf')
-        try:
-            zrmina = (1.0 / self.getparam('res_min_acceptable')) * mr
-        except ZeroDivisionError:
-            zrmina = float('inf')
-        if zrmaxa == zrmaxi and zrmina == zrmini:
-            self.Cr = lambda p: float(p.z > zrmaxa and p.z < zrmina)
-        elif zrmaxa == zrmaxi:
-            self.Cr = lambda p: p.z > zrmaxa and min(max((zrmina - p.z) / \
-                (zrmina - zrmini), 0.0), 1.0) or 0.0
-        elif zrmina == zrmini:
-            self.Cr = lambda p: p.z < zrmina and min(max((p.z - zrmaxa) / \
-                (zrmaxi - zrmaxa), 0.0), 1.0) or 0.0
-        else:
-            self.Cr = lambda p: min(max(min((p.z - zrmaxa) / (zrmaxi - zrmaxa),
-                (zrmina - p.z) / (zrmina - zrmini)), 0.0), 1.0)
-        self._zrmaxa, self._zrmina = zrmaxa, zrmina
-
-    def _generate_cf(self):
-        zn, zf = self.zc(self.getparam('blur_max_acceptable') \
-            * min(self.getparam('s')))
-        if self.getparam('blur_max_ideal') == \
-           self.getparam('blur_max_acceptable'):
-            self.Cf = lambda p: float(p.z > zn and p.z < zf)
-        else:
-            zl, zr = self.zc(self.getparam('blur_max_ideal') \
-                * min(self.getparam('s')))
-            self.Cf = lambda p: min(max(min((p.z - zn) / (zl - zn),
-                (zf - p.z) / (zf - zr)), 0.0), 1.0)
-        self._zn, self._zf = zn, zf
-
-    def _generate_cd(self):
-        aa = cos(self.getparam('angle_max_acceptable'))
-        if self.getparam('angle_max_ideal') == \
-           self.getparam('angle_max_acceptable'):
-            cdval = lambda sigma: float(sigma > aa)
-        else:
-            ai = cos(self.getparam('angle_max_ideal'))
-            cdval = lambda sigma: min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
-        def Cd(p):
-            try:
-                sigma = cos(p.direction_unit.angle(-p))
-            except (ValueError, AttributeError):
-                # p is at origin or not a directional point
-                return 1.0
-            else:
-                return cdval(sigma)
-        self.Cd = Cd
-
     @property
     def fov(self):
         """\
@@ -459,26 +380,171 @@ class Camera(SceneObject):
         except AttributeError:
             self._fov = {}
             # horizontal
-            self._fov['ahl'] = 2.0 * atan((self.getparam('o')[0] * \
-                self.getparam('s')[0]) / (2.0 * self.getparam('f')))
-            self._fov['ahr'] = 2.0 * atan(((self.getparam('dim')[0] - \
-                self.getparam('o')[0]) * self.getparam('s')[0]) / \
-                (2.0 * self.getparam('f')))
+            self._fov['ahl'] = 2.0 * atan((self._params['o'][0] * \
+                self._params['s'][0]) / (2.0 * self._params['f']))
+            self._fov['ahr'] = 2.0 * atan(((self._params['dim'][0] - \
+                self._params['o'][0]) * self._params['s'][0]) / \
+                (2.0 * self._params['f']))
             self._fov['ah'] = self._fov['ahl'] + self._fov['ahr']
             self._fov['sahl'] = -sin(self._fov['ahl'])
             self._fov['sahr'] = sin(self._fov['ahr'])
             self._fov['sah'] = self._fov['sahr'] - self._fov['sahl']
+            self._fov['2sah2'] = 2.0 * sin(self._fov['ah'] / 2.0)
             # vertical
-            self._fov['avt'] = 2.0 * atan((self.getparam('o')[1] * \
-                self.getparam('s')[1]) / (2.0 * self.getparam('f')))
-            self._fov['avb'] = 2.0 * atan(((self.getparam('dim')[1] - \
-                self.getparam('o')[1]) * self.getparam('s')[1]) / \
-                (2.0 * self.getparam('f')))
+            self._fov['avt'] = 2.0 * atan((self._params['o'][1] * \
+                self._params['s'][1]) / (2.0 * self._params['f']))
+            self._fov['avb'] = 2.0 * atan(((self._params['dim'][1] - \
+                self._params['o'][1]) * self._params['s'][1]) / \
+                (2.0 * self._params['f']))
             self._fov['av'] = self._fov['avt'] + self._fov['avb']
             self._fov['savt'] = -sin(self._fov['avt'])
             self._fov['savb'] = sin(self._fov['avb'])
             self._fov['sav'] = self._fov['savb'] - self._fov['savt']
+            self._fov['2sav2'] = 2.0 * sin(self._fov['av'] / 2.0)
             return self._fov
+
+    def image(self, point):
+        """\
+        Return the projected subpixel coordinates of the specified 3D point.
+
+        @param point: The point to project.
+        @type point: L{Point}
+        @return: The subpixel coordinates of the point (if any).
+        @rtype: C{tuple} of C{float}
+        """
+        cp = (-self.pose).map(point)
+        if self.cv(cp, {'boundary_padding': 0.0}):
+            return tuple([(self._params['f'] / self._params['s'][i]) * \
+                (cp[i] / cp.z) + self._params['o'][i] for i in range(2)])
+        else:
+            return None
+
+    def zc(self, c):
+        """\
+        Return the depth values at which a circle of confusion of a given size
+        occurs.
+
+        @param c: The diameter of the circle of confusion.
+        @type c: C{float}
+        @return: Two depth values.
+        @rtype: C{tuple} of C{float}
+        """
+        r = []
+        for s in [1, -1]:
+            r.append((self._params['A'] * self._params['f'] \
+                * self._params['zS']) / (self._params['A'] \
+                * self._params['f'] + s * c * (self._params['zS'] \
+                - self._params['f'])))
+        if r[1] < 0:
+            r[1] = float('inf')
+        return tuple(r)
+
+    def cv(self, p, tp):
+        """\
+        Visibility component of the coverage function.
+
+        @param p: The point to test.
+        @type p: L{Point}
+        @param tp: Task parameters.
+        @type tp: C{dict}
+        @return: The visibility coverage component value in M{[0, 1]}.
+        @rtype: C{float}
+        """
+        if not tp['boundary_padding']:
+            return p.z > 0 and \
+                float(p.x / p.z > self.fov['sahl'] \
+                  and p.x / p.z < self.fov['sahr'] \
+                  and p.y / p.z > self.fov['savt'] \
+                  and p.y / p.z < self.fov['savb']) or 0.0
+        else:
+            gh = tp['boundary_padding'] / \
+                float(self._params['dim'][0]) * self.fov['2sah2']
+            gv = tp['boundary_padding'] / \
+                float(self._params['dim'][1]) * self.fov['2sav2']
+            return p.z > 0 and min(min(max((min(p.x / p.z - self.fov['sahl'],
+                self.fov['sahr'] - p.x / p.z) / gh), 0.0), 1.0),
+                                   min(max((min(p.y / p.z - self.fov['savt'], 
+                self.fov['savb'] - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
+
+    def cr(self, p, tp):
+        """\
+        Resolution component of the coverage function.
+
+        @param p: The point to test.
+        @type p: L{Point}
+        @param tp: Task parameters.
+        @type tp: C{dict}
+        @return: The resolution coverage component value in M{[0, 1]}.
+        @rtype: C{float}
+        """
+        mr = min([float(self._params['dim'][0]) / self.fov['2sah2'],
+                  float(self._params['dim'][1]) / self.fov['2sav2']])
+        zrmaxi = mr / tp['res_max_ideal']
+        zrmaxa = mr / tp['res_max_acceptable']
+        try:
+            zrmini = mr / tp['res_min_ideal']
+        except ZeroDivisionError:
+            zrmini = float('inf')
+        try:
+            zrmina = mr / tp['res_min_acceptable']
+        except ZeroDivisionError:
+            zrmina = float('inf')
+        if zrmaxa == zrmaxi and zrmina == zrmini:
+            return float(p.z > zrmaxa and p.z < zrmina)
+        elif zrmaxa == zrmaxi:
+            return p.z > zrmaxa and min(max((zrmina - p.z) / \
+                (zrmina - zrmini), 0.0), 1.0) or 0.0
+        elif zrmina == zrmini:
+            return p.z < zrmina and min(max((p.z - zrmaxa) / \
+                (zrmaxi - zrmaxa), 0.0), 1.0) or 0.0
+        else:
+            return min(max(min((p.z - zrmaxa) / (zrmaxi - zrmaxa),
+                (zrmina - p.z) / (zrmina - zrmini)), 0.0), 1.0)
+
+    def cf(self, p, tp):
+        """\
+        Focus component of the coverage function.
+
+        @param p: The point to test.
+        @type p: L{Point}
+        @param tp: Task parameters.
+        @type tp: C{dict}
+        @return: The focus coverage component value in M{[0, 1]}.
+        @rtype: C{float}
+        """
+        zn, zf = self.zc(tp['blur_max_acceptable'] * min(self._params['s']))
+        if tp['blur_max_ideal'] == tp['blur_max_acceptable']:
+            return float(p.z > zn and p.z < zf)
+        else:
+            zl, zr = self.zc(tp['blur_max_ideal'] * min(self._params['s']))
+            return min(max(min((p.z - zn) / (zl - zn),
+                               (zf - p.z) / (zf - zr)), 0.0), 1.0)
+
+    def cd(self, p, tp):
+        """\
+        View angle component of the coverage function.
+
+        @param p: The point to test.
+        @type p: L{Point}
+        @param tp: Task parameters.
+        @type tp: C{dict}
+        @return: The view angle coverage component value in M{[0, 1]}.
+        @rtype: C{float}
+        """
+        try:
+            sigma = cos(p.direction_unit.angle(-p))
+            aa = cos(tp['angle_max_acceptable'])
+            if tp['angle_max_ideal'] == tp['angle_max_acceptable']:
+                return float(sigma > aa)
+            else:
+                return min(max((sigma - aa) / \
+                    (cos(tp['angle_max_ideal']) - aa), 0.0), 1.0)
+        except (ValueError, AttributeError):
+            # point is at the origin or is non-directional
+            return 1.0
+
+    # FIXME: all this FOV stuff is now task-dependent... occlusion caching now
+    #        needs to be done on a per-task basis, etc.
 
     @property
     def fov_hull(self):
@@ -533,26 +599,6 @@ class Camera(SceneObject):
             range(0, 16, 4)] + [{'type': 'curve', 'color': (1, 0, 0),
             'pos': [self.fov_hull[i], self.fov_hull[i + 4]]} for i in range(4)]
 
-    def zc(self, c):
-        """\
-        Return the depth values at which a circle of confusion of a given size
-        occurs.
-
-        @param c: The diameter of the circle of confusion.
-        @type c: C{float}
-        @return: Two depth values.
-        @rtype: C{tuple} of C{float}
-        """
-        r = []
-        for s in [1, -1]:
-            r.append((self.getparam('A') * self.getparam('f') \
-                * self.getparam('zS')) / (self.getparam('A') \
-                * self.getparam('f') + s * c * (self.getparam('zS') \
-                - self.getparam('f'))))
-        if r[1] < 0:
-            r[1] = float('inf')
-        return tuple(r)
-
     def occluded_by(self, triangle):
         """\
         Return whether this camera's field of view is occluded (in part) by the
@@ -587,7 +633,7 @@ class Camera(SceneObject):
                     return False
         return True
 
-    def strength(self, point):
+    def strength(self, point, task_params):
         """\
         Return the coverage strength for a directional point. Note that since
         the L{Camera} object is not internally aware of the scene it inhabits,
@@ -595,27 +641,14 @@ class Camera(SceneObject):
 
         @param point: The (directional) point to test.
         @type point: L{Point}
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
         cp = (-self.pose).map(point)
-        return self.Cv(cp) * self.Cr(cp) * self.Cf(cp) * self.Cd(cp)
-
-    def image(self, point):
-        """\
-        Return the projected subpixel coordinates of the specified 3D point.
-
-        @param point: The point to project.
-        @type point: L{Point}
-        @return: The subpixel coordinates of the point (if any).
-        @rtype: C{tuple} of C{float}
-        """
-        cp = (-self.pose).map(point)
-        if self.Cv(cp):
-            return tuple([(self.getparam('f') / self.getparam('s')[i]) * \
-                (cp[i] / cp.z) + self.getparam('o')[i] for i in range(2)])
-        else:
-            return None
+        return self.cv(cp, task_params) * self.cr(cp, task_params) \
+             * self.cf(cp, task_params) * self.cd(cp, task_params)
 
     def update_visualization(self):
         """\

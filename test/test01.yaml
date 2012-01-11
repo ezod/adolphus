@@ -1,12 +1,6 @@
 model:
     name:           Test Model 01
 
-    boundary_padding:       20.0
-    res_min_ideal:          3.0
-    res_min_acceptable:     0.5
-    blur_max_acceptable:    5.0
-    angle_max_ideal:        1.3
-
     cameras:
         - name:         C
           sprites:      [cameras/prosilicaec1350.yaml, lenses/computarm3z1228cmp.yaml]
@@ -47,12 +41,22 @@ model:
                     - [100, 1100, -80]
                     - [-100, 1100, -80]
 
-relevance:
+tasks:
     - name:         R1
-      points:
-        - point:        [0, 0, 1000]
-          strength:     0.5
+      subtasks:
+        - parameters:
+              boundary_padding:       20.0
+              res_min_ideal:          3.0
+              res_min_acceptable:     0.5
+              blur_max_acceptable:    5.0
+          points:
+            - [0, 0, 1000]
     - name:         R2
-      points:
-        - point:        [0, 0, 1200]
-          strength:     0.5
+      subtasks:
+        - parameters:
+              boundary_padding:       20.0
+              res_min_ideal:          3.0
+              res_min_acceptable:     0.5
+              blur_max_acceptable:    5.0
+          points:
+            - [0, 0, 1200]
