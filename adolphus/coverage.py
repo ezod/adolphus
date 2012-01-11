@@ -288,11 +288,8 @@ class Camera(SceneObject):
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
         self._params = params
-        # FIXME: reinstate once FOV stuff is fixed
-        #self._generate_fovvis()
         self.active = active
         self.click_actions = {'none':   'active %s' % name,
-                              'ctrl':   'fov %s' % name,
                               'alt':    'cameraview %s' % name,
                               'shift':  'modify %s' % name}
 
@@ -543,63 +540,7 @@ class Camera(SceneObject):
             # point is at the origin or is non-directional
             return 1.0
 
-    # FIXME: all this FOV stuff is now task-dependent... occlusion caching now
-    #        needs to be done on a per-task basis, etc.
-
-    @property
-    def fov_hull(self):
-        """\
-        Vertices of the viewing frustum (region of 3-space in which coverage is
-        nonzero before occlusion).
-        """
-        try:
-            return self._fov_hull
-        except AttributeError:
-            self._fov_hull = []
-            for z in [max(self._zn, self._zrmaxa), min(self._zf, self._zrmina)]:
-                self._fov_hull += \
-                    [Point((self.fov['sahl'] * z, self.fov['savt'] * z, z)),
-                     Point((self.fov['sahl'] * z, self.fov['savb'] * z, z)),
-                     Point((self.fov['sahr'] * z, self.fov['savb'] * z, z)),
-                     Point((self.fov['sahr'] * z, self.fov['savt'] * z, z))]
-            return self._fov_hull
-
-    @property
-    def fov_hull_vertices(self):
-        try:
-            return self._fov_hull_vertices
-        except AttributeError:
-            self._fov_hull_vertices = [self.pose.T] + \
-                [self.pose.map(v) for v in self.fov_hull[4:]]
-            return self._fov_hull_vertices
-
-    @property
-    def fov_hull_edges(self):
-        try:
-            return self._fov_hull_edges
-        except AttributeError:
-            H = self.fov_hull_vertices
-            self._fov_hull_edges = [(H[i] - H[0], H[0]) for i in range(1, 5)] \
-                + [(H[(i + 1) % 4 + 1] - H[i + 1], H[i + 1]) for i in range(4)]
-            return self._fov_hull_edges
-
-    @property
-    def fov_hull_faces(self):
-        try:
-            return self._fov_hull_faces
-        except AttributeError:
-            H = self.fov_hull_vertices
-            self._fov_hull_faces = [Face([H[4], H[3], H[2], H[1]])] \
-                + [Face([H[0], H[i + 1], H[(i + 1) % 4 + 1]]) for i in range(4)]
-            return self._fov_hull_faces
-
-    def _generate_fovvis(self):
-        self.fovvis = [{'type': 'curve', 'color': (1, 0, 0), 'pos': \
-            self.fov_hull[i:i + 4] + self.fov_hull[i:i + 1]} for i in \
-            range(0, 16, 4)] + [{'type': 'curve', 'color': (1, 0, 0),
-            'pos': [self.fov_hull[i], self.fov_hull[i + 4]]} for i in range(4)]
-
-    def occluded_by(self, triangle):
+    def occluded_by(self, triangle, depth):
         """\
         Return whether this camera's field of view is occluded (in part) by the
         specified triangle.
@@ -609,20 +550,35 @@ class Camera(SceneObject):
 
         @param triangle: The triangle to check.
         @type triangle: L{OcclusionTriangle}
+        @param depth: The depth to which occlusion should be checked.
+        @type depth: C{float}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        for face in self.fov_hull_faces:
+        # TODO: should these be cached?
+        hull = \
+            [Point((self.fov['sahl'] * depth, self.fov['savt'] * depth, depth)),
+             Point((self.fov['sahl'] * depth, self.fov['savb'] * depth, depth)),
+             Point((self.fov['sahr'] * depth, self.fov['savb'] * depth, depth)),
+             Point((self.fov['sahr'] * depth, self.fov['savt'] * depth, depth))]
+        verts = [self.pose.T] + [self.pose.map(v) for v in hull]
+        edges = [(verts[i] - verts[0], verts[0]) for i in range(1, 5)] + \
+                [(verts[(i + 1) % 4 + 1] - verts[i + 1], verts[i + 1]) \
+                for i in range(4)]
+        faces = [Face([verts[4], verts[3], verts[2], verts[1]])] + \
+                [Face([verts[0], verts[i + 1], verts[(i + 1) % 4 + 1]]) \
+                for i in range(4)]
+        for face in faces:
             if which_side(triangle.mapped_triangle.vertices, face.normal,
                 face.vertices[0]) > 0:
                 return False
-        if which_side(self.fov_hull_vertices, triangle.mapped_triangle.normal,
+        if which_side(verts, triangle.mapped_triangle.normal,
             triangle.mapped_triangle.vertices[0]) > 0:
             return False
-        for fedge, fvertex in self.fov_hull_edges:
+        for fedge, fvertex in edges:
             for i in range(3):
                 direction = fedge ** triangle.mapped_triangle.edges[i]
-                side0 = which_side(self.fov_hull_vertices, direction, fvertex)
+                side0 = which_side(verts, direction, fvertex)
                 if side0 == 0:
                     continue
                 side1 = which_side(triangle.mapped_triangle.vertices, direction,
@@ -679,13 +635,15 @@ class Model(dict):
         self.cameras = set()
         self._occlusion_cache = {}
         self._oc_updated = {}
-        self._oc_needs_update = True
+        self._oc_needs_update = {}
 
     def __setitem__(self, key, value):
-        self._oc_updated[key] = False
+        for depth in self._occlusion_cache:
+            self._oc_updated[depth][key] = False
         def callback():
-            self._oc_updated[key] = False
-            self._oc_needs_update = True
+            for depth in self._occlusion_cache:
+                self._oc_updated[depth][key] = False
+                self._oc_needs_update[depth] = True
         value.posecallbacks.add(callback)
         if isinstance(value, Camera):
             self.cameras.add(key)
@@ -721,45 +679,60 @@ class Model(dict):
         return set([frozenset(view) \
             for view in combinations(self.active_cameras, ocular)])
 
-    def _update_occlusion_cache(self):
-        if not self._oc_needs_update:
+    def _update_occlusion_cache(self, depth):
+        if not depth in self._occlusion_cache:
+            self._occlusion_cache[depth] = {}
+            self._oc_updated[depth] = {}
+            for sceneobject in self:
+                self._oc_updated[depth][sceneobject] = False
+            self._oc_needs_update[depth] = True
+        elif not self._oc_needs_update[depth]:
             return
         remainder = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
             for oc_set in self.oc_sets]))
         for obj in set(remainder):
-            if not self._oc_updated[obj]:
+            if not self._oc_updated[depth][obj]:
                 remainder.remove(obj)
-                self._occlusion_cache[obj] = {}
+                self._occlusion_cache[depth][obj] = {}
                 for sceneobject in self:
-                    self._occlusion_cache[obj][sceneobject] = \
+                    self._occlusion_cache[depth][obj][sceneobject] = \
                         set([triangle for triangle \
                             in self[sceneobject].triangles \
-                            if self[obj].occluded_by(triangle)])
+                            if self[obj].occluded_by(triangle, depth)])
         for sceneobject in self:
-            if not self._oc_updated[sceneobject]:
+            if not self._oc_updated[depth][sceneobject]:
                 for obj in remainder:
-                    self._occlusion_cache[obj][sceneobject] = \
+                    self._occlusion_cache[depth][obj][sceneobject] = \
                         set([triangle for triangle \
                             in self[sceneobject].triangles \
-                            if self[obj].occluded_by(triangle)])
-                self._oc_updated[sceneobject] = True
-        self._oc_needs_update = False
+                            if self[obj].occluded_by(triangle, depth)])
+                self._oc_updated[depth][sceneobject] = True
+        self._oc_needs_update[depth] = False
 
-    def occluded(self, point, obj):
+    def occluded(self, point, obj, depth=None):
         """\
         Return whether the specified point is occluded with respect to the
-        specified object, using the occlusion cache triangles.
+        specified object. If a depth is specified, an occlusion cache for the
+        specified depth will be used.
 
         @param point: The point to check.
         @type point: L{Point}
         @param obj: The object ID to check.
         @type obj: C{str}
+        @param depth: Depth of occlusion cache to use (optional).
+        @type depth: C{float}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        self._update_occlusion_cache()
-        for triangle in set([t for ts in [self._occlusion_cache[obj]\
-            [sceneobject] for sceneobject in self] for t in ts]):
+        if depth:
+            self._update_occlusion_cache(depth)
+            tset = set([t for ts in \
+                [self._occlusion_cache[depth][obj][sceneobject] \
+                for sceneobject in self] for t in ts])
+        else:
+            tset = set([t for ts in [self[sceneobject].triangles \
+                for sceneobject in self] for t in ts])
+        for triangle in tset:
             if triangle.intersection(self[obj].pose.T, point):
                 return True
         return False
@@ -779,7 +752,6 @@ class Model(dict):
         @rtype: C{float}
         """
         active_cameras = subset or self.active_cameras
-        self._update_occlusion_cache()
         if len(active_cameras) < task_params['ocular']:
             raise ValueError('too few active cameras')
         maxstrength = 0.0
@@ -791,6 +763,7 @@ class Model(dict):
                     minstrength = 0.0
                     break
                 elif strength < minstrength:
+                    # TODO: get depth, use occlusion cache (not trivial)
                     minstrength = strength * (not self.occluded(point, camera))
             if minstrength > 1.0:
                 minstrength = 0.0
@@ -831,7 +804,8 @@ class Model(dict):
         @rtype: C{float}
         """
         coverage = coverage or self.coverage(task, subset)
-        return sum((coverage & task.mapped).values()) / float(len(task))
+        return sum((coverage & task.mapped).values()) / \
+            float(len(task.original))
 
     def best_view(self, task, current=None, threshold=0, candidates=None):
         """\

@@ -19,8 +19,8 @@ class LineLaser(SceneObject):
     """\
     Line laser class.
     """
-    def __init__(self, name, fan, depth, pose=Pose(), mount_pose=Pose(),
-                 mount=None, primitives=[], triangles=[]):
+    def __init__(self, name, fan, pose=Pose(), mount_pose=Pose(), mount=None,
+                 primitives=[], triangles=[]):
         """\
         Constructor.
 
@@ -28,8 +28,6 @@ class LineLaser(SceneObject):
         @type name: C{str}
         @param fan: Fan angle of the laser line.
         @type fan: L{Angle}
-        @param depth: Projection depth of the laser line.
-        @type depth: C{float}
         @param pose: Pose of the laser in space (optional).
         @type pose: L{Pose}
         @param mount_pose: The transformation to the mounting end (optional).
@@ -44,10 +42,8 @@ class LineLaser(SceneObject):
         super(LineLaser, self).__init__(name, pose=pose, mount_pose=mount_pose,
             mount=mount, primitives=primitives, triangles=triangles)
         self._fan = Angle(fan)
-        self._depth = depth
         self._generate_laservis()
-        self.click_actions = {'ctrl':   'laser %s' % name,
-                              'shift':  'modify %s' % name}
+        self.click_actions = {'shift':  'modify %s' % name}
 
     def _pose_changed_hook(self):
         """\
@@ -66,44 +62,24 @@ class LineLaser(SceneObject):
         """
         return self._fan
 
-    @property
-    def depth(self):
-        """\
-        Projection depth.
-        """
-        return self._depth
-
-    @property
-    def triangle(self):
-        """\
-        Triangle defining the laser plane.
-        """
-        try:
-            return self._triangle
-        except AttributeError:
-            width = self.depth * tan(self.fan / 2.0)
-            self._triangle = Triangle((self.pose.T,
-                self.pose.map(Point((-width, 0, self.depth))),
-                self.pose.map(Point((width, 0, self.depth)))))
-            return self._triangle
-
-    def _generate_laservis(self):
-        width = self.depth * tan(self.fan / 2.0)
-        self.laservis = [{'type': 'curve', 'color': (1, 0, 0),
-            'pos': [(0, 0, 0), (-width, 0, self.depth),
-                    (width, 0, self.depth), (0, 0, 0)]}]
-
-    def occluded_by(self, triangle):
+    def occluded_by(self, triangle, depth):
         """\
         Return whether this laser's projection plane is occluded (in part) by
         the specified triangle.
 
         @param triangle: The triangle to check.
         @type triangle: L{OcclusionTriangle}
+        @param depth: The projection depth of the laser.
+        @type depth: C{float}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        return self.triangle.overlap(triangle.mapped_triangle)
+        # TODO: should these be cached?
+        width = depth * tan(self.fan / 2.0)
+        laser_triangle = Triangle((self.pose.T,
+            self.pose.map(Point((-width, 0, depth))),
+            self.pose.map(Point((width, 0, depth)))))
+        return laser_triangle.overlap(triangle.mapped_triangle)
 
 
 class RangeCamera(Camera):
@@ -167,13 +143,15 @@ class RangeModel(Model):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
 
-    def project(self, laser, target, lpitch):
+    def project(self, laser, depth, target, lpitch):
         """\
         Generate a range imaging task model by projecting the specified laser
         line onto the target object.
 
         @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
+        @param depth: The projection depth of the laser.
+        @type depth: C{float}
         @param target: The target object ID.
         @type target: C{str}
         @param lpitch: The horizontal pitch of task model points.
@@ -184,12 +162,12 @@ class RangeModel(Model):
         if not laser in self.lasers:
             raise KeyError('invalid laser')
         points = PointCache()
-        width = self[laser].depth * tan(self[laser].fan / 2.0)
+        width = depth * tan(self[laser].fan / 2.0)
         x = int(-width / lpitch) * lpitch
         while x < width:
             cp = None
             origin = self[laser].pose.map(Point((x, 0, 0)))
-            end = self[laser].pose.map(Point((x, 0, self[laser].depth)))
+            end = self[laser].pose.map(Point((x, 0, depth)))
             for triangle in self[target].triangles:
                 ip = triangle.intersection(origin, end)
                 if ip:

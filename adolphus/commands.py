@@ -170,38 +170,6 @@ def cmd_cameraview(ex, args):
         except RuntimeError:
             pass
 
-def cmd_fov(ex, args):
-    """\
-    Toggle display of the viewing frustum for the specified camera.
-    
-    usage: %s name
-    """
-    if args[0] in ex.fovvis:
-        ex.fovvis[args[0]].visible = not ex.fovvis[args[0]].visible
-    else:
-        ex.display.select()
-        try:
-            ex.fovvis[args[0]] = Sprite(ex.model[args[0]].fovvis)
-            ex.fovvis[args[0]].frame = ex.model[args[0]].actuals['main']
-        except KeyError:
-            raise CommandError('invalid camera name')
-
-def cmd_laser(ex, args):
-    """\
-    Toggle display of the laser sheet for the specified line laser.
-
-    usage: %s name
-    """
-    if args[0] in ex.laservis:
-        ex.laservis[args[0]].visible = not ex.laservis[args[0]].visible
-    else:
-        ex.display.select()
-        try:
-            ex.laservis[args[0]] = Sprite(ex.model[args[0]].laservis)
-            ex.laservis[args[0]].frame = ex.model[args[0]].actuals['main']
-        except KeyError:
-            raise CommandError('invalid laser name')
-
 ### Geometric
 
 def cmd_pose(ex, args, response='pickle'):
