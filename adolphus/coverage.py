@@ -1,21 +1,7 @@
 """\
 Coverage model module. Contains the coverage strength model classes for single
-cameras and multi-camera networks, as well as point cache and relevance model
+cameras and multi-camera networks, as well as point cache and task model
 classes.
-
-The available task parameters are:
-
-    - C{boundary_padding}: width of degradation boundary around image (pixels).
-    - C{res_max_ideal}: upper limit of ideal resolution range (mm/pixel).
-    - C{res_max_acceptable}: maximum acceptable resolution (mm/pixel).
-    - C{res_min_ideal}: lower limit of ideal resolution range (mm/pixel).
-    - C{res_min_acceptable}: minimum acceptable resolution (mm/pixel).
-    - C{blur_max_ideal}: ideal maximum blur circle diameter (pixels).
-    - C{blur_max_acceptable}: maximum acceptable blur circle diameter (pixels).
-    - C{angle_max_ideal}: ideal maximum view angle (radians).
-    - C{angle_max_acceptable}: maximum acceptable view angle (radians).
-
-See L{TP_DEFAULTS} for default (permissive) task parameter values.
 
 @author: Aaron Mavrinac
 @organization: University of Windsor
@@ -37,24 +23,12 @@ from .posable import Posable, SceneObject
 from .visualization import Visualizable
 
 
-# TODO: make this specific to the model class?
-TP_DEFAULTS = {'boundary_padding': 0.0,
-               'res_max_ideal': float('inf'),
-               'res_max_acceptable': float('inf'),
-               'res_min_ideal': 0.0,
-               'res_min_acceptable': 0.0,
-               'blur_max_ideal': 1.0,
-               'blur_max_acceptable': 1.0,
-               'angle_max_ideal': pi / 2.0,
-               'angle_max_acceptable': pi / 2.0}
-
-
 class PointCache(dict):
     """\
     Point cache class.
 
     The L{PointCache} object attempts to improve the efficiency of operations
-    involving relevance models and discrete coverage functions. It provides the
+    involving task models and discrete coverage functions. It provides the
     equivalent of standard fuzzy intersection and union via the C{&} and C{|}
     operators, respectively. It also provides a visualization method.
     """
@@ -128,26 +102,58 @@ class PointCache(dict):
         self.visual.visualize()
 
 
-class RelevanceModel(Posable):
+class Task(Posable):
     """\
-    Relevance model class.
+    Task model class.
 
-    A L{RelevanceModel} object is functionally a posable set of discrete
-    relevance function points. In practice it manages two L{PointCache}
-    objects: a static original and a volatile version mapped through the pose.
+    A L{Task} object is functionally a posable discrete set of relevant points
+    to be covered according to requirements defined by its task parameters. It
+    manages two L{PointCache} objects: a static original and a volatile version
+    mapped through its pose.
+
+    The available task parameters are:
+
+        - C{ocular}: mutual camera coverage degree (number of cameras).
+        - C{boundary_padding}: width of degradation boundary around image (pixels).
+        - C{res_max_ideal}: upper limit of ideal resolution range (mm/pixel).
+        - C{res_max_acceptable}: maximum acceptable resolution (mm/pixel).
+        - C{res_min_ideal}: lower limit of ideal resolution range (mm/pixel).
+        - C{res_min_acceptable}: minimum acceptable resolution (mm/pixel).
+        - C{blur_max_ideal}: ideal maximum blur circle diameter (pixels).
+        - C{blur_max_acceptable}: maximum acceptable blur circle diameter (pixels).
+        - C{angle_max_ideal}: ideal maximum view angle (radians).
+        - C{angle_max_acceptable}: maximum acceptable view angle (radians).
+
+    See L{Task.defaults} for default (permissive) values.
     """
-    def __init__(self, original, pose=Pose(), mount=None):
+    defaults = {'ocular': 1,
+                'boundary_padding': 0.0,
+                'res_max_ideal': float('inf'),
+                'res_max_acceptable': float('inf'),
+                'res_min_ideal': 0.0,
+                'res_min_acceptable': 0.0,
+                'blur_max_ideal': 1.0,
+                'blur_max_acceptable': 1.0,
+                'angle_max_ideal': pi / 2.0,
+                'angle_max_acceptable': pi / 2.0}
+
+    def __init__(self, params, original, pose=Pose(), mount=None):
         """\
         Constructor.
 
-        @param original: The original set of relevance model points.
+        @param params: The task parameters for this task.
+        @type params: C{dict}
+        @param original: The original set of task model points.
         @type original: L{PointCache}
-        @param pose: The pose of this relevance model.
+        @param pose: The pose of this task model.
         @type pose: L{Pose}
-        @param mount: The mount of this relevance model.
+        @param mount: The mount of this task model.
         @type mount: L{SceneObject}
         """
-        super(RelevanceModel, self).__init__(pose=pose, mount=mount)
+        super(Task, self).__init__(pose=pose, mount=mount)
+        self._params = {}
+        for param in params:
+            self.setparam(param, params[param])
         self._original = original
 
     def _pose_changed_hook(self):
@@ -158,19 +164,19 @@ class RelevanceModel(Posable):
             del self._mapped
         except AttributeError:
             pass
-        super(RelevanceModel, self)._pose_changed_hook()
+        super(Task, self)._pose_changed_hook()
 
     @property
     def original(self):
         """\
-        Original (unmapped) relevance model points.
+        Original (unmapped) task model points.
         """
         return self._original
 
     @property
     def mapped(self):
         """\
-        Actual (mapped) relevance model points.
+        Actual (mapped) task model points.
         """
         try:
             return self._mapped
@@ -183,16 +189,66 @@ class RelevanceModel(Posable):
     @property
     def pose(self):
         """\
-        The pose of the relevance model.
+        The pose of the task model.
         """
         if self.mount:
             return self._pose + self.mount.mount_pose()
         else:
             return self._pose
 
+    @property
+    def params(self):
+        """\
+        Task parameters, with defaults filled in for missing values.
+        """
+        params = self.defaults
+        for param in self._params:
+            params[param] = self._params[param]
+        return params
+
+    def getparam(self, param):
+        """\
+        Retrieve a task parameter.
+
+        @param param: The name of the parameter to retrieve.
+        @type param: C{str}
+        @return: The value of the parameter.
+        @rtype: C{object}
+        """
+        try:
+            return self._params[param]
+        except KeyError:
+            return self.defaults[param]
+
+    def setparam(self, param, value):
+        """\
+        Set a camera parameter.
+
+        @param param: The name of the paramater to set.
+        @type param: C{str}
+        @param value: The value to which to set the parameter.
+        @type value: C{object}
+        """
+        if not param in self._params and not param in self.defaults:
+            raise KeyError(param)
+        self._params[param] = value
+        prefix = param.split('_')[0]
+        if param.endswith('max_ideal'):
+            self.setparam('%s_max_acceptable' % prefix, max(value,
+                self.getparam('%s_max_acceptable' % prefix)))
+        elif param.endswith('max_acceptable'):
+            self.setparam('%s_max_ideal' % prefix, min(value,
+                self.getparam('%s_max_ideal' % prefix)))
+        elif param.endswith('min_ideal'):
+            self.setparam('%s_min_acceptable' % prefix, min(value,
+                self.getparam('%s_min_acceptable' % prefix)))
+        elif param.endswith('min_acceptable'):
+            self.setparam('%s_min_ideal' % prefix, max(value,
+                self.getparam('%s_min_ideal' % prefix)))
+
     def visualize(self):
         """\
-        Visualize the relevance model.
+        Visualize the task model.
         """
         self.mapped.visualize()
 
@@ -264,51 +320,48 @@ class Camera(SceneObject):
         self._delete_fov_data()
         super(Camera, self)._pose_changed_hook()
 
+    @property
+    def params(self):
+        """\
+        Camera parameters.
+        """
+        return self._params
+
     def getparam(self, param):
         """\
-        Retrieve a camera parameter from this camera.
+        Retrieve a camera parameter.
 
         @param param: The name of the parameter to retrieve.
         @type param: C{str}
         @return: The value of the parameter.
         @rtype: C{object}
         """
-        try:
-            return self._params[param]
-        except KeyError:
-            return TP_DEFAULTS[param]
+        return self._params[param]
 
     def setparam(self, param, value):
         """\
-        Set a camera parameter on this camera.
+        Set a camera parameter.
 
         @param param: The name of the paramater to set.
         @type param: C{str}
         @param value: The value to which to set the parameter.
         @type value: C{object}
         """
-        if not param in self._params and not param in TP_DEFAULTS:
-            raise KeyError('invalid parameter %s' % param)
+        if not param in self._params:
+            raise KeyError(param)
         self._params[param] = value
-        fov = False
         fovvis = False
         if param in ['f', 's', 'o', 'dim']:
             try:
                 del self._fov
             except AttributeError:
                 pass
-            fov = True
-            fovvis = True
-        if fov or param == 'boundary_padding':
             self._generate_cv()
-        if fov or param.startswith('res'):
             self._generate_cr()
             fovvis = True
-        if param in ['A', 'zS', 'f', 's'] or param.startswith('blur'):
+        if param in ['A', 'zS', 'f', 's']:
             self._generate_cf()
             fovvis = True
-        if param.startswith('angle'):
-            self._generate_cd()
         if fovvis:
             try:
                 del self._fov_hull
@@ -585,19 +638,15 @@ class Model(dict):
     # object types for which occlusion caching is handled by this class
     oc_sets = ['cameras']
 
-    def __init__(self, task_params=dict()):
+    def __init__(self):
         """\
         Constructor.
-
-        @param task_params: Task parameters.
-        @type task_params: C{dict}
         """
         dict.__init__(self)
         self.cameras = set()
         self._occlusion_cache = {}
         self._oc_updated = {}
         self._oc_needs_update = True
-        self._task_params = task_params
 
     def __setitem__(self, key, value):
         self._oc_updated[key] = False
@@ -607,8 +656,6 @@ class Model(dict):
         value.posecallbacks.add(callback)
         if isinstance(value, Camera):
             self.cameras.add(key)
-            for param in self._task_params:
-                value.setparam(param, self._task_params[param])
         super(Model, self).__setitem__(key, value)
 
     def __delitem__(self, key):
@@ -619,35 +666,6 @@ class Model(dict):
     def __del__(self):
         for sceneobject in self:
             self[sceneobject].visible = False
-
-    def getparam(self, param):
-        """\
-        Retrieve a task parameter from this model.
-
-        @param param: The name of the task parameter to retrieve.
-        @type param: C{str}
-        @return: The value of the parameter.
-        @rtype: C{object}
-        """
-        try:
-            return self._task_params[param]
-        except KeyError:
-            return TP_DEFAULTS[param]
-
-    def setparam(self, param, value):
-        """\
-        Set a task parameter on this model.
-
-        @param param: The name of the task paramater to set.
-        @type param: C{str}
-        @param value: The value to which to set the parameter.
-        @type value: C{object}
-        """
-        if not param in TP_DEFAULTS:
-            raise KeyError('invalid parameter')
-        self._task_params[param] = value
-        for camera in self.cameras:
-            self[camera].setparam(param, value)
 
     @property
     def active_cameras(self):
@@ -713,15 +731,15 @@ class Model(dict):
                 return True
         return False
 
-    def strength(self, point, ocular=1, subset=None):
+    def strength(self, point, task_params, subset=None):
         """\
         Return the individual coverage strength of a point in the coverage
         strength model.
 
         @param point: The (directional) point to test.
         @type point: L{Point}
-        @param ocular: Mutual camera coverage degree.
-        @type ocular: C{int}
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @return: The coverage strength of the point.
@@ -729,13 +747,13 @@ class Model(dict):
         """
         active_cameras = subset or self.active_cameras
         self._update_occlusion_cache()
-        if len(active_cameras) < ocular:
+        if len(active_cameras) < task_params['ocular']:
             raise ValueError('too few active cameras')
         maxstrength = 0.0
-        for combination in combinations(active_cameras, ocular):
+        for view in self.views(task_params['ocular']):
             minstrength = float('inf')
-            for camera in combination:
-                strength = self[camera].strength(point)
+            for camera in view:
+                strength = self[camera].strength(point, task_params)
                 if not strength:
                     minstrength = 0.0
                     break
@@ -746,36 +764,32 @@ class Model(dict):
             maxstrength = max(maxstrength, minstrength)
         return maxstrength
 
-    def coverage(self, relevance, ocular=1, subset=None):
+    def coverage(self, task, subset=None):
         """\
         Return the coverage model of this multi-camera network with respect to
-        the points in a given relevance model.
+        the points in a given task model.
 
-        @param relevance: The relevance model.
-        @type relevance: L{RelevanceModel}
-        @param ocular: Mutual camera coverage degree.
-        @type ocular: C{int}
+        @param task: The task model.
+        @type task: L{Task}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @return: The coverage model.
         @rtype: L{PointCache}
         """
         coverage = PointCache()
-        for point in relevance.mapped:
-            coverage[point] = self.strength(point, ocular, subset)
+        for point in task.mapped:
+            coverage[point] = self.strength(point, task.params, subset)
         return coverage
 
-    def performance(self, relevance, ocular=1, subset=None, coverage=None):
+    def performance(self, task, subset=None, coverage=None):
         """\
         Return the coverage performance of this multi-camera network with
-        respect to a given relevance model. If a previously computed coverage
-        cache is provided, it should be for the same point set as used by the
-        relevance model.
+        respect to a given task model. If a previously computed coverage cache
+        is provided, it is assumed to contain the same points as the mapped
+        task model.
 
-        @param relevance: The relevance model.
-        @type relevance: L{RelevanceModel}
-        @param ocular: Mutual camera coverage degree.
-        @type ocular: C{int}
+        @param task: The task model.
+        @type task: L{Task}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @param coverage: Previously computed coverage cache for these points.
@@ -783,22 +797,18 @@ class Model(dict):
         @return: Performance metric in [0, 1].
         @rtype: C{float}
         """
-        coverage = coverage or self.coverage(relevance, ocular, subset)
-        return sum((coverage & relevance.mapped).values()) \
-            / sum(relevance.mapped.values())
+        coverage = coverage or self.coverage(task, subset)
+        return sum((coverage & task.mapped).values()) / float(len(task))
 
-    def best_view(self, relevance, ocular=1, current=None, threshold=0,
-                  candidates=None):
+    def best_view(self, task, current=None, threshold=0, candidates=None):
         """\
-        Return the best I{k}-view of the given relevance model. If the current
-        (or previous) best view is specified, the hysteresis threshold adds some
+        Return the best I{k}-view of the given task model. If the current (or
+        previous) best view is specified, the hysteresis threshold adds some
         bias to that view to smooth the transition sequence. A restricted set of
         candidate views may be specified.
 
-        @param relevance: The relevance model.
-        @type relevance: L{RelevanceModel}
-        @param ocular: Mutual camera coverage degree.
-        @type ocular: C{int}
+        @param task: The task model.
+        @type task: L{Task}
         @param current: The current (previous) best view (optional).
         @type current: C{str}
         @param threshold: The hysteresis threshold in [0, 1] for transition.
@@ -811,9 +821,9 @@ class Model(dict):
         if candidates:
             scores = dict.fromkeys(candidates)
         else:
-            scores = dict.fromkeys(self.views(ocular=ocular))
+            scores = dict.fromkeys(self.views(ocular=task.params['ocular']))
         for view in scores:
-            scores[view] = self.performance(relevance, subset=view)
+            scores[view] = self.performance(task, subset=view)
         if current and scores[current]:
             scores[current] += threshold
         best = max(scores.keys(), key=scores.__getitem__)
@@ -821,13 +831,13 @@ class Model(dict):
             return current, 0.0
         return best, scores[best] - (best == current and threshold or 0)
 
-    def coverage_hypergraph(self, relevance, K=None):
+    def coverage_hypergraph(self, task, K=None):
         """\
         Return the coverage hypergraph of this multi-camera network. If C{K} is
         specified, return the I{K}-coverage hypergraph.
 
-        @param relevance: The relevance model.
-        @type relevance: L{RelevanceModel}
+        @param task: The task model.
+        @type task: L{Task}
         @param K: A set of possible hyperedge sizes.
         @type K: C{list} of C{int}
         @return: The coverage hypergraph.
@@ -846,7 +856,7 @@ class Model(dict):
         cache = {}
         for camera in active_cameras:
             subset = frozenset([camera])
-            cache[subset] = self.coverage(relevance, subset=subset)
+            cache[subset] = self.coverage(task, subset=subset)
             weight = sum(cache[subset].values())
             if weight:
                 H.add_edge(hypergraph.core.Edge(subset), weight=weight)

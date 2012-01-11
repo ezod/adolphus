@@ -173,8 +173,8 @@ class Experiment(threading.Thread):
     Experiment class.
 
     An L{Experiment} object is the main interface component of Adolphus. It
-    manages a L{Model} along with any relevance models, and provides one or
-    more Visual displays and command-based interaction.
+    manages a L{Model} along with any task models, and provides one or more
+    Visual displays and command-based interaction.
     """
     def __init__(self, zoom=False):
         """\
@@ -206,7 +206,7 @@ class Experiment(threading.Thread):
 
         # model and configuration data
         self.model = Model()
-        self.relevance_models = {}
+        self.tasks = {}
         self.keybindings = {}
 
         # center marker

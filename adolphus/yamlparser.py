@@ -15,7 +15,7 @@ from functools import reduce
 
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import OcclusionTriangle, SceneObject
-from .coverage import PointCache, RelevanceModel, Model, TP_DEFAULTS
+from .coverage import PointCache, Task, Model
 from .laser import LineLaser, RangeModel
 from .robot import Robot
 
@@ -35,20 +35,17 @@ class YAMLParser(object):
         self._mounts = {}
         experiment = yaml.load(open(filename))
         self.model = self._parse_model(experiment['model'])
-        self.relevances = {}
-        if not 'relevance' in experiment:
-            experiment['relevance'] = []
-        for relevance in experiment['relevance']:
-            self.relevances[relevance['name']] = \
-                self._parse_relevance(relevance)
+        self.tasks = {}
+        if 'tasks' in experiment:
+            for task in experiment['tasks']:
+                self.tasks[task['name']] = self._parse_task(task)
 
     @property
     def experiment(self):
         """\
-        Tuple containing the coverage model and relevance models for this
-        experiment.
+        Tuple containing the coverage model and task models for this experiment.
         """
-        return self.model, self.relevances
+        return self.model, self.tasks
     
     @staticmethod
     def _external_path(basepath, filename):
@@ -196,32 +193,14 @@ class YAMLParser(object):
         @return: The parsed multi-camera model.
         @rtype: L{Model}
         """
-        # complete and sanitize task paramters
-        for tp in TP_DEFAULTS:
-            if not tp in model:
-                model[tp] = TP_DEFAULTS[tp]
-        model['res_max_ideal'] = \
-            min(model['res_max_ideal'], model['res_max_acceptable'])
-        model['res_min_ideal'] = \
-            max(model['res_min_ideal'], model['res_min_acceptable'])
-        model['blur_max_ideal'] = \
-            min(model['blur_max_ideal'], model['blur_max_acceptable'])
-        model['angle_max_ideal'] = \
-            min(model['angle_max_ideal'], model['angle_max_acceptable'])
-        # create model
-        task_params = {}
-        for param in TP_DEFAULTS:
-            try:
-                task_params[param] = model[param]
-            except KeyError:
-                pass
+        # create model object
         try:
             if model['type'] == 'range':
-                rmodel = RangeModel(task_params=task_params)
+                rmodel = RangeModel()
             else:
                 raise KeyError
         except KeyError:
-            rmodel = Model(task_params=task_params)
+            rmodel = Model()
         mounts = {}
         for objecttype in ['cameras', 'lasers', 'robots', 'scene']:
             if not objecttype in model:
@@ -314,22 +293,23 @@ class YAMLParser(object):
             y = yr[0]
             x += step
 
-    def _parse_relevance(self, relevance):
+    def _parse_task(self, task):
         """\
-        Parse a relevance model from YAML.
+        Parse a task model from YAML.
         
-        @param relevance: The YAML dict of the relevance model.
-        @type relevance: C{dict}
-        @return: The parsed relevance model.
-        @rtype: L{RelevanceModel}
+        @param task: The YAML dict of the task model.
+        @type task: C{dict}
+        @return: The parsed task model.
+        @rtype: L{Task}
         """
+        # FIXME: this won't work at all yet
         whole_model = PointCache()
         try:
             try:
-                ddiv = relevance['ddiv']
+                ddiv = task['ddiv']
             except KeyError:
                 ddiv = None
-            for prange in relevance['ranges']:
+            for prange in task['ranges']:
                 try:
                     strength = prange['strength']
                 except KeyError:
@@ -344,7 +324,7 @@ class YAMLParser(object):
                     etarange = (0.0, 2 * pi)
                 part_model = PointCache()
                 for point in self._pointrange(prange['x'], prange['y'],
-                    prange['z'], relevance['step'], rhorange, etarange,
+                    prange['z'], task['step'], rhorange, etarange,
                     ddiv=ddiv):
                     part_model[point] = strength
                 whole_model |= part_model
@@ -352,7 +332,7 @@ class YAMLParser(object):
             pass
         try:
             part_model = PointCache()
-            for point in relevance['points']:
+            for point in task['points']:
                 if len(point['point']) == 3:
                     pointobject = Point(point['point'])
                 elif len(point['point']) == 5:
@@ -366,11 +346,11 @@ class YAMLParser(object):
         except KeyError:
             pass
         try:
-            pose = self._parse_pose(relevance['pose'])
+            pose = self._parse_pose(task['pose'])
         except KeyError:
             pose = Pose()
-        if 'mount' in relevance:
-            mount = self._mounts[relevance['mount']]
+        if 'mount' in task:
+            mount = self._mounts[task['mount']]
         else:
             mount = None
-        return RelevanceModel(whole_model, pose=pose, mount=mount)
+        return Task(whole_model, pose=pose, mount=mount)

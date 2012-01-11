@@ -49,7 +49,7 @@ def cmd_loadmodel(ex, args):
     for sceneobject in ex.model:
         ex.model[sceneobject].visible = False
     try:
-        ex.model, ex.relevance_models = YAMLParser(args[0]).experiment
+        ex.model, ex.tasks = YAMLParser(args[0]).experiment
     except IOError, e:
         raise CommandError(e)
     ex.model.visualize()
@@ -342,29 +342,21 @@ def cmd_strength(ex, args, response='pickle'):
 
 def cmd_coverage(ex, args, response='pickle'):
     """
-    Return the k-ocular coverage performance for the specified relevance
-    model(s).
+    Return the coverage performance for the specified task(s).
 
-    usage: %s ocular name*
+    usage: %s name*
     """
     cmd_clear(ex, [])
     try:
         ex.display.message('Calculating coverage...')
         ex.display.userspin = False
         performance = {}
-        try:
-            ocular = int(args.pop(0))
-        except IndexError:
-            raise CommandError('incorrect arguments')
         if not args:
-            args = ex.relevance_models.keys()
+            args = ex.tasks.keys()
         for arg in args:
-            ex.coverage[arg] = \
-                ex.model.coverage(ex.relevance_models[arg],
-                ocular=ocular)
+            ex.coverage[arg] = ex.model.coverage(ex.tasks[arg])
             ex.coverage[arg].visualize()
-            performance[arg] = ex.model.performance(\
-                ex.relevance_models[arg], ocular=ocular,
+            performance[arg] = ex.model.performance(ex.tasks[arg],
                 coverage=ex.coverage[arg])
         if response == 'pickle':
             return pickle.dumps(performance)
@@ -375,7 +367,7 @@ def cmd_coverage(ex, args, response='pickle'):
             return '\n'.join(['%s: %.4f' % (key, performance[key]) \
                 for key in performance])
     except KeyError:
-        raise CommandError('invalid relevance model name')
+        raise CommandError('invalid task name')
     except Exception, e:
         raise CommandError(e)
     finally:
@@ -393,11 +385,11 @@ def cmd_rangecoverage(ex, args, response='pickle'):
         ex.display.message('Calculating range imaging coverage...')
         ex.display.userspin = False
         taxis = Point([float(t) for t in args[4:7]])
-        coverage, relevance = ex.model.range_coverage(args[0], args[1],
+        coverage, task = ex.model.range_coverage(args[0], args[1],
             float(args[2]), float(args[3]), taxis, args[7])
         ex.coverage['range'] = coverage
         ex.coverage['range'].visualize()
-        performance = ex.model.performance(relevance, coverage=coverage)
+        performance = ex.model.performance(task, coverage=coverage)
         if response == 'pickle':
             return pickle.dumps(performance)
         elif response == 'csv':
@@ -456,12 +448,12 @@ def cmd_objecthierarchy(ex, args, response='pickle'):
                 ex.model[so].__class__.__name__)
         except AttributeError:
             hierarchy[so] = (None, ex.model[so].__class__.__name__)
-    for rm in ex.relevance_models:
+    for task in ex.tasks:
         try:
-            hierarchy[rm] = (ex.relevance_models[rm].mount.name,
-                ex.relevance_models[rm].__class__.__name__)
+            hierarchy[task] = (ex.tasks[task].mount.name,
+                ex.tasks[task].__class__.__name__)
         except AttributeError:
-            hierarchy[rm] = (None, ex.relevance_models[rm].__class__.__name__)
+            hierarchy[task] = (None, ex.tasks[task].__class__.__name__)
     return pickle.dumps(hierarchy)
 
 def cmd_select(ex, args):

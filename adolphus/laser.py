@@ -11,7 +11,7 @@ modeling laser line based range imaging cameras.
 from math import pi, sin, cos, tan
 
 from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
-from .coverage import PointCache, RelevanceModel, Camera, Model
+from .coverage import PointCache, Task, Camera, Model
 from .posable import SceneObject
 
 
@@ -160,17 +160,17 @@ class RangeModel(Model):
 
     def project(self, laser, target, lpitch):
         """\
-        Generate a range imaging relevance model by projecting the specified
-        laser line onto the target object.
+        Generate a range imaging task model by projecting the specified laser
+        line onto the target object.
 
         @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
         @param target: The target object ID.
         @type target: C{str}
-        @param lpitch: The horizontal pitch of relevance model points.
+        @param lpitch: The horizontal pitch of task model points.
         @type lpitch: C{float}
-        @return: The generated range imaging relevance model.
-        @rtype: L{RelevanceModel}
+        @return: The generated range imaging task model.
+        @rtype: L{Task}
         """
         if not laser in self.lasers:
             raise KeyError('invalid laser')
@@ -194,15 +194,16 @@ class RangeModel(Model):
             if cp and not self.occluded(self[laser].pose.map(cp), laser):
                 points[DirectionalPoint(tuple(cp) + (pi, 0))] = 1.0
             x += lpitch
-        return RelevanceModel(points, mount=self[laser])
+        # FIXME: task parameters!
+        return Task(points, {}, mount=self[laser])
 
     def range_coverage(self, laser, target, lpitch, tpitch, taxis,
                        tstyle='linear', subset=None):
         """\
         Move the specified target object through the plane of the specified
-        laser, generate profile relevance models by projection, and return the
-        overall coverage and relevance models in the original target pose. The
-        target motion is based on the original pose and may be linear or rotary.
+        laser, generate profile task models by projection, and return the
+        overall coverage and task models in the original target pose. The target
+        motion is based on the original pose and may be linear or rotary.
 
         @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
@@ -218,10 +219,10 @@ class RangeModel(Model):
         @type tstyle: C{str}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
-        @return: The coverage and relevance models.
-        @rtype: L{PointCache}, L{RelevanceModel}
+        @return: The coverage and task models.
+        @rtype: L{PointCache}, L{Task}
         """
-        coverage, relevance_original = PointCache(), PointCache()
+        coverage, task_original = PointCache(), PointCache()
         original_pose = self[target].pose
         if tstyle == 'linear':
             # find least and greatest triangle vertices along taxis
@@ -237,14 +238,14 @@ class RangeModel(Model):
                 # get coverage of profile
                 self[target].set_absolute_pose(original_pose + \
                     Pose(T=((tpitch * i - gv) * taxis)))
-                prof_relevance = self.project(laser, target, lpitch)
-                prof_coverage = self.coverage(prof_relevance, subset=subset)
+                prof_task = self.project(laser, target, lpitch)
+                prof_coverage = self.coverage(prof_task, subset=subset)
                 # add to main coverage result
                 for point in prof_coverage:
                     original_point = \
                         (-self[target].pose + original_pose).map(point)
                     coverage[original_point] = prof_coverage[point]
-                    relevance_original[original_point] = 1.0
+                    task_original[original_point] = 1.0
         elif tstyle == 'rotary':
             #steps = int(2 * pi / float(tpitch))
             # TODO: the rest...
@@ -253,5 +254,6 @@ class RangeModel(Model):
             raise ValueError('transport style must be \'linear\' or \'rotary\'')
         self[target].set_absolute_pose(original_pose)
         # TODO: for each point in coverage, scale by laser coverage
-        relevance = RelevanceModel(relevance_original)
-        return coverage, relevance
+        # FIXME: task parameters!
+        task = Task(task_original, {})
+        return coverage, task
