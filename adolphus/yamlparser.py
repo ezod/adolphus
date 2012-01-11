@@ -302,32 +302,28 @@ class YAMLParser(object):
         @return: The parsed task model.
         @rtype: L{Task}
         """
-        subtasks = []
-        for subtask in task['subtasks']:
-            whole_model = PointCache()
-            if 'ranges' in subtask:
-                ddiv = 'ddiv' in subtask and subtask['ddiv'] or None
-                for prange in subtask['ranges']:
-                    if ddiv:
-                        rho = 'rho' in prange and prange['rho'] or (0.0, pi)
-                        eta = 'eta' in prange and prange['eta'] or (0.0, 2 * pi)
-                    part_model = PointCache()
-                    for point in self._pointrange(prange['x'], prange['y'],
-                        prange['z'], subtask['step'], rho, eta, ddiv=ddiv):
-                        part_model[point] = 1.0
-                    whole_model |= part_model
-            if 'points' in subtask:
+        whole_model = PointCache()
+        if 'ranges' in task:
+            ddiv = 'ddiv' in task and task['ddiv'] or None
+            for prange in task['ranges']:
+                if ddiv:
+                    rho = 'rho' in prange and prange['rho'] or (0.0, pi)
+                    eta = 'eta' in prange and prange['eta'] or (0.0, 2 * pi)
                 part_model = PointCache()
-                for point in subtask['points']:
-                    if len(point) == 3:
-                        point = Point(point)
-                    elif len(point) == 5:
-                        point = DirectionalPoint(point)
+                for point in self._pointrange(prange['x'], prange['y'],
+                    prange['z'], task['step'], rho, eta, ddiv=ddiv):
                     part_model[point] = 1.0
                 whole_model |= part_model
-            params = 'parameters' in subtask and subtask['parameters'] or {}
-            pose = 'pose' in subtask \
-                and self._parse_pose(subtask['pose']) or Pose()
-            mount = 'mount' in subtask and self.model[subtask['mount']] or None
-            subtasks.append(Task(params, whole_model, pose=pose, mount=mount))
-        return subtasks
+        if 'points' in task:
+            part_model = PointCache()
+            for point in task['points']:
+                if len(point) == 3:
+                    point = Point(point)
+                elif len(point) == 5:
+                    point = DirectionalPoint(point)
+                part_model[point] = 1.0
+            whole_model |= part_model
+        params = 'parameters' in task and task['parameters'] or {}
+        pose = 'pose' in task and self._parse_pose(task['pose']) or Pose()
+        mount = 'mount' in task and self.model[task['mount']] or None
+        return Task(params, whole_model, pose=pose, mount=mount)

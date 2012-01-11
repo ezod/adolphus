@@ -42,21 +42,19 @@ model:
                     - [-100, 1100, -80]
 
 tasks:
-    - name:         R1
-      subtasks:
-        - parameters:
-              boundary_padding:       20.0
-              res_min_ideal:          3.0
-              res_min_acceptable:     0.5
-              blur_max_acceptable:    5.0
-          points:
-            - [0, 0, 1000]
-    - name:         R2
-      subtasks:
-        - parameters:
-              boundary_padding:       20.0
-              res_min_ideal:          3.0
-              res_min_acceptable:     0.5
-              blur_max_acceptable:    5.0
-          points:
-            - [0, 0, 1200]
+    - name:                     R1
+      parameters:
+          boundary_padding:     20.0
+          res_min_ideal:        3.0
+          res_min_acceptable:   0.5
+          blur_max_acceptable:  5.0
+      points:
+        - [0, 0, 1000]
+    - name:                     R2
+      parameters:
+          boundary_padding:     20.0
+          res_min_ideal:        3.0
+          res_min_acceptable:   0.5
+          blur_max_acceptable:  5.0
+      points:
+        - [0, 0, 1200]
