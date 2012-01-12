@@ -214,12 +214,16 @@ class YAMLParser(object):
                     primitives = reduce(lambda a, b: a + b,
                         [self._parse_primitives(sprite) \
                         for sprite in obj['sprites']])
+                else:
+                    primitives = []
                 occlusion = obj.has_key('occlusion') and \
                     bool(obj['occlusion']) or True
                 if occlusion and 'sprites' in obj:
                     triangles = reduce(lambda a, b: a + b,
                         [self._parse_triangles(sprite, self._path) \
                         for sprite in obj['sprites']])
+                else:
+                    triangles = []
                 if objecttype == 'cameras':
                     active = obj.has_key('active') and obj['active'] or True
                     rmodel[obj['name']] = rmodel.camera_class(obj['name'], obj,
@@ -306,12 +310,11 @@ class YAMLParser(object):
         if 'ranges' in task:
             ddiv = 'ddiv' in task and task['ddiv'] or None
             for prange in task['ranges']:
-                if ddiv:
-                    rho = 'rho' in prange and prange['rho'] or (0.0, pi)
-                    eta = 'eta' in prange and prange['eta'] or (0.0, 2 * pi)
+                rhor = 'rho' in prange and prange['rho'] or (0.0, pi)
+                etar = 'eta' in prange and prange['eta'] or (0.0, 2 * pi)
                 part_model = PointCache()
                 for point in self._pointrange(prange['x'], prange['y'],
-                    prange['z'], task['step'], rho, eta, ddiv=ddiv):
+                    prange['z'], task['step'], rhor, etar, ddiv=ddiv):
                     part_model[point] = 1.0
                 whole_model |= part_model
         if 'points' in task:
