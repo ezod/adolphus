@@ -350,6 +350,10 @@ class Camera(SceneObject):
                 del self._fov
             except AttributeError:
                 pass
+            try:
+                del self._mr
+            except AttributeError:
+                pass
             self._generate_cv()
             self._generate_cr()
             fovvis = True
@@ -416,6 +420,22 @@ class Camera(SceneObject):
         else:
             return None
 
+    def zres(self, resolution):
+        """\
+        Return the depth at which the specified resolution occurs.
+
+        @param resolution: Resolution in millimeters per pixel.
+        @type resolution: C{float}
+        @return: Depth (distance along camera M{z}-axis).
+        @rtype: C{float}
+        """
+        try:
+            return self._mr / resolution
+        except AttributeError:
+            self._mr = min([float(self._params['dim'][0]) / self.fov['2sah2'],
+                            float(self._params['dim'][1]) / self.fov['2sav2']])
+            return self._mr / resolution
+
     def zc(self, c):
         """\
         Return the depth values at which a circle of confusion of a given size
@@ -474,16 +494,14 @@ class Camera(SceneObject):
         @return: The resolution coverage component value in M{[0, 1]}.
         @rtype: C{float}
         """
-        mr = min([float(self._params['dim'][0]) / self.fov['2sah2'],
-                  float(self._params['dim'][1]) / self.fov['2sav2']])
-        zrmaxi = mr / tp['res_max_ideal']
-        zrmaxa = mr / tp['res_max_acceptable']
+        zrmaxi = self.zres(tp['res_max_ideal'])
+        zrmaxa = self.zres(tp['res_max_acceptable'])
         try:
-            zrmini = mr / tp['res_min_ideal']
+            zrmini = self.zres(tp['res_min_ideal'])
         except ZeroDivisionError:
             zrmini = float('inf')
         try:
-            zrmina = mr / tp['res_min_acceptable']
+            zrmina = self.zres(tp['res_min_acceptable'])
         except ZeroDivisionError:
             zrmina = float('inf')
         if zrmaxa == zrmaxi and zrmina == zrmini:
