@@ -709,7 +709,7 @@ class Model(dict):
                 self._oc_updated[depth][sceneobject] = False
             self._oc_needs_update[depth] = True
         elif not self._oc_needs_update[depth]:
-            return
+            return depth
         remainder = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
             for oc_set in self.oc_sets]))
         for obj in set(remainder):
