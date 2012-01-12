@@ -431,10 +431,12 @@ class Camera(SceneObject):
         """
         try:
             return self._mr / resolution
+        except ZeroDivisionError:
+            return float('inf')
         except AttributeError:
             self._mr = min([float(self._params['dim'][0]) / self.fov['2sah2'],
                             float(self._params['dim'][1]) / self.fov['2sav2']])
-            return self._mr / resolution
+            return self.zres(resolution)
 
     def zc(self, c):
         """\
