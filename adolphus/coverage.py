@@ -784,12 +784,13 @@ class Model(dict):
             minstrength = float('inf')
             for camera in view:
                 strength = self[camera].strength(point, task_params)
-                if not strength:
+                # the following should short-circuit if strength = 0, and not
+                # incur a performance hit for the occlusion check
+                if not strength or self.occluded(point, camera, task_params):
                     minstrength = 0.0
                     break
                 elif strength < minstrength:
-                    minstrength = strength * \
-                        (not self.occluded(point, camera, task_params))
+                    minstrength = strength
             if minstrength > 1.0:
                 minstrength = 0.0
             maxstrength = max(maxstrength, minstrength)
