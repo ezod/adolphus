@@ -286,21 +286,24 @@ def cmd_active(ex, args):
 
 def cmd_strength(ex, args, response='pickle'):
     """\
-    Return the k-ocular coverage strength of the specified point.
+    Return the coverage strength of the specified point with respect to the
+    task parameters of the specified task.
     
-    usage: %s ocular x y z [rho eta]
+    usage: %s task x y z [rho eta]
     """
     try:
-        ocular = int(args.pop(0))
+        task = ex.tasks[args.pop(0)]
     except IndexError:
         raise CommandError('incorrect arguments')
+    except KeyError:
+        raise CommandError('invalid task name')
     if len(args) == 3:
         p = Point([float(args[i]) for i in range(3)])
     elif len(args) == 5:
         p = DirectionalPoint([float(args[i]) for i in range(5)])
     else:
         raise CommandError('invalid point')
-    strength = ex.model.strength(p, ocular=ocular)
+    strength = ex.model.strength(p, task.params)
     if response == 'pickle':
         return pickle.dumps(strength)
     elif response == 'csv':
