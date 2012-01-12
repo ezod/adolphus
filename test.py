@@ -78,35 +78,35 @@ class TestModel01(unittest.TestCase):
     Test model 01.
     """
     def setUp(self):
-        self.model, self.relevance_models = YAMLParser('test/test01.yaml').experiment
+        self.model, self.tasks = YAMLParser('test/test01.yaml').experiment
 
     def test_strength(self):
         p1 = Point((0, 0, 1000))
         p2 = Point((0, 0, 1200))
-        self.assertEqual(self.model.strength(p1), self.model['C'].strength(p1))
-        self.assertTrue(self.model.strength(p1))
-        self.assertFalse(self.model.strength(p2))
+        self.assertEqual(self.model.strength(p1, self.tasks['R1'].params), self.model['C'].strength(p1, self.tasks['R1'].params))
+        self.assertTrue(self.model.strength(p1, self.tasks['R1'].params))
+        self.assertFalse(self.model.strength(p2, self.tasks['R1'].params))
         self.model['C'].set_absolute_pose(Pose(T=Point((1000, 0, 0))))
-        self.assertFalse(self.model.strength(p1))
+        self.assertFalse(self.model.strength(p1, self.tasks['R1'].params))
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(pi, Point((1, 0, 0)))))
-        self.assertFalse(self.model.strength(p1))
+        self.assertFalse(self.model.strength(p1, self.tasks['R1'].params))
 
     def test_performance(self):
-        self.assertEqual(self.model.performance(self.relevance_models['R1']), 1.0)
-        self.assertEqual(self.model.performance(self.relevance_models['R2']), 0.0)
+        self.assertEqual(self.model.performance(self.tasks['R1']), 1.0)
+        self.assertEqual(self.model.performance(self.tasks['R2']), 0.0)
 
     def test_occlusion_cache(self):
-        self.model._update_occlusion_cache()
-        self.assertTrue(self.model._occlusion_cache['C']['P1'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2'])
+        depth = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertTrue(self.model._occlusion_cache[depth]['C']['P1'])
+        self.assertFalse(self.model._occlusion_cache[depth]['C']['P2'])
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(-pi / 2.0, Point((1, 0, 0)))))
-        self.model._update_occlusion_cache()
-        self.assertFalse(self.model._occlusion_cache['C']['P1'])
-        self.assertTrue(self.model._occlusion_cache['C']['P2'])
+        depth = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertFalse(self.model._occlusion_cache[depth]['C']['P1'])
+        self.assertTrue(self.model._occlusion_cache[depth]['C']['P2'])
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(pi, Point((1, 0, 0)))))
-        self.model._update_occlusion_cache()
-        self.assertFalse(self.model._occlusion_cache['C']['P1'])
-        self.assertFalse(self.model._occlusion_cache['C']['P2'])
+        depth = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertFalse(self.model._occlusion_cache[depth]['C']['P1'])
+        self.assertFalse(self.model._occlusion_cache[depth]['C']['P2'])
 
 
 if __name__ == '__main__':
