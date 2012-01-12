@@ -19,8 +19,8 @@ class LineLaser(SceneObject):
     """\
     Line laser class.
     """
-    def __init__(self, name, fan, pose=Pose(), mount_pose=Pose(), mount=None,
-                 primitives=[], triangles=[]):
+    def __init__(self, name, fan, depth, pose=Pose(), mount_pose=Pose(),
+                 mount=None, primitives=[], triangles=[]):
         """\
         Constructor.
 
@@ -28,6 +28,8 @@ class LineLaser(SceneObject):
         @type name: C{str}
         @param fan: Fan angle of the laser line.
         @type fan: L{Angle}
+        @param depth: Projection depth of the laser line.
+        @type depth: C{float}
         @param pose: Pose of the laser in space (optional).
         @type pose: L{Pose}
         @param mount_pose: The transformation to the mounting end (optional).
@@ -42,6 +44,7 @@ class LineLaser(SceneObject):
         super(LineLaser, self).__init__(name, pose=pose, mount_pose=mount_pose,
             mount=mount, primitives=primitives, triangles=triangles)
         self._fan = Angle(fan)
+        self._depth = depth
         self._generate_laservis()
         self.click_actions = {'shift':  'modify %s' % name}
 
@@ -62,23 +65,30 @@ class LineLaser(SceneObject):
         """
         return self._fan
 
-    def occluded_by(self, triangle, depth):
+    @property
+    def depth(self):
+        """\
+        Projection depth.
+        """
+        return self._depth
+
+    def occluded_by(self, triangle, task_params):
         """\
         Return whether this laser's projection plane is occluded (in part) by
         the specified triangle.
 
         @param triangle: The triangle to check.
         @type triangle: L{OcclusionTriangle}
-        @param depth: The projection depth of the laser.
-        @type depth: C{float}
+        @param task_params: Task parameters (not used).
+        @type task_params: C{dict}
         @return: True if occluded.
         @rtype: C{bool}
         """
         # TODO: should these be cached?
-        width = depth * tan(self.fan / 2.0)
+        width = self._depth * tan(self._fan / 2.0)
         laser_triangle = Triangle((self.pose.T,
-            self.pose.map(Point((-width, 0, depth))),
-            self.pose.map(Point((width, 0, depth)))))
+            self.pose.map(Point((-width, 0, self._depth))),
+            self.pose.map(Point((width, 0, self._depth)))))
         return laser_triangle.overlap(triangle.mapped_triangle)
 
 

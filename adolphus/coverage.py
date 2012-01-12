@@ -133,6 +133,7 @@ class Task(Posable):
                 'res_min_ideal': 0.0,
                 'res_min_acceptable': 0.0,
                 'blur_max_ideal': 1.0,
+                # FIXME: why is blur_max_acceptable default not inf?
                 'blur_max_acceptable': 1.0,
                 'angle_max_ideal': pi / 2.0,
                 'angle_max_acceptable': pi / 2.0}
@@ -560,7 +561,7 @@ class Camera(SceneObject):
             # point is at the origin or is non-directional
             return 1.0
 
-    def occluded_by(self, triangle, resolution, blur):
+    def occluded_by(self, triangle, task_params):
         """\
         Return whether this camera's field of view is occluded (in part) by the
         specified triangle.
@@ -570,15 +571,14 @@ class Camera(SceneObject):
 
         @param triangle: The triangle to check.
         @type triangle: L{OcclusionTriangle}
-        @param resolution: The minimum resolution in millimeters per pixel.
-        @type resolution: C{float}
-        @param blur: The maximum blur circle diameter in pixels.
-        @type blur: C{float}
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
         @return: True if occluded.
         @rtype: C{bool}
         """
         # TODO: should these be cached?
-        z = min(self.zres(resolution), self.zc(blur)[1])
+        z = min(self.zres(task_params['res_min_acceptable']),
+                self.zc(task_params['blur_max_acceptable'])[1])
         hull = [Point((self.fov['sahl'] * z, self.fov['savt'] * z, z)),
                 Point((self.fov['sahl'] * z, self.fov['savb'] * z, z)),
                 Point((self.fov['sahr'] * z, self.fov['savb'] * z, z)),
@@ -660,12 +660,12 @@ class Model(dict):
         self._oc_needs_update = {}
 
     def __setitem__(self, key, value):
-        for depth in self._occlusion_cache:
-            self._oc_updated[depth][key] = False
+        for ckey in self._occlusion_cache:
+            self._oc_updated[ckey][key] = False
         def callback():
-            for depth in self._occlusion_cache:
-                self._oc_updated[depth][key] = False
-                self._oc_needs_update[depth] = True
+            for ckey in self._occlusion_cache:
+                self._oc_updated[ckey][key] = False
+                self._oc_needs_update[ckey] = True
         value.posecallbacks.add(callback)
         if isinstance(value, Camera):
             self.cameras.add(key)
@@ -702,37 +702,37 @@ class Model(dict):
             for view in combinations(self.active_cameras, ocular)])
 
     def _update_occlusion_cache(self, task_params):
-        depth = (task_params['res_min_acceptable'],
+        key = (task_params['res_min_acceptable'],
                  task_params['blur_max_acceptable'])
-        if not depth in self._occlusion_cache:
-            self._occlusion_cache[depth] = {}
-            self._oc_updated[depth] = {}
+        if not key in self._occlusion_cache:
+            self._occlusion_cache[key] = {}
+            self._oc_updated[key] = {}
             for sceneobject in self:
-                self._oc_updated[depth][sceneobject] = False
-            self._oc_needs_update[depth] = True
-        elif not self._oc_needs_update[depth]:
-            return depth
+                self._oc_updated[key][sceneobject] = False
+            self._oc_needs_update[key] = True
+        elif not self._oc_needs_update[key]:
+            return key 
         remainder = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
             for oc_set in self.oc_sets]))
         for obj in set(remainder):
-            if not self._oc_updated[depth][obj]:
+            if not self._oc_updated[key][obj]:
                 remainder.remove(obj)
-                self._occlusion_cache[depth][obj] = {}
+                self._occlusion_cache[key][obj] = {}
                 for sceneobject in self:
-                    self._occlusion_cache[depth][obj][sceneobject] = \
+                    self._occlusion_cache[key][obj][sceneobject] = \
                         set([triangle for triangle in \
                         self[sceneobject].triangles if \
-                        self[obj].occluded_by(triangle, depth[0], depth[1])])
+                        self[obj].occluded_by(triangle, task_params)])
         for sceneobject in self:
-            if not self._oc_updated[depth][sceneobject]:
+            if not self._oc_updated[key][sceneobject]:
                 for obj in remainder:
-                    self._occlusion_cache[depth][obj][sceneobject] = \
+                    self._occlusion_cache[key][obj][sceneobject] = \
                         set([triangle for triangle \
                             in self[sceneobject].triangles \
-                            if self[obj].occluded_by(triangle, depth)])
-                self._oc_updated[depth][sceneobject] = True
-        self._oc_needs_update[depth] = False
-        return depth
+                            if self[obj].occluded_by(triangle, task_params)])
+                self._oc_updated[key][sceneobject] = True
+        self._oc_needs_update[key] = False
+        return key
 
     def occluded(self, point, obj, task_params=None):
         """\
@@ -745,14 +745,14 @@ class Model(dict):
         @param obj: The object ID to check.
         @type obj: C{str}
         @param task_params: Task parameters (optional).
-        @type depth: C{float}
+        @type task_params: C{dict}
         @return: True if occluded.
         @rtype: C{bool}
         """
         if task_params:
-            depth = self._update_occlusion_cache(task_params)
+            key = self._update_occlusion_cache(task_params)
             tset = set([t for ts in \
-                [self._occlusion_cache[depth][obj][sceneobject] \
+                [self._occlusion_cache[key][obj][sceneobject] \
                 for sceneobject in self] for t in ts])
         else:
             tset = set([t for ts in [self[sceneobject].triangles \
