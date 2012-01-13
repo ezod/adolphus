@@ -156,7 +156,7 @@ def cmd_cameraview(ex, args):
     usage: %s name
     """
     if len(args):
-        if ex.zoom:
+        if ex.display.userzoom:
             raise CommandError('no camera view with external zoom enabled')
         try:
             ex.display.camera_view(ex.model[args[0]])
