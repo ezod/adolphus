@@ -133,8 +133,7 @@ class Task(Posable):
                 'res_min_ideal': 0.0,
                 'res_min_acceptable': 0.0,
                 'blur_max_ideal': 1.0,
-                # FIXME: why is blur_max_acceptable default not inf?
-                'blur_max_acceptable': 1.0,
+                'blur_max_acceptable': float('inf'),
                 'angle_max_ideal': pi / 2.0,
                 'angle_max_acceptable': pi / 2.0}
 
@@ -551,15 +550,15 @@ class Camera(SceneObject):
         """
         try:
             sigma = cos(p.direction_unit.angle(-p))
-            aa = cos(tp['angle_max_acceptable'])
-            if tp['angle_max_ideal'] == tp['angle_max_acceptable']:
-                return float(sigma > aa)
-            else:
-                return min(max((sigma - aa) / \
-                    (cos(tp['angle_max_ideal']) - aa), 0.0), 1.0)
         except (ValueError, AttributeError):
             # point is at the origin or is non-directional
             return 1.0
+        aa = cos(tp['angle_max_acceptable'])
+        if tp['angle_max_ideal'] == tp['angle_max_acceptable']:
+            return float(sigma > aa)
+        else:
+            ai = cos(tp['angle_max_ideal'])
+            return min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
 
     def occluded_by(self, triangle, task_params):
         """\
@@ -689,17 +688,19 @@ class Model(dict):
         """
         return set([key for key in self.cameras if self[key].active])
 
-    def views(self, ocular=1):
+    def views(self, ocular=1, subset=None):
         """\
         Return the set of I{k}-ocular views from the active cameras.
 
         @param ocular: The value of I{k}.
         @type ocular: C{int}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
         @return: All I{k}-ocular views.
         @rtype: C{set} of C{frozenset} of C{str}
         """
-        return set([frozenset(view) \
-            for view in combinations(self.active_cameras, ocular)])
+        cameras = subset or self.active_cameras
+        return set([frozenset(view) for view in combinations(cameras, ocular)])
 
     def _update_occlusion_cache(self, task_params):
         key = (task_params['res_min_acceptable'],
@@ -776,11 +777,8 @@ class Model(dict):
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
-        active_cameras = subset or self.active_cameras
-        if len(active_cameras) < task_params['ocular']:
-            raise ValueError('too few active cameras')
         maxstrength = 0.0
-        for view in self.views(task_params['ocular']):
+        for view in self.views(ocular=task_params['ocular'], subset=subset):
             minstrength = float('inf')
             for camera in view:
                 strength = self[camera].strength(point, task_params)
@@ -791,8 +789,6 @@ class Model(dict):
                     break
                 elif strength < minstrength:
                     minstrength = strength
-            if minstrength > 1.0:
-                minstrength = 0.0
             maxstrength = max(maxstrength, minstrength)
         return maxstrength
 

@@ -310,11 +310,17 @@ class YAMLParser(object):
         if 'ranges' in task:
             ddiv = 'ddiv' in task and task['ddiv'] or None
             for prange in task['ranges']:
-                rhor = 'rho' in prange and prange['rho'] or (0.0, pi)
-                etar = 'eta' in prange and prange['eta'] or (0.0, 2 * pi)
+                try:
+                    rhor = prange['rho']
+                except KeyError:
+                    rhor = (0.0, pi)
+                try:
+                    etar = prange['eta']
+                except KeyError:
+                    etar = (0.0, 2 * pi)
                 part_model = PointCache()
                 for point in self._pointrange(prange['x'], prange['y'],
-                    prange['z'], task['step'], rhor, etar, ddiv=ddiv):
+                    prange['z'], task['step'], rhor=rhor, etar=etar, ddiv=ddiv):
                     part_model[point] = 1.0
                 whole_model |= part_model
         if 'points' in task:
