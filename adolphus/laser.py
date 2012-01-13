@@ -45,7 +45,6 @@ class LineLaser(SceneObject):
             mount=mount, primitives=primitives, triangles=triangles)
         self._fan = Angle(fan)
         self._depth = depth
-        self._generate_laservis()
         self.click_actions = {'shift':  'modify %s' % name}
 
     def _pose_changed_hook(self):
@@ -140,9 +139,9 @@ class RangeModel(Model):
     # object types for which occlusion caching is handled by this class
     oc_sets = ['cameras', 'lasers']
 
-    def __init__(self, task_params=dict()):
+    def __init__(self):
         self.lasers = set()
-        super(RangeModel, self).__init__(task_params=task_params)
+        super(RangeModel, self).__init__()
 
     def __setitem__(self, key, value):
         if isinstance(value, LineLaser):
