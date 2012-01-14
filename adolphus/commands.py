@@ -315,7 +315,7 @@ def cmd_coverage(ex, args, response='pickle'):
     """
     Return the coverage performance for the specified task(s).
 
-    usage: %s name*
+    usage: %s task
     """
     cmd_clear(ex, [])
     try:
@@ -349,15 +349,15 @@ def cmd_rangecoverage(ex, args, response='pickle'):
     Return the monocular range imaging coverage performance based on laser and
     transport parameters.
 
-    usage: %s laser target lpitch tpitch tx ty tz tstyle
+    usage: %s task laser target lpitch tpitch tx ty tz tstyle
     """
     cmd_clear(ex, [])
     try:
         ex.display.message('Calculating range imaging coverage...')
         ex.display.userspin = False
-        taxis = Point([float(t) for t in args[4:7]])
-        coverage, task = ex.model.range_coverage(args[0], args[1],
-            float(args[2]), float(args[3]), taxis, args[7])
+        taxis = Point([float(t) for t in args[5:8]])
+        coverage, task = ex.model.range_coverage(ex.tasks[args[0]], args[1],
+            args[2], float(args[3]), float(args[4]), taxis, args[8])
         ex.coverage['range'] = coverage
         ex.coverage['range'].visualize()
         performance = ex.model.performance(task, coverage=coverage)
@@ -372,7 +372,7 @@ def cmd_rangecoverage(ex, args, response='pickle'):
     except IndexError:
         raise CommandError('incorrect arguments')
     except KeyError:
-        raise CommandError('invalid laser or target name')
+        raise CommandError('invalid task, laser, or target name')
     except Exception, e:
         raise CommandError(e)
     finally:

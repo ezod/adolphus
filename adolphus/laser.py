@@ -190,11 +190,13 @@ class RangeModel(Model):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
 
-    def project(self, laser, depth, target, lpitch):
+    def project(self, task_params, laser, target, lpitch):
         """\
         Generate a range imaging task model by projecting the specified laser
         line onto the target object.
 
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
         @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
         @param depth: The projection depth of the laser.
@@ -209,12 +211,12 @@ class RangeModel(Model):
         if not laser in self.lasers:
             raise KeyError('invalid laser')
         points = PointCache()
-        width = depth * tan(self[laser].fan / 2.0)
+        width = self[laser].depth * tan(self[laser].fan / 2.0)
         x = int(-width / lpitch) * lpitch
         while x < width:
             cp = None
             origin = self[laser].pose.map(Point((x, 0, 0)))
-            end = self[laser].pose.map(Point((x, 0, depth)))
+            end = self[laser].pose.map(Point((x, 0, self[laser].depth)))
             for triangle in self[target].triangles:
                 ip = triangle.intersection(origin, end)
                 if ip:
@@ -228,10 +230,9 @@ class RangeModel(Model):
             if cp and not self.occluded(self[laser].pose.map(cp), laser):
                 points[DirectionalPoint(tuple(cp) + (pi, 0))] = 1.0
             x += lpitch
-        # FIXME: task parameters!
-        return Task(points, {}, mount=self[laser])
+        return Task(task_params, points, mount=self[laser])
 
-    def range_coverage(self, laser, target, lpitch, tpitch, taxis,
+    def range_coverage(self, task, laser, target, lpitch, tpitch, taxis,
                        tstyle='linear', subset=None):
         """\
         Move the specified target object through the plane of the specified
@@ -239,6 +240,8 @@ class RangeModel(Model):
         overall coverage and task models in the original target pose. The target
         motion is based on the original pose and may be linear or rotary.
 
+        @param task: The range coverage task.
+        @type task: L{Task}
         @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
         @param target: The target object ID.
@@ -272,7 +275,7 @@ class RangeModel(Model):
                 # get coverage of profile
                 self[target].set_absolute_pose(original_pose + \
                     Pose(T=((tpitch * i - gv) * taxis)))
-                prof_task = self.project(laser, target, lpitch)
+                prof_task = self.project(task.params, laser, target, lpitch)
                 prof_coverage = self.coverage(prof_task, subset=subset)
                 # add to main coverage result
                 for point in prof_coverage:
@@ -287,7 +290,5 @@ class RangeModel(Model):
         else:
             raise ValueError('transport style must be \'linear\' or \'rotary\'')
         self[target].set_absolute_pose(original_pose)
-        # TODO: for each point in coverage, scale by laser coverage
-        # FIXME: task parameters!
-        task = Task(task_original, {})
+        task = Task(task.params, task_original)
         return coverage, task
