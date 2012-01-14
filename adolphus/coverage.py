@@ -114,15 +114,17 @@ class Task(Posable):
     The available task parameters are:
 
         - C{ocular}: mutual camera coverage degree (number of cameras).
-        - C{boundary_padding}: width of degradation boundary around image (pixels).
+        - C{boundary_padding}: degradation boundary around image (pixels).
         - C{res_max_ideal}: upper limit of ideal resolution range (mm/pixel).
-        - C{res_max_acceptable}: maximum acceptable resolution (mm/pixel).
+        - C{res_max_acceptable}: max. acceptable resolution (mm/pixel).
         - C{res_min_ideal}: lower limit of ideal resolution range (mm/pixel).
-        - C{res_min_acceptable}: minimum acceptable resolution (mm/pixel).
-        - C{blur_max_ideal}: ideal maximum blur circle diameter (pixels).
-        - C{blur_max_acceptable}: maximum acceptable blur circle diameter (pixels).
-        - C{angle_max_ideal}: ideal maximum view angle (radians).
-        - C{angle_max_acceptable}: maximum acceptable view angle (radians).
+        - C{res_min_acceptable}: min. acceptable resolution (mm/pixel).
+        - C{hres_min_ideal}: ideal min. height resolution (mm/pixel).
+        - C{hres_min_acceptable}: min. acceptable height resolution (mm/pixel).
+        - C{blur_max_ideal}: ideal max. blur circle diameter (pixels).
+        - C{blur_max_acceptable}: max. acceptable blur circle diameter (pixels).
+        - C{angle_max_ideal}: ideal max. view angle (radians).
+        - C{angle_max_acceptable}: max. acceptable view angle (radians).
 
     See L{Task.defaults} for default (permissive) values.
     """
@@ -132,6 +134,8 @@ class Task(Posable):
                 'res_max_acceptable': float('inf'),
                 'res_min_ideal': 0.0,
                 'res_min_acceptable': 0.0,
+                'hres_min_ideal': 0.0,
+                'hres_min_acceptable': 0.0,
                 'blur_max_ideal': 1.0,
                 'blur_max_acceptable': float('inf'),
                 'angle_max_ideal': pi / 2.0,
