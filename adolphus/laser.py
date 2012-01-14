@@ -8,7 +8,7 @@ modeling laser line based range imaging cameras.
 @license: GPL-3
 """
 
-from math import pi, sin, cos, tan
+from math import pi, sin, tan
 
 from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
 from .coverage import PointCache, Task, Camera, Model
@@ -94,36 +94,74 @@ class LineLaser(SceneObject):
 class RangeCamera(Camera):
     """\
     Single-camera coverage strength model for laser line based range camera.
-
-    A L{RangeCamera} differed from a L{Camera} in that its directional coverage
-    assumes perpendicular projection to quantify height resolution.
     """
-    def cd(self, p, tp):
+    def zres(self, resolution):
         """\
-        View angle component of the coverage function. Differs from the base
-        class in that it uses the sine of the view angle with respect to the
-        laser incidence on the surface, rather than the cosine with respect to
-        the point surface normal.
+        Return the depth at which the specified resolution occurs. In a range
+        camera, only horizontal resolution is considered (and the resolution
+        coverage component behaves accordingly).
+
+        @param resolution: Horizontal resolution in millimeters per pixel.
+        @type resolution: C{float}
+        @return: Depth (distance along camera M{z}-axis).
+        @rtype: C{float}
+        """
+        try:
+            return self._mr / resolution
+        except ZeroDivisionError:
+            return float('inf')
+        except AttributeError:
+            self._mr = float(self._params['dim'][0]) / self.fov['2sah2']
+            return self.zres(resolution)
+
+    def ch(self, p, tp):
+        """\
+        Height resolution component of the coverage function. Returns zero
+        coverage for non-directional points as it is intended for use in range
+        coverage only.
 
         @param p: The point to test.
         @type p: L{Point}
-        @param tp: Task parameters.
-        @type tp: C{dict}
-        @return: The view angle coverage component value in M{[0, 1]}.
+        @aram tp: Task parameters.
+        @ddtype tp: C{dict}
+        @return: The height resolution coverage component value in M{[0, 1]}.
         @rtype: C{float}
         """
-        # TODO: this is related to the camera orientation about local-z
         try:
-            sigma = sin(p.direction_unit.angle(-p))
-            aa = cos(tp['angle_max_acceptable'])
-            if tp['angle_max_ideal'] == tp['angle_max_acceptable']:
-                return float(sigma > aa)
-            else:
-                return min(max((sigma - aa) / \
-                    (cos(tp['angle_max_ideal']) - aa), 0.0), 1.0)
-        except (ValueError, AttributeError):
-            # point is at the origin or is non-directional
-            return 1.0
+            ascale = sin(p.direction_unit.angle(-p))
+        except AttributeError:
+            return 0.0
+        mr = ascale * float(self._params['dim'][1]) / self.fov['2sav2']
+        zhres = lambda resolution: mr / resolution
+        try:
+            zhmini = zhres(tp['hres_min_ideal'])
+        except ZeroDivisionError:
+            zhmini = float('inf')
+        try:
+            zhmina = zhres(tp['hres_min_acceptable'])
+        except ZeroDivisionError:
+            zhmina = float('inf')
+        if zhmina == zhmini:
+            return float(p.z < zhmina)
+        else:
+            return min(max((zhmina - p.z) / (zhmina - zhmini), 0.0), 1.0)
+
+    def strength(self, point, task_params):
+        """\
+        Return the coverage strength for a directional point. Includes the
+        height resolution component.
+
+        @param point: The (directional) point to test.
+        @type point: L{Point}
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
+        @return: The coverage strength of the point.
+        @rtype: C{float}
+        """
+        cp = (-self.pose).map(point)
+        return self.cv(cp, task_params) * self.cr(cp, task_params) \
+             * self.cf(cp, task_params) * self.cd(cp, task_params) \
+             * self.ch(cp, task_params)
 
 
 class RangeModel(Model):
