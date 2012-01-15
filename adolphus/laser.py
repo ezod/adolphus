@@ -122,8 +122,8 @@ class RangeCamera(Camera):
 
         @param p: The point to test.
         @type p: L{Point}
-        @aram tp: Task parameters.
-        @ddtype tp: C{dict}
+        @param tp: Task parameters.
+        @type tp: C{dict}
         @return: The height resolution coverage component value in M{[0, 1]}.
         @rtype: C{float}
         """
@@ -199,8 +199,6 @@ class RangeModel(Model):
         @type task_params: C{dict}
         @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
-        @param depth: The projection depth of the laser.
-        @type depth: C{float}
         @param target: The target object ID.
         @type target: C{str}
         @param lpitch: The horizontal pitch of task model points.
