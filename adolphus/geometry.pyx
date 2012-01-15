@@ -534,23 +534,24 @@ class Rotation(object):
         """\
         Generate the internal quaternion representation from a rotation matrix.
 
+            - U{http://en.wikipedia.org/wiki/Rotation_matrix#Quaternion}
+
         @param R: The rotation matrix.
         @type R: C{list} of C{list}
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        u = max([(abs(R[i][i]), i) for i in range(3)])[1]
-        v, w = (u + 1) % 3, (u + 2) % 3
-        r = sqrt(1.0 + R[u][u] - R[v][v] - R[w][w])
-        if r == 0:
-            return Quaternion()
-        Qa = (R[w][v] - R[v][w]) / (2.0 * r)
-        Qv = [0.0] * 3
-        Qv[u] = r / 2.0
-        Qv[v] = (R[u][v] + R[v][u]) / (2.0 * r)
-        Qv[w] = (R[w][u] + R[u][w]) / (2.0 * r)
-        return Rotation(Quaternion((Qa, Point(Qv))))
-    
+        t = R[0][0] + R[1][1] + R[2][2]
+        r = sqrt(1.0 + t)
+        a = 0.5 * r
+        b = copysign(0.5 * sqrt(1 + R[0][0] - R[1][1] - R[2][2]),
+            R[2][1] - R[1][2])
+        c = copysign(0.5 * sqrt(1 - R[0][0] + R[1][1] - R[2][2]),
+            R[0][2] - R[2][0])
+        d = copysign(0.5 * sqrt(1 - R[0][0] - R[1][1] + R[2][2]),
+            R[1][0] - R[0][1])
+        return Rotation(Quaternion((a, Point((b, c, d)))))
+
     @staticmethod
     def from_axis_angle(theta, axis):
         """\
