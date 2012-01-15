@@ -608,21 +608,25 @@ class Rotation(object):
         Return the rotation matrix representation from the internal quaternion
         representation.
 
+            - U{http://en.wikipedia.org/wiki/Rotation_matrix#Quaternion}
+
         @return: Rotation matrix.
         @rtype: C{list} of C{list}
         """
         a = self.Q[0]
         b, c, d = self.Q[1]
-        R = [[a ** 2 + b ** 2 - c ** 2 - d ** 2,
-              2.0 * b * c - 2.0 * a * d,
-              2.0 * b * d + 2.0 * a * c],
-             [2.0 * b * c + 2.0 * a * d,
-              a ** 2 - b ** 2 + c ** 2 - d ** 2,
-              2.0 * c * d - 2.0 * a * b],
-             [2.0 * b * d - 2.0 * a * c,
-              2.0 * c * d + 2.0 * a * b,
-              a ** 2 - b ** 2 - c ** 2 + d ** 2]]
-        return R
+        Nq = a ** 2 + b ** 2 + c ** 2 + d ** 2
+        if Nq > 0:
+            s = 2.0 / Nq
+        else:
+            s = 0.0
+        B = b * s; C = c * s; D = d * s
+        aB = a * B; aC = a * C; aD = a * D
+        bB = b * B; bC = b * C; bD = b * D
+        cC = c * C; cD = c * D; dD = d * D
+        return [[1.0 - (cC + dD), bC - aD, bD + aC],
+                [bC + aD, 1.0 - (bB + dD), cD - aB],
+                [bD - aC, cD + aB, 1.0 - (bB + cC)]]
 
     def to_axis_angle(self):
         """\
