@@ -25,8 +25,7 @@ class TestGeometry(unittest.TestCase):
     def setUp(self):
         self.p = Point((3, 4, 5))
         self.dp = DirectionalPoint((-7, 1, 9, 1.3, 0.2))
-        self.q = Rotation.from_euler('zyx', (pi, 0, 0))
-        self.R = Rotation(self.q)
+        self.R = Rotation.from_euler('zyx', (pi, 0, 0))
         self.P1 = Pose(T=Point(), R=self.R)
         self.P2 = Pose(T=Point((3, 2, 1)), R=self.R)
 

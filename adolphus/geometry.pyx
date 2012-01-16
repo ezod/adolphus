@@ -184,7 +184,7 @@ class Point(tuple):
     @property
     def magnitude(self):
         """\
-        Return the magnitude of this vector.
+        Magnitude of this vector.
 
         @rtype: C{float}
         """
@@ -197,7 +197,7 @@ class Point(tuple):
     @property
     def normal(self):
         """\
-        Return a normalized (unit) vector in the direction of this vector.
+        Normalized (unit) vector in the direction of this vector.
 
         @rtype: L{Point}
         """
@@ -288,8 +288,7 @@ class DirectionalPoint(Point):
     @property
     def direction_unit(self):
         """\
-        Return a unit vector representation of the direction of this
-        directional point.
+        Unit vector representation of the direction of this directional point.
 
         @rtype: L{Point}
         """
@@ -402,7 +401,7 @@ class Quaternion(tuple):
     @property
     def magnitude(self):
         """\
-        Return the magnitude (norm) of this quaternion.
+        Magnitude (norm) of this quaternion.
 
         @rtype: C{float}
         """
@@ -414,9 +413,25 @@ class Quaternion(tuple):
             return self._magnitude
 
     @property
+    def normal(self):
+        """\
+        Versor (normalized or unit quaternion) of this quaternion.
+
+        @rtype: L{Quaternion}
+        """
+        try:
+            return self._normal
+        except AttributeError:
+            try:
+                self._normal = self / self.magnitude
+                return self._normal
+            except ZeroDivisionError:
+                raise ValueError('cannot normalize a zero quaternion')
+
+    @property
     def conjugate(self):
         """\
-        Return the conjugate of this quaternion.
+        Conjugate of this quaternion.
 
         @rtype: L{Quaternion}
         """
@@ -429,7 +444,7 @@ class Quaternion(tuple):
     @property
     def inverse(self):
         """\
-        Return the multiplicative inverse of this quaternion.
+        Multiplicative inverse of this quaternion.
 
         @rtype: L{Quaternion}
         """
@@ -461,7 +476,7 @@ class Rotation(object):
         """\
         Constructor.
         """
-        self.Q = Q
+        self.Q = Q.normal
 
     def __getstate__(self):
         return self.Q
@@ -679,10 +694,20 @@ class Pose(object):
     
     @property
     def T(self):
+        """\
+        Translation vector of this pose.
+
+        @rtype: L{Point}
+        """
         return self._T
 
     @property
     def R(self):
+        """\
+        Rotation component of this pose.
+
+        @rtype: L{Rotation}
+        """
         return self._R
 
     def __getstate__(self):
@@ -817,6 +842,8 @@ class Face(object):
     def edges(self):
         """\
         Edges of this face.
+
+        @rtype: C{list} of L{Point}
         """
         try:
             return self._edges
@@ -829,6 +856,8 @@ class Face(object):
     def normal(self):
         """\
         Normal vector to this face.
+
+        @rtype: L{Point}
         """
         try:
             return self._normal
