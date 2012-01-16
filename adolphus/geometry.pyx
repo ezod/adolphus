@@ -872,10 +872,10 @@ class Triangle(Face):
         """
         super(Triangle, self).__init__(vertices)
 
-    def intersection(self, origin, end):
+    def intersection(self, origin, end, limit=True):
         """\
-        Return the point of intersection of the line segment between the two
-        given points with this triangle.
+        Return the point of intersection of the line or line segment between the
+        two given points with this triangle.
 
             - T. Moller and B. Trumbore, "Fast, Minimum Storage Ray/Triangle
               Intersection," J. Graphics Tools, vol. 2, no. 1, pp. 21-28, 1997.
@@ -884,6 +884,8 @@ class Triangle(Face):
         @type origin: L{Point}
         @param end: The end of the segment.
         @type end: L{Point}
+        @param limit: If true, limit intersection to the line segment.
+        @type limit: C{bool}
         @return: The point of intersection.
         @rtype: L{Point}
         """
@@ -902,7 +904,7 @@ class Triangle(Face):
         if v < 0 or u + v > 1.0:
             return None
         t = (-self.edges[2] * Q) * inv_det
-        if t < 1e-04 or t > origin.euclidean(end) - 1e-04:
+        if limit and (t < 1e-04 or t > origin.euclidean(end) - 1e-04):
             return None
         return origin + t * direction
 

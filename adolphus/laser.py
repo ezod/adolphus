@@ -8,10 +8,10 @@ modeling laser line based range imaging cameras.
 @license: GPL-3
 """
 
-from math import pi, sin, tan
+from math import sin, tan
 
 from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
-from .coverage import PointCache, Task, Camera, Model
+from .coverage import PointCache, Camera, Model
 from .posable import SceneObject
 
 
@@ -71,6 +71,20 @@ class LineLaser(SceneObject):
         """
         return self._depth
 
+    @property
+    def triangle(self):
+        """\
+        Triangle formed by the laser plane.
+        """
+        try:
+            return self._triangle
+        except AttributeError:
+            width = self._depth * tan(self._fan / 2.0)
+            self._triangle = Triangle((self.pose.T,
+                self.pose.map(Point((-width, 0, self._depth))),
+                self.pose.map(Point((width, 0, self._depth)))))
+            return self._triangle
+
     def occluded_by(self, triangle, task_params):
         """\
         Return whether this laser's projection plane is occluded (in part) by
@@ -83,12 +97,7 @@ class LineLaser(SceneObject):
         @return: True if occluded.
         @rtype: C{bool}
         """
-        # TODO: should these be cached?
-        width = self._depth * tan(self._fan / 2.0)
-        laser_triangle = Triangle((self.pose.T,
-            self.pose.map(Point((-width, 0, self._depth))),
-            self.pose.map(Point((width, 0, self._depth)))))
-        return laser_triangle.overlap(triangle.mapped_triangle)
+        return self.triangle.overlap(triangle.mapped_triangle)
 
 
 class RangeCamera(Camera):
@@ -190,103 +199,43 @@ class RangeModel(Model):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
 
-    def project(self, task_params, laser, target, lpitch):
+    def range_coverage_linear(self, task, laser, taxis=None, subset=None):
         """\
-        Generate a range imaging task model by projecting the specified laser
-        line onto the target object.
-
-        @param task_params: Task parameters.
-        @type task_params: C{dict}
-        @param laser: The ID of the laser line generator to use.
-        @type laser: C{str}
-        @param target: The target object ID.
-        @type target: C{str}
-        @param lpitch: The horizontal pitch of task model points.
-        @type lpitch: C{float}
-        @return: The generated range imaging task model.
-        @rtype: L{Task}
-        """
-        if not laser in self.lasers:
-            raise KeyError('invalid laser')
-        points = PointCache()
-        width = self[laser].depth * tan(self[laser].fan / 2.0)
-        x = int(-width / lpitch) * lpitch
-        while x < width:
-            cp = None
-            origin = self[laser].pose.map(Point((x, 0, 0)))
-            end = self[laser].pose.map(Point((x, 0, self[laser].depth)))
-            for triangle in self[target].triangles:
-                ip = triangle.intersection(origin, end)
-                if ip:
-                    ip = (-self[laser].pose).map(ip)
-                else:
-                    continue
-                if abs(ip.x) > ip.z * tan(self[laser].fan / 2.0):
-                    continue
-                elif not cp or ip.z < cp.z:
-                    cp = Point(ip)
-            if cp and not self.occluded(self[laser].pose.map(cp), laser):
-                points[DirectionalPoint(tuple(cp) + (pi, 0))] = 1.0
-            x += lpitch
-        return Task(task_params, points, mount=self[laser])
-
-    def range_coverage(self, task, laser, target, lpitch, tpitch, taxis,
-                       tstyle='linear', subset=None):
-        """\
-        Move the specified target object through the plane of the specified
-        laser, generate profile task models by projection, and return the
-        overall coverage and task models in the original target pose. The target
-        motion is based on the original pose and may be linear or rotary.
+        Return the coverage model using a linear range coverage scheme. It is
+        assumed that the specified task is mounted on the target object, which
+        will be moved linearly TODO
 
         @param task: The range coverage task.
         @type task: L{Task}
         @param laser: The ID of the laser line generator to use.
         @type laser: C{str}
-        @param target: The target object ID.
-        @type target: C{str}
-        @param lpitch: The horizontal laser projection pitch in distance units.
-        @type lpitch: C{float}
-        @param tpitch: The transport pitch in distance units or radians.
-        @type tpitch: C{float} or L{Angle}
-        @param taxis: The transport axis and (rotary only) target center point.
-        @type taxis: L{Point} or C{tuple} of L{Point}
-        @param tstyle: The transport style (linear or rotary).
-        @type tstyle: C{str}
+        @param taxis: The transport axis (defaults to laser plane normal).
+        @type taxis: L{Point}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
-        @return: The coverage and task models.
-        @rtype: L{PointCache}, L{Task}
+        @return: The coverage model.
+        @rtype: L{PointCache}
         """
-        coverage, task_original = PointCache(), PointCache()
-        original_pose = self[target].pose
-        if tstyle == 'linear':
-            # find least and greatest triangle vertices along taxis
-            taxis = taxis.normal
-            lv, gv = float('inf'), -float('inf')
-            for triangle in self[target].triangles:
-                for vertex in triangle.mapped_triangle.vertices:
-                    pv = taxis * vertex
-                    lv = min(lv, pv)
-                    gv = max(gv, pv)
-            steps = int((gv - lv) / float(tpitch))
-            for i in range(steps):
-                # get coverage of profile
-                self[target].set_absolute_pose(original_pose + \
-                    Pose(T=((tpitch * i - gv) * taxis)))
-                prof_task = self.project(task.params, laser, target, lpitch)
-                prof_coverage = self.coverage(prof_task, subset=subset)
-                # add to main coverage result
-                for point in prof_coverage:
-                    original_point = \
-                        (-self[target].pose + original_pose).map(point)
-                    coverage[original_point] = prof_coverage[point]
-                    task_original[original_point] = 1.0
-        elif tstyle == 'rotary':
-            #steps = int(2 * pi / float(tpitch))
-            # TODO: the rest...
-            raise ValueError('rotary transport style not yet implemented')
-        else:
-            raise ValueError('transport style must be \'linear\' or \'rotary\'')
-        self[target].set_absolute_pose(original_pose)
-        task = Task(task.params, task_original)
-        return coverage, task
+        if not taxis:
+            taxis = self[laser].triangle.normal
+        rho, eta = self[laser].pose.map(Point((0, 0, 1)))[3:5]
+        original_pose = task.mount.pose
+        task_original = PointCache(task.mapped)
+        coverage = PointCache()
+        for point in task_original:
+            # TODO: several opportunities for optimization in this block
+            lp = self[laser].triangle.intersection(point, point + taxis,
+                limit=False)
+            if not lp:
+                coverage[point] = 0.0
+                continue
+            pose = Pose(T=(lp - point))
+            task.mount.set_absolute_pose(original_pose + pose)
+            mp = pose.map(point)
+            if self.occluded(mp, laser):
+                coverage[point] = 0.0
+            else:
+                mdp = DirectionalPoint(tuple(mp) + (rho, eta))
+                coverage[point] = self.strength(mdp, task.params, subset=subset)
+        task.mount.set_absolute_pose(original_pose)
+        return coverage

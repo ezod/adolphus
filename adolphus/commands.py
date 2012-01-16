@@ -344,23 +344,26 @@ def cmd_coverage(ex, args, response='pickle'):
     finally:
         ex.display.userspin = True
 
-def cmd_rangecoverage(ex, args, response='pickle'):
+def cmd_lrcoverage(ex, args, response='pickle'):
     """
-    Return the monocular range imaging coverage performance based on laser and
+    Return the linear range imaging coverage performance based on laser and
     transport parameters.
 
-    usage: %s task laser target lpitch tpitch tx ty tz tstyle
+    usage: %s task laser [tx ty tz]
     """
     cmd_clear(ex, [])
     try:
         ex.display.message('Calculating range imaging coverage...')
         ex.display.userspin = False
-        taxis = Point([float(t) for t in args[5:8]])
-        coverage, task = ex.model.range_coverage(ex.tasks[args[0]], args[1],
-            args[2], float(args[3]), float(args[4]), taxis, args[8])
-        ex.coverage['range'] = coverage
+        try:
+            taxis = Point([float(t) for t in args[2:5]])
+        except IndexError:
+            taxis = None
+        ex.coverage['range'] = \
+            ex.model.range_coverage(ex.tasks[args[0]], args[1], taxis=taxis)
         ex.coverage['range'].visualize()
-        performance = ex.model.performance(task, coverage=coverage)
+        performance = ex.model.performance(ex.tasks[args[0]],
+            coverage=ex.coverage['range'])
         if response == 'pickle':
             return pickle.dumps(performance)
         elif response == 'csv':
