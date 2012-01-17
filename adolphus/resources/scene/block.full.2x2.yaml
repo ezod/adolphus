@@ -1,0 +1,74 @@
+description:    Block - Full Height, 2 x 2
+primitives:
+    - type:         box
+      pos:          [8, 8, 4.8]
+      length:       15.8
+      height:       15.8
+      width:        9.6
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [4, 4, 9.6]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [12, 4, 9.6]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [4, 12, 9.6]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [12, 12, 9.6]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+triangles:
+    - vertices:
+        - [0.1, 0.1, 0]
+        - [0.1, 0.1, 9.6]
+        - [15.9, 0.1, 9.6]
+    - vertices:
+        - [15.9, 0.1, 9.6]
+        - [15.9, 0.1, 0]
+        - [0.1, 0.1, 0]
+    - vertices:
+        - [0.1, 0.1, 0]
+        - [0.1, 0.1, 9.6]
+        - [0.1, 15.9, 9.6]
+    - vertices:
+        - [0.1, 15.9, 9.6]
+        - [0.1, 15.9, 0]
+        - [0.1, 0.1, 0]
+    - vertices:
+        - [0.1, 15.9, 0]
+        - [0.1, 15.9, 9.6]
+        - [15.9, 15.9, 9.6]
+    - vertices:
+        - [15.9, 15.9, 9.6]
+        - [15.9, 15.9, 0]
+        - [0.1, 15.9, 0]
+    - vertices:
+        - [15.9, 0.1, 0]
+        - [15.9, 0.1, 9.6]
+        - [15.9, 15.9, 9.6]
+    - vertices:
+        - [15.9, 15.9, 9.6]
+        - [15.9, 15.9, 0]
+        - [15.9, 0.1, 0]
+    - vertices:
+        - [0.1, 0.1, 9.6]
+        - [15.9, 0.1, 9.6]
+        - [15.9, 15.9, 9.6]
+    - vertices:
+        - [15.9, 15.9, 9.6]
+        - [0.1, 15.9, 9.6]
+        - [0.1, 0.1, 9.6]

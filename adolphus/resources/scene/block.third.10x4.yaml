@@ -1,0 +1,258 @@
+description:    Block - Third Height, 10 x 4
+primitives:
+    - type:         box
+      pos:          [40, 16, 1.6]
+      length:       79.8
+      height:       31.8
+      width:        3.2
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [4, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [4, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [4, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [4, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [12, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [12, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [12, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [12, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [20, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [20, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [20, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [20, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [28, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [28, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [28, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [28, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [36, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [36, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [36, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [36, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [44, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [44, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [44, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [44, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [52, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [52, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [52, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [52, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [60, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [60, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [60, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [60, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [68, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [68, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [68, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [68, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [76, 4, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [76, 12, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [76, 20, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [76, 28, 3.2]
+      radius:       2.5
+      axis:         [0, 0, 1.7]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+triangles:
+    - vertices:
+        - [0.1, 0.1, 1.6]
+        - [79.8, 0.1, 1.6]
+        - [79.8, 31.8, 1.6]
+    - vertices:
+        - [79.8, 31.8, 1.6]
+        - [0.1, 31.8, 1.6]
+        - [0.1, 0.1, 1.6]
