@@ -222,20 +222,23 @@ class RangeModel(Model):
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
         coverage = PointCache()
-        for point in task_original:
-            # TODO: several opportunities for optimization in this block
-            lp = self[laser].triangle.intersection(point, point + taxis,
-                limit=False)
-            if not lp:
-                coverage[point] = 0.0
-                continue
-            pose = Pose(T=(lp - point))
-            task.mount.set_absolute_pose(original_pose + pose)
-            mp = pose.map(point)
-            if self.occluded(mp, laser):
-                coverage[point] = 0.0
-            else:
-                mdp = DirectionalPoint(tuple(mp) + (rho, eta))
-                coverage[point] = self.strength(mdp, task.params, subset=subset)
-        task.mount.set_absolute_pose(original_pose)
+        try:
+            for point in task_original:
+                # TODO: several opportunities for optimization in this block
+                lp = self[laser].triangle.intersection(point, point + taxis,
+                    limit=False)
+                if not lp:
+                    coverage[point] = 0.0
+                    continue
+                pose = Pose(T=(lp - point))
+                task.mount.set_absolute_pose(original_pose + pose)
+                mp = pose.map(point)
+                if self.occluded(mp, laser):
+                    coverage[point] = 0.0
+                else:
+                    mdp = DirectionalPoint(tuple(mp) + (rho, eta))
+                    coverage[point] = \
+                        self.strength(mdp, task.params, subset=subset)
+        finally:
+            task.mount.set_absolute_pose(original_pose)
         return coverage
