@@ -8,7 +8,7 @@ modeling laser line based range imaging cameras.
 @license: GPL-3
 """
 
-from math import sin, tan
+from math import pi, sin, tan
 
 from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
 from .coverage import PointCache, Camera, Model
@@ -218,7 +218,7 @@ class RangeModel(Model):
         """
         if not taxis:
             taxis = self[laser].triangle.normal
-        rho, eta = self[laser].pose.map(Point((0, 0, 1)))[3:5]
+        rho, eta = self[laser].pose.map(DirectionalPoint((0, 0, 0, pi, 0)))[3:5]
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
         coverage = PointCache()
