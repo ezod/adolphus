@@ -4,7 +4,6 @@ primitives:
       pos:          [0, 1550, 0]
       radius:       410
       color:        [0.82,0.65,0.69]
-      #material:     plastic
       texture:      fisherpriceperson
       mapping:      spherical
     - type:         cylinder
