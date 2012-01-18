@@ -236,19 +236,36 @@ class Task(Posable):
         if not param in self._params and not param in self.defaults:
             raise KeyError(param)
         self._params[param] = value
-        prefix = param.split('_')[0]
-        if param.endswith('max_ideal'):
-            self._params['%s_max_acceptable' % prefix] = \
-                max(value, self.getparam('%s_max_acceptable' % prefix))
-        elif param.endswith('max_acceptable'):
-            self._params['%s_max_ideal' % prefix] = \
-                min(value, self.getparam('%s_max_ideal' % prefix))
-        elif param.endswith('min_ideal'):
-            self._params['%s_min_acceptable' % prefix] = \
-                min(value, self.getparam('%s_min_acceptable' % prefix))
-        elif param.endswith('min_acceptable'):
-            self._params['%s_min_ideal' % prefix] = \
-                max(value, self.getparam('%s_min_ideal' % prefix))
+        if param == 'res_max_ideal':
+            self._params['res_max_acceptable'] = \
+                min(value, self.getparam('res_max_acceptable'))
+        elif param == 'res_max_acceptable':
+            self._params['res_max_ideal'] = \
+                max(value, self.getparam('res_max_ideal'))
+        elif param == 'res_min_ideal':
+            self._params['res_min_acceptable'] = \
+                max(value, self.getparam('res_min_acceptable'))
+        elif param == 'res_min_acceptable':
+            self._params['res_min_ideal'] = \
+                min(value, self.getparam('res_min_ideal'))
+        elif param == 'hres_min_ideal':
+            self._params['hres_min_acceptable'] = \
+                max(value, self.getparam('hres_min_acceptable'))
+        elif param == 'hres_min_acceptable':
+            self._params['hres_min_ideal'] = \
+                min(value, self.getparam('hres_min_ideal'))
+        elif param == 'angle_max_ideal':
+            self._params['angle_max_acceptable'] = \
+                max(value, self.getparam('angle_max_acceptable'))
+        elif param == 'angle_max_acceptable':
+            self._params['angle_max_ideal'] = \
+                min(value, self.getparam('angle_max_ideal'))
+        elif param == 'blur_max_ideal':
+            self._params['blur_max_acceptable'] = \
+                max(value, self.getparam('blur_max_acceptable'))
+        elif param == 'blur_max_acceptable':
+            self._params['angle_max_ideal'] = \
+                min(value, self.getparam('blur_max_ideal'))
 
     def visualize(self):
         """\
