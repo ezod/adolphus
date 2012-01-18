@@ -7,13 +7,7 @@ Visual interface module.
 @license: GPL-3
 """
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-import threading
-import socket
+from threading import Thread, Event
 from math import copysign
 from inspect import getargspec
 
@@ -168,7 +162,7 @@ class Display(visual.display):
         return process_cmd and cmd or None
 
 
-class Experiment(threading.Thread):
+class Experiment(Thread):
     """\
     Experiment class.
 
@@ -193,7 +187,7 @@ class Experiment(threading.Thread):
         self.altdisplays = []
 
         # generic event flag
-        self.event = threading.Event()
+        self.event = Event()
 
         # state variables
         self.selected = None
@@ -459,73 +453,3 @@ class Experiment(threading.Thread):
                             response='text'))
                     except CommandError as e:
                         self.display.message(str(e))
-
-
-class Controller(object):
-    """\
-    Socket-based IPC experiment controller class.
-    """
-    class ExperimentDeath(Exception):
-        pass
-
-    def __init__(self, experiment, port=0):
-        """\
-        Constructor.
-
-        @param experiment: The experiment to control.
-        @type experiment: L{Experiment}
-        @param port: The port to which to bind the socket (optional).
-        @type port: C{int}
-        """
-        self.experiment = experiment
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind(('localhost', port))
-        self.sock.listen(0)
-
-    @property
-    def port(self):
-        """\
-        The port on which the controller is listening.
-        """
-        return self.sock.getsockname()[1]
-
-    def main(self):
-        """\
-        Main loop.
-        """
-        self.experiment.start()
-        # TODO: time out and check for experiment death here?
-        channel, details = self.sock.accept()
-        # get client response format
-        client = ''
-        while not client.endswith('#'):
-            client += channel.recv(256)
-        response = client.strip('#')
-        try:
-            channel.settimeout(0.1)
-            while True:
-                cmd = ''
-                while not cmd.endswith('#'):
-                    if not self.experiment.is_alive():
-                        raise Controller.ExperimentDeath
-                    try:
-                        cmd += channel.recv(256)
-                    except socket.error:
-                        continue
-                try:
-                    rstring = self.experiment.execute(cmd.strip('#'),
-                        response=response)
-                except CommandError as e:
-                    channel.sendall(pickle.dumps(e))
-                if rstring:
-                    channel.sendall(rstring)
-                else:
-                    channel.sendall(pickle.dumps(None))
-        except Controller.ExperimentDeath:
-            pass
-        finally:
-            channel.close()
-            self.sock.close()
-            if self.experiment.is_alive():
-                self.experiment.execute('exit')
-            self.experiment.join()

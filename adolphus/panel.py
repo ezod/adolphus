@@ -17,7 +17,7 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import pkg_resources
-import socket
+from sys import stdin, stdout
 
 
 class ObjectTreeView(gtk.TreeView):
@@ -79,7 +79,7 @@ class Panel(gtk.Window):
     """\
     Control panel window.
     """
-    def __init__(self, parent=None, host=None, port=None):
+    def __init__(self, parent=None):
         """\
         Constructor.
         """
@@ -88,8 +88,6 @@ class Panel(gtk.Window):
             self.set_screen(parent.get_screen())
         except AttributeError:
             self.connect('destroy', lambda *w: gtk.main_quit())
-
-        self.connected = False
 
         # basics
         self.set_title('Adolphus Panel')
@@ -103,11 +101,6 @@ class Panel(gtk.Window):
         vbox.pack_start(menubar, expand=False)
         menuc = gtk.MenuItem('File')
         menu = gtk.Menu()
-        menui = gtk.ImageMenuItem('Connect...')
-        img = gtk.image_new_from_stock(gtk.STOCK_NETWORK, gtk.ICON_SIZE_MENU)
-        menui.set_image(img)
-        menui.connect('activate', self._connect)
-        menu.add(menui)
         menui = gtk.ImageMenuItem(gtk.STOCK_QUIT)
         menui.connect('activate', self._destroy)
         menu.add(menui)
@@ -131,10 +124,8 @@ class Panel(gtk.Window):
         # show panel
         self.show_all()
 
-        # connect to experiment
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if port:
-            self.ad_connect(host, port)
+        # populate object tree
+        self.populate_object_tree()
 
     @staticmethod
     def main():
@@ -142,21 +133,6 @@ class Panel(gtk.Window):
         Main event loop.
         """
         gtk.main()
-
-    def ad_connect(self, host, port):
-        """\
-        Connect to Adolphus.
-        
-        @param host: The hostname (defaults to local host).
-        @type host: C{str}
-        @param port: THe port to connect on.
-        @type port: C{int}
-        """
-        self.sock.connect((host or 'localhost', port))
-        self.sock.send('pickle#')
-        self.sock.settimeout(0.1)
-        self.connected = True
-        self.populate_object_tree()
 
     def ad_command(self, cmd):
         """\
@@ -168,12 +144,10 @@ class Panel(gtk.Window):
         @rtype: C{str}
         """
         response = ''
-        self.sock.send('%s#' % cmd)
+        stdout.write('%s\n' % cmd)
+        stdout.flush()
         while True:
-            try:
-                response += self.sock.recv(256)
-            except socket.error:
-                pass
+            response += stdin.readline()
             try:
                 robj = pickle.loads(response)
                 break
@@ -185,47 +159,14 @@ class Panel(gtk.Window):
             return robj
 
     def populate_object_tree(self):
-        if not self.connected:
-            return
         self.objecttreeview.populate(self.ad_command('objecthierarchy'))
 
     def _delete_event(self, widget, data=None):
         return False
 
     def _destroy(self, widget, data=None):
-        try:
-            self.ad_command('exit')
-        except socket.error:
-            pass
-        self.sock.close()
+        self.ad_command('exit')
         gtk.main_quit()
-
-    def _connect(self, widget, data=None):
-        dialog = gtk.Dialog('Connect to Adolphus', self, 0, (gtk.STOCK_OK,
-            gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-        dialog.set_border_width(5)
-        table = gtk.Table(2, 2)
-        table.set_row_spacings(5)
-        table.set_col_spacings(5)
-        dialog.vbox.pack_start(table, True, True, 0)
-        label = gtk.Label('_Host')
-        label.set_use_underline(True)
-        table.attach(label, 0, 1, 0, 1)
-        host = gtk.Entry()
-        host.set_text('localhost')
-        table.attach(host, 1, 2, 0, 1)
-        label.set_mnemonic_widget(host)
-        label = gtk.Label('_Port')
-        label.set_use_underline(True)
-        table.attach(label, 0, 1, 1, 2)
-        port = gtk.Entry()
-        table.attach(port, 1, 2, 1, 2)
-        label.set_mnemonic_widget(port)
-        dialog.show_all()
-        response = dialog.run()
-        if response == gtk.RESPONSE_OK:
-            self.ad_connect(host.get_text(), int(port.get_text()))
-        dialog.destroy()
 
     def _select_object(self, widget, data=None):
         model, selected = widget.get_selected_rows()

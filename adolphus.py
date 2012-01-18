@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 
 import sys
-import os.path
+import os
 import subprocess
 
 
 def main():
+    vr, pw = os.pipe()
+    pr, vw = os.pipe()
     argviewer = [os.path.join(os.path.dirname(sys.argv[0]),
         'adolphusviewer.py'), '-s'] + sys.argv[1:]
-    viewer = subprocess.Popen(argviewer, stdout=subprocess.PIPE)
-    port = viewer.stdout.readline().rstrip().strip('.').split(' ')[3]
-    argpanel = [os.path.join(os.path.dirname(sys.argv[0]), 'adolphuspanel.py'),
-        '-H', 'localhost', '-p', port]
-    panel = subprocess.Popen(argpanel)
+    viewer = subprocess.Popen(argviewer, stdin=vr, stdout=vw)
+    argpanel = [os.path.join(os.path.dirname(sys.argv[0]), 'adolphuspanel.py')]
+    panel = subprocess.Popen(argpanel, stdin=pr, stdout=pw)
     viewer.wait()
+    panel.wait()
 
 
 if __name__ == '__main__':
