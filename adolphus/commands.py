@@ -349,18 +349,26 @@ def cmd_lrcoverage(ex, args, response='pickle'):
     Return the linear range imaging coverage performance based on laser and
     transport parameters.
 
-    usage: %s task laser [tx ty tz]
+    usage: %s task [laser] [tx ty tz]
     """
     cmd_clear(ex, [])
     try:
         ex.display.message('Calculating range imaging coverage...')
         ex.display.userspin = False
+        d = 0
+        laser = None
         try:
-            taxis = Point([float(t) for t in args[2:5]])
+            if args[1] in ex.model.lasers:
+                laser = args[1]
+                d = 1
+        except IndexError:
+            pass
+        try:
+            taxis = Point([float(t) for t in args[1 + d:4 + d]])
         except IndexError:
             taxis = None
         ex.coverage['range'] = ex.model.range_coverage_linear(\
-            ex.tasks[args[0]], args[1], taxis=taxis)
+            ex.tasks[args[0]], laser=laser, taxis=taxis)
         ex.coverage['range'].visualize()
         performance = ex.model.performance(ex.tasks[args[0]],
             coverage=ex.coverage['range'])
