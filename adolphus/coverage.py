@@ -114,32 +114,18 @@ class Task(Posable):
     The available task parameters are:
 
         - C{ocular}: mutual camera coverage degree (number of cameras).
-        - C{boundary_padding}: degradation boundary around image (pixels).
-        - C{res_max_ideal}: upper limit of ideal resolution range (mm/pixel).
-        - C{res_max_acceptable}: max. acceptable resolution (mm/pixel).
-        - C{res_min_ideal}: lower limit of ideal resolution range (mm/pixel).
-        - C{res_min_acceptable}: min. acceptable resolution (mm/pixel).
-        - C{hres_min_ideal}: ideal min. height resolution (mm/pixel).
-        - C{hres_min_acceptable}: min. acceptable height resolution (mm/pixel).
-        - C{blur_max_ideal}: ideal max. blur circle diameter (pixels).
-        - C{blur_max_acceptable}: max. acceptable blur circle diameter (pixels).
-        - C{angle_max_ideal}: ideal max. view angle (radians).
-        - C{angle_max_acceptable}: max. acceptable view angle (radians).
+        - C{res_max}: maximum resolution (mm/pixel).
+        - C{res_min}: minimum resolution (mm/pixel).
+        - C{blur_max}: maximum blur circle diameter (pixels).
+        - C{angle_max}: maximum view angle (radians).
 
     See L{Task.defaults} for default (permissive) values.
     """
     defaults = {'ocular': 1,
-                'boundary_padding': 0.0,
-                'res_max_ideal': float('inf'),
-                'res_max_acceptable': float('inf'),
-                'res_min_ideal': 0.0,
-                'res_min_acceptable': 0.0,
-                'hres_min_ideal': 0.0,
-                'hres_min_acceptable': 0.0,
-                'blur_max_ideal': 1.0,
-                'blur_max_acceptable': float('inf'),
-                'angle_max_ideal': pi / 2.0,
-                'angle_max_acceptable': pi / 2.0}
+                'res_max': 0.0,
+                'res_min': float('inf'),
+                'blur_max': float('inf'),
+                'angle_max': pi / 2.0}
 
     def __init__(self, params, original, pose=Pose(), mount=None):
         """\
@@ -236,36 +222,12 @@ class Task(Posable):
         if not param in self._params and not param in self.defaults:
             raise KeyError(param)
         self._params[param] = value
-        if param == 'res_max_ideal':
-            self._params['res_max_acceptable'] = \
-                min(value, self.getparam('res_max_acceptable'))
-        elif param == 'res_max_acceptable':
-            self._params['res_max_ideal'] = \
-                max(value, self.getparam('res_max_ideal'))
-        elif param == 'res_min_ideal':
-            self._params['res_min_acceptable'] = \
-                max(value, self.getparam('res_min_acceptable'))
-        elif param == 'res_min_acceptable':
-            self._params['res_min_ideal'] = \
-                min(value, self.getparam('res_min_ideal'))
-        elif param == 'hres_min_ideal':
-            self._params['hres_min_acceptable'] = \
-                max(value, self.getparam('hres_min_acceptable'))
-        elif param == 'hres_min_acceptable':
-            self._params['hres_min_ideal'] = \
-                min(value, self.getparam('hres_min_ideal'))
-        elif param == 'angle_max_ideal':
-            self._params['angle_max_acceptable'] = \
-                max(value, self.getparam('angle_max_acceptable'))
-        elif param == 'angle_max_acceptable':
-            self._params['angle_max_ideal'] = \
-                min(value, self.getparam('angle_max_ideal'))
-        elif param == 'blur_max_ideal':
-            self._params['blur_max_acceptable'] = \
-                max(value, self.getparam('blur_max_acceptable'))
-        elif param == 'blur_max_acceptable':
-            self._params['angle_max_ideal'] = \
-                min(value, self.getparam('blur_max_ideal'))
+        if param == 'res_min':
+            self._params['res_max'] = \
+                min(value, self.getparam('res_max'))
+        elif param == 'res_max':
+            self._params['res_min'] = \
+                max(value, self.getparam('res_min'))
 
     def visualize(self):
         """\
