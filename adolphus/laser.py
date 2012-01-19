@@ -199,7 +199,7 @@ class RangeModel(Model):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
 
-    def range_coverage_linear(self, task, laser, taxis=None, subset=None):
+    def range_coverage_linear(self, task, laser=None, taxis=None, subset=None):
         """\
         Return the coverage model using a linear range coverage scheme. It is
         assumed that the specified task is mounted on the target object, which
@@ -207,7 +207,7 @@ class RangeModel(Model):
 
         @param task: The range coverage task.
         @type task: L{Task}
-        @param laser: The ID of the laser line generator to use.
+        @param laser: The ID of the laser line generator to use (if ambiguous).
         @type laser: C{str}
         @param taxis: The transport axis (defaults to laser plane normal).
         @type taxis: L{Point}
@@ -216,8 +216,17 @@ class RangeModel(Model):
         @return: The coverage model.
         @rtype: L{PointCache}
         """
+        if not laser:
+            if len(self.lasers) > 1:
+                raise KeyError('must specify a laser to use')
+            try:
+                laser = iter(self.lasers).next()
+            except StopIteration:
+                raise KeyError('model contains no lasers')
         if not taxis:
             taxis = self[laser].triangle.normal
+        elif not taxis * self[laser].triangle.normal:
+            raise ValueError('transport axis parallel to laser plane')
         rho, eta = self[laser].pose.map(DirectionalPoint((0, 0, 0, pi, 0)))[3:5]
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
