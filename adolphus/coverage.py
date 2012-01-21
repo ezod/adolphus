@@ -9,7 +9,7 @@ classes.
 @license: GPL-3
 """
 
-from math import sin, cos, atan, pi
+from math import cos, tan, atan, pi
 from numbers import Number
 from itertools import combinations
 
@@ -408,10 +408,9 @@ class Camera(SceneObject):
                 self._params['o'][0]) * self._params['s'][0]) / \
                 (2.0 * self._params['f']))
             self._fov['ah'] = self._fov['ahl'] + self._fov['ahr']
-            self._fov['sahl'] = -sin(self._fov['ahl'])
-            self._fov['sahr'] = sin(self._fov['ahr'])
-            self._fov['sah'] = self._fov['sahr'] - self._fov['sahl']
-            self._fov['2sah2'] = 2.0 * sin(self._fov['ah'] / 2.0)
+            self._fov['tahl'] = -tan(self._fov['ahl'])
+            self._fov['tahr'] = tan(self._fov['ahr'])
+            self._fov['tah'] = self._fov['tahr'] - self._fov['tahl']
             # vertical
             self._fov['avt'] = 2.0 * atan((self._params['o'][1] * \
                 self._params['s'][1]) / (2.0 * self._params['f']))
@@ -419,10 +418,9 @@ class Camera(SceneObject):
                 self._params['o'][1]) * self._params['s'][1]) / \
                 (2.0 * self._params['f']))
             self._fov['av'] = self._fov['avt'] + self._fov['avb']
-            self._fov['savt'] = -sin(self._fov['avt'])
-            self._fov['savb'] = sin(self._fov['avb'])
-            self._fov['sav'] = self._fov['savb'] - self._fov['savt']
-            self._fov['2sav2'] = 2.0 * sin(self._fov['av'] / 2.0)
+            self._fov['tavt'] = -tan(self._fov['avt'])
+            self._fov['tavb'] = tan(self._fov['avb'])
+            self._fov['tav'] = self._fov['tavb'] - self._fov['tavt']
             return self._fov
 
     def image(self, point):
@@ -455,8 +453,8 @@ class Camera(SceneObject):
         except ZeroDivisionError:
             return float('inf')
         except AttributeError:
-            self._mr = min([float(self._params['dim'][0]) / self.fov['2sah2'],
-                            float(self._params['dim'][1]) / self.fov['2sav2']])
+            self._mr = min([float(self._params['dim'][0]) / self.fov['tah'],
+                            float(self._params['dim'][1]) / self.fov['tav']])
             return self.zres(resolution)
 
     def zc(self, c):
@@ -492,19 +490,19 @@ class Camera(SceneObject):
         """
         if not tp['boundary_padding']:
             return p.z > 0 and \
-                float(p.x / p.z > self.fov['sahl'] \
-                  and p.x / p.z < self.fov['sahr'] \
-                  and p.y / p.z > self.fov['savt'] \
-                  and p.y / p.z < self.fov['savb']) or 0.0
+                float(p.x / p.z > self.fov['tahl'] \
+                  and p.x / p.z < self.fov['tahr'] \
+                  and p.y / p.z > self.fov['tavt'] \
+                  and p.y / p.z < self.fov['tavb']) or 0.0
         else:
             gh = tp['boundary_padding'] / \
-                float(self._params['dim'][0]) * self.fov['2sah2']
+                float(self._params['dim'][0]) * self.fov['tah']
             gv = tp['boundary_padding'] / \
-                float(self._params['dim'][1]) * self.fov['2sav2']
-            return p.z > 0 and min(min(max((min(p.x / p.z - self.fov['sahl'],
-                self.fov['sahr'] - p.x / p.z) / gh), 0.0), 1.0),
-                                   min(max((min(p.y / p.z - self.fov['savt'], 
-                self.fov['savb'] - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
+                float(self._params['dim'][1]) * self.fov['tav']
+            return p.z > 0 and min(min(max((min(p.x / p.z - self.fov['tahl'],
+                self.fov['tahr'] - p.x / p.z) / gh), 0.0), 1.0),
+                                   min(max((min(p.y / p.z - self.fov['tavt'], 
+                self.fov['tavb'] - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
 
     def cr(self, p, tp):
         """\
@@ -599,10 +597,10 @@ class Camera(SceneObject):
         # TODO: should these be cached?
         z = min(self.zres(task_params['res_min_acceptable']),
                 self.zc(task_params['blur_max_acceptable'])[1])
-        hull = [Point((self.fov['sahl'] * z, self.fov['savt'] * z, z)),
-                Point((self.fov['sahl'] * z, self.fov['savb'] * z, z)),
-                Point((self.fov['sahr'] * z, self.fov['savb'] * z, z)),
-                Point((self.fov['sahr'] * z, self.fov['savt'] * z, z))]
+        hull = [Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
+                Point((self.fov['tahl'] * z, self.fov['tavb'] * z, z)),
+                Point((self.fov['tahr'] * z, self.fov['tavb'] * z, z)),
+                Point((self.fov['tahr'] * z, self.fov['tavt'] * z, z))]
         verts = [self.pose.T] + [self.pose.map(v) for v in hull]
         edges = [(verts[i] - verts[0], verts[0]) for i in range(1, 5)] + \
                 [(verts[(i + 1) % 4 + 1] - verts[i + 1], verts[i + 1]) \
