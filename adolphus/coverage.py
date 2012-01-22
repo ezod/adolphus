@@ -314,27 +314,6 @@ class Camera(SceneObject):
                               'alt':    'cameraview %s' % name,
                               'shift':  'modify %s' % name}
 
-    def _delete_fov_data(self):
-        try:
-            del self._fov_hull_vertices
-        except AttributeError:
-            pass
-        try:
-            del self._fov_hull_edges
-        except AttributeError:
-            pass
-        try:
-            del self._fov_hull_faces
-        except AttributeError:
-            pass
-
-    def _pose_changed_hook(self):
-        """\
-        Hook called on pose change.
-        """
-        self._delete_fov_data()
-        super(Camera, self)._pose_changed_hook()
-
     @property
     def params(self):
         """\
@@ -365,29 +344,12 @@ class Camera(SceneObject):
         if not param in self._params:
             raise KeyError(param)
         self._params[param] = value
-        fovvis = False
         if param in ['f', 's', 'o', 'dim']:
             try:
                 del self._fov
-            except AttributeError:
-                pass
-            try:
                 del self._mr
             except AttributeError:
                 pass
-            self._generate_cv()
-            self._generate_cr()
-            fovvis = True
-        if param in ['A', 'zS', 'f', 's']:
-            self._generate_cf()
-            fovvis = True
-        if fovvis:
-            try:
-                del self._fov_hull
-            except AttributeError:
-                pass
-            self._delete_fov_data()
-            self._generate_fovvis()
 
     @property
     def fov(self):
