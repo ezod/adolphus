@@ -1,7 +1,7 @@
 """\
 Standard library of interface commands.
 
-Commands are functions prefixed with 'cmd_' and taking two positional
+Commands are functions decorated with C{@command} and taking two positional
 arguments -- a reference to the experiment object and a list of strings
 comprising the command arguments -- as well as (optionally) a 'response'
 keyword argument specifying the response string format. Possible values for the
@@ -32,6 +32,8 @@ from .robot import Robot
 from .yamlparser import YAMLParser
 
 
+commands = {}
+
 class CommandError(Exception):
     pass
 
@@ -40,7 +42,7 @@ def command(f):
         def wrapped(ex, args, response='pickle'):
             try:
                 return f(ex, args, response)
-            except CommandError, e:
+            except CommandError as e:
                 raise e
             except Exception, e:
                 raise CommandError('%s: %s' % (e.__class__.__name__, e))
@@ -49,27 +51,29 @@ def command(f):
         def wrapped(ex, args):
             try:
                 return f(ex, args)
-            except CommandError, e:
+            except CommandError as e:
                 raise e
             except Exception, e:
                 raise CommandError('%s: %s' % (e.__class__.__name__, e))
         wrapped.response = False
+    wrapped.__doc__ = f.__doc__
+    commands[f.__name__] = wrapped
     return wrapped
 
 
 ### File Operations
 
 @command
-def cmd_loadmodel(ex, args):
+def loadmodel(ex, args):
     """\
     Load a model from a YAML file.
 
     usage: %s filename
     """
-    cmd_clear(ex, [])
-    cmd_modify(ex, [])
-    cmd_cameraview(ex, [])
-    cmd_cameranames(ex, [])
+    clear(ex, [])
+    modify(ex, [])
+    cameraview(ex, [])
+    cameranames(ex, [])
     for sceneobject in ex.model:
         ex.model[sceneobject].visible = False
     ex.model, ex.tasks = YAMLParser(args[0]).experiment
@@ -77,7 +81,7 @@ def cmd_loadmodel(ex, args):
     ex.display.select()
 
 @command
-def cmd_loadconfig(ex, args):
+def loadconfig(ex, args):
     """\
     Load viewer configuration from a YAML file.
 
@@ -95,14 +99,14 @@ def cmd_loadconfig(ex, args):
         ex.keybindings = {}
 
 @command
-def cmd_event(ex, args):
+def event(ex, args):
     """\
     Set the generic experiment event.
     """
     ex.event.set()
 
 @command
-def cmd_exit(ex, args):
+def exit(ex, args):
     """\
     Exit the viewer.
     """
@@ -114,7 +118,7 @@ def cmd_exit(ex, args):
 ### Visualization
 
 @command
-def cmd_clear(ex, args):
+def clear(ex, args):
     """\
     Clear all point coverage visualizations.
     """
@@ -122,21 +126,21 @@ def cmd_clear(ex, args):
         del ex.coverage[key]
 
 @command
-def cmd_axes(ex, args):
+def axes(ex, args):
     """\
     Toggle display of 3D axes.
     """
     ex.axes.visible = not ex.axes.visible
 
 @command
-def cmd_centerdot(ex, args):
+def centerdot(ex, args):
     """\
     Toggle display of a center indicator dot.
     """
     ex.centerdot.visible = not ex.centerdot.visible
 
 @command
-def cmd_setcenter(ex, args):
+def setcenter(ex, args):
     """\
     Set the position of the display center.
 
@@ -149,7 +153,7 @@ def cmd_setcenter(ex, args):
     ex.centerdot.pos = pos
 
 @command
-def cmd_shiftcenter(ex, args):
+def shiftcenter(ex, args):
     """\
     Shift the display center from its current position by the amount specified.
 
@@ -164,7 +168,7 @@ def cmd_shiftcenter(ex, args):
     ex.centerdot.pos = tuple(pos)
 
 @command
-def cmd_triangles(ex, args):
+def triangles(ex, args):
     """\
     Toggle display of occluding triangles.
     """
@@ -172,14 +176,14 @@ def cmd_triangles(ex, args):
         ex.model[sceneobject].toggle_triangles()
 
 @command
-def cmd_cameranames(ex, args):
+def cameranames(ex, args):
     """\
     Toggle display of camera identifiers.
     """
     ex.camera_names()
 
 @command
-def cmd_cameraview(ex, args):
+def cameraview(ex, args):
     """\
     Switch to camera view for the specified camera.
     
@@ -200,7 +204,7 @@ def cmd_cameraview(ex, args):
 ### Geometric
 
 @command
-def cmd_pose(ex, args, response='pickle'):
+def pose(ex, args, response='pickle'):
     """\
     Return the (absolute) pose of an object. If using CSV or text response,
     a rotation format may be specified (one of 'quaternion', 'matrix',
@@ -254,7 +258,7 @@ def cmd_pose(ex, args, response='pickle'):
             return tstr + 'R: %s' % (pose.R.Q,)
 
 @command
-def cmd_modify(ex, args):
+def modify(ex, args):
     """\
     Enable interactive pose modification for the specified object, or disable
     modification if no object is specified.
@@ -270,7 +274,7 @@ def cmd_modify(ex, args):
         ex.modifier.parent = None
 
 @command
-def cmd_position(ex, args, response='pickle'):
+def position(ex, args, response='pickle'):
     """\
     Set the position of the specified robot, or return its position if no new
     position is specified.
@@ -293,17 +297,17 @@ def cmd_position(ex, args, response='pickle'):
 ### Coverage Operations
 
 @command
-def cmd_active(ex, args):
+def active(ex, args):
     """name"""
     try:
         ex.model[args[0]].active = not ex.model[args[0]].active
         ex.model[args[0]].update_visualization()
     except IndexError:
         for camera in ex.model.cameras:
-            cmd_active(ex, [camera])
+            active(ex, [camera])
 
 @command
-def cmd_strength(ex, args, response='pickle'):
+def strength(ex, args, response='pickle'):
     """\
     Return the coverage strength of the specified point with respect to the
     task parameters of the specified task.
@@ -326,25 +330,25 @@ def cmd_strength(ex, args, response='pickle'):
         return '%f' % strength
 
 @command
-def cmd_showtask(ex, args):
+def showtask(ex, args):
     """
     Show the points of the specified task.
     
     usage: %s task
     """
-    cmd_clear(ex, [])
+    clear(ex, [])
     for arg in args:
         ex.coverage[arg] = deepcopy(ex.tasks[args[0]].mapped)
         ex.coverage[arg].visualize()
 
 @command
-def cmd_coverage(ex, args, response='pickle'):
+def coverage(ex, args, response='pickle'):
     """
     Return the coverage performance for the specified task(s).
 
     usage: %s task
     """
-    cmd_clear(ex, [])
+    clear(ex, [])
     ex.display.message('Calculating coverage...')
     try:
         ex.display.userspin = False
@@ -368,14 +372,14 @@ def cmd_coverage(ex, args, response='pickle'):
         ex.display.userspin = True
 
 @command
-def cmd_lrcoverage(ex, args, response='pickle'):
+def lrcoverage(ex, args, response='pickle'):
     """
     Return the linear range imaging coverage performance based on laser and
     transport parameters.
 
     usage: %s task [laser] [tx ty tz]
     """
-    cmd_clear(ex, [])
+    clear(ex, [])
     ex.display.message('Calculating range imaging coverage...')
     try:
         ex.display.userspin = False
@@ -406,7 +410,7 @@ def cmd_lrcoverage(ex, args, response='pickle'):
         ex.display.userspin = True
 
 @command
-def cmd_showval(ex, args):
+def showval(ex, args):
     """
     Display a value in [0, 1] in 'bar graph' style next to the specified camera,
     or remove the display if no value is specified.
@@ -431,7 +435,7 @@ def cmd_showval(ex, args):
 ### Information
 
 @command
-def cmd_objecthierarchy(ex, args, response='pickle'):
+def objecthierarchy(ex, args, response='pickle'):
     """\
     Return a scene object hierarchy in the form C{{'object': (parent, type)}}.
 
@@ -455,7 +459,7 @@ def cmd_objecthierarchy(ex, args, response='pickle'):
     return pickle.dumps(hierarchy)
 
 @command
-def cmd_select(ex, args):
+def select(ex, args):
     """\
     Select a scene object.
 
@@ -469,7 +473,7 @@ def cmd_select(ex, args):
 ### Debug
 
 @command
-def cmd_eval(ex, args):
+def eval(ex, args):
     """\
     Execute arbitrary code.
     
