@@ -61,8 +61,6 @@ def command(f):
     return wrapped
 
 
-### File Operations
-
 @command
 def loadmodel(ex, args):
     """\
@@ -114,8 +112,6 @@ def exit(ex, args):
         display.visible = False
     ex.display.visible = False
     ex.exit = True
-
-### Visualization
 
 @command
 def clear(ex, args):
@@ -200,8 +196,6 @@ def cameraview(ex, args):
             ex.display.camera_view()
         except RuntimeError:
             pass
-
-### Geometric
 
 @command
 def pose(ex, args, response='pickle'):
@@ -294,11 +288,14 @@ def position(ex, args, response='pickle'):
         elif response == 'text':
             return str(ex.model[args[0]].config)
 
-### Coverage Operations
-
 @command
 def active(ex, args):
-    """name"""
+    """\
+    Toggle the active state of the specified camera (or, if unspecified, that
+    of all cameras).
+    
+    usage: %s [camera]
+    """
     try:
         ex.model[args[0]].active = not ex.model[args[0]].active
         ex.model[args[0]].update_visualization()
@@ -331,7 +328,7 @@ def strength(ex, args, response='pickle'):
 
 @command
 def showtask(ex, args):
-    """
+    """\
     Show the points of the specified task.
     
     usage: %s task
@@ -343,7 +340,7 @@ def showtask(ex, args):
 
 @command
 def coverage(ex, args, response='pickle'):
-    """
+    """\
     Return the coverage performance for the specified task(s).
 
     usage: %s task
@@ -373,7 +370,7 @@ def coverage(ex, args, response='pickle'):
 
 @command
 def lrcoverage(ex, args, response='pickle'):
-    """
+    """\
     Return the linear range imaging coverage performance based on laser and
     transport parameters.
 
@@ -411,7 +408,7 @@ def lrcoverage(ex, args, response='pickle'):
 
 @command
 def showval(ex, args):
-    """
+    """\
     Display a value in [0, 1] in 'bar graph' style next to the specified camera,
     or remove the display if no value is specified.
     
@@ -431,8 +428,6 @@ def showval(ex, args):
             'color': (1, 0, 0), 'pos': (80, -30 + (1.0 - value) * 60.0,
             0), 'axis': (0, value * 60.0, 0), 'radius': 6}])
         ex.valvis[args[0]].frame = ex.model[args[0]].actuals['main']
-
-### Information
 
 @command
 def objecthierarchy(ex, args, response='pickle'):
@@ -470,8 +465,6 @@ def select(ex, args):
     else:
         ex.select(ex.model[args[0]])
 
-### Debug
-
 @command
 def eval(ex, args):
     """\
@@ -480,3 +473,14 @@ def eval(ex, args):
     usage: %s code
     """
     return str(eval(' '.join(args)))
+
+@command
+def help(ex, args, response='pickle'):
+    """\
+    Print the documentation for a command.
+
+    usage: %s command
+    """
+    if response != 'text':
+        raise CommandError('command cannot return %s response' % response)
+    return commands[args[0]].__doc__.rstrip()
