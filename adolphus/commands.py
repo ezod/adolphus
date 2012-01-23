@@ -23,6 +23,7 @@ except ImportError:
     import pickle
 
 import yaml
+from copy import deepcopy
 
 from .geometry import Point, DirectionalPoint
 from .visualization import Sprite
@@ -310,6 +311,22 @@ def cmd_strength(ex, args, response='pickle'):
         return '%f#' % strength
     elif response == 'text':
         return '%f' % strength
+
+def cmd_showtask(ex, args):
+    """
+    Show the points of the specified task.
+    
+    usage: %s task
+    """
+    cmd_clear(ex, [])
+    try:
+        for arg in args:
+            ex.coverage[arg] = deepcopy(ex.tasks[args[0]].mapped)
+            ex.coverage[arg].visualize()
+    except KeyError:
+        raise CommandError('invalid task name')
+    except Exception, e:
+        raise CommandError(e)
 
 def cmd_coverage(ex, args, response='pickle'):
     """
