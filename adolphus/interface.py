@@ -9,7 +9,6 @@ Visual interface module.
 
 from threading import Thread, Event
 from math import copysign
-from inspect import getargspec
 
 import commands
 from .commands import CommandError
@@ -319,7 +318,7 @@ class Experiment(Thread):
         if cmd not in self.commands:
             raise CommandError('invalid command')
         try:
-            if 'response' in getargspec(self.commands[cmd]).args:
+            if self.commands[cmd].response:
                 return self.commands[cmd](self, args, response=response)
             else:
                 return self.commands[cmd](self, args)

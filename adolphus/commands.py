@@ -24,6 +24,7 @@ except ImportError:
 
 import yaml
 from copy import deepcopy
+from inspect import getargspec
 
 from .geometry import Point, DirectionalPoint
 from .visualization import Sprite
@@ -34,9 +35,31 @@ from .yamlparser import YAMLParser
 class CommandError(Exception):
     pass
 
+def command(f):
+    if 'response' in getargspec(f).args:
+        def wrapped(ex, args, response='pickle'):
+            try:
+                return f(ex, args, response)
+            except CommandError, e:
+                raise e
+            except Exception, e:
+                raise CommandError('%s: %s' % (e.__class__.__name__, e))
+        wrapped.response = True
+    else:
+        def wrapped(ex, args):
+            try:
+                return f(ex, args)
+            except CommandError, e:
+                raise e
+            except Exception, e:
+                raise CommandError('%s: %s' % (e.__class__.__name__, e))
+        wrapped.response = False
+    return wrapped
+
 
 ### File Operations
 
+@command
 def cmd_loadmodel(ex, args):
     """\
     Load a model from a YAML file.
@@ -49,13 +72,11 @@ def cmd_loadmodel(ex, args):
     cmd_cameranames(ex, [])
     for sceneobject in ex.model:
         ex.model[sceneobject].visible = False
-    try:
-        ex.model, ex.tasks = YAMLParser(args[0]).experiment
-    except IOError, e:
-        raise CommandError(e)
+    ex.model, ex.tasks = YAMLParser(args[0]).experiment
     ex.model.visualize()
     ex.display.select()
 
+@command
 def cmd_loadconfig(ex, args):
     """\
     Load viewer configuration from a YAML file.
@@ -64,8 +85,6 @@ def cmd_loadconfig(ex, args):
     """
     try:
         config = yaml.load(open(args[0]))
-    except IOError, e:
-        raise CommandError(e)
     except IndexError:
         import pkg_resources
         config = yaml.load(pkg_resources.resource_string(__name__,
@@ -75,12 +94,14 @@ def cmd_loadconfig(ex, args):
     except KeyError:
         ex.keybindings = {}
 
+@command
 def cmd_event(ex, args):
     """\
     Set the generic experiment event.
     """
     ex.event.set()
 
+@command
 def cmd_exit(ex, args):
     """\
     Exit the viewer.
@@ -92,6 +113,7 @@ def cmd_exit(ex, args):
 
 ### Visualization
 
+@command
 def cmd_clear(ex, args):
     """\
     Clear all point coverage visualizations.
@@ -99,18 +121,21 @@ def cmd_clear(ex, args):
     for key in ex.coverage.keys():
         del ex.coverage[key]
 
+@command
 def cmd_axes(ex, args):
     """\
     Toggle display of 3D axes.
     """
     ex.axes.visible = not ex.axes.visible
 
+@command
 def cmd_centerdot(ex, args):
     """\
     Toggle display of a center indicator dot.
     """
     ex.centerdot.visible = not ex.centerdot.visible
 
+@command
 def cmd_setcenter(ex, args):
     """\
     Set the position of the display center.
@@ -123,6 +148,7 @@ def cmd_setcenter(ex, args):
     ex.display.set_center(pos)
     ex.centerdot.pos = pos
 
+@command
 def cmd_shiftcenter(ex, args):
     """\
     Shift the display center from its current position by the amount specified.
@@ -137,6 +163,7 @@ def cmd_shiftcenter(ex, args):
     ex.display.set_center(tuple(pos))
     ex.centerdot.pos = tuple(pos)
 
+@command
 def cmd_triangles(ex, args):
     """\
     Toggle display of occluding triangles.
@@ -144,12 +171,14 @@ def cmd_triangles(ex, args):
     for sceneobject in ex.model:
         ex.model[sceneobject].toggle_triangles()
 
+@command
 def cmd_cameranames(ex, args):
     """\
     Toggle display of camera identifiers.
     """
     ex.camera_names()
 
+@command
 def cmd_cameraview(ex, args):
     """\
     Switch to camera view for the specified camera.
@@ -159,12 +188,9 @@ def cmd_cameraview(ex, args):
     if len(args):
         if ex.display.userzoom:
             raise CommandError('no camera view with external zoom enabled')
-        try:
-            ex.display.camera_view(ex.model[args[0]])
-            ex.modifier.visible = False
-            ex.modifier.parent = None
-        except KeyError:
-            raise CommandError('invalid camera name')
+        ex.display.camera_view(ex.model[args[0]])
+        ex.modifier.visible = False
+        ex.modifier.parent = None
     else:
         try:
             ex.display.camera_view()
@@ -173,6 +199,7 @@ def cmd_cameraview(ex, args):
 
 ### Geometric
 
+@command
 def cmd_pose(ex, args, response='pickle'):
     """\
     Return the (absolute) pose of an object. If using CSV or text response,
@@ -181,54 +208,52 @@ def cmd_pose(ex, args, response='pickle'):
     
     usage: %s name [rformat]
     """
-    try:
-        pose = ex.model[args[0]].pose
-        if response == 'pickle':
-            return pickle.dumps(pose)
-        elif response == 'csv':
-            flatpose = tuple(pose.T)
-            try:
-                if args[1] == 'quaternion':
-                    raise IndexError
-                elif args[1] == 'matrix':
-                    flatpose += tuple(pose.R.to_rotation_matrix().flatten())
-                elif args[1] == 'axis-angle':
-                    angle, axis = pose.R.to_axis_angle()
-                    flatpose += (angle,) + tuple(axis)
-                elif args[1] == 'euler-zyx':
-                    flatpose += tuple(pose.R.to_euler_zyx())
-                else:
-                    raise CommandError('invalid rotation format')
-            except IndexError:
-                flatpose += (pose.R.Q.a,) + tuple(pose.R.Q.v)
-            return ','.join([str(float(e)) for e in flatpose]) + '#'
-        elif response == 'text':
-            tstr = 'T: (%.2f, %.2f, %.2f)\n' % ex.model[args[0]].pose.T
-            try:
-                if args[1] == 'quaternion':
-                    raise IndexError
-                elif args[1] == 'matrix':
-                    return tstr + \
-                        ('R:\t%.4f\t%.4f\t%.4f\n' \
-                        + '\t%.4f\t%.4f\t%.4f\n' \
-                        + '\t%.4f\t%.4f\t%.4f') \
-                        % tuple(pose.R.to_rotation_matrix().flatten())
-                elif args[1] == 'axis-angle':
-                    angle, axis = pose.R.to_axis_angle()
-                    return tstr + \
-                        u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' \
-                        % ((angle,) + axis)
-                elif args[1] == 'euler-zyx':
-                    return tstr + \
-                        u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
-                        % pose.R.to_euler_zyx()
-                else:
-                    raise CommandError('invalid rotation format')
-            except IndexError:
-                return tstr + 'R: %s' % (pose.R.Q,)
-    except KeyError:
-        raise CommandError('invalid object name')
+    pose = ex.model[args[0]].pose
+    if response == 'pickle':
+        return pickle.dumps(pose)
+    elif response == 'csv':
+        flatpose = tuple(pose.T)
+        try:
+            if args[1] == 'quaternion':
+                raise IndexError
+            elif args[1] == 'matrix':
+                flatpose += tuple(pose.R.to_rotation_matrix().flatten())
+            elif args[1] == 'axis-angle':
+                angle, axis = pose.R.to_axis_angle()
+                flatpose += (angle,) + tuple(axis)
+            elif args[1] == 'euler-zyx':
+                flatpose += tuple(pose.R.to_euler_zyx())
+            else:
+                raise CommandError('invalid rotation format')
+        except IndexError:
+            flatpose += (pose.R.Q.a,) + tuple(pose.R.Q.v)
+        return ','.join([str(float(e)) for e in flatpose]) + '#'
+    elif response == 'text':
+        tstr = 'T: (%.2f, %.2f, %.2f)\n' % ex.model[args[0]].pose.T
+        try:
+            if args[1] == 'quaternion':
+                raise IndexError
+            elif args[1] == 'matrix':
+                return tstr + \
+                    ('R:\t%.4f\t%.4f\t%.4f\n' \
+                    + '\t%.4f\t%.4f\t%.4f\n' \
+                    + '\t%.4f\t%.4f\t%.4f') \
+                    % tuple(pose.R.to_rotation_matrix().flatten())
+            elif args[1] == 'axis-angle':
+                angle, axis = pose.R.to_axis_angle()
+                return tstr + \
+                    u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' \
+                    % ((angle,) + axis)
+            elif args[1] == 'euler-zyx':
+                return tstr + \
+                    u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
+                    % pose.R.to_euler_zyx()
+            else:
+                raise CommandError('invalid rotation format')
+        except IndexError:
+            return tstr + 'R: %s' % (pose.R.Q,)
 
+@command
 def cmd_modify(ex, args):
     """\
     Enable interactive pose modification for the specified object, or disable
@@ -236,17 +261,15 @@ def cmd_modify(ex, args):
     
     usage: %s [name]
     """
-    try:
-        if len(args) and not ex.modifier.parent == ex.model[args[0]]:
-                ex.modifier.pos = ex.model[args[0]].pose.T
-                ex.modifier.visible = True
-                ex.modifier.parent = ex.model[args[0]]
-        else:
-            ex.modifier.visible = False
-            ex.modifier.parent = None
-    except KeyError:
-        raise CommandError('invalid object name')
+    if len(args) and not ex.modifier.parent == ex.model[args[0]]:
+            ex.modifier.pos = ex.model[args[0]].pose.T
+            ex.modifier.visible = True
+            ex.modifier.parent = ex.model[args[0]]
+    else:
+        ex.modifier.visible = False
+        ex.modifier.parent = None
 
+@command
 def cmd_position(ex, args, response='pickle'):
     """\
     Set the position of the specified robot, or return its position if no new
@@ -254,26 +277,22 @@ def cmd_position(ex, args, response='pickle'):
 
     usage: %s robot [position]
     """
-    try:
-        assert isinstance(ex.model[args[0]], Robot)
-        if len(args) > 1:
-            ex.model[args[0]].config = [float(arg) for arg in args[1:]]
-            ex.model[args[0]].update_visualization()
-        else:
-            if response == 'pickle':
-                return pickle.dumps(ex.model[args[0]].config)
-            elif response == 'csv':
-                return ','.join([str(e) for e in \
-                    ex.model[args[0]].config]) + '#'
-            elif response == 'text':
-                return str(ex.model[args[0]].config)
-    except AssertionError:
-        raise CommandError('not a robot')
-    except KeyError:
-        raise CommandError('invalid robot name')
+    assert isinstance(ex.model[args[0]], Robot)
+    if len(args) > 1:
+        ex.model[args[0]].config = [float(arg) for arg in args[1:]]
+        ex.model[args[0]].update_visualization()
+    else:
+        if response == 'pickle':
+            return pickle.dumps(ex.model[args[0]].config)
+        elif response == 'csv':
+            return ','.join([str(e) for e in \
+                ex.model[args[0]].config]) + '#'
+        elif response == 'text':
+            return str(ex.model[args[0]].config)
 
 ### Coverage Operations
 
+@command
 def cmd_active(ex, args):
     """name"""
     try:
@@ -282,9 +301,8 @@ def cmd_active(ex, args):
     except IndexError:
         for camera in ex.model.cameras:
             cmd_active(ex, [camera])
-    except KeyError:
-        raise CommandError('invalid camera name')
 
+@command
 def cmd_strength(ex, args, response='pickle'):
     """\
     Return the coverage strength of the specified point with respect to the
@@ -292,12 +310,7 @@ def cmd_strength(ex, args, response='pickle'):
     
     usage: %s task x y z [rho eta]
     """
-    try:
-        task = ex.tasks[args.pop(0)]
-    except IndexError:
-        raise CommandError('incorrect arguments')
-    except KeyError:
-        raise CommandError('invalid task name')
+    task = ex.tasks[args.pop(0)]
     if len(args) == 3:
         p = Point([float(args[i]) for i in range(3)])
     elif len(args) == 5:
@@ -312,6 +325,7 @@ def cmd_strength(ex, args, response='pickle'):
     elif response == 'text':
         return '%f' % strength
 
+@command
 def cmd_showtask(ex, args):
     """
     Show the points of the specified task.
@@ -319,15 +333,11 @@ def cmd_showtask(ex, args):
     usage: %s task
     """
     cmd_clear(ex, [])
-    try:
-        for arg in args:
-            ex.coverage[arg] = deepcopy(ex.tasks[args[0]].mapped)
-            ex.coverage[arg].visualize()
-    except KeyError:
-        raise CommandError('invalid task name')
-    except Exception, e:
-        raise CommandError(e)
+    for arg in args:
+        ex.coverage[arg] = deepcopy(ex.tasks[args[0]].mapped)
+        ex.coverage[arg].visualize()
 
+@command
 def cmd_coverage(ex, args, response='pickle'):
     """
     Return the coverage performance for the specified task(s).
@@ -335,8 +345,8 @@ def cmd_coverage(ex, args, response='pickle'):
     usage: %s task
     """
     cmd_clear(ex, [])
+    ex.display.message('Calculating coverage...')
     try:
-        ex.display.message('Calculating coverage...')
         ex.display.userspin = False
         performance = {}
         if not args:
@@ -354,13 +364,10 @@ def cmd_coverage(ex, args, response='pickle'):
         elif response == 'text':
             return '\n'.join(['%s: %.4f' % (key, performance[key]) \
                 for key in performance])
-    except KeyError:
-        raise CommandError('invalid task name')
-    except Exception, e:
-        raise CommandError(e)
     finally:
         ex.display.userspin = True
 
+@command
 def cmd_lrcoverage(ex, args, response='pickle'):
     """
     Return the linear range imaging coverage performance based on laser and
@@ -369,8 +376,8 @@ def cmd_lrcoverage(ex, args, response='pickle'):
     usage: %s task [laser] [tx ty tz]
     """
     cmd_clear(ex, [])
+    ex.display.message('Calculating range imaging coverage...')
     try:
-        ex.display.message('Calculating range imaging coverage...')
         ex.display.userspin = False
         d = 0
         laser = None
@@ -395,17 +402,10 @@ def cmd_lrcoverage(ex, args, response='pickle'):
             return 'range:%f#' % performance
         elif response == 'text':
             return 'range: %.4f' % performance
-    except AttributeError:
-        raise CommandError('not a range model')
-    except IndexError:
-        raise CommandError('incorrect arguments')
-    except KeyError:
-        raise CommandError('invalid task, laser, or target name')
-    except Exception, e:
-        raise CommandError(e)
     finally:
         ex.display.userspin = True
 
+@command
 def cmd_showval(ex, args):
     """
     Display a value in [0, 1] in 'bar graph' style next to the specified camera,
@@ -418,20 +418,19 @@ def cmd_showval(ex, args):
         del ex.valvis[args[0]]
     try:
         value = float(args[1])
+    except IndexError:
+        pass
+    else:
         ex.valvis[args[0]] = Sprite([{'type': 'cylinder',
             'color': (0.8, 0.8, 0.8), 'pos': (80, -30, 0), 'axis': (0,
             (1.0 - value) * 60, 0), 'radius': 6}, {'type': 'cylinder',
             'color': (1, 0, 0), 'pos': (80, -30 + (1.0 - value) * 60.0,
             0), 'axis': (0, value * 60.0, 0), 'radius': 6}])
-        try:
-            ex.valvis[args[0]].frame = ex.model[args[0]].actuals['main']
-        except KeyError:
-            raise CommandError('invalid camera name')
-    except IndexError:
-        pass
+        ex.valvis[args[0]].frame = ex.model[args[0]].actuals['main']
 
 ### Information
 
+@command
 def cmd_objecthierarchy(ex, args, response='pickle'):
     """\
     Return a scene object hierarchy in the form C{{'object': (parent, type)}}.
@@ -455,6 +454,7 @@ def cmd_objecthierarchy(ex, args, response='pickle'):
             hierarchy[task] = (None, ex.tasks[task].__class__.__name__)
     return pickle.dumps(hierarchy)
 
+@command
 def cmd_select(ex, args):
     """\
     Select a scene object.
@@ -464,13 +464,11 @@ def cmd_select(ex, args):
     if not args:
         ex.select()
     else:
-        try:
-            ex.select(ex.model[args[0]])
-        except KeyError:
-            raise CommandError('invalid object')
+        ex.select(ex.model[args[0]])
 
 ### Debug
 
+@command
 def cmd_eval(ex, args):
     """\
     Execute arbitrary code.
