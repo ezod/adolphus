@@ -374,11 +374,11 @@ class Experiment(Thread):
                 elif m.drag == 'left' and m.pick in self.modifier.objects:
                     m.pick.color = (0, 1, 0)
                     if isinstance(m.pick, visual.arrow):
-                        moving = Point(m.pick.axis).normal
+                        moving = Point(m.pick.axis).unit
                         lastpos = self.display.mouse.project(normal=\
                             self.display.forward, point=self.modifier.pos)
                     else:
-                        rotating = Point(m.pick.axis).normal
+                        rotating = Point(m.pick.axis).unit
                         lastpos = self.display.mouse.project(normal=rotating,
                             point=self.modifier.pos)
                 elif m.drop == 'left' and (moving or rotating):

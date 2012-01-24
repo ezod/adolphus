@@ -195,21 +195,23 @@ class Point(tuple):
             return self._magnitude
 
     @property
-    def normal(self):
+    def unit(self):
         """\
-        Normalized (unit) vector in the direction of this vector.
+        Unit vector in the direction of this vector.
 
         @rtype: L{Point}
         """
         try:
-            return self._normal
+            return self._unit
         except AttributeError:
             m = self.magnitude
             try:
-                self._normal = Point([self[i] / m for i in range(3)])
-                return self._normal
+                self._unit = Point([self[i] / m for i in range(3)])
+                return self._unit
             except ZeroDivisionError:
                 raise ValueError('cannot normalize a zero vector')
+
+    normal = unit
 
     def euclidean(self, p):
         """\
@@ -231,7 +233,7 @@ class Point(tuple):
         @return: Angle in radians.
         @rtype: L{Angle}
         """
-        return Angle(acos(p.normal * self.normal))
+        return Angle(acos(p.unit * self.unit))
 
 
 class DirectionalPoint(Point):
@@ -413,20 +415,22 @@ class Quaternion(tuple):
             return self._magnitude
 
     @property
-    def normal(self):
+    def unit(self):
         """\
-        Versor (normalized or unit quaternion) of this quaternion.
+        Versor (unit quaternion) of this quaternion.
 
         @rtype: L{Quaternion}
         """
         try:
-            return self._normal
+            return self._unit
         except AttributeError:
             try:
-                self._normal = self / self.magnitude
-                return self._normal
+                self._unit = self / self.magnitude
+                return self._unit
             except ZeroDivisionError:
                 raise ValueError('cannot normalize a zero quaternion')
+
+    normal = unit
 
     @property
     def conjugate(self):
@@ -476,7 +480,7 @@ class Rotation(object):
         """\
         Constructor.
         """
-        self.Q = Q.normal
+        self.Q = Q.unit
 
     def __getstate__(self):
         return self.Q
@@ -581,7 +585,7 @@ class Rotation(object):
         @rtype: L{Rotation}
         """
         return Rotation(Quaternion((cos(theta / 2.0), sin(theta / 2.0) \
-            * axis.normal)))
+            * axis.unit)))
 
     @staticmethod
     def from_euler(convention, angles):
@@ -654,7 +658,7 @@ class Rotation(object):
         """
         theta = Angle(copysign(2.0 * acos(self.Q.a), self.Q.v.magnitude))
         try:
-            return (theta, self.Q.v.normal)
+            return (theta, self.Q.v.unit)
         except ValueError:
             return (theta, Point((1.0, 0.0, 0.0)))
 
@@ -862,7 +866,7 @@ class Face(object):
         try:
             return self._normal
         except AttributeError:
-            self._normal = (self.edges[0] ** self.edges[1]).normal
+            self._normal = (self.edges[0] ** self.edges[1]).unit
             return self._normal
 
     @property
@@ -918,7 +922,7 @@ class Triangle(Face):
         @return: The point of intersection.
         @rtype: L{Point}
         """
-        direction = (end - origin).normal
+        direction = (end - origin).unit
         P = direction ** -self.edges[2]
         det = self.edges[0] * P
         if det > -1e-4 and det < 1e-4:
@@ -1028,7 +1032,7 @@ def random_unit_vector():
     while True:
         rv = Point((uniform(-1, 1), uniform(-1, 1), uniform(-1, 1)))
         if rv.magnitude < 1:
-            return rv.normal
+            return rv.unit
 
 
 def pose_error(pose, taxis, terror, raxis, rerror):
@@ -1051,6 +1055,6 @@ def pose_error(pose, taxis, terror, raxis, rerror):
     @rtype: L{Pose}
     """
     T, R = pose.T, pose.R
-    T += terror * taxis.normal
-    R = Rotation.from_axis_angle(rerror, raxis.normal) + R
+    T += terror * taxis.unit
+    R = Rotation.from_axis_angle(rerror, raxis.unit) + R
     return Pose(T=T, R=R)
