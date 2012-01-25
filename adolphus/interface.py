@@ -9,10 +9,8 @@ Visual interface module.
 
 from threading import Thread, Event
 from math import copysign
-from inspect import getargspec
 
 import commands
-from .commands import CommandError
 from .geometry import Point, Rotation, Pose
 from .coverage import Model
 from .posable import SceneObject
@@ -250,12 +248,6 @@ class Experiment(Thread):
         self.modifier = Sprite(primitives)
         self.modifier.visible = False
 
-        # interface commands
-        self.commands = {}
-        for function in dir(commands):
-            if function.startswith('cmd_'):
-                self.commands[function[4:]] = getattr(commands, function)
-
         super(Experiment, self).__init__()
 
     def add_display(self, zoom=False):
@@ -316,22 +308,22 @@ class Experiment(Thread):
         @rtype: C{str}
         """
         cmd, args = cmd.split()[0], cmd.split()[1:]
-        if cmd not in self.commands:
-            raise CommandError('invalid command')
+        if cmd not in commands.commands:
+            raise commands.CommandError('invalid command')
         try:
-            if 'response' in getargspec(self.commands[cmd]).args:
-                return self.commands[cmd](self, args, response=response)
+            if commands.commands[cmd].response:
+                return commands.commands[cmd](self, args, response=response)
             else:
-                return self.commands[cmd](self, args)
-        except CommandError as e:
+                return commands.commands[cmd](self, args)
+        except commands.CommandError as e:
             es = str(e)
-            if self.commands[cmd].__doc__:
-                for line in self.commands[cmd].__doc__.split('\n'):
+            if commands.commands[cmd].__doc__:
+                for line in commands.commands[cmd].__doc__.split('\n'):
                     line = line.strip(' ')
                     if line.startswith('usage'):
                         es += '\n' + line % cmd
                         break
-            raise CommandError(es)
+            raise commands.CommandError(es)
 
     def run(self):
         """\
@@ -382,11 +374,11 @@ class Experiment(Thread):
                 elif m.drag == 'left' and m.pick in self.modifier.objects:
                     m.pick.color = (0, 1, 0)
                     if isinstance(m.pick, visual.arrow):
-                        moving = Point(m.pick.axis).normal
+                        moving = Point(m.pick.axis).unit
                         lastpos = self.display.mouse.project(normal=\
                             self.display.forward, point=self.modifier.pos)
                     else:
-                        rotating = Point(m.pick.axis).normal
+                        rotating = Point(m.pick.axis).unit
                         lastpos = self.display.mouse.project(normal=rotating,
                             point=self.modifier.pos)
                 elif m.drop == 'left' and (moving or rotating):
@@ -445,11 +437,11 @@ class Experiment(Thread):
                         try:
                             self.display.message(self.execute(cmd,
                                 response='text'))
-                        except CommandError as e:
+                        except commands.CommandError as e:
                             self.display.message(str(e))
                 elif k in self.keybindings:
                     try:
                         self.display.message(self.execute(self.keybindings[k],
                             response='text'))
-                    except CommandError as e:
+                    except commands.CommandError as e:
                         self.display.message(str(e))

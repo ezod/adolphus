@@ -120,7 +120,7 @@ class RangeCamera(Camera):
         except ZeroDivisionError:
             return float('inf')
         except AttributeError:
-            self._mr = float(self._params['dim'][0]) / self.fov['2sah2']
+            self._mr = float(self._params['dim'][0]) / self.fov['tah']
             return self.zres(resolution)
 
     def ch(self, p, tp):
@@ -140,7 +140,7 @@ class RangeCamera(Camera):
             ascale = sin(p.direction_unit.angle(-p))
         except AttributeError:
             return 0.0
-        mr = ascale * float(self._params['dim'][1]) / self.fov['2sav2']
+        mr = ascale * float(self._params['dim'][1]) / self.fov['tav']
         zhres = lambda resolution: mr / resolution
         try:
             zhmini = zhres(tp['hres_min_ideal'])
