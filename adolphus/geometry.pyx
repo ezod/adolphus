@@ -9,7 +9,7 @@ geometric descriptor functions for features.
 """
 
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
-from random import uniform
+from random import uniform, gauss
 
 
 class Angle(float):
@@ -1057,4 +1057,24 @@ def pose_error(pose, taxis, terror, raxis, rerror):
     T, R = pose.T, pose.R
     T += terror * taxis.unit
     R = Rotation.from_axis_angle(rerror, raxis.unit) + R
+    return Pose(T=T, R=R)
+
+
+def gaussian_pose_error(pose, tsigma, rsigma):
+    """\
+    Introduce random Gaussian noise to the specified pose and return the noisy
+    pose.
+    
+    @param p: The original pose.
+    @type p: L{Pose}
+    @param tsigma: The standard deviation of the translation error.
+    @type tsigma: C{float}
+    @param tsigma: The standard deviation of the rotation error.
+    @type tsigma: C{float}
+    @return: THe pose with introduced error.
+    @rtype: L{Pose}
+    """
+    T, R = pose.T, pose.R
+    T = Point((gauss(T.x, tsigma), gauss(T.y, tsigma), gauss(T.z, tsigma)))
+    R += Rotation.from_euler('zyx', [Angle(gauss(0, rsigma)) for i in range(3)])
     return Pose(T=T, R=R)
