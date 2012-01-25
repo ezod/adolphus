@@ -16,7 +16,7 @@ from functools import reduce
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import OcclusionTriangle, SceneObject
 from .coverage import PointCache, Task, Model
-from .laser import LineLaser, RangeModel
+from .laser import RangeTask, LineLaser, RangeModel
 from .robot import Robot
 
 
@@ -198,7 +198,7 @@ class YAMLParser(object):
             if model['type'] == 'range':
                 rmodel = RangeModel()
             else:
-                raise KeyError
+                raise ValueError('unknown model type')
         except KeyError:
             rmodel = Model()
         mounts = {}
@@ -306,6 +306,13 @@ class YAMLParser(object):
         @return: The parsed task model.
         @rtype: L{Task}
         """
+        try:
+            if task['type'] == 'range':
+                task_class = RangeTask
+            else:
+                raise ValueError('unknown task type')
+        except KeyError:
+            task_class = Task
         whole_model = PointCache()
         if 'ranges' in task:
             ddiv = 'ddiv' in task and task['ddiv'] or None
@@ -335,4 +342,4 @@ class YAMLParser(object):
         params = 'parameters' in task and task['parameters'] or {}
         pose = 'pose' in task and self._parse_pose(task['pose']) or Pose()
         mount = 'mount' in task and self.model[task['mount']] or None
-        return Task(params, whole_model, pose=pose, mount=mount)
+        return task_class(params, whole_model, pose=pose, mount=mount)

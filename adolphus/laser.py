@@ -11,8 +11,39 @@ modeling laser line based range imaging cameras.
 from math import pi, sin, tan
 
 from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
-from .coverage import PointCache, Camera, Model
+from .coverage import PointCache, Task, Camera, Model
 from .posable import SceneObject
+
+
+class RangeTask(Task):
+    """\
+    Range imaging task model class.
+
+    The L{RangeTask} adds height resolution to the set of task parameters:
+
+        - C{hres_min_ideal}: ideal min. height resolution (mm/pixel).
+        - C{hres_min_acceptable}: min. acceptable height resolution (mm/pixel).
+    """
+    defaults = Task.defaults
+    defaults['hres_min_ideal'] = 0.0
+    defaults['hres_min_acceptable'] = 0.0
+
+    def setparam(self, param, value):
+        """\
+        Set a camera parameter.
+
+        @param param: The name of the paramater to set.
+        @type param: C{str}
+        @param value: The value to which to set the parameter.
+        @type value: C{object}
+        """
+        super(RangeTask, self).setparam(param, value)
+        if param == 'hres_min_ideal':
+            self._params['hres_min_acceptable'] = \
+                max(value, self.getparam('hres_min_acceptable'))
+        elif param == 'hres_min_acceptable':
+            self._params['hres_min_ideal'] = \
+                min(value, self.getparam('hres_min_ideal'))
 
 
 class LineLaser(SceneObject):
@@ -216,6 +247,8 @@ class RangeModel(Model):
         @return: The coverage model.
         @rtype: L{PointCache}
         """
+        if not isinstance(task, RangeTask):
+            raise TypeError('task is not a range coverage task')
         if not laser:
             if len(self.lasers) > 1:
                 raise KeyError('must specify a laser to use')

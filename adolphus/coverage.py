@@ -119,14 +119,13 @@ class Task(Posable):
         - C{res_max_acceptable}: max. acceptable resolution (mm/pixel).
         - C{res_min_ideal}: lower limit of ideal resolution range (mm/pixel).
         - C{res_min_acceptable}: min. acceptable resolution (mm/pixel).
-        - C{hres_min_ideal}: ideal min. height resolution (mm/pixel).
-        - C{hres_min_acceptable}: min. acceptable height resolution (mm/pixel).
         - C{blur_max_ideal}: ideal max. blur circle diameter (pixels).
         - C{blur_max_acceptable}: max. acceptable blur circle diameter (pixels).
         - C{angle_max_ideal}: ideal max. view angle (radians).
         - C{angle_max_acceptable}: max. acceptable view angle (radians).
 
-    See L{Task.defaults} for default (permissive) values.
+    See L{Task.defaults} for default (permissive) values. Note that subclasses
+    may define additional task parameters.
     """
     defaults = {'ocular': 1,
                 'boundary_padding': 0.0,
@@ -134,8 +133,6 @@ class Task(Posable):
                 'res_max_acceptable': float('inf'),
                 'res_min_ideal': 0.0,
                 'res_min_acceptable': 0.0,
-                'hres_min_ideal': 0.0,
-                'hres_min_acceptable': 0.0,
                 'blur_max_ideal': 1.0,
                 'blur_max_acceptable': float('inf'),
                 'angle_max_ideal': pi / 2.0,
@@ -233,7 +230,13 @@ class Task(Posable):
         @param value: The value to which to set the parameter.
         @type value: C{object}
         """
-        if not param in self._params and not param in self.defaults:
+        if (param.endswith('max') or param.endswith('min')) \
+        and param + '_ideal' in self.defaults \
+        and param + '_acceptable' in self.defaults:
+            self._params[param + '_ideal'] = value
+            self._params[param + '_acceptable'] = value
+            return
+        if not param in self.defaults:
             raise KeyError(param)
         self._params[param] = value
         if param == 'res_max_ideal':
@@ -248,12 +251,6 @@ class Task(Posable):
         elif param == 'res_min_acceptable':
             self._params['res_min_ideal'] = \
                 min(value, self.getparam('res_min_ideal'))
-        elif param == 'hres_min_ideal':
-            self._params['hres_min_acceptable'] = \
-                max(value, self.getparam('hres_min_acceptable'))
-        elif param == 'hres_min_acceptable':
-            self._params['hres_min_ideal'] = \
-                min(value, self.getparam('hres_min_ideal'))
         elif param == 'angle_max_ideal':
             self._params['angle_max_acceptable'] = \
                 max(value, self.getparam('angle_max_acceptable'))
