@@ -31,7 +31,7 @@ class TestGeometry(unittest.TestCase):
 
     def test_angle(self):
         a = Angle(0.3)
-        self.assertTrue(abs(a - Angle(0.3 + 2 * pi)) < 1e04)
+        self.assertTrue(abs(a - Angle(0.3 + 2 * pi)) < 1e-04)
         b = a + Angle(6.0)
         self.assertTrue(b < a)
 
