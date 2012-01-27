@@ -8,7 +8,7 @@ modeling laser line based range imaging cameras.
 @license: GPL-3
 """
 
-from math import pi, sin, tan
+from math import pi, sin, tan, atan
 
 from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
 from .coverage import PointCache, Task, Camera, Model
@@ -23,10 +23,12 @@ class RangeTask(Task):
 
         - C{hres_min_ideal}: ideal min. height resolution (mm/pixel).
         - C{hres_min_acceptable}: min. acceptable height resolution (mm/pixel).
+        - C{inc_angle_max}: max. laser incidence angle (radians).
     """
     defaults = Task.defaults
     defaults['hres_min_ideal'] = 0.0
     defaults['hres_min_acceptable'] = 0.0
+    defaults['inc_angle_max'] = pi / 2.0
 
     def setparam(self, param, value):
         """\
@@ -230,6 +232,55 @@ class RangeModel(Model):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
 
+    def occluded(self, point, obj, task_params=None):
+        """\
+        Return whether the specified point is occluded with respect to the
+        specified object. If task parameters are specified, an occlusion cache
+        is used.
+
+        For efficiency in range coverage, this also returns the incidence angle
+        to a nearby surface normal in the laser plane if the object is a laser.
+
+        @param point: The point to check.
+        @type point: L{Point}
+        @param obj: The object ID to check.
+        @type obj: C{str}
+        @param task_params: Task parameters (optional).
+        @type task_params: C{dict}
+        @return: True if occluded.
+        @rtype: C{bool} or C{bool}, C{float}
+        """
+        if not isinstance(self[obj], LineLaser):
+            return super(RangeModel, self).occluded(point, obj,
+                task_params=task_params)
+        if task_params:
+            key = self._update_occlusion_cache(task_params)
+            tset = set([t for ts in \
+                [self._occlusion_cache[key][obj][sceneobject] \
+                for sceneobject in self] for t in ts])
+        else:
+            tset = set([t for ts in [self[sceneobject].triangles \
+                for sceneobject in self] for t in ts])
+        d = self[obj].pose.T.euclidean(point)
+        ds = float('inf')
+        surface = None
+        for triangle in tset:
+            ip = triangle.intersection(self[obj].pose.T, point, limit=False)
+            if not ip:
+                continue
+            di = self[obj].pose.T.euclidean(ip)
+            if di < d:
+                return True, None
+            elif di < ds:
+                ds = di
+                surface = triangle
+        if surface and ds - d < 1e-04:
+            ln = (-self[obj].pose).map(surface.mapped_triangle.normal)
+            angle = atan(ln.x / ln.z)
+        else:
+            angle = None
+        return False, angle
+
     def range_coverage_linear(self, task, laser=None, taxis=None, subset=None):
         """\
         Return the coverage model using a linear range coverage scheme. It is
@@ -275,7 +326,8 @@ class RangeModel(Model):
                 pose = Pose(T=(lp - point))
                 task.mount.set_absolute_pose(original_pose + pose)
                 mp = pose.map(point)
-                if self.occluded(mp, laser):
+                occluded, inc_angle = self.occluded(mp, laser)
+                if occluded or inc_angle > task.params['inc_angle_max']:
                     coverage[point] = 0.0
                 else:
                     mdp = DirectionalPoint(tuple(mp) + (rho, eta))

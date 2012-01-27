@@ -922,7 +922,8 @@ class Triangle(Face):
         @return: The point of intersection.
         @rtype: L{Point}
         """
-        direction = (end - origin).unit
+        origin_end = end - origin
+        direction = origin_end.unit
         P = direction ** -self.edges[2]
         det = self.edges[0] * P
         if det > -1e-4 and det < 1e-4:
@@ -937,7 +938,7 @@ class Triangle(Face):
         if v < 0 or u + v > 1.0:
             return None
         t = (-self.edges[2] * Q) * inv_det
-        if limit and (t < 1e-04 or t > origin.euclidean(end) - 1e-04):
+        if limit and (t < 1e-04 or t > origin_end.magnitude - 1e-04):
             return None
         return origin + t * direction
 

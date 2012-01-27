@@ -176,18 +176,20 @@ class OcclusionTriangle(Posable, Visualizable):
                 for v in self.triangle.vertices])
             return self._mapped_triangle
 
-    def intersection(self, pa, pb):
+    def intersection(self, pa, pb, limit=True):
         """\
-        Return the intersection of a line segment with this triangle.
+        Return the intersection of a line or line segment with this triangle.
 
         @param pa: The first point.
         @type pa: L{Point}
         @param pb: The second point.
         @type pb: L{Point}
+        @param limit: If true, limit intersection to the line segment.
+        @type limit: C{bool}
         @return: The point of intersection.
         @rtype: L{Point}
         """
-        return self.mapped_triangle.intersection(pa, pb)
+        return self.mapped_triangle.intersection(pa, pb, limit=limit)
 
 
 class SceneObject(Posable, Visualizable):
