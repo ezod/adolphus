@@ -2,14 +2,23 @@
 Standard library of interface commands.
 
 Commands are functions decorated with C{@command} and taking two positional
-arguments -- a reference to the experiment object and a list of strings
-comprising the command arguments -- as well as (optionally) a 'response'
-keyword argument specifying the response string format. Possible values for the
-response format are:
+arguments: a reference to the experiment object, and a list of strings
+comprising the command arguments.
+
+A command may return data in the form of a string. If so, its base function
+must accept a third (keyword) argument, C{response}, which defines the format
+accepted by the interface and may take one of the following string values
+(though it is acceptable to define base functions which reject some formats):
 
   - C{pickle} - pickled Python object generated with C{pickle.dumps()}
   - C{csv} - comma-delimited values terminated with hash (C{#}) character
   - C{text} - human-readable text format (can include newlines)
+
+Commands may raise any type of exception, but these will be re-raised as
+L{CommandError} so that they may be appropriately handled by the interface.
+
+Custom commands may be added simply by importing the C{@command} decorator from
+this module and wrapping an appropriately-formed base function.
 
 @author: Aaron Mavrinac
 @organization: University of Windsor
@@ -40,6 +49,7 @@ class CommandError(Exception):
 def command(f):
     if 'response' in getargspec(f).args:
         def wrapped(ex, args, response='pickle'):
+            assert response in ['pickle', 'csv', 'text']
             try:
                 return f(ex, args, response)
             except CommandError as e:
