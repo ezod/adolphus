@@ -466,15 +466,15 @@ def objecthierarchy(ex, args, response='pickle'):
     for so in ex.model:
         try:
             hierarchy[so] = (ex.model[so].mount.name,
-                ex.model[so].__class__.__name__)
+                ex.model[so].__class__)
         except AttributeError:
-            hierarchy[so] = (None, ex.model[so].__class__.__name__)
+            hierarchy[so] = (None, ex.model[so].__class__)
     for task in ex.tasks:
         try:
             hierarchy[task] = (ex.tasks[task].mount.name,
-                ex.tasks[task].__class__.__name__)
+                ex.tasks[task].__class__)
         except AttributeError:
-            hierarchy[task] = (None, ex.tasks[task].__class__.__name__)
+            hierarchy[task] = (None, ex.tasks[task].__class__)
     return pickle.dumps(hierarchy)
 
 @command

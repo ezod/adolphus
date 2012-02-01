@@ -18,6 +18,9 @@ import gtk
 import gobject
 import pkg_resources
 from sys import stdin, stdout
+from copy import copy
+
+from .coverage import Task
 
 
 class ObjectTreeView(gtk.TreeView):
@@ -72,16 +75,16 @@ class ObjectTreeView(gtk.TreeView):
         Get the icon graphic file location for a given object type.
 
         @param objtype: The object type.
-        @type objtype: C{str}
+        @type objtype: C{type}
         @return: The resource icon file location.
         @rtype: C{str}
         """
         try:
             return gtk.gdk.pixbuf_new_from_file_at_size(\
                 pkg_resources.resource_filename(__name__, 'resources/icons/' \
-                + objtype.lower() + '.png'), 16, 16)
-        except Exception:
-            return None
+                + objtype.__name__.lower() + '.png'), 16, 16)
+        except gobject.GError:
+            return self.get_icon_pixbuf(objtype.__bases__[0])
 
 
 class Panel(gtk.Window):
@@ -195,7 +198,8 @@ class Panel(gtk.Window):
             return robj
 
     def populate_object_tree(self):
-        self.objecttreeview.populate(self.ad_command('objecthierarchy'))
+        self.hierarchy = self.ad_command('objecthierarchy')
+        self.objecttreeview.populate(copy(self.hierarchy))
 
     def _delete_event(self, widget, data=None):
         return False
@@ -222,8 +226,11 @@ class Panel(gtk.Window):
     def _select_object(self, widget, data=None):
         model, selected = widget.get_selected_rows()
         try:
-            self.ad_command('select %s' % \
-                model.get_value(model.get_iter(selected[0]), 1))
+            obj = model.get_value(model.get_iter(selected[0]), 1)
+            if issubclass(self.hierarchy[obj][1], Task):
+                self.ad_command('select')
+            else:
+                self.ad_command('select %s' % obj)
         except IndexError:
             self.ad_command('select')
 
