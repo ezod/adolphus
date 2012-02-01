@@ -174,6 +174,20 @@ def shiftcenter(ex, args):
     ex.centerdot.pos = tuple(pos)
 
 @command
+def getcenter(ex, args, response='pickle'):
+    """\
+    Get the position of the display center.
+
+    usage: %s
+    """
+    if response == 'pickle':
+        return pickle.dumps(Point(ex.centerdot.pos))
+    elif response == 'csv':
+        return '%s,%s,%s#' % tuple(ex.centerdot.pos)
+    elif response == 'text':
+        return '(%s, %s, %s)' % tuple(ex.centerdot.pos)
+
+@command
 def triangles(ex, args):
     """\
     Toggle display of occluding triangles.

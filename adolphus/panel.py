@@ -43,7 +43,11 @@ class ObjectTreeView(gtk.TreeView):
 
     def populate(self, hierarchy):
         """\
-        TODO
+        Populate this tree view with the hierarchy of scene objects and tasks
+        from an Adolphus model.
+
+        @param hierarchy: Hierarchy of scene objects and tasks from Adolphus.
+        @type hierarchy: C{dict}
         """
         objecttree = gtk.TreeStore(gtk.gdk.Pixbuf, gobject.TYPE_STRING)
         hiter = {}
@@ -65,7 +69,12 @@ class ObjectTreeView(gtk.TreeView):
 
     def get_icon_pixbuf(self, objtype):
         """\
-        TODO
+        Get the icon graphic file location for a given object type.
+
+        @param objtype: The object type.
+        @type objtype: C{str}
+        @return: The resource icon file location.
+        @rtype: C{str}
         """
         try:
             return gtk.gdk.pixbuf_new_from_file_at_size(\
@@ -96,17 +105,44 @@ class Panel(gtk.Window):
         vbox = gtk.VBox()
         self.add(vbox)
 
+        # menu bar
         menubar = gtk.MenuBar()
         menubar.set_border_width(5)
         vbox.pack_start(menubar, expand=False)
         menuc = gtk.MenuItem('File')
         menu = gtk.Menu()
+        menui = gtk.MenuItem('Load Model...')
+        menui.connect('activate', self._loadmodel)
+        menu.add(menui)
+        menu.add(gtk.SeparatorMenuItem())
         menui = gtk.ImageMenuItem(gtk.STOCK_QUIT)
         menui.connect('activate', self._destroy)
         menu.add(menui)
         menuc.set_submenu(menu)
         menubar.add(menuc)
+        menuc = gtk.MenuItem('View')
+        menu = gtk.Menu()
+        menui = gtk.MenuItem('Clear Points')
+        menui.connect('activate', self._clear)
+        menu.add(menui)
+        menu.add(gtk.SeparatorMenuItem())
+        menui = gtk.CheckMenuItem('Camera Names')
+        menui.connect('activate', self._cameranames)
+        menu.add(menui)
+        menui = gtk.CheckMenuItem('Axes')
+        menui.connect('activate', self._axes)
+        menu.add(menui)
+        menui = gtk.CheckMenuItem('Center Dot')
+        menui.connect('activate', self._centerdot)
+        menu.add(menui)
+        menu.add(gtk.SeparatorMenuItem())
+        menui = gtk.MenuItem('Set Center...')
+        menui.connect('activate', self._setcenter)
+        menu.add(menui)
+        menuc.set_submenu(menu)
+        menubar.add(menuc)
 
+        # main panel boxes
         vpaned = gtk.VPaned()
         vpaned.set_border_width(5)
         vbox.pack_start(vpaned, True, True)
@@ -151,7 +187,7 @@ class Panel(gtk.Window):
             try:
                 robj = pickle.loads(response)
                 break
-            except Exception:
+            except (EOFError, pickle.UnpicklingError):
                 continue
         if isinstance(robj, Exception):
             raise robj
@@ -168,6 +204,21 @@ class Panel(gtk.Window):
         self.ad_command('exit')
         gtk.main_quit()
 
+    def _loadmodel(self, widget, data=None):
+        dialog = gtk.FileChooserDialog('Load Model...', self,
+            gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL,
+            gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dialog.set_default_response(gtk.RESPONSE_OK)
+        filt = gtk.FileFilter()
+        filt.set_name('Adolphus Models')
+        filt.add_pattern('*.yaml')
+        dialog.add_filter(filt)
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            self.ad_command('loadmodel %s' % dialog.get_filename())
+            self.populate_object_tree()
+        dialog.destroy()
+
     def _select_object(self, widget, data=None):
         model, selected = widget.get_selected_rows()
         try:
@@ -175,3 +226,41 @@ class Panel(gtk.Window):
                 model.get_value(model.get_iter(selected[0]), 1))
         except IndexError:
             self.ad_command('select')
+
+    def _setcenter(self, widget, data=None):
+        c = self.ad_command('getcenter')
+        dialog = gtk.Dialog('Set Center', self, 0, (gtk.STOCK_OK,
+            gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        dialog.set_border_width(5)
+        table = gtk.Table(2, 3)
+        table.set_row_spacings(5)
+        table.set_col_spacings(5)
+        dialog.vbox.pack_start(table, True, True, 0)
+        table.attach(gtk.Label('X'), 0, 1, 1, 2)
+        table.attach(gtk.Label('Y'), 1, 2, 1, 2)
+        table.attach(gtk.Label('Z'), 2, 3, 1, 2)
+        p = []
+        for i in range(3):
+            p.append(gtk.Adjustment(c[i], -1e5, 1e5, 30))
+            sb = gtk.SpinButton(p[-1])
+            sb.set_numeric(True)
+            sb.set_alignment(0.5)
+            table.attach(sb, i, i + 1, 0, 1)
+        dialog.show_all()
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            self.ad_command('setcenter %d %d %d' % \
+                tuple([pv.get_value() for pv in p]))
+        dialog.destroy()
+
+    def _clear(self, wiget, data=None):
+        self.ad_command('clear')
+
+    def _cameranames(self, wiget, data=None):
+        self.ad_command('cameranames')
+
+    def _axes(self, wiget, data=None):
+        self.ad_command('axes')
+
+    def _centerdot(self, wiget, data=None):
+        self.ad_command('centerdot')
