@@ -10,6 +10,7 @@ geometric descriptor functions for features.
 
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 from random import uniform, gauss
+from functools import reduce
 
 
 class Angle(float):

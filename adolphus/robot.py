@@ -8,6 +8,7 @@ Robot module.
 """
 
 from math import pi
+from functools import reduce
 
 from .geometry import Point, Rotation, Pose
 from .posable import SceneObject
