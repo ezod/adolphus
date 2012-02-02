@@ -193,7 +193,6 @@ class Experiment(Thread):
         self.coverage = {}
         self.fovvis = {}
         self.laservis = {}
-        self.valvis = {}
         self.exit = False
 
         # model and configuration data

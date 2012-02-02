@@ -431,29 +431,6 @@ def lrcoverage(ex, args, response='pickle'):
         ex.display.userspin = True
 
 @command
-def showval(ex, args):
-    """\
-    Display a value in [0, 1] in 'bar graph' style next to the specified camera,
-    or remove the display if no value is specified.
-    
-    usage: %s name [value]
-    """
-    if args[0] in ex.valvis:
-        ex.valvis[args[0]].visible = False
-        del ex.valvis[args[0]]
-    try:
-        value = float(args[1])
-    except IndexError:
-        pass
-    else:
-        ex.valvis[args[0]] = Sprite([{'type': 'cylinder',
-            'color': (0.8, 0.8, 0.8), 'pos': (80, -30, 0), 'axis': (0,
-            (1.0 - value) * 60, 0), 'radius': 6}, {'type': 'cylinder',
-            'color': (1, 0, 0), 'pos': (80, -30 + (1.0 - value) * 60.0,
-            0), 'axis': (0, value * 60.0, 0), 'radius': 6}])
-        ex.valvis[args[0]].frame = ex.model[args[0]].actuals['main']
-
-@command
 def objecthierarchy(ex, args, response='pickle'):
     """\
     Return a scene object hierarchy in the form C{{'object': (parent, type)}}.
