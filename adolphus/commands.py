@@ -351,6 +351,15 @@ def strength(ex, args, response='pickle'):
         return '%f' % strength
 
 @command
+def tasks(ex, args, response='pickle'):
+    if response == 'pickle':
+        return pickle.dumps(ex.tasks.keys())
+    elif response == 'csv':
+        return ','.join(ex.tasks.keys()) + '#'
+    elif response == 'text':
+        return '\n'.join(ex.tasks.keys())
+
+@command
 def showtask(ex, args):
     """\
     Show the points of the specified task.

@@ -106,11 +106,12 @@ class Panel(gtk.Window):
         self.connect('delete_event', self._delete_event)
         self.connect('destroy', self._destroy)
         vbox = gtk.VBox()
+        vbox.set_spacing(5)
+        vbox.set_border_width(5)
         self.add(vbox)
 
         # menu bar
         menubar = gtk.MenuBar()
-        menubar.set_border_width(5)
         vbox.pack_start(menubar, expand=False)
         menuc = gtk.MenuItem('File')
         menu = gtk.Menu()
@@ -145,9 +146,16 @@ class Panel(gtk.Window):
         menuc.set_submenu(menu)
         menubar.add(menuc)
 
-        # main panel boxes
+        # fixed controls
+        hbox = gtk.HBox()
+        hbox.set_spacing(5)
+        hbox.pack_start(gtk.Label('Task:'), expand=False)
+        self.tasklist = gtk.combo_box_new_text()
+        hbox.pack_start(self.tasklist)
+        vbox.pack_start(hbox, expand=False)
+
+        # paned panel boxes
         vpaned = gtk.VPaned()
-        vpaned.set_border_width(5)
         vbox.pack_start(vpaned, True, True)
         sw = gtk.ScrolledWindow()
         sw.set_shadow_type(gtk.SHADOW_IN)
@@ -165,6 +173,7 @@ class Panel(gtk.Window):
 
         # populate object tree
         self.populate_object_tree()
+        self.populate_task_list()
 
     @staticmethod
     def main():
@@ -201,6 +210,12 @@ class Panel(gtk.Window):
         self.hierarchy = self.ad_command('objecthierarchy')
         self.objecttreeview.populate(copy(self.hierarchy))
 
+    def populate_task_list(self):
+        self.tasklist.get_model().clear()
+        tasks = self.ad_command('tasks')
+        for task in tasks:
+            self.tasklist.append_text(task)
+
     def _delete_event(self, widget, data=None):
         return False
 
@@ -221,6 +236,7 @@ class Panel(gtk.Window):
         if response == gtk.RESPONSE_OK:
             self.ad_command('loadmodel %s' % dialog.get_filename())
             self.populate_object_tree()
+            self.populate_task_list()
         dialog.destroy()
 
     def _select_object(self, widget, data=None):
