@@ -459,17 +459,6 @@ class Quaternion(tuple):
             self._inverse = self.conjugate / (self.magnitude ** 2)
             return self._inverse
 
-    def rotate(self, p):
-        """\
-        Rotate (conjugate) the operand point by this quaternion.
-
-        @param p: The operand point.
-        @type p: L{Point}
-        @return: The rotated (conjugated) point.
-        @rtype: L{Point}
-        """
-        return (self * Quaternion((0.0, p)) * self.inverse)[1]
-
 
 class Rotation(object):
     """\
@@ -547,7 +536,7 @@ class Rotation(object):
         @return: The rotated vector.
         @rtype: L{Point}
         """
-        return self.Q.rotate(p)
+        return (self.Q * Quaternion((0.0, p)) * self.Q.inverse)[1]
 
     @staticmethod
     def from_rotation_matrix(R):
