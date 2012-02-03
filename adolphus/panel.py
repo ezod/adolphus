@@ -91,6 +91,56 @@ class Panel(gtk.Window):
     """\
     Control panel window.
     """
+    class PosableFrame(gtk.Frame):
+        """\
+        Object control frame for L{Posable} objects.
+        """
+        def __init__(self, obj, command):
+            super(Panel.PosableFrame, self).__init__('Pose')
+            self.obj = obj
+            self.command = command
+
+
+    class CameraFrame(gtk.Frame):
+        """\
+        Object control frame for L{Camera} objects.
+        """
+        def __init__(self, obj, command):
+            super(Panel.CameraFrame, self).__init__('Camera')
+            self.obj = obj
+            self.command = command
+
+
+    class RobotFrame(gtk.Frame):
+        """\
+        Object control frame for L{Robot} objects.
+        """
+        def __init__(self, obj, command):
+            super(Panel.RobotFrame, self).__init__('Robot')
+            self.obj = obj
+            self.command = command
+
+
+    class LineLaserFrame(gtk.Frame):
+        """\
+        Object control frame for L{LineLaser} objects.
+        """
+        def __init__(self, obj, command):
+            super(Panel.LineLaserFrame, self).__init__('Line Laser')
+            self.obj = obj
+            self.command = command
+
+
+    class TaskFrame(gtk.Frame):
+        """\
+        Object control frame for L{Task} objects.
+        """
+        def __init__(self, obj, command):
+            super(Panel.TaskFrame, self).__init__('Task')
+            self.obj = obj
+            self.command = command
+
+
     def __init__(self, parent=None):
         """\
         Constructor.
@@ -166,6 +216,10 @@ class Panel(gtk.Window):
         vpaned.add1(sw)
         sw = gtk.Frame()
         sw.set_shadow_type(gtk.SHADOW_IN)
+        self.controlbox = gtk.VBox()
+        self.controlbox.set_spacing(5)
+        self.controlbox.set_border_width(5)
+        sw.add(self.controlbox)
         vpaned.add2(sw)
 
         # show panel
@@ -243,7 +297,23 @@ class Panel(gtk.Window):
         model, selected = widget.get_selected_rows()
         try:
             obj = model.get_value(model.get_iter(selected[0]), 1)
-            if issubclass(self.hierarchy[obj][1], Task):
+            objclass = self.hierarchy[obj][1]
+            for child in self.controlbox.get_children():
+                self.controlbox.remove(child)
+            bases = [objclass]
+            while bases:
+                newbases = []
+                for base in bases:
+                    try:
+                        self.controlbox.pack_start(getattr(self, base.__name__ \
+                            + 'Frame')(obj, self.ad_command), expand=False)
+                    except AttributeError:
+                        pass
+                    for newbase in base.__bases__:
+                        newbases.append(newbase)
+                bases = newbases
+            self.controlbox.show_all()
+            if issubclass(objclass, Task):
                 self.ad_command('select')
             else:
                 self.ad_command('select %s' % obj)
