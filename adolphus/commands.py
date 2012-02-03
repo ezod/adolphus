@@ -275,6 +275,15 @@ def pose(ex, args, response='pickle'):
             return tstr + 'R: %s' % (pose.R.Q,)
 
 @command
+def relativepose(ex, args, response='pickle'):
+    """\
+    Return the relative pose of an object or task.
+    """
+    if response != 'pickle':
+        raise CommandError('command cannot return %s response' % response)
+    return pickle.dumps(ex.model[args[0]].relative_pose)
+
+@command
 def modify(ex, args):
     """\
     Enable interactive pose modification for the specified object, or disable

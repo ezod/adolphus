@@ -44,12 +44,19 @@ class Posable(object):
     @property
     def pose(self):
         """\
-        The pose of the object.
+        The (absolute) pose of the object.
         """
         if self.mount:
             return self._pose + self.mount.mount_pose()
         else:
             return self._pose
+
+    @property
+    def relative_pose(self):
+        """\
+        The relative pose of the object.
+        """
+        return self._pose
 
     def _pose_changed_hook(self):
         """\
