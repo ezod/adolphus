@@ -36,7 +36,6 @@ from copy import deepcopy
 from inspect import getargspec
 
 from .geometry import Point, DirectionalPoint
-from .visualization import Sprite
 from .robot import Robot
 from .yamlparser import YAMLParser
 

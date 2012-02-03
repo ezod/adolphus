@@ -232,12 +232,7 @@ class SceneObject(Posable, Visualizable):
             for triangle in triangles:
                 triangle.mount = self
                 self.triangles.add(triangle)
-            if not self.primitives:
-                for triangle in self.triangles:
-                    triangle.visualize()
-                self._triangles_view = True
-            else:
-                self._triangles_view = False
+            self._triangles_view = False
         self.click_actions = {'shift':  'modify %s' % name}
 
     def _pose_changed_hook(self):
@@ -249,6 +244,23 @@ class SceneObject(Posable, Visualizable):
         except AttributeError:
             pass
         super(SceneObject, self)._pose_changed_hook()
+
+    @property
+    def visible(self):
+        """\
+        Visibility of this object.
+        """
+        return self._visible
+
+    @visible.setter
+    def visible(self, value):
+        if not self.primitives:
+            for triangle in self.triangles:
+                triangle.visible = value
+            self._triangles_view = value
+        for display in self.actuals:
+            self.actuals[display].visible = value
+        self._visible = value
 
     @property
     def bounding_box(self):
@@ -294,11 +306,25 @@ class SceneObject(Posable, Visualizable):
                 triangle.visible = True
         self._triangles_view = not self._triangles_view
 
+    def visualize(self):
+        """\
+        Visualize this object. If no sprites are defined, the attached
+        occluding triangles are visualized instead.
+        """
+        Visualizable.visualize(self)
+        if not self.primitives:
+            for triangle in self.triangles:
+                triangle.visualize()
+            self._triangles_view = True
+
     def update_visualization(self):
         """\
         Update this object's visualization.
         """
         Visualizable.update_visualization(self)
+        if not self.primitives:
+            for triangle in self.triangles:
+                triangle.update_visualization()
         for child in self.children:
             try:
                 child.update_visualization()
