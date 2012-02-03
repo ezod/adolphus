@@ -23,6 +23,19 @@ from copy import copy
 from .coverage import Task
 
 
+class NumericEntry(gtk.Entry):
+    """\
+    Numeric text entry widget.
+    """
+    def __init__(self):
+        super(NumericEntry, self).__init__()
+        self.connect('changed', self.on_changed)
+
+    def on_changed(self, *args):
+        text = self.get_text().strip()
+        self.set_text(''.join([i for i in text if i in '-.e0123456789']))
+
+
 class ObjectTreeView(gtk.TreeView):
     """\
     Object tree view.
@@ -99,6 +112,57 @@ class Panel(gtk.Window):
             super(Panel.PosableFrame, self).__init__('Pose')
             self.obj = obj
             self.command = command
+            table = gtk.Table(3, 5)
+            table.set_border_width(5)
+            table.set_row_spacings(5)
+            table.set_col_spacings(5)
+            self.add(table)
+            table.attach(gtk.Label('x'), 0, 1, 0, 1)
+            table.attach(gtk.Label('y'), 0, 1, 1, 2)
+            table.attach(gtk.Label('z'), 0, 1, 2, 3)
+            self.t = []
+            for i in range(3):
+                self.t.append(NumericEntry())
+                self.t[-1].set_alignment(0.5)
+                table.attach(self.t[-1], 1, 2, i, i + 1)
+            table.attach(gtk.Label(u'\u03b8'), 2, 3, 0, 1)
+            table.attach(gtk.Label(u'\u03c6'), 2, 3, 1, 2)
+            table.attach(gtk.Label(u'\u03c8'), 2, 3, 2, 3)
+            self.r = []
+            for i in range(3):
+                self.r.append(NumericEntry())
+                self.r[-1].set_alignment(0.5)
+                table.attach(self.r[-1], 3, 4, i, i + 1)
+            self.absolute = gtk.RadioButton(label='Absolute')
+            self.absolute.connect('toggled', self._update_data)
+            table.attach(self.absolute, 4, 5, 0, 1)
+            relative = gtk.RadioButton(group=self.absolute, label='Relative')
+            table.attach(relative, 4, 5, 1, 2)
+            setpose = gtk.Button('Set Pose')
+            setpose.connect('activate', self._set_data)
+            table.attach(setpose, 4, 5, 2, 3)
+            self.update_data()
+
+        def update_data(self):
+            if self.absolute.get_active():
+                pose = self.command('pose %s' % self.obj)
+            else:
+                pose = self.command('relativepose %s' % self.obj)
+            for i in range(3):
+                self.t[i].set_text(str(pose.T[i]))
+            angles = pose.R.to_euler_zyx()
+            for i in range(3):
+                self.r[i].set_text(str(angles[i]))
+
+        def set_data(self):
+            # TODO: set object pose
+            pass
+
+        def _update_data(self, wiget, data=None):
+            self.update_data()
+
+        def _set_data(self, widget, data=None):
+            self.set_data()
 
 
     class CameraFrame(gtk.Frame):
@@ -329,9 +393,9 @@ class Panel(gtk.Window):
         table.set_row_spacings(5)
         table.set_col_spacings(5)
         dialog.vbox.pack_start(table, True, True, 0)
-        table.attach(gtk.Label('X'), 0, 1, 1, 2)
-        table.attach(gtk.Label('Y'), 1, 2, 1, 2)
-        table.attach(gtk.Label('Z'), 2, 3, 1, 2)
+        table.attach(gtk.Label('x'), 0, 1, 1, 2)
+        table.attach(gtk.Label('y'), 1, 2, 1, 2)
+        table.attach(gtk.Label('z'), 2, 3, 1, 2)
         p = []
         for i in range(3):
             p.append(gtk.Adjustment(c[i], -1e5, 1e5, 30))
