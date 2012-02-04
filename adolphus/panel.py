@@ -164,8 +164,13 @@ class Panel(gtk.Window):
                 self.r[i].set_text(str(angles[i]))
 
         def set_data(self):
-            # TODO: set object pose
-            pass
+            pose = ' '.join([self.obj, 'euler-zyx-rad',
+                ' '.join([self.t[i].get_text() for i in range(3)]),
+                ' '.join([self.r[i].get_text() for i in range(3)])])
+            if self.absolute.get_active():
+                self.command('setpose %s' % pose)
+            else:
+                self.command('setrelativepose %s' % pose)
 
         def _update_data(self, wiget, data=None):
             self.update_data()

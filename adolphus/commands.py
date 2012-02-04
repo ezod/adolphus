@@ -32,10 +32,11 @@ except ImportError:
     import pickle
 
 import yaml
+from math import pi
 from copy import deepcopy
 from inspect import getargspec
 
-from .geometry import Point, DirectionalPoint
+from .geometry import Angle, Point, DirectionalPoint, Quaternion, Rotation, Pose
 from .robot import Robot
 from .yamlparser import YAMLParser
 
@@ -305,9 +306,9 @@ def getrelativepose(ex, args, response='pickle'):
     usage: %s name [rformat]
     """
     try:
-        pose = ex.model[args[0]].pose
+        pose = ex.model[args[0]].relative_pose
     except KeyError:
-        pose = ex.tasks[args[0]].pose
+        pose = ex.tasks[args[0]].relative_pose
     rformat = len(args) > 1 and args[1] or 'quaternion'
     if response == 'pickle':
         return pickle.dumps(pose)
@@ -315,6 +316,56 @@ def getrelativepose(ex, args, response='pickle'):
         return format_pose_csv(pose, rformat)
     elif response == 'text':
         return format_pose_text(pose, rformat)
+
+def parse_pose(args):
+    numeric = lambda l: [float(n) for n in l]
+    T = Point(numeric(args[1:4]))
+    if args[0] == 'quaternion':
+        R = Rotation(Quaternion([float(args[4]), numeric(args[5:8])]))
+    elif args[0] == 'matrix':
+        R = Rotation.from_rotation_matrix([numeric(args[4:7]),
+                                           numeric(args[7:10]),
+                                           numeric(args[10:13])])
+    elif args[0].startswith('axis-angle'):
+        unit = args[0].split('-')[2]
+        if unit == 'deg':
+            angle = Angle(float(args[4]) * pi / 180.0)
+        else:
+            angle = Angle(args[4])
+        R = Rotation.from_axis_angle(angle, Point(numeric(args[5:8])))
+    elif args[0].startswith('euler'):
+        convention, unit = args[0].split('-')[1:]
+        angles = numeric(args[4:7])
+        if unit == 'deg':
+            angles = [Angle(angle * pi / 180.0) for angle in angles]
+        else:
+            angles = [Angle(angle) for angle in angles]
+        R = Rotation.from_euler(convention, angles)
+    else:
+        raise CommandError('invalid rotation format')
+    return Pose(T, R)
+
+@command
+def setpose(ex, args):
+    """\
+    Set the absolute pose of an object.
+
+    usage: %s name rformat x y z [rotation]
+    """
+    pose = parse_pose(args[1:])
+    ex.model[args[0]].set_absolute_pose(pose)
+    ex.model[args[0]].update_visualization()
+
+@command
+def setrelativepose(ex, args):
+    """\
+    Set the relative pose of an object.
+
+    usage: %s name rformat x y z [rotation]
+    """
+    pose = parse_pose(args[1:])
+    ex.model[args[0]].set_relative_pose(pose)
+    ex.model[args[0]].update_visualization()
 
 @command
 def modify(ex, args):
