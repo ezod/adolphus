@@ -138,9 +138,18 @@ class Panel(gtk.Window):
             table.attach(self.absolute, 4, 5, 0, 1)
             relative = gtk.RadioButton(group=self.absolute, label='Relative')
             table.attach(relative, 4, 5, 1, 2)
-            setpose = gtk.Button('Set Pose')
-            setpose.connect('activate', self._set_data)
-            table.attach(setpose, 4, 5, 2, 3)
+            hbox = gtk.HBox()
+            hbox.set_spacing(5)
+            updatepose = gtk.Button('U')
+            updatepose.connect('clicked', self._update_data)
+            hbox.pack_start(updatepose)
+            setpose = gtk.Button('S')
+            setpose.connect('clicked', self._set_data)
+            hbox.pack_start(setpose)
+            modifypose = gtk.ToggleButton('M')
+            modifypose.connect('toggled', self._modify)
+            hbox.pack_start(modifypose)
+            table.attach(hbox, 4, 5, 2, 3)
             self.update_data()
 
         def update_data(self):
@@ -163,6 +172,12 @@ class Panel(gtk.Window):
 
         def _set_data(self, widget, data=None):
             self.set_data()
+
+        def _modify(self, widget, data=None):
+            if widget.get_active():
+                self.command('modify %s' % self.obj)
+            else:
+                self.command('modify')
 
 
     class CameraFrame(gtk.Frame):
@@ -383,6 +398,7 @@ class Panel(gtk.Window):
                 self.ad_command('select %s' % obj)
         except IndexError:
             self.ad_command('select')
+        self.ad_command('modify')
 
     def _setcenter(self, widget, data=None):
         c = self.ad_command('getcenter')
