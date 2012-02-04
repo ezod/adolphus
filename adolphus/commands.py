@@ -220,8 +220,64 @@ def cameraview(ex, args):
         except RuntimeError:
             pass
 
+def format_pose_csv(pose, rformat):
+    """\
+    Format a pose in CSV format.
+
+    @param pose: The pose to format.
+    @type pose: L{Pose}
+    @param rformat: The rotation format.
+    @type rformat: C{str}
+    @return: The formatted pose.
+    @rtype: C{str}
+    """
+    flatpose = tuple(pose.T)
+    if rformat == 'quaternion':
+        flatpose += (pose.R.Q.a,) + tuple(pose.R.Q.v)
+    elif rformat == 'matrix':
+        flatpose += tuple(pose.R.to_rotation_matrix().flatten())
+    elif rformat == 'axis-angle':
+        angle, axis = pose.R.to_axis_angle()
+        flatpose += (angle,) + tuple(axis)
+    elif rformat == 'euler-zyx':
+        flatpose += tuple(pose.R.to_euler_zyx())
+    else:
+        raise CommandError('invalid rotation format')
+    return ','.join([str(float(e)) for e in flatpose]) + '#'
+
+def format_pose_text(pose, rformat):
+    """\
+    Format a pose in human-readable text format.
+
+    @param pose: The pose to format.
+    @type pose: L{Pose}
+    @param rformat: The rotation format.
+    @type rformat: C{str}
+    @return: The formatted pose.
+    @rtype: C{str}
+    """
+    tstr = 'T: (%.2f, %.2f, %.2f)\n' % pose.T
+    if rformat == 'quaternion':
+        return tstr + 'R: %s' % (pose.R.Q,)
+    elif rformat == 'matrix':
+        return tstr + \
+            ('R:\t%.4f\t%.4f\t%.4f\n' \
+            + '\t%.4f\t%.4f\t%.4f\n' \
+            + '\t%.4f\t%.4f\t%.4f') \
+            % tuple(pose.R.to_rotation_matrix().flatten())
+    elif rformat == 'axis-angle':
+        angle, axis = pose.R.to_axis_angle()
+        return tstr + \
+            u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' % ((angle,) + axis)
+    elif rformat == 'euler-zyx':
+        return tstr + \
+            u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
+            % pose.R.to_euler_zyx()
+    else:
+        raise CommandError('invalid rotation format')
+
 @command
-def pose(ex, args, response='pickle'):
+def getpose(ex, args, response='pickle'):
     """\
     Return the (absolute) pose of an object. If using CSV or text response,
     a rotation format may be specified (one of 'quaternion', 'matrix',
@@ -229,59 +285,36 @@ def pose(ex, args, response='pickle'):
     
     usage: %s name [rformat]
     """
-    pose = ex.model[args[0]].pose
+    try:
+        pose = ex.model[args[0]].pose
+    except KeyError:
+        pose = ex.tasks[args[0]].pose
+    rformat = len(args) > 1 and args[1] or 'quaternion'
     if response == 'pickle':
         return pickle.dumps(pose)
     elif response == 'csv':
-        flatpose = tuple(pose.T)
-        try:
-            if args[1] == 'quaternion':
-                raise IndexError
-            elif args[1] == 'matrix':
-                flatpose += tuple(pose.R.to_rotation_matrix().flatten())
-            elif args[1] == 'axis-angle':
-                angle, axis = pose.R.to_axis_angle()
-                flatpose += (angle,) + tuple(axis)
-            elif args[1] == 'euler-zyx':
-                flatpose += tuple(pose.R.to_euler_zyx())
-            else:
-                raise CommandError('invalid rotation format')
-        except IndexError:
-            flatpose += (pose.R.Q.a,) + tuple(pose.R.Q.v)
-        return ','.join([str(float(e)) for e in flatpose]) + '#'
+        return format_pose_csv(pose, rformat)
     elif response == 'text':
-        tstr = 'T: (%.2f, %.2f, %.2f)\n' % ex.model[args[0]].pose.T
-        try:
-            if args[1] == 'quaternion':
-                raise IndexError
-            elif args[1] == 'matrix':
-                return tstr + \
-                    ('R:\t%.4f\t%.4f\t%.4f\n' \
-                    + '\t%.4f\t%.4f\t%.4f\n' \
-                    + '\t%.4f\t%.4f\t%.4f') \
-                    % tuple(pose.R.to_rotation_matrix().flatten())
-            elif args[1] == 'axis-angle':
-                angle, axis = pose.R.to_axis_angle()
-                return tstr + \
-                    u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' \
-                    % ((angle,) + axis)
-            elif args[1] == 'euler-zyx':
-                return tstr + \
-                    u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
-                    % pose.R.to_euler_zyx()
-            else:
-                raise CommandError('invalid rotation format')
-        except IndexError:
-            return tstr + 'R: %s' % (pose.R.Q,)
+        return format_pose_text(pose, rformat)
 
 @command
-def relativepose(ex, args, response='pickle'):
+def getrelativepose(ex, args, response='pickle'):
     """\
     Return the relative pose of an object or task.
+
+    usage: %s name [rformat]
     """
-    if response != 'pickle':
-        raise CommandError('command cannot return %s response' % response)
-    return pickle.dumps(ex.model[args[0]].relative_pose)
+    try:
+        pose = ex.model[args[0]].pose
+    except KeyError:
+        pose = ex.tasks[args[0]].pose
+    rformat = len(args) > 1 and args[1] or 'quaternion'
+    if response == 'pickle':
+        return pickle.dumps(pose)
+    elif response == 'csv':
+        return format_pose_csv(pose, rformat)
+    elif response == 'text':
+        return format_pose_text(pose, rformat)
 
 @command
 def modify(ex, args):

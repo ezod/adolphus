@@ -154,9 +154,9 @@ class Panel(gtk.Window):
 
         def update_data(self):
             if self.absolute.get_active():
-                pose = self.command('pose %s' % self.obj)
+                pose = self.command('getpose %s' % self.obj)
             else:
-                pose = self.command('relativepose %s' % self.obj)
+                pose = self.command('getrelativepose %s' % self.obj)
             for i in range(3):
                 self.t[i].set_text(str(pose.T[i]))
             angles = pose.R.to_euler_zyx()
