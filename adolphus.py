@@ -8,10 +8,11 @@ import subprocess
 def main():
     vr, pw = os.pipe()
     pr, vw = os.pipe()
-    argviewer = [os.path.join(os.path.dirname(sys.argv[0]),
+    argviewer = [sys.executable, os.path.join(os.path.dirname(sys.argv[0]),
         'adolphusviewer.py'), '-s'] + sys.argv[1:]
     viewer = subprocess.Popen(argviewer, stdin=vr, stdout=vw)
-    argpanel = [os.path.join(os.path.dirname(sys.argv[0]), 'adolphuspanel.py')]
+    argpanel = [sys.executable, os.path.join(os.path.dirname(sys.argv[0]),
+        'adolphuspanel.py')]
     panel = subprocess.Popen(argpanel, stdin=pr, stdout=pw)
     viewer.wait()
     panel.wait()
