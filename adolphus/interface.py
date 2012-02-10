@@ -189,7 +189,7 @@ class Experiment(Thread):
 
         # state variables
         self.selected = None
-        self._camera_names = False
+        self._camera_names = True
         self.coverage = {}
         self.fovvis = {}
         self.laservis = {}
