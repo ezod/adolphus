@@ -138,18 +138,9 @@ class Panel(gtk.Window):
             table.attach(self.absolute, 4, 5, 0, 1)
             relative = gtk.RadioButton(group=self.absolute, label='Relative')
             table.attach(relative, 4, 5, 1, 2)
-            hbox = gtk.HBox()
-            hbox.set_spacing(5)
-            updatepose = gtk.Button('U')
-            updatepose.connect('clicked', self._update_data)
-            hbox.pack_start(updatepose)
-            setpose = gtk.Button('S')
-            setpose.connect('clicked', self._set_data)
-            hbox.pack_start(setpose)
-            modifypose = gtk.ToggleButton('M')
+            modifypose = gtk.ToggleButton('Modify')
             modifypose.connect('toggled', self._modify)
-            hbox.pack_start(modifypose)
-            table.attach(hbox, 4, 5, 2, 3)
+            table.attach(modifypose, 4, 5, 2, 3)
             self.update_data()
 
         def update_data(self):
@@ -172,11 +163,8 @@ class Panel(gtk.Window):
             else:
                 self.command('setrelativepose %s' % pose)
 
-        def _update_data(self, wiget, data=None):
+        def _update_data(self, widget, data=None):
             self.update_data()
-
-        def _set_data(self, widget, data=None):
-            self.set_data()
 
         def _modify(self, widget, data=None):
             if widget.get_active():
@@ -194,6 +182,12 @@ class Panel(gtk.Window):
             self.obj = obj
             self.command = command
 
+        def update_data(self):
+            pass
+
+        def set_data(self):
+            pass
+
 
     class RobotFrame(gtk.Frame):
         """\
@@ -203,6 +197,12 @@ class Panel(gtk.Window):
             super(Panel.RobotFrame, self).__init__('Robot')
             self.obj = obj
             self.command = command
+
+        def update_data(self):
+            pass
+
+        def set_data(self):
+            pass
 
 
     class LineLaserFrame(gtk.Frame):
@@ -214,6 +214,12 @@ class Panel(gtk.Window):
             self.obj = obj
             self.command = command
 
+        def update_data(self):
+            pass
+
+        def set_data(self):
+            pass
+
 
     class TaskFrame(gtk.Frame):
         """\
@@ -223,6 +229,12 @@ class Panel(gtk.Window):
             super(Panel.TaskFrame, self).__init__('Task')
             self.obj = obj
             self.command = command
+
+        def update_data(self):
+            pass
+
+        def set_data(self):
+            pass
 
 
     def __init__(self, parent=None):
@@ -307,6 +319,17 @@ class Panel(gtk.Window):
         sw.add_with_viewport(self.controlbox)
         vpaned.add2(sw)
 
+        # control update/commit buttons
+        hbox = gtk.HBox()
+        hbox.set_spacing(5)
+        update = gtk.Button('Update')
+        update.connect('clicked', self._update_data)
+        hbox.pack_start(update)
+        commit = gtk.Button('Commit')
+        commit.connect('clicked', self._set_data)
+        hbox.pack_start(commit)
+        vbox.pack_start(hbox, expand=False)
+
         # show panel
         self.show_all()
 
@@ -361,6 +384,14 @@ class Panel(gtk.Window):
     def _destroy(self, widget, data=None):
         self.ad_command('exit')
         gtk.main_quit()
+
+    def _update_data(self, widget, data=None):
+        for child in self.controlbox.get_children():
+            child.update_data()
+
+    def _set_data(self, widget, data=None):
+        for child in self.controlbox.get_children():
+            child.set_data()
 
     def _loadmodel(self, widget, data=None):
         dialog = gtk.FileChooserDialog('Load Model...', self,

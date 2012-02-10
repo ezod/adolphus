@@ -355,6 +355,8 @@ def setpose(ex, args):
     pose = parse_pose(args[1:])
     ex.model[args[0]].set_absolute_pose(pose)
     ex.model[args[0]].update_visualization()
+    if ex.modifier.parent == ex.model[args[0]]:
+        ex.modifier.pos = ex.model[args[0]].pose.T
 
 @command
 def setrelativepose(ex, args):
@@ -366,6 +368,8 @@ def setrelativepose(ex, args):
     pose = parse_pose(args[1:])
     ex.model[args[0]].set_relative_pose(pose)
     ex.model[args[0]].update_visualization()
+    if ex.modifier.parent == ex.model[args[0]]:
+        ex.modifier.pos = ex.model[args[0]].pose.T
 
 @command
 def modify(ex, args):
