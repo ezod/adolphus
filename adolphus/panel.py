@@ -117,17 +117,17 @@ class Panel(gtk.Window):
             table.set_row_spacings(5)
             table.set_col_spacings(5)
             self.add(table)
-            table.attach(gtk.Label('x'), 0, 1, 0, 1)
-            table.attach(gtk.Label('y'), 0, 1, 1, 2)
-            table.attach(gtk.Label('z'), 0, 1, 2, 3)
+            table.attach(gtk.Label('x'), 0, 1, 0, 1, xoptions=0)
+            table.attach(gtk.Label('y'), 0, 1, 1, 2, xoptions=0)
+            table.attach(gtk.Label('z'), 0, 1, 2, 3, xoptions=0)
             self.t = []
             for i in range(3):
                 self.t.append(NumericEntry())
                 self.t[-1].set_alignment(0.5)
                 table.attach(self.t[-1], 1, 2, i, i + 1)
-            table.attach(gtk.Label(u'\u03b8'), 2, 3, 0, 1)
-            table.attach(gtk.Label(u'\u03c6'), 2, 3, 1, 2)
-            table.attach(gtk.Label(u'\u03c8'), 2, 3, 2, 3)
+            table.attach(gtk.Label(u'\u03b8'), 2, 3, 0, 1, xoptions=0)
+            table.attach(gtk.Label(u'\u03c6'), 2, 3, 1, 2, xoptions=0)
+            table.attach(gtk.Label(u'\u03c8'), 2, 3, 2, 3, xoptions=0)
             self.r = []
             for i in range(3):
                 self.r.append(NumericEntry())
@@ -292,18 +292,19 @@ class Panel(gtk.Window):
         vpaned = gtk.VPaned()
         vbox.pack_start(vpaned, True, True)
         sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
         sw.set_shadow_type(gtk.SHADOW_IN)
         self.objecttreeview = ObjectTreeView()
         self.objecttreeview.get_selection().connect('changed',
             self._select_object)
         sw.add(self.objecttreeview)
         vpaned.add1(sw)
-        sw = gtk.Frame()
-        sw.set_shadow_type(gtk.SHADOW_IN)
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_ALWAYS)
         self.controlbox = gtk.VBox()
         self.controlbox.set_spacing(5)
         self.controlbox.set_border_width(5)
-        sw.add(self.controlbox)
+        sw.add_with_viewport(self.controlbox)
         vpaned.add2(sw)
 
         # show panel
