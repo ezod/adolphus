@@ -30,6 +30,7 @@ class NumericEntry(gtk.Entry):
     def __init__(self):
         super(NumericEntry, self).__init__()
         self.connect('changed', self.on_changed)
+        self.set_size_request(0, -1)
 
     def on_changed(self, *args):
         text = self.get_text().strip()
@@ -135,12 +136,12 @@ class Panel(gtk.Window):
                 table.attach(self.r[-1], 3, 4, i, i + 1)
             self.absolute = gtk.RadioButton(label='Absolute')
             self.absolute.connect('toggled', self._update_data)
-            table.attach(self.absolute, 4, 5, 0, 1)
+            table.attach(self.absolute, 4, 5, 0, 1, xoptions=gtk.FILL)
             relative = gtk.RadioButton(group=self.absolute, label='Relative')
-            table.attach(relative, 4, 5, 1, 2)
+            table.attach(relative, 4, 5, 1, 2, xoptions=gtk.FILL)
             modifypose = gtk.ToggleButton('Modify')
             modifypose.connect('toggled', self._modify)
-            table.attach(modifypose, 4, 5, 2, 3)
+            table.attach(modifypose, 4, 5, 2, 3, xoptions=gtk.FILL)
             self.update_data()
 
         def update_data(self):
@@ -181,6 +182,47 @@ class Panel(gtk.Window):
             super(Panel.CameraFrame, self).__init__('Camera')
             self.obj = obj
             self.command = command
+            table = gtk.Table(3, 6)
+            table.set_border_width(5)
+            table.set_row_spacings(5)
+            table.set_col_spacings(5)
+            self.add(table)
+            table.attach(gtk.Label('f'), 0, 1, 0, 1, xoptions=0)
+            table.attach(gtk.Label('A'), 0, 1, 1, 2, xoptions=0)
+            table.attach(gtk.Label('zS'), 0, 1, 2, 3, xoptions=0)
+            self.f = NumericEntry()
+            self.f.set_alignment(0.5)
+            table.attach(self.f, 1, 2, 0, 1)
+            self.A = NumericEntry()
+            self.A.set_alignment(0.5)
+            table.attach(self.A, 1, 2, 1, 2)
+            self.zS = NumericEntry()
+            self.zS.set_alignment(0.5)
+            table.attach(self.zS, 1, 2, 2, 3)
+            table.attach(gtk.Label('s'), 2, 3, 0, 1, xoptions=0)
+            table.attach(gtk.Label('r'), 2, 3, 1, 2, xoptions=0)
+            table.attach(gtk.Label('D'), 2, 3, 2, 3, xoptions=0)
+            self.s = []
+            for i in range(2):
+                self.s.append(NumericEntry())
+                self.s[-1].set_alignment(0.5)
+                table.attach(self.s[-1], 3 + i, 4 + i, 0, 1)
+            self.r = []
+            for i in range(2):
+                self.r.append(NumericEntry())
+                self.r[-1].set_alignment(0.5)
+                table.attach(self.r[-1], 3 + i, 4 + i, 1, 2)
+            self.D = []
+            for i in range(2):
+                self.D.append(NumericEntry())
+                self.D[-1].set_alignment(0.5)
+                table.attach(self.D[-1], 3 + i, 4 + i, 2, 3)
+            self.active = gtk.CheckButton('Active')
+            table.attach(self.active, 5, 6, 0, 1, xoptions=gtk.FILL)
+            frustum = gtk.ToggleButton('Frustum')
+            #frustum.connect('toggled', self._frustum)
+            table.attach(frustum, 5, 6, 2, 3, xoptions=gtk.FILL)
+            self.update_data()
 
         def update_data(self):
             pass
