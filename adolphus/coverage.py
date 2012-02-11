@@ -228,7 +228,7 @@ class Task(Posable):
         @param param: The name of the paramater to set.
         @type param: C{str}
         @param value: The value to which to set the parameter.
-        @type value: C{object}
+        @type value: C{float}
         """
         if (param.endswith('max') or param.endswith('min')) \
         and param + '_ideal' in self.defaults \
@@ -238,6 +238,8 @@ class Task(Posable):
             return
         if not param in self.defaults:
             raise KeyError(param)
+        if param == 'ocular':
+            value = int(value)
         self._params[param] = value
         if param == 'res_max_ideal':
             self._params['res_max_acceptable'] = \
@@ -305,8 +307,6 @@ class Camera(SceneObject):
         """
         super(Camera, self).__init__(name, pose=pose, mount_pose=mount_pose,
             mount=mount, primitives=primitives, triangles=triangles)
-        if isinstance(params['s'], Number):
-            params['s'] = (params['s'], params['s'])
         self._params = {}
         for param in params:
             try:
@@ -343,10 +343,12 @@ class Camera(SceneObject):
         @param param: The name of the paramater to set.
         @type param: C{str}
         @param value: The value to which to set the parameter.
-        @type value: C{object}
+        @type value: C{float} or C{list} of C{float}
         """
         if not param in self.param_keys:
             raise KeyError(param)
+        if param == 's' and isinstance(value, Number):
+            value = [value, value]
         self._params[param] = value
         if param in ['f', 's', 'o', 'dim']:
             try:

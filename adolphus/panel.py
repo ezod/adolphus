@@ -222,7 +222,7 @@ class Panel(gtk.Window):
             self.active = gtk.CheckButton('Active')
             table.attach(self.active, 5, 6, 0, 1, xoptions=gtk.FILL)
             frustum = gtk.ToggleButton('Frustum')
-            #frustum.connect('toggled', self._frustum)
+            frustum.connect('toggled', self._frustum)
             table.attach(frustum, 5, 6, 2, 3, xoptions=gtk.FILL)
             self.update_data()
 
@@ -238,6 +238,17 @@ class Panel(gtk.Window):
             self.active.set_active(active)
 
         def set_data(self):
+            for param in self.par:
+                if hasattr(self.par[param], '__iter__'):
+                    value = ' '.join([p.get_text() for p in self.par[param]])
+                else:
+                    value = self.par[param].get_text()
+                self.command('setparam %s %s %s' % (self.obj, param, value))
+            if not self.active.get_active() == \
+                self.command('getactive %s' % self.obj):
+                self.command('setactive %s' % self.obj)
+
+        def _frustum(self, widget, data=None):
             pass
 
 

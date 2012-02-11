@@ -392,9 +392,12 @@ def setparam(ex, args):
     """\
     Set a parameter of a camera or task. 
 
-    usage: %s object parameter value
+    usage: %s object parameter value*
     """
-    ex.model[args[0]].setparam(args[1], float(args[2]))
+    if len(args) == 3:
+        ex.model[args[0]].setparam(args[1], float(args[2]))
+    else:
+        ex.model[args[0]].setparam(args[1], [float(a) for a in args[2:]])
 
 @command
 def getparams(ex, args, response='pickle'):
