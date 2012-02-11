@@ -182,6 +182,7 @@ class Panel(gtk.Window):
             super(Panel.CameraFrame, self).__init__('Camera')
             self.obj = obj
             self.command = command
+            self.par = {}
             table = gtk.Table(3, 6)
             table.set_border_width(5)
             table.set_row_spacings(5)
@@ -190,33 +191,33 @@ class Panel(gtk.Window):
             table.attach(gtk.Label('f'), 0, 1, 0, 1, xoptions=0)
             table.attach(gtk.Label('A'), 0, 1, 1, 2, xoptions=0)
             table.attach(gtk.Label('zS'), 0, 1, 2, 3, xoptions=0)
-            self.f = NumericEntry()
-            self.f.set_alignment(0.5)
-            table.attach(self.f, 1, 2, 0, 1)
-            self.A = NumericEntry()
-            self.A.set_alignment(0.5)
-            table.attach(self.A, 1, 2, 1, 2)
-            self.zS = NumericEntry()
-            self.zS.set_alignment(0.5)
-            table.attach(self.zS, 1, 2, 2, 3)
+            self.par['f'] = NumericEntry()
+            self.par['f'].set_alignment(0.5)
+            table.attach(self.par['f'], 1, 2, 0, 1)
+            self.par['A'] = NumericEntry()
+            self.par['A'].set_alignment(0.5)
+            table.attach(self.par['A'], 1, 2, 1, 2)
+            self.par['zS'] = NumericEntry()
+            self.par['zS'].set_alignment(0.5)
+            table.attach(self.par['zS'], 1, 2, 2, 3)
             table.attach(gtk.Label('s'), 2, 3, 0, 1, xoptions=0)
-            table.attach(gtk.Label('r'), 2, 3, 1, 2, xoptions=0)
+            table.attach(gtk.Label('o'), 2, 3, 1, 2, xoptions=0)
             table.attach(gtk.Label('D'), 2, 3, 2, 3, xoptions=0)
-            self.s = []
+            self.par['s'] = []
             for i in range(2):
-                self.s.append(NumericEntry())
-                self.s[-1].set_alignment(0.5)
-                table.attach(self.s[-1], 3 + i, 4 + i, 0, 1)
-            self.r = []
+                self.par['s'].append(NumericEntry())
+                self.par['s'][-1].set_alignment(0.5)
+                table.attach(self.par['s'][-1], 3 + i, 4 + i, 0, 1)
+            self.par['o'] = []
             for i in range(2):
-                self.r.append(NumericEntry())
-                self.r[-1].set_alignment(0.5)
-                table.attach(self.r[-1], 3 + i, 4 + i, 1, 2)
-            self.D = []
+                self.par['o'].append(NumericEntry())
+                self.par['o'][-1].set_alignment(0.5)
+                table.attach(self.par['o'][-1], 3 + i, 4 + i, 1, 2)
+            self.par['dim'] = []
             for i in range(2):
-                self.D.append(NumericEntry())
-                self.D[-1].set_alignment(0.5)
-                table.attach(self.D[-1], 3 + i, 4 + i, 2, 3)
+                self.par['dim'].append(NumericEntry())
+                self.par['dim'][-1].set_alignment(0.5)
+                table.attach(self.par['dim'][-1], 3 + i, 4 + i, 2, 3)
             self.active = gtk.CheckButton('Active')
             table.attach(self.active, 5, 6, 0, 1, xoptions=gtk.FILL)
             frustum = gtk.ToggleButton('Frustum')
@@ -225,7 +226,15 @@ class Panel(gtk.Window):
             self.update_data()
 
         def update_data(self):
-            pass
+            params = self.command('getparams %s' % self.obj)
+            for param in params:
+                if hasattr(params[param], '__iter__'):
+                    for i in range(len(params[param])):
+                        self.par[param][i].set_text(str(params[param][i]))
+                else:
+                    self.par[param].set_text(str(params[param]))
+            active = self.command('getactive %s' % self.obj)
+            self.active.set_active(active)
 
         def set_data(self):
             pass

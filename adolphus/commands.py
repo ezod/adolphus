@@ -388,28 +388,32 @@ def modify(ex, args):
         ex.modifier.parent = None
 
 @command
-def position(ex, args, response='pickle'):
+def setparam(ex, args):
     """\
-    Set the position of the specified robot, or return its position if no new
-    position is specified.
+    Set a parameter of a camera or task. 
 
-    usage: %s robot [position]
+    usage: %s object parameter value
     """
-    assert isinstance(ex.model[args[0]], Robot)
-    if len(args) > 1:
-        ex.model[args[0]].config = [float(arg) for arg in args[1:]]
-        ex.model[args[0]].update_visualization()
-    else:
-        if response == 'pickle':
-            return pickle.dumps(ex.model[args[0]].config)
-        elif response == 'csv':
-            return ','.join([str(e) for e in \
-                ex.model[args[0]].config]) + '#'
-        elif response == 'text':
-            return str(ex.model[args[0]].config)
+    ex.model[args[0]].setparam(args[1], float(args[2]))
 
 @command
-def active(ex, args):
+def getparams(ex, args, response='pickle'):
+    """\
+    Get the parameters of a camera or task.
+
+    usage: %s object
+    """
+    if response == 'pickle':
+        return pickle.dumps(ex.model[args[0]].params)
+    elif response == 'csv':
+        return ','.join([str(ex.model[args[0]].params[p]) \
+            for p in ex.model[args[0]].params]) + '#'
+    elif response == 'text':
+        return '\n'.join(['%s: %s' % (p, str(ex.model[args[0]].params[p])) \
+            for p in ex.model[args[0]].params])
+
+@command
+def setactive(ex, args):
     """\
     Toggle the active state of the specified camera (or, if unspecified, that
     of all cameras).
@@ -421,7 +425,47 @@ def active(ex, args):
         ex.model[args[0]].update_visualization()
     except IndexError:
         for camera in ex.model.cameras:
-            active(ex, [camera])
+            setactive(ex, [camera])
+
+@command
+def getactive(ex, args, response='pickle'):
+    """\
+    Get the active state of the specified camera.
+
+    usage: %s camera
+    """
+    if response == 'pickle':
+        return pickle.dumps(ex.model[args[0]].active)
+    elif response == 'csv':
+        return '%d#' % int(ex.model[args[0]].active)
+    elif response == 'text':
+        return ex.model[args[0]].active and 'Active' or 'Inactive'
+
+@command
+def setposition(ex, args):
+    """\
+    Set the position of the specified robot.
+
+    usage: %s robot position*
+    """
+    assert isinstance(ex.model[args[0]], Robot)
+    ex.model[args[0]].config = [float(arg) for arg in args[1:]]
+    ex.model[args[0]].update_visualization()
+
+@command
+def getposition(ex, args, response='pickle'):
+    """\
+    Get the position of the specified robot.
+
+    usage: %s robot
+    """
+    assert isinstance(ex.model[args[0]], Robot)
+    if response == 'pickle':
+        return pickle.dumps(ex.model[args[0]].config)
+    elif response == 'csv':
+        return ','.join([str(e) for e in ex.model[args[0]].config]) + '#'
+    elif response == 'text':
+        return str(ex.model[args[0]].config)
 
 @command
 def strength(ex, args, response='pickle'):

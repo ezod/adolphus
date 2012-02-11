@@ -279,6 +279,8 @@ class Camera(SceneObject):
     based on camera and task parameters. Being a L{SceneObject} itself, it also
     provides the usual functionality of pose, visualization, and occlusion.
     """
+    param_keys = ['A', 'dim', 'f', 'o', 's', 'zS']
+
     def __init__(self, name, params, pose=Pose(), mount_pose=Pose(), mount=None,
                  primitives=[], triangles=[], active=True):
         """\
@@ -305,9 +307,14 @@ class Camera(SceneObject):
             mount=mount, primitives=primitives, triangles=triangles)
         if isinstance(params['s'], Number):
             params['s'] = (params['s'], params['s'])
-        self._params = params
+        self._params = {}
+        for param in params:
+            try:
+                self.setparam(param, params[param])
+            except KeyError:
+                pass
         self.active = active
-        self.click_actions = {'none':   'active %s' % name,
+        self.click_actions = {'none':   'setactive %s' % name,
                               'alt':    'cameraview %s' % name,
                               'shift':  'modify %s' % name}
 
@@ -338,7 +345,7 @@ class Camera(SceneObject):
         @param value: The value to which to set the parameter.
         @type value: C{object}
         """
-        if not param in self._params:
+        if not param in self.param_keys:
             raise KeyError(param)
         self._params[param] = value
         if param in ['f', 's', 'o', 'dim']:
