@@ -21,6 +21,7 @@ from sys import stdin, stdout
 from copy import copy
 
 from .coverage import Task
+from .laser import RangeTask
 
 
 class NumericEntry(gtk.Entry):
@@ -342,12 +343,31 @@ class Panel(gtk.Window):
         menu.add(menui)
         menuc.set_submenu(menu)
         menubar.add(menuc)
+        menuc = gtk.MenuItem('Coverage')
+        menu = gtk.Menu()
+        self.cov = {}
+        self.cov['standard'] = gtk.MenuItem('Standard')
+        self.cov['standard'].connect('activate', self._coverage_standard)
+        self.cov['standard'].set_sensitive(False)
+        menu.add(self.cov['standard'])
+        menu.add(gtk.SeparatorMenuItem())
+        self.cov['lr'] = gtk.MenuItem('Range (Linear)')
+        #self.cov['lr'].connect('activate', self._coverage_range_linear)
+        self.cov['lr'].set_sensitive(False)
+        menu.add(self.cov['lr'])
+        self.cov['rr'] = gtk.MenuItem('Range (Rotary)')
+        #self.cov['rr'].connect('activate', self._coverage_range_rotary)
+        self.cov['rr'].set_sensitive(False)
+        menu.add(self.cov['rr'])
+        menuc.set_submenu(menu)
+        menubar.add(menuc)
 
         # fixed controls
         hbox = gtk.HBox()
         hbox.set_spacing(5)
         hbox.pack_start(gtk.Label('Task:'), expand=False)
         self.tasklist = gtk.combo_box_new_text()
+        self.tasklist.connect('changed', self._select_task)
         hbox.pack_start(self.tasklist)
         vbox.pack_start(hbox, expand=False)
 
@@ -488,6 +508,19 @@ class Panel(gtk.Window):
             self.ad_command('select')
         self.ad_command('modify')
 
+    def _select_task(self, widget, data=None):
+        selected = self.tasklist.get_active()
+        model = self.tasklist.get_model()
+        if selected < 0:
+            for key in self.cov:
+                self.cov[key].set_sensitive(False)
+        else:
+            self.cov['standard'].set_sensitive(True)
+            task = model.get_value(model.get_iter(selected), 0)
+            rt = issubclass(self.hierarchy[task][1], RangeTask)
+            self.cov['lr'].set_sensitive(rt)
+            self.cov['rr'].set_sensitive(rt)
+
     def _setcenter(self, widget, data=None):
         c = self.ad_command('getcenter')
         dialog = gtk.Dialog('Set Center', self, 0, (gtk.STOCK_OK,
@@ -525,3 +558,9 @@ class Panel(gtk.Window):
 
     def _centerdot(self, wiget, data=None):
         self.ad_command('centerdot')
+
+    def _coverage_standard(self, widget, data=None):
+        selected = self.tasklist.get_active()
+        model = self.tasklist.get_model()
+        task = model.get_value(model.get_iter(selected), 0)
+        self.ad_command('coverage %s' % task)
