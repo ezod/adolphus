@@ -253,23 +253,6 @@ class SceneObject(Posable, Visualizable):
         super(SceneObject, self)._pose_changed_hook()
 
     @property
-    def visible(self):
-        """\
-        Visibility of this object.
-        """
-        return self._visible
-
-    @visible.setter
-    def visible(self, value):
-        if not self.primitives:
-            for triangle in self.triangles:
-                triangle.visible = value
-            self._triangles_view = value
-        for display in self.actuals:
-            self.actuals[display].visible = value
-        self._visible = value
-
-    @property
     def bounding_box(self):
         """\
         Axis-aligned bounding box of occluding triangles.
@@ -298,9 +281,9 @@ class SceneObject(Posable, Visualizable):
         Toggle display of occluding triangles in the visualization. This fades
         the object sprites so that the opaque triangles can be seen clearly.
         """
-        if not self.primitives:
+        if self._triangles_view is None:
             return
-        if self._triangles_view:
+        elif self._triangles_view:
             self.opacity = 1.0
             self.update_visualization()
             for triangle in self.triangles:
@@ -318,20 +301,20 @@ class SceneObject(Posable, Visualizable):
         Visualize this object. If no sprites are defined, the attached
         occluding triangles are visualized instead.
         """
-        Visualizable.visualize(self)
         if not self.primitives:
+            self.primitives = []
             for triangle in self.triangles:
-                triangle.visualize()
-            self._triangles_view = True
+                self.primitives.append(triangle.primitives[0])
+                self.primitives[-1]['pos'] = [triangle.pose.map(Point(p)) \
+                    for p in self.primitives[-1]['pos']]
+            self._triangles_view = None
+        Visualizable.visualize(self)
 
     def update_visualization(self):
         """\
         Update this object's visualization.
         """
         Visualizable.update_visualization(self)
-        if not self.primitives:
-            for triangle in self.triangles:
-                triangle.update_visualization()
         for child in self.children:
             try:
                 child.update_visualization()
