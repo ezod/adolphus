@@ -221,6 +221,7 @@ class RangeModel(Model):
 
     def __init__(self):
         self.lasers = set()
+        self._active_laser = None
         super(RangeModel, self).__init__()
 
     def __setitem__(self, key, value):
@@ -231,6 +232,26 @@ class RangeModel(Model):
     def __delitem__(self, key):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
+
+    @property
+    def active_laser(self):
+        """\
+        The active line laser.
+        """
+        if self._active_laser:
+            return self._active_laser
+        elif len(self.lasers) == 1:
+            self._active_laser = iter(self.lasers).next()
+            return self._active_laser
+        else:
+            raise RuntimeError('no active laser specified from multiple lasers')
+
+    @active_laser.setter
+    def active_laser(self, value):
+        if value in self.lasers:
+            self._active_laser = value
+        else:
+            raise KeyError('invalid laser %s' % value)
 
     def occluded(self, point, obj, task_params=None):
         """\
@@ -281,7 +302,7 @@ class RangeModel(Model):
             angle = None
         return False, angle
 
-    def range_coverage_linear(self, task, laser=None, taxis=None, subset=None):
+    def range_coverage_linear(self, task, taxis=None, subset=None):
         """\
         Return the coverage model using a linear range coverage scheme. It is
         assumed that the specified task is mounted on the target object, which
@@ -289,8 +310,6 @@ class RangeModel(Model):
 
         @param task: The range coverage task.
         @type task: L{Task}
-        @param laser: The ID of the laser line generator to use (if ambiguous).
-        @type laser: C{str}
         @param taxis: The transport axis (defaults to laser plane normal).
         @type taxis: L{Point}
         @param subset: Subset of cameras (defaults to all active cameras).
@@ -300,33 +319,27 @@ class RangeModel(Model):
         """
         if not isinstance(task, RangeTask):
             raise TypeError('task is not a range coverage task')
-        if not laser:
-            if len(self.lasers) > 1:
-                raise KeyError('must specify a laser to use')
-            try:
-                laser = iter(self.lasers).next()
-            except StopIteration:
-                raise KeyError('model contains no lasers')
         if not taxis:
-            taxis = self[laser].triangle.normal
-        elif not taxis * self[laser].triangle.normal:
+            taxis = self[self.active_laser].triangle.normal
+        elif not taxis * self[self.active_laser].triangle.normal:
             raise ValueError('transport axis parallel to laser plane')
-        rho, eta = self[laser].pose.map(DirectionalPoint((0, 0, 0, pi, 0)))[3:5]
+        rho, eta = self[self.active_laser].pose.map(\
+            DirectionalPoint((0, 0, 0, pi, 0)))[3:5]
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
         coverage = PointCache()
         try:
             for point in task_original:
                 # TODO: several opportunities for optimization in this block
-                lp = self[laser].triangle.intersection(point, point + taxis,
-                    limit=False)
+                lp = self[self.active_laser].triangle.intersection(point,
+                    point + taxis, limit=False)
                 if not lp:
                     coverage[point] = 0.0
                     continue
                 pose = Pose(T=(lp - point))
                 task.mount.set_absolute_pose(original_pose + pose)
                 mp = pose.map(point)
-                occluded, inc_angle = self.occluded(mp, laser)
+                occluded, inc_angle = self.occluded(mp, self.active_laser)
                 if occluded or inc_angle > task.params['inc_angle_max']:
                     coverage[point] = 0.0
                 else:
