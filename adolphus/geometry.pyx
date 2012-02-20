@@ -42,7 +42,8 @@ class Point(tuple):
 
     def __hash__(self):
         """\
-        Hash function.
+        Hash function. Intentionally collides on points which are very close to
+        each other (per the string representation precision).
         """
         return hash(repr(self))
 
