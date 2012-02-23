@@ -46,10 +46,14 @@ class Posable(object):
         """\
         The (absolute) pose of the object.
         """
-        if self.mount:
-            return self._pose + self.mount.mount_pose()
-        else:
-            return self._pose
+        try:
+            return self._absolute_pose
+        except AttributeError:
+            if self.mount:
+                self._absolute_pose = self._pose + self.mount.mount_pose()
+            else:
+                self._absolute_pose = self._pose
+            return self._absolute_pose
 
     @property
     def relative_pose(self):
@@ -62,6 +66,10 @@ class Posable(object):
         """\
         Hook called on pose change.
         """
+        try:
+            del self._absolute_pose
+        except AttributeError:
+            pass
         for child in self.children:
             child._pose_changed_hook()
         for callback in self.posecallbacks:
@@ -76,6 +84,10 @@ class Posable(object):
 
     @mount.setter
     def mount(self, value):
+        try:
+            del self._absolute_pose
+        except AttributeError:
+            pass
         if self._mount:
             self._mount.children.discard(self)
         self._mount = value
@@ -156,10 +168,14 @@ class OcclusionTriangle(Posable, Visualizable):
         The pose of the triangle. Triangles ignore the mount pose of the parent
         object when mounted, to simplify manual definition.
         """
-        if self.mount:
-            return self._pose + self.mount.pose
-        else:
-            return self._pose
+        try:
+            return self._absolute_pose
+        except AttributeError:
+            if self.mount:
+                self._absolute_pose = self._pose + self.mount.pose
+            else:
+                self._absolute_pose = self._pose
+            return self._absolute_pose
 
     def _pose_changed_hook(self):
         """\
@@ -169,7 +185,7 @@ class OcclusionTriangle(Posable, Visualizable):
             del self._mapped_triangle
         except AttributeError:
             pass
-        super(OcclusionTriangle, self)._pose_changed_hook()
+        Posable._pose_changed_hook(self)
 
     @property
     def mapped_triangle(self):
