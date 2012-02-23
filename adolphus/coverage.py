@@ -441,7 +441,7 @@ class Camera(SceneObject):
                 * self._params['zS']) / (self._params['A'] \
                 * self._params['f'] + s * c * (self._params['zS'] \
                 - self._params['f'])))
-        if r[1] < 0:
+        if r[1] <= 0:
             r[1] = float('inf')
         return tuple(r)
 
@@ -485,14 +485,8 @@ class Camera(SceneObject):
         """
         zrmaxi = self.zres(tp['res_max_ideal'])
         zrmaxa = self.zres(tp['res_max_acceptable'])
-        try:
-            zrmini = self.zres(tp['res_min_ideal'])
-        except ZeroDivisionError:
-            zrmini = float('inf')
-        try:
-            zrmina = self.zres(tp['res_min_acceptable'])
-        except ZeroDivisionError:
-            zrmina = float('inf')
+        zrmini = self.zres(tp['res_min_ideal'])
+        zrmina = self.zres(tp['res_min_acceptable'])
         if zrmaxa == zrmaxi and zrmina == zrmini:
             return float(p.z > zrmaxa and p.z < zrmina)
         elif zrmaxa == zrmaxi:
