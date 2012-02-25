@@ -129,10 +129,10 @@ class Task(Posable):
     """
     defaults = {'ocular': 1,
                 'boundary_padding': 0.0,
-                'res_max_ideal': float('inf'),
-                'res_max_acceptable': float('inf'),
-                'res_min_ideal': 0.0,
-                'res_min_acceptable': 0.0,
+                'res_max_ideal': 0.0,
+                'res_max_acceptable': 0.0,
+                'res_min_ideal': float('inf'),
+                'res_min_acceptable': float('inf'),
                 'blur_max_ideal': 1.0,
                 'blur_max_acceptable': float('inf'),
                 'angle_max_ideal': pi / 2.0,
@@ -417,9 +417,7 @@ class Camera(SceneObject):
         @rtype: C{float}
         """
         try:
-            return self._mr / resolution
-        except ZeroDivisionError:
-            return float('inf')
+            return self._mr * resolution
         except AttributeError:
             self._mr = min([float(self._params['dim'][0]) / self.fov['tah'],
                             float(self._params['dim'][1]) / self.fov['tav']])

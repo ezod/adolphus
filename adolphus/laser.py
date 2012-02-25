@@ -26,8 +26,8 @@ class RangeTask(Task):
         - C{inc_angle_max}: max. laser incidence angle (radians).
     """
     defaults = Task.defaults
-    defaults['hres_min_ideal'] = 0.0
-    defaults['hres_min_acceptable'] = 0.0
+    defaults['hres_min_ideal'] = float('inf')
+    defaults['hres_min_acceptable'] = float('inf')
     defaults['inc_angle_max'] = pi / 2.0
 
     def setparam(self, param, value):
@@ -149,9 +149,7 @@ class RangeCamera(Camera):
         @rtype: C{float}
         """
         try:
-            return self._mr / resolution
-        except ZeroDivisionError:
-            return float('inf')
+            return self._mr * resolution
         except AttributeError:
             self._mr = float(self._params['dim'][0]) / self.fov['tah']
             return self.zres(resolution)
@@ -174,7 +172,7 @@ class RangeCamera(Camera):
         except AttributeError:
             return 0.0
         mr = ascale * float(self._params['dim'][1]) / self.fov['tav']
-        zhres = lambda resolution: mr / resolution
+        zhres = lambda resolution: mr * resolution
         try:
             zhmini = zhres(tp['hres_min_ideal'])
         except ZeroDivisionError:
