@@ -528,7 +528,7 @@ class Camera(SceneObject):
         @rtype: C{float}
         """
         try:
-            sigma = -p * p.direction_unit
+            sigma = -(p.unit) * p.direction_unit
         except (ValueError, AttributeError):
             # point is at the origin or is non-directional
             return 1.0
