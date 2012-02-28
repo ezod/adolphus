@@ -37,7 +37,7 @@ class Posable(object):
         self._pose = pose
         self._mount_pose = mount_pose
         self.children = set()
-        self.posecallbacks = set()
+        self.posecallbacks = {}
         self._mount = None
         self.mount = mount
 
@@ -72,7 +72,7 @@ class Posable(object):
             pass
         for child in self.children:
             child._pose_changed_hook()
-        for callback in self.posecallbacks:
+        for callback in self.posecallbacks.values():
             callback()
 
     @property

@@ -198,6 +198,7 @@ class RangeCamera(Camera):
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
+        # TODO: only directional points properly aligned
         cp = (-self.pose).map(point)
         return self.cv(cp, task_params) * self.cr(cp, task_params) \
              * self.cf(cp, task_params) * self.cd(cp, task_params) \
@@ -220,6 +221,7 @@ class RangeModel(Model):
     def __init__(self):
         self.lasers = set()
         self._active_laser = None
+        self._rcl_cache = {}
         super(RangeModel, self).__init__()
 
     def __setitem__(self, key, value):
@@ -239,7 +241,7 @@ class RangeModel(Model):
         if self._active_laser:
             return self._active_laser
         elif len(self.lasers) == 1:
-            self._active_laser = iter(self.lasers).next()
+            self.active_laser = iter(self.lasers).next()
             return self._active_laser
         else:
             raise RuntimeError('no active laser specified from multiple lasers')
@@ -247,9 +249,22 @@ class RangeModel(Model):
     @active_laser.setter
     def active_laser(self, value):
         if value in self.lasers:
+            if value != self._active_laser:
+                self._clear_caches()
+                def callback():
+                    self._clear_caches()
+                try:
+                    del self[self._active_laser].posecallbacks['rc_cache']
+                except KeyError:
+                    pass
+                self[value].posecallbacks['rc_cache'] = callback
             self._active_laser = value
         else:
             raise KeyError('invalid laser %s' % value)
+
+    def _clear_caches(self):
+        self._rcl_cache = {}
+        # TODO: delete rotary range coverage cache
 
     def occluded(self, point, obj, task_params=None):
         """\
@@ -266,8 +281,8 @@ class RangeModel(Model):
         @type obj: C{str}
         @param task_params: Task parameters (optional).
         @type task_params: C{dict}
-        @return: True if occluded.
-        @rtype: C{bool} or C{bool}, C{float}
+        @return: True if occluded, plus incidence angle.
+        @rtype: C{bool}, C{float}
         """
         if not isinstance(self[obj], LineLaser):
             return super(RangeModel, self).occluded(point, obj,
@@ -304,7 +319,15 @@ class RangeModel(Model):
         """\
         Return the coverage model using a linear range coverage scheme. It is
         assumed that the specified task is mounted on the target object, which
-        will be moved linearly TODO
+        will be moved linearly along the transport axis through the laser
+        plane. Binary laser coverage is computed, and covered points are
+        converted to directional points in the laser plane for camera coverage
+        per L{RangeCamera}.
+
+        This function caches the laser coverage calculations, which might
+        otherwise be repeated many times during tests or optimization. A cache
+        entry is specific to the task, transport axis, and initial target pose,
+        and is cleared if the active laser is changed or has its pose modified.
 
         @param task: The range coverage task.
         @type task: L{Task}
@@ -326,24 +349,38 @@ class RangeModel(Model):
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
         coverage = PointCache()
+        rcl_cache = {}
+        cache_key = hash(tuple(task.original.keys())) + \
+                    hash(tuple(task.params.values())) + \
+                    hash(taxis) + hash(original_pose)
         try:
             for point in task_original:
-                # TODO: several opportunities for optimization in this block
-                lp = self[self.active_laser].triangle.intersection(point,
-                    point + taxis, limit=False)
-                if not lp:
-                    coverage[point] = 0.0
-                    continue
-                pose = Pose(T=(lp - point))
-                task.mount.set_absolute_pose(original_pose + pose)
-                mp = pose.map(point)
-                occluded, inc_angle = self.occluded(mp, self.active_laser)
-                if occluded or inc_angle > task.params['inc_angle_max']:
-                    coverage[point] = 0.0
+                if cache_key in self._rcl_cache:
+                    try:
+                        mdp = self._rcl_cache[cache_key][point][0]
+                    except KeyError:
+                        coverage[point] = 0.0
+                        continue
+                    else:
+                        pose = self._rcl_cache[cache_key][point][1]
+                        task.mount.set_absolute_pose(original_pose + pose)
                 else:
-                    mdp = DirectionalPoint(tuple(mp) + (rho, eta))
-                    coverage[point] = \
-                        self.strength(mdp, task.params, subset=subset)
+                    lp = self[self.active_laser].triangle.intersection(point,
+                        point + taxis, limit=False)
+                    if not lp:
+                        coverage[point] = 0.0
+                        continue
+                    pose = Pose(T=(lp - point))
+                    task.mount.set_absolute_pose(original_pose + pose)
+                    mdp = DirectionalPoint(tuple(pose.map(point)) + (rho, eta))
+                    occluded, inc_angle = self.occluded(mdp, self.active_laser)
+                    if occluded or inc_angle > task.params['inc_angle_max']:
+                        coverage[point] = 0.0
+                        continue
+                    rcl_cache[point] = (mdp, pose)
+                coverage[point] = self.strength(mdp, task.params, subset=subset)
+            if not cache_key in self._rcl_cache:
+                self._rcl_cache[cache_key] = rcl_cache
         finally:
             task.mount.set_absolute_pose(original_pose)
         return coverage

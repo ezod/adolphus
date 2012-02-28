@@ -644,7 +644,7 @@ class Model(dict):
             for ckey in self._occlusion_cache:
                 self._oc_updated[ckey][key] = False
                 self._oc_needs_update[ckey] = True
-        value.posecallbacks.add(callback)
+        value.posecallbacks['occlusion_cache'] = callback
         if isinstance(value, Camera):
             self.cameras.add(key)
         super(Model, self).__setitem__(key, value)
