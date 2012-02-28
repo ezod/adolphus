@@ -53,6 +53,8 @@ class Point(tuple):
 
         @param p: The other point.
         @type p: L{Point}
+        @return: True if equal.
+        @rtype: C{bool}
         """
         try:
             return all([abs(self[i] - p[i]) < 1e-4 for i in range(len(self))])
@@ -65,6 +67,8 @@ class Point(tuple):
 
         @param p: The other point.
         @type p: L{Point}
+        @return: True if not equal.
+        @rtype: C{bool}
         """
         return not self.__eq__(p)
 
@@ -330,6 +334,20 @@ class Quaternion(tuple):
     def d(self):
         return self[1][2]
 
+    def __eq__(self, q):
+        """\
+        Equality function.
+
+        @param q: The other quaternion.
+        @type q: L{Quaternion}
+        @return: True if equal.
+        @rtype: C{bool}
+        """
+        try:
+            return all([self[i] == q[i] for i in range(2)])
+        except AttributeError:
+            return False
+
     def __add__(self, q):
         """\
         Quaternion addition.
@@ -487,6 +505,20 @@ class Rotation(object):
         @rtype: C{str}
         """
         return '%s(%s)' % (self.__class__.__name__, str(self.Q))
+
+    def __eq__(self, r):
+        """\
+        Equality function.
+
+        @param r: The other rotation.
+        @type r: L{Rotation}
+        @return: True if equal.
+        @rtype: C{bool}
+        """
+        try:
+            return self.Q == r.Q
+        except AttributeError:
+            return False
 
     def __add__(self, other):
         """\
@@ -710,6 +742,20 @@ class Pose(object):
 
     def __setstate__(self, state):
         self._T, self._R = state
+
+    def __eq__(self, other):
+        """\
+        Equality function.
+
+        @param other: The other pose.
+        @type other: L{Pose}
+        @return: True if equal.
+        @rtype: C{bool}
+        """
+        try:
+            return self.T == other.T and self.R == other.R
+        except AttributeError:
+            return False
 
     def __add__(self, other):
         """\
