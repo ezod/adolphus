@@ -348,11 +348,22 @@ class RangeModel(Model):
             DirectionalPoint((0, 0, 0, pi, 0)))[3:5]
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
+
+        oc_mask_original = self._oc_mask
+        def oc_mask_target(obj):
+            self._oc_mask.add(obj.name)
+            for child in obj.children:
+                if isinstance(child, SceneObject):
+                    oc_mask_target(child)
+        oc_mask_target(task.mount)
+
         coverage = PointCache()
+
         rcl_cache = {}
         cache_key = hash(tuple(task.original.keys())) + \
                     hash(tuple(task.params.values())) + \
                     hash(taxis) + hash(original_pose)
+
         try:
             for point in task_original:
                 if cache_key in self._rcl_cache:
@@ -383,4 +394,6 @@ class RangeModel(Model):
                 self._rcl_cache[cache_key] = rcl_cache
         finally:
             task.mount.set_absolute_pose(original_pose)
+            self._oc_mask = oc_mask_original
+
         return coverage

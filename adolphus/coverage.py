@@ -636,6 +636,7 @@ class Model(dict):
         self._occlusion_cache = {}
         self._oc_updated = {}
         self._oc_needs_update = {}
+        self._oc_mask = set()
 
     def __setitem__(self, key, value):
         for ckey in self._occlusion_cache:
@@ -683,7 +684,8 @@ class Model(dict):
 
     def _update_occlusion_cache(self, task_params):
         key = (task_params['res_min_acceptable'],
-                 task_params['blur_max_acceptable'])
+               task_params['res_max_acceptable'],
+               task_params['blur_max_acceptable'])
         if not key in self._occlusion_cache:
             self._occlusion_cache[key] = {}
             self._oc_updated[key] = {}
@@ -696,20 +698,30 @@ class Model(dict):
             for oc_set in self.oc_sets]))
         for obj in set(remainder):
             if not self._oc_updated[key][obj]:
-                remainder.remove(obj)
                 self._occlusion_cache[key][obj] = {}
                 for sceneobject in self:
-                    self._occlusion_cache[key][obj][sceneobject] = \
-                        set([triangle for triangle in \
-                        self[sceneobject].triangles if \
-                        self[obj].occluded_by(triangle, task_params)])
+                    if sceneobject in self._oc_mask:
+                        self._occlusion_cache[key][obj][sceneobject] = \
+                            set([triangle for triangle in \
+                            self[sceneobject].triangles])
+                    else:
+                        self._occlusion_cache[key][obj][sceneobject] = \
+                            set([triangle for triangle in \
+                            self[sceneobject].triangles if \
+                            self[obj].occluded_by(triangle, task_params)])
+                remainder.remove(obj)
         for sceneobject in self:
             if not self._oc_updated[key][sceneobject]:
                 for obj in remainder:
-                    self._occlusion_cache[key][obj][sceneobject] = \
-                        set([triangle for triangle \
-                            in self[sceneobject].triangles \
-                            if self[obj].occluded_by(triangle, task_params)])
+                    if sceneobject in self._oc_mask:
+                        self._occlusion_cache[key][obj][sceneobject] = \
+                            set([triangle for triangle in \
+                            self[sceneobject].triangles])
+                    else:
+                        self._occlusion_cache[key][obj][sceneobject] = \
+                            set([triangle for triangle in \
+                            self[sceneobject].triangles if \
+                            self[obj].occluded_by(triangle, task_params)])
                 self._oc_updated[key][sceneobject] = True
         self._oc_needs_update[key] = False
         return key
