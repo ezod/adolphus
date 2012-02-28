@@ -641,6 +641,7 @@ class Model(dict):
     def __setitem__(self, key, value):
         for ckey in self._occlusion_cache:
             self._oc_updated[ckey][key] = False
+            self._oc_needs_update[ckey] = True
         def callback():
             for ckey in self._occlusion_cache:
                 self._oc_updated[ckey][key] = False
@@ -653,6 +654,7 @@ class Model(dict):
     def __delitem__(self, key):
         self[key].visible = False
         self.cameras.discard(key)
+        self._oc_mask.discard(key)
         super(Model, self).__delitem__(key)
 
     def __del__(self):
@@ -662,7 +664,7 @@ class Model(dict):
     @property
     def active_cameras(self):
         """\
-        Return the set of active cameras.
+        The set of active cameras.
 
         @rtype: C{set}
         """
@@ -681,6 +683,40 @@ class Model(dict):
         """
         cameras = subset or self.active_cameras
         return set([frozenset(view) for view in combinations(cameras, ocular)])
+
+    @property
+    def oc_mask(self):
+        """\
+        The set of objects masked from the occlusion cache. All triangles for
+        such objects will be checked for occlusion, regardless of whether they
+        are candidates; however, they need not be checked for candidacy. In some
+        cases, masking objects from the cache is a worthwhile tradeoff.
+
+        @rtype: C{set}
+        """
+        return self._oc_mask
+
+    def occlusion_cache_mask(self, sceneobject):
+        """\
+        Mask an object from inclusion in the occlusion cache.
+
+        @param sceneobject: The object to mask.
+        @type sceneobject: C{str}
+        """
+        if sceneobject in self:
+            self._oc_mask.add(sceneobject)
+
+    def occlusion_cache_unmask(self, sceneobject):
+        """\
+        Unmask an object for inclusion in the occlusion cache.
+
+        @param sceneobject: The object to unmask.
+        @type sceneobject: C{str}
+        """
+        self._oc_mask.discard(sceneobject)
+        for ckey in self._occlusion_cache:
+            self._oc_updated[ckey][sceneobject] = False
+            self._oc_needs_update[ckey] = True
 
     def _update_occlusion_cache(self, task_params):
         key = (task_params['res_min_acceptable'],
