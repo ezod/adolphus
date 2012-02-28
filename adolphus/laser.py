@@ -78,7 +78,8 @@ class LineLaser(SceneObject):
             mount=mount, primitives=primitives, triangles=triangles)
         self._fan = Angle(fan)
         self._depth = depth
-        self.click_actions = {'shift':  'modify %s' % name}
+        self.click_actions = {'shift':  'modify %s' % name,
+                              'ctrl':   'guide %s' % name}
 
     def _pose_changed_hook(self):
         """\
@@ -131,6 +132,17 @@ class LineLaser(SceneObject):
         @rtype: C{bool}
         """
         return self.triangle.overlap(triangle.mapped_triangle)
+
+    def triangle_primitives(self):
+        """\
+        Generate the curve primitives for this laser's triangle.
+
+        @return: Triangle primitives.
+        @rtypee: C{list} of C{dict}
+        """
+        width = self._depth * tan(self._fan / 2.0)
+        return [{'type': 'curve', 'color': (1, 0, 0), 'pos': [(0, 0, 0),
+            (-width, 0, self._depth), (width, 0, self._depth), (0, 0, 0)]}]
 
 
 class RangeCamera(Camera):

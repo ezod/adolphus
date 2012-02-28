@@ -316,7 +316,8 @@ class Camera(SceneObject):
         self.active = active
         self.click_actions = {'none':   'setactive %s' % name,
                               'alt':    'cameraview %s' % name,
-                              'shift':  'modify %s' % name}
+                              'shift':  'modify %s' % name,
+                              'ctrl':   'guide %s' % name}
 
     @property
     def params(self):
@@ -428,7 +429,7 @@ class Camera(SceneObject):
         Return the depth values at which a circle of confusion of a given size
         occurs.
 
-        @param c: The diameter of the circle of confusion.
+        @param c: The diameter of the circle of confusion in millimeters.
         @type c: C{float}
         @return: Two depth values.
         @rtype: C{tuple} of C{float}
@@ -556,7 +557,8 @@ class Camera(SceneObject):
         """
         # TODO: should these be cached?
         z = min(self.zres(task_params['res_min_acceptable']),
-                self.zc(task_params['blur_max_acceptable'])[1])
+                self.zc(task_params['blur_max_acceptable'] * \
+                min(self._params['s']))[1])
         hull = [Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
                 Point((self.fov['tahl'] * z, self.fov['tavb'] * z, z)),
                 Point((self.fov['tahr'] * z, self.fov['tavb'] * z, z)),
@@ -612,6 +614,32 @@ class Camera(SceneObject):
         """
         self.opacity = self.active and 1.0 or 0.2
         super(Camera, self).update_visualization()
+
+    def frustum_primitives(self, task_params):
+        """\
+        Generate the curve primitives for this camera's frustum for a given
+        task.
+
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
+        @return: Frustum primitives.
+        @rtypee: C{list} of C{dict}
+        """
+        z_lim = [max(self.zres(task_params['res_max_acceptable']),
+                     self.zc(task_params['blur_max_acceptable'] * \
+                     min(self._params['s']))[0]),
+                 min(self.zres(task_params['res_min_acceptable']),
+                     self.zc(task_params['blur_max_acceptable'] * \
+                     min(self._params['s']))[1])]
+        hull = []
+        for z in z_lim:
+            hull += [Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
+                     Point((self.fov['tahl'] * z, self.fov['tavb'] * z, z)),
+                     Point((self.fov['tahr'] * z, self.fov['tavb'] * z, z)),
+                     Point((self.fov['tahr'] * z, self.fov['tavt'] * z, z))]
+        return [{'type': 'curve', 'color': (1, 0, 0), 'pos': hull[i:i + 4] + \
+            hull[i:i + 1]} for i in range(0, 16, 4)] + [{'type': 'curve',
+            'color': (1, 0, 0), 'pos': [hull[i], hull[i + 4]]} for i in range(4)]
 
 
 class Model(dict):
@@ -720,7 +748,6 @@ class Model(dict):
 
     def _update_occlusion_cache(self, task_params):
         key = (task_params['res_min_acceptable'],
-               task_params['res_max_acceptable'],
                task_params['blur_max_acceptable'])
         if not key in self._occlusion_cache:
             self._occlusion_cache[key] = {}

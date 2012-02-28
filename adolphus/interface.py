@@ -191,8 +191,7 @@ class Experiment(Thread):
         self.selected = None
         self._camera_names = True
         self.coverage = {}
-        self.fovvis = {}
-        self.laservis = {}
+        self.guides = {}
         self.exit = False
 
         # model and configuration data
