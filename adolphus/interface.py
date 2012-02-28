@@ -128,7 +128,7 @@ class Display(visual.display):
             self._messagebox.text = text
             self._messagebox.visible = True
 
-    def prompt(self):
+    def prompt(self, initial=''):
         """\
         Display a prompt and process the command entered by the user.
 
@@ -136,7 +136,7 @@ class Display(visual.display):
         @rtype: C{str}
         """
         self.userspin = False
-        self.message(' ')
+        self.message(initial + ' ')
         cmd = ''
         process_cmd = False
         while True:
@@ -155,7 +155,7 @@ class Display(visual.display):
                         break
                 elif k.isalnum() or k in " -_(),.[]+*%=|&:<>'~/\\":
                     cmd += k
-            self.message(cmd + ' ')
+            self.message(initial + ' ' + cmd)
         self.userspin = True
         return process_cmd and cmd or None
 
@@ -369,6 +369,8 @@ class Experiment(Thread):
                             self.execute(obj.click_actions['none'])
                     except KeyError:
                         pass
+                    except commands.CommandError as e:
+                        self.display.message(str(e))
                 elif m.drag == 'left' and m.pick in self.modifier.objects:
                     m.pick.color = (0, 1, 0)
                     if isinstance(m.pick, visual.arrow):
@@ -430,7 +432,7 @@ class Experiment(Thread):
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
                 if k == '\n':
-                    cmd = self.display.prompt()
+                    cmd = self.display.prompt('Command:')
                     if cmd:
                         try:
                             self.display.message(self.execute(cmd,

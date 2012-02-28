@@ -220,8 +220,8 @@ def guide(ex, args):
         elif len(ex.tasks) > 1:
             try:
                 task = ex.tasks[args[1]]
-            except (IndexError, KeyError):
-                raise CommandError('invalid task specified')
+            except IndexError:
+                task = ex.tasks[ex.display.prompt('Task:')]
         else:
             raise CommandError('no task to parameterize frustum')
         ex.display.select()
