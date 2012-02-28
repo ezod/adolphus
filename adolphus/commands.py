@@ -445,6 +445,35 @@ def getactive(ex, args, response='pickle'):
         return ex.model[args[0]].active and 'Active' or 'Inactive'
 
 @command
+def setactivelaser(ex, args):
+    """\
+    Set the active laser to the specified laser.
+
+    usage %s laser
+    """
+    try:
+        ex.model.active_laser = args[0]
+    except AttributeError:
+        raise CommandError('not a range coverage model')
+
+@command
+def getactivelaser(ex, args, response='pickle'):
+    """\
+    Get the active laser.
+
+    usage: %s
+    """
+    try:
+        if response == 'pickle':
+            return pickle.dumps(ex.model.active_laser)
+        elif response == 'csv':
+            return '%s#' % ex.model.active_laser
+        elif response == 'text':
+            return ex.model.active_laser
+    except AttributeError:
+        raise CommandError('not a range coverage model')
+
+@command
 def setposition(ex, args):
     """\
     Set the position of the specified robot.
@@ -609,15 +638,6 @@ def select(ex, args):
         ex.select()
     else:
         ex.select(ex.model[args[0]])
-
-@command
-def eval(ex, args):
-    """\
-    Execute arbitrary code.
-    
-    usage: %s code
-    """
-    return str(eval(' '.join(args)))
 
 @command
 def help(ex, args, response='pickle'):
