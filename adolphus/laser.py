@@ -138,7 +138,7 @@ class LineLaser(SceneObject):
         Generate the curve primitives for this laser's triangle.
 
         @return: Triangle primitives.
-        @rtypee: C{list} of C{dict}
+        @rtype: C{list} of C{dict}
         """
         width = self._depth * tan(self._fan / 2.0)
         return [{'type': 'curve', 'color': (1, 0, 0), 'pos': [(0, 0, 0),

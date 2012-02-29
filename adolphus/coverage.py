@@ -623,7 +623,7 @@ class Camera(SceneObject):
         @param task_params: Task parameters.
         @type task_params: C{dict}
         @return: Frustum primitives.
-        @rtypee: C{list} of C{dict}
+        @rtype: C{list} of C{dict}
         """
         z_lim = [max(self.zres(task_params['res_max_acceptable']),
                      self.zc(task_params['blur_max_acceptable'] * \

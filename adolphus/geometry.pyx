@@ -1107,9 +1107,9 @@ def gaussian_pose_error(pose, tsigma, rsigma):
     @type p: L{Pose}
     @param tsigma: The standard deviation of the translation error.
     @type tsigma: C{float}
-    @param tsigma: The standard deviation of the rotation error.
-    @type tsigma: C{float}
-    @return: THe pose with introduced error.
+    @param rsigma: The standard deviation of the rotation error.
+    @type rsigma: C{float}
+    @return: The pose with introduced error.
     @rtype: L{Pose}
     """
     T, R = pose.T, pose.R
