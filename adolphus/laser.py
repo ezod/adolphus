@@ -210,8 +210,12 @@ class RangeCamera(Camera):
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
-        # TODO: only directional points properly aligned
         cp = (-self.pose).map(point)
+        try:
+            if cp.direction_unit.y > 1e-4:
+                raise ValueError('point is not aligned for range coverage')
+        except AttributeError:
+            raise TypeError('point must be directional for range coverage')
         return self.cv(cp, task_params) * self.cr(cp, task_params) \
              * self.cf(cp, task_params) * self.cd(cp, task_params) \
              * self.ch(cp, task_params)
