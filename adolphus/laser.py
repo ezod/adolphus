@@ -212,7 +212,7 @@ class RangeCamera(Camera):
         """
         cp = (-self.pose).map(point)
         try:
-            if cp.direction_unit.y > 1e-4:
+            if abs(cp.direction_unit.x) > 1e-4:
                 raise ValueError('point is not aligned for range coverage')
         except AttributeError:
             raise TypeError('point must be directional for range coverage')
