@@ -18,7 +18,7 @@ try:
 except ImportError:
     hypergraph = None
 
-from .geometry import Point, Pose, Face, which_side
+from .geometry import Point, Pose, Triangle, triangle_frustum_intersection
 from .posable import Posable, SceneObject
 from .visualization import Visualizable
 
@@ -555,41 +555,17 @@ class Camera(SceneObject):
         @return: True if occluded.
         @rtype: C{bool}
         """
-        # TODO: should these be cached?
         z = min(self.zres(task_params['res_min_acceptable']),
                 self.zc(task_params['blur_max_acceptable'] * \
                 min(self._params['s']))[1])
-        hull = [Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
+        hull = [Point(),
+                Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
                 Point((self.fov['tahl'] * z, self.fov['tavb'] * z, z)),
                 Point((self.fov['tahr'] * z, self.fov['tavb'] * z, z)),
                 Point((self.fov['tahr'] * z, self.fov['tavt'] * z, z))]
-        verts = [self.pose.T] + [self.pose.map(v) for v in hull]
-        edges = [(verts[i] - verts[0], verts[0]) for i in range(1, 5)] + \
-                [(verts[(i + 1) % 4 + 1] - verts[i + 1], verts[i + 1]) \
-                for i in range(4)]
-        faces = [Face([verts[4], verts[3], verts[2], verts[1]])] + \
-                [Face([verts[0], verts[i + 1], verts[(i + 1) % 4 + 1]]) \
-                for i in range(4)]
-        for face in faces:
-            if which_side(triangle.mapped_triangle.vertices, face.normal,
-                face.vertices[0]) > 0:
-                return False
-        if which_side(verts, triangle.mapped_triangle.normal,
-            triangle.mapped_triangle.vertices[0]) > 0:
-            return False
-        for fedge, fvertex in edges:
-            for i in range(3):
-                direction = fedge ** triangle.mapped_triangle.edges[i]
-                side0 = which_side(verts, direction, fvertex)
-                if side0 == 0:
-                    continue
-                side1 = which_side(triangle.mapped_triangle.vertices, direction,
-                    fvertex)
-                if side1 == 0:
-                    continue
-                if side0 * side1 < 0:
-                    return False
-        return True
+        ctriangle = Triangle([(-self.pose).map(v) \
+            for v in triangle.mapped_triangle.vertices])
+        return triangle_frustum_intersection(ctriangle, hull)
 
     def strength(self, point, task_params):
         """\

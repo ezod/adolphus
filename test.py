@@ -10,7 +10,7 @@ Unit tests for the various Adolphus modules.
 """
 
 import unittest
-from math import pi
+from math import sqrt, pi, sin, cos
 
 import adolphus
 from adolphus.geometry import Angle, Point, DirectionalPoint, Pose, Rotation, Triangle
@@ -31,17 +31,51 @@ class TestGeometry(unittest.TestCase):
 
     def test_angle(self):
         a = Angle(0.3)
-        self.assertTrue(abs(a - Angle(0.3 + 2 * pi)) < 1e-04)
+        self.assertTrue(abs(a - Angle(0.3 + 2 * pi)) < 1e-4)
         b = a + Angle(6.0)
         self.assertTrue(b < a)
+        b = -a
+        self.assertTrue(b > a)
 
-    def test_point_addition(self):
-        r = Point((-4, 5, 14))
-        self.assertEqual(self.p + self.dp, r)
-        s = DirectionalPoint((-4, 5, 14, 1.3, 0.2))
-        self.assertEqual(self.dp + self.p, s)
+    def test_point_eq(self):
+        e = 9e-5
+        self.assertEqual(self.p, Point((3 + e, 4 - e, 5 + e)))
 
-    def test_point_rotation(self):
+    def test_point_add_sub(self):
+        self.assertEqual(self.p + self.dp, Point((-4, 5, 14)))
+        self.assertEqual(self.dp + self.p, DirectionalPoint((-4, 5, 14, 1.3, 0.2)))
+        self.assertEqual(self.p - self.dp, Point((10, 3, -4)))
+
+    def test_point_mul_div(self):
+        self.assertEqual(self.p * Point((2, 1, 3)), 25)
+        self.assertEqual(self.p * 1.5, Point((4.5, 6, 7.5)))
+        self.assertEqual(self.p / 2, Point((1.5, 2, 2.5)))
+
+    def test_point_pow(self):
+        self.assertEqual(self.p ** Point((1, 2, 1)), Point((-6, 2, 2)))
+
+    def test_point_neg(self):
+        self.assertEqual(-self.p, Point((-3, -4, -5)))
+        self.assertEqual(-self.dp, DirectionalPoint((7, -1, -9, 1.3 + pi, 0.2)))
+
+    def test_point_magnitude(self):
+        self.assertEqual(self.p.magnitude, sqrt(sum([self.p[i] ** 2 for i in range(3)])))
+
+    def test_point_unit(self):
+        m = self.p.magnitude
+        self.assertEqual(self.p.unit, Point([self.p[i] / m for i in range(3)]))
+
+    def test_point_euclidean(self):
+        self.assertEqual(self.p.euclidean(Point()), self.p.magnitude)
+
+    def test_point_angle(self):
+        self.assertTrue(abs(float(self.p.angle(-self.p)) - pi) < 1e-4)
+
+    def test_point_direction_unit(self):
+        rho, eta = self.dp[3:]
+        self.assertEqual(self.dp.direction_unit, Point((sin(rho) * cos(eta), sin(rho) * sin(eta), cos(rho))))
+
+    def test_rotation_rotate_point(self):
         r = Point((3, -4, -5))
         self.assertEqual(r, self.R.rotate(self.p))
         r = DirectionalPoint((-7, -1, -9, pi - 1.3, 2 * pi - 0.2))

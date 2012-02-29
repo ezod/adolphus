@@ -58,7 +58,7 @@ class Point(tuple):
         """
         try:
             return all([abs(self[i] - p[i]) < 1e-4 for i in range(len(self))])
-        except AttributeError:
+        except (AttributeError, IndexError):
             return False
 
     def __neq__(self, p):
@@ -124,7 +124,7 @@ class Point(tuple):
         """
         return self.__mul__(p)
 
-    def __div__(self, p):
+    def __div__(self, double p):
         """\
         Scalar division.
 
@@ -194,6 +194,7 @@ class Point(tuple):
 
         @rtype: C{float}
         """
+        cdef int i
         try:
             return self._magnitude
         except AttributeError:
@@ -207,6 +208,8 @@ class Point(tuple):
 
         @rtype: L{Point}
         """
+        cdef int i
+        cdef double m
         try:
             return self._unit
         except AttributeError:
@@ -382,7 +385,7 @@ class Quaternion(tuple):
         return Quaternion(((self[0] * q[0] - self[1] * q[1]),
             (self[0] * q[1] + q[0] * self[1] + self[1] ** q[1])))
 
-    def __div__(self, q):
+    def __div__(self, double q):
         """\
         Scalar division.
 
@@ -583,6 +586,7 @@ class Rotation(object):
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
+        cdef double t, r, a, b, c, d
         t = R[0][0] + R[1][1] + R[2][2]
         r = sqrt(1.0 + t)
         a = 0.5 * r
@@ -595,7 +599,7 @@ class Rotation(object):
         return Rotation(Quaternion((a, Point((b, c, d)))))
 
     @staticmethod
-    def from_axis_angle(theta, axis):
+    def from_axis_angle(double theta, axis):
         """\
         Generate the internal quaternion representation from an axis and
         angle representation.
@@ -622,6 +626,7 @@ class Rotation(object):
         @return Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
+        cdef double a, b, c, d
         def qterm(index):
             bin = lambda x: [(x >> 2) % 2, (x >> 1) % 2, x % 2]
             return copysign(1, index) * reduce(lambda a, b: a * b,
@@ -656,6 +661,8 @@ class Rotation(object):
         @return: Rotation matrix.
         @rtype: C{list} of C{list}
         """
+        cdef double a, b, c, d, Nq, s
+        cdef double B, C, D, aB, aC, aD, bB, bC, bD, cC, cD, dD
         a = self.Q[0]
         b, c, d = self.Q[1]
         Nq = a ** 2 + b ** 2 + c ** 2 + d ** 2
@@ -693,11 +700,13 @@ class Rotation(object):
         @return: Three fixed-axis (Euler zyx) angle rotation form.
         @rtype: C{tuple} of L{Angle}
         """
+        cdef double a, b, c, d
         a = self.Q[0]
         b, c, d = self.Q[1]
-        theta = atan2(2.0 * (c * d - a * b), 1.0 - 2.0 * (b ** 2 + c ** 2))
-        phi = -asin(2.0 * (a * c + d * b))
-        psi = atan2(2.0 * (b * c - a * d), 1.0 - 2.0 * (c ** 2 + d ** 2))
+        theta = Angle(atan2(2.0 * (c * d - a * b),
+                            1.0 - 2.0 * (b ** 2 + c ** 2)))
+        phi = Angle(-asin(2.0 * (a * c + d * b)))
+        psi = Angle(atan2(2.0 * (b * c - a * d), 1.0 - 2.0 * (c ** 2 + d ** 2)))
         return (theta, phi, psi)
 
 
@@ -753,7 +762,7 @@ class Pose(object):
         @rtype: C{bool}
         """
         try:
-            return self.T == other.T and self.R == other.R
+            return self._T == other.T and self._R == other.R
         except AttributeError:
             return False
 
@@ -766,8 +775,8 @@ class Pose(object):
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        Tnew = other.R.rotate(self.T) + other.T
-        Rnew = other.R + self.R
+        Tnew = other.R.rotate(self._T) + other.T
+        Rnew = other.R + self._R
         return Pose(Tnew, Rnew)
 
     def __sub__(self, other):
@@ -791,7 +800,7 @@ class Pose(object):
         try:
             return self._inverse
         except AttributeError:
-            self._inverse = Pose(-(-self.R).rotate(self.T), -self.R)
+            self._inverse = Pose(-(-self._R).rotate(self._T), -self._R)
             return self._inverse
 
     def __hash__(self):
@@ -801,7 +810,7 @@ class Pose(object):
         @return: Hash of this pose.
         @rtype: C{int}
         """
-        return hash(self.T) + hash(self.R)
+        return hash(self._T) + hash(self._R)
 
     def __repr__(self):
         """\
@@ -810,7 +819,7 @@ class Pose(object):
         @return: String representations of T and R.
         @rtype: C{str}
         """
-        return '%s(%s, %s)' % (self.__class__.__name__, self.T, self.R)
+        return '%s(%s, %s)' % (self.__class__.__name__, self._T, self._R)
 
     @property
     def nonzero(self):
@@ -819,10 +828,7 @@ class Pose(object):
 
         @rtype: C{bool}
         """
-        if sum(self.T.tuple) == 0 and sum(self.R.Q.v.tuple) == 0:
-            return False
-        else:
-            return True
+        return not abs(sum(self._T)) < 1e-4 and abs(sum(self._R.Q.v)) < 1e-4
 
     def map(self, p):
         """\
@@ -833,20 +839,21 @@ class Pose(object):
         @return: The mapped point/vector.
         @rtype: L{Point}
         """
-        q = self.R.rotate(p)
+        cdef double rho, eta
+        q = self._R.rotate(p)
         try:
-            unit = self.R.rotate(p.direction_unit)
+            unit = self._R.rotate(p.direction_unit)
             try:
                 rho = acos(unit.z)
             except ValueError:
-                if unit.z > 0:
+                if unit[2] > 0:
                     rho = 0.0
                 else:
                     rho = pi
-            eta = atan2(unit.y, unit.x)
-            return DirectionalPoint(tuple(q) + (rho, eta)) + self.T
+            eta = atan2(unit[1], unit[0])
+            return DirectionalPoint(tuple(q) + (rho, eta)) + self._T
         except AttributeError:
-            return q + self.T
+            return q + self._T
 
 
 class Face(object):
@@ -959,6 +966,7 @@ class Triangle(Face):
         @return: The point of intersection.
         @rtype: L{Point}
         """
+        cdef double det, inv_det, u, v, t
         origin_end = end - origin
         direction = origin_end.unit
         P = direction ** -self.edges[2]
@@ -1044,6 +1052,8 @@ def which_side(points, direction, vertex):
     @return: 0 if positive side, -1 if negative side, 0 if both.
     @rtype: C{int}
     """
+    cdef int positive, negative
+    cdef double t
     positive, negative = 0, 0
     for point in points:
         t = direction * (point - vertex)
@@ -1057,6 +1067,45 @@ def which_side(points, direction, vertex):
         return 1
     else:
         return -1
+
+
+def triangle_frustum_intersection(triangle, hull):
+    """\
+    Check whether a triangle intersects a frustum.
+
+        - D. Eberly, "Intersection of Convex Objects: The Method of Separating
+          Axes," 2008.
+
+    @param triangle: The triangle to check.
+    @type triangle: L{Triangle}
+    @param hull: The vertices of the frustum to check.
+    @type hull: C{list} of L{Point}
+    @return: True if the triangle intersects the frustum.
+    @rtype: C{bool}
+    """
+    edges = [(hull[i] - hull[0], hull[0]) for i in range(1, 5)] + \
+            [(hull[(i + 1) % 4 + 1] - hull[i + 1], hull[i + 1]) \
+            for i in range(4)]
+    faces = [Face([hull[4], hull[3], hull[2], hull[1]])] + \
+            [Face([hull[0], hull[i + 1], hull[(i + 1) % 4 + 1]]) \
+            for i in range(4)]
+    for face in faces:
+        if which_side(triangle.vertices, face.normal, face.vertices[0]) > 0:
+            return False
+    if which_side(hull, triangle.normal, triangle.vertices[0]) > 0:
+        return False
+    for fedge, fvertex in edges:
+        for i in range(3):
+            direction = fedge ** triangle.edges[i]
+            side0 = which_side(hull, direction, fvertex)
+            if side0 == 0:
+                continue
+            side1 = which_side(triangle.vertices, direction, fvertex)
+            if side1 == 0:
+                continue
+            if side0 * side1 < 0:
+                return False
+    return True
 
 
 def random_unit_vector():
@@ -1073,7 +1122,7 @@ def random_unit_vector():
             return rv.unit
 
 
-def pose_error(pose, taxis, terror, raxis, rerror):
+def pose_error(pose, taxis, double terror, raxis, double rerror):
     """\
     Introduce translation error of a specified magnitude and direction and
     rotation error of a specified angle about a specified axis, and return the
@@ -1098,7 +1147,7 @@ def pose_error(pose, taxis, terror, raxis, rerror):
     return Pose(T=T, R=R)
 
 
-def gaussian_pose_error(pose, tsigma, rsigma):
+def gaussian_pose_error(pose, double tsigma, double rsigma):
     """\
     Introduce random Gaussian noise to the specified pose and return the noisy
     pose.
