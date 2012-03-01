@@ -820,6 +820,8 @@ class Model(dict):
                 elif strength < minstrength:
                     minstrength = strength
             maxstrength = max(maxstrength, minstrength)
+            if maxstrength == 1.0:
+                break
         return maxstrength
 
     def coverage(self, task, subset=None):
