@@ -297,9 +297,9 @@ class SceneObject(Posable, Visualizable):
         Toggle display of occluding triangles in the visualization. This fades
         the object sprites so that the opaque triangles can be seen clearly.
         """
-        if self._triangles_view is None:
+        if not self.primitives:
             return
-        elif self._triangles_view:
+        if self._triangles_view:
             self.opacity = 1.0
             self.update_visualization()
             for triangle in self.triangles:
@@ -318,12 +318,8 @@ class SceneObject(Posable, Visualizable):
         occluding triangles are visualized instead.
         """
         if not self.primitives:
-            self.primitives = []
             for triangle in self.triangles:
-                self.primitives.append(triangle.primitives[0])
-                self.primitives[-1]['pos'] = [triangle.pose.map(Point(p)) \
-                    for p in self.primitives[-1]['pos']]
-            self._triangles_view = None
+                triangle.visualize()
         Visualizable.visualize(self)
 
     def update_visualization(self):
