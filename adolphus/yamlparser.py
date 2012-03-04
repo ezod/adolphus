@@ -206,18 +206,18 @@ class YAMLParser(object):
             if not objecttype in model:
                 continue
             for obj in model[objecttype]:
-                pose = obj.has_key('pose') and \
-                    self._parse_pose(obj['pose']) or Pose()
-                mount_pose = obj.has_key('mount_pose') and \
-                    self._parse_pose(obj['mount_pose']) or Pose()
+                pose = self._parse_pose(obj['pose']) \
+                    if 'pose' in obj else Pose()
+                mount_pose = self._parse_pose(obj['mount_pose']) \
+                    if 'mount_pose' in obj else Pose()
                 if 'sprites' in obj:
                     primitives = reduce(lambda a, b: a + b,
                         [self._parse_primitives(sprite) \
                         for sprite in obj['sprites']])
                 else:
                     primitives = []
-                occlusion = obj.has_key('occlusion') and \
-                    bool(obj['occlusion']) or True
+                occlusion = bool(obj['occlusion']) \
+                    if 'occlusion' in obj else True
                 if occlusion and 'sprites' in obj:
                     triangles = reduce(lambda a, b: a + b,
                         [self._parse_triangles(sprite, self._path) \
@@ -225,7 +225,7 @@ class YAMLParser(object):
                 else:
                     triangles = []
                 if objecttype == 'cameras':
-                    active = obj.has_key('active') and obj['active'] or True
+                    active = obj['active'] if 'active' in obj else True
                     rmodel[obj['name']] = rmodel.camera_class(obj['name'], obj,
                         pose=pose, mount_pose=mount_pose, primitives=primitives,
                         active=active, triangles=triangles)
@@ -235,7 +235,7 @@ class YAMLParser(object):
                         primitives=primitives, triangles=triangles)
                 elif objecttype == 'robots':
                     pieces = self._parse_pieces(obj['robot'])
-                    config = obj.has_key('config') and obj['config'] or None
+                    config = obj['config'] if 'config' in obj else None
                     rmodel[obj['name']] = Robot(obj['name'], pose=pose,
                         pieces=pieces, config=config, occlusion=occlusion)
                 else:
@@ -315,7 +315,7 @@ class YAMLParser(object):
             task_class = Task
         whole_model = PointCache()
         if 'ranges' in task:
-            ddiv = 'ddiv' in task and task['ddiv'] or None
+            ddiv = task['ddiv'] if 'ddiv' in task else None
             for prange in task['ranges']:
                 try:
                     rhor = prange['rho']
@@ -339,7 +339,7 @@ class YAMLParser(object):
                     point = DirectionalPoint(point)
                 part_model[point] = 1.0
             whole_model |= part_model
-        params = 'parameters' in task and task['parameters'] or {}
-        pose = 'pose' in task and self._parse_pose(task['pose']) or Pose()
-        mount = 'mount' in task and self.model[task['mount']] or None
+        params = task['parameters'] if 'parameters' in task else {}
+        pose = self._parse_pose(task['pose']) if 'pose' in task  else Pose()
+        mount = self.model[task['mount']] if 'mount' in task else None
         return task_class(params, whole_model, pose=pose, mount=mount)

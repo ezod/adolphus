@@ -321,7 +321,7 @@ def getpose(ex, args, response='pickle'):
         pose = ex.model[args[0]].pose
     except KeyError:
         pose = ex.tasks[args[0]].pose
-    rformat = len(args) > 1 and args[1] or 'quaternion'
+    rformat = args[1] if len(args) > 1 else 'quaternion'
     if response == 'pickle':
         return pickle.dumps(pose)
     elif response == 'csv':
@@ -340,7 +340,7 @@ def getrelativepose(ex, args, response='pickle'):
         pose = ex.model[args[0]].relative_pose
     except KeyError:
         pose = ex.tasks[args[0]].relative_pose
-    rformat = len(args) > 1 and args[1] or 'quaternion'
+    rformat = args[1] if len(args) > 1 else 'quaternion'
     if response == 'pickle':
         return pickle.dumps(pose)
     elif response == 'csv':
@@ -473,7 +473,7 @@ def getactive(ex, args, response='pickle'):
     elif response == 'csv':
         return '%d#' % int(ex.model[args[0]].active)
     elif response == 'text':
-        return ex.model[args[0]].active and 'Active' or 'Inactive'
+        return 'Active' if ex.model[args[0]].active else 'Inactive'
 
 @command
 def setactivelaser(ex, args):

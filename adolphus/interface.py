@@ -157,7 +157,7 @@ class Display(visual.display):
                     cmd += k
             self.message(initial + ' ' + cmd)
         self.userspin = True
-        return process_cmd and cmd or None
+        return cmd if process_cmd else None
 
 
 class Experiment(Thread):

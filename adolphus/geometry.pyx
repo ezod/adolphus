@@ -627,7 +627,7 @@ class Rotation(object):
         def qterm(index):
             bin = lambda x: [(x >> 2) % 2, (x >> 1) % 2, x % 2]
             return copysign(1, index) * reduce(lambda a, b: a * b,
-                [(bit and sin or cos)(angles[i] / 2.0) \
+                [(sin if bit else cos)(angles[i] / 2.0) \
                 for i, bit in enumerate(bin(abs(index)))])
         eulerquat = {'xyx': [0, -5, 1, 4, 2, 7, 3, -6],
                      'xyz': [0, -7, 1, 6, 2, -5, 3, 4],

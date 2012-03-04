@@ -456,20 +456,19 @@ class Camera(SceneObject):
         @rtype: C{float}
         """
         if not tp['boundary_padding']:
-            return p.z > 0 and \
-                float(p.x / p.z > self.fov['tahl'] \
-                  and p.x / p.z < self.fov['tahr'] \
-                  and p.y / p.z > self.fov['tavt'] \
-                  and p.y / p.z < self.fov['tavb']) or 0.0
+            return float(p.x / p.z > self.fov['tahl'] \
+                     and p.x / p.z < self.fov['tahr'] \
+                     and p.y / p.z > self.fov['tavt'] \
+                     and p.y / p.z < self.fov['tavb']) if p.z > 0 else 0.0
         else:
             gh = tp['boundary_padding'] / \
                 float(self._params['dim'][0]) * self.fov['tah']
             gv = tp['boundary_padding'] / \
                 float(self._params['dim'][1]) * self.fov['tav']
-            return p.z > 0 and min(min(max((min(p.x / p.z - self.fov['tahl'],
+            return min(min(max((min(p.x / p.z - self.fov['tahl'],
                 self.fov['tahr'] - p.x / p.z) / gh), 0.0), 1.0),
-                                   min(max((min(p.y / p.z - self.fov['tavt'], 
-                self.fov['tavb'] - p.y / p.z) / gv), 0.0), 1.0)) or 0.0
+                min(max((min(p.y / p.z - self.fov['tavt'], self.fov['tavb'] - \
+                p.y / p.z) / gv), 0.0), 1.0)) if p.z > 0 else 0.0
 
     def cr(self, p, tp):
         """\
@@ -489,11 +488,11 @@ class Camera(SceneObject):
         if zrmaxa == zrmaxi and zrmina == zrmini:
             return float(p.z > zrmaxa and p.z < zrmina)
         elif zrmaxa == zrmaxi:
-            return p.z > zrmaxa and min(max((zrmina - p.z) / \
-                (zrmina - zrmini), 0.0), 1.0) or 0.0
+            return min(max((zrmina - p.z) / (zrmina - zrmini), 0.0), 1.0) \
+                if p.z > zrmaxa else 0.0
         elif zrmina == zrmini:
-            return p.z < zrmina and min(max((p.z - zrmaxa) / \
-                (zrmaxi - zrmaxa), 0.0), 1.0) or 0.0
+            return min(max((p.z - zrmaxa) / (zrmaxi - zrmaxa), 0.0), 1.0) \
+                if p.z < zrmina else 0.0
         else:
             return min(max(min((p.z - zrmaxa) / (zrmaxi - zrmaxa),
                 (zrmina - p.z) / (zrmina - zrmini)), 0.0), 1.0)
@@ -588,7 +587,7 @@ class Camera(SceneObject):
         """\
         Update the visualization for camera active state and pose.
         """
-        self.opacity = self.active and 1.0 or 0.2
+        self.opacity = 1.0 if self.active else 0.2
         super(Camera, self).update_visualization()
 
     def frustum_primitives(self, task_params):
@@ -890,7 +889,7 @@ class Model(dict):
         best = max(scores.keys(), key=scores.__getitem__)
         if current and not scores[best]:
             return current, 0.0
-        return best, scores[best] - (best == current and threshold or 0)
+        return best, scores[best] - (threshold if best == current else 0)
 
     def coverage_hypergraph(self, task, K=None):
         """\
