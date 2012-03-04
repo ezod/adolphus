@@ -262,14 +262,20 @@ class Panel(gtk.Window):
             self.obj = obj
             self.command = command
             joints = self.command('getjoints %s' % self.obj)
-            table = gtk.Table(3, len(joints))
+            table = gtk.Table(4, len(joints))
             table.set_border_width(5)
             table.set_row_spacings(5)
             table.set_col_spacings(5)
             self.add(table)
             self.joint = []
             for i, joint in enumerate(joints):
-                table.attach(gtk.Label(joint['name']), 0, 1, i, i + 1, xoptions=0)
+                table.attach(gtk.Label(joint['name']),
+                    0, 1, i, i + 1, xoptions=0)
+                image = gtk.Image()
+                image.set_from_pixbuf(gtk.gdk.pixbuf_new_from_file_at_size(\
+                    pkg_resources.resource_filename(__name__,
+                    'resources/icons/' + joint['type'] + '.png'), 16, 16))
+                table.attach(image, 1, 2, i, i + 1, xoptions=0)
                 if joint['type'] == 'revolute':
                     inc = pi / 180.0
                 elif joint['type'] == 'prismatic':
@@ -280,10 +286,10 @@ class Panel(gtk.Window):
                 spin.set_width_chars(8)
                 spin.set_numeric(True)
                 spin.set_digits(2)
-                table.attach(spin, 1, 2, i, i + 1, xoptions=0)
+                table.attach(spin, 2, 3, i, i + 1, xoptions=0)
                 slider = gtk.HScale(self.joint[-1])
                 slider.set_draw_value(False)
-                table.attach(slider, 2, 3, i, i + 1)
+                table.attach(slider, 3, 4, i, i + 1)
                 self.joint[-1].connect('value-changed', self._set_data)
             self.update_data()
 
