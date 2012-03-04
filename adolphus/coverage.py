@@ -39,7 +39,7 @@ class PointCache(dict):
         else:
             ds = other
             dl = self
-        result = self.__class__(dl)
+        result = type(self)(dl)
         for point, value in ds.iteritems():
             if not point in result or result[point] < value:
                 result[point] = value
@@ -56,7 +56,7 @@ class PointCache(dict):
         else:
             ds = other
             dl = self
-        result = self.__class__(dl)
+        result = type(self)(dl)
         for point, value in ds.iteritems():
             if not point in result:
                 result[point] = value

@@ -56,7 +56,7 @@ def command(f):
             except CommandError as e:
                 raise e
             except Exception, e:
-                raise CommandError('%s: %s' % (e.__class__.__name__, e))
+                raise CommandError('%s: %s' % (type(e).__name__, e))
         wrapped.response = True
     else:
         def wrapped(ex, args):
@@ -65,7 +65,7 @@ def command(f):
             except CommandError as e:
                 raise e
             except Exception, e:
-                raise CommandError('%s: %s' % (e.__class__.__name__, e))
+                raise CommandError('%s: %s' % (type(e).__name__, e))
         wrapped.response = False
     wrapped.__doc__ = f.__doc__
     commands[f.__name__] = wrapped
@@ -659,16 +659,14 @@ def objecthierarchy(ex, args, response='pickle'):
     hierarchy = {}
     for so in ex.model:
         try:
-            hierarchy[so] = (ex.model[so].mount.name,
-                ex.model[so].__class__)
+            hierarchy[so] = (ex.model[so].mount.name, type(ex.model[so]))
         except AttributeError:
-            hierarchy[so] = (None, ex.model[so].__class__)
+            hierarchy[so] = (None, type(ex.model[so]))
     for task in ex.tasks:
         try:
-            hierarchy[task] = (ex.tasks[task].mount.name,
-                ex.tasks[task].__class__)
+            hierarchy[task] = (ex.tasks[task].mount.name, type(ex.tasks[task]))
         except AttributeError:
-            hierarchy[task] = (None, ex.tasks[task].__class__)
+            hierarchy[task] = (None, type(ex.tasks[task]))
     return pickle.dumps(hierarchy)
 
 @command

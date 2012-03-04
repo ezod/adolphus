@@ -81,8 +81,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return self.__class__(tuple([self[i] + p[i] for i in range(3)]) + \
-            self[3:])
+        return type(self)(tuple([self[i] + p[i] for i in range(3)]) + self[3:])
 
     def __sub__(self, p):
         """\
@@ -93,8 +92,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return self.__class__(tuple([self[i] - p[i] for i in range(3)]) + \
-            self[3:])
+        return type(self)(tuple([self[i] - p[i] for i in range(3)]) + self[3:])
 
     def __mul__(self, p):
         """\
@@ -109,8 +107,7 @@ class Point(tuple):
         try:
             return self[0] * p[0] + self[1] * p[1] + self[2] * p[2]
         except TypeError:
-            return self.__class__(tuple([self[i] * p for i in range(3)]) + \
-                self[3:])
+            return type(self)(tuple([self[i] * p for i in range(3)]) + self[3:])
 
     def __rmul__(self, p):
         """\
@@ -133,7 +130,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return self.__class__(tuple([self[i] / p for i in range(3)]) + self[3:])
+        return type(self)(tuple([self[i] / p for i in range(3)]) + self[3:])
 
     def __pow__(self, p):
         """\
@@ -144,7 +141,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return self.__class__(tuple([self[(i + 1) % 3] * p[(i + 2) % 3] - \
+        return type(self)(tuple([self[(i + 1) % 3] * p[(i + 2) % 3] - \
             self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)]) + self[3:])
 
     def __neg__(self):
@@ -154,7 +151,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return self.__class__([-self[i] for i in range(3)])
+        return type(self)([-self[i] for i in range(3)])
 
     def __repr__(self):
         """\
@@ -163,7 +160,7 @@ class Point(tuple):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return '%s((%.4f, %.4f, %.4f))' % (self.__class__.__name__,
+        return '%s((%.4f, %.4f, %.4f))' % (type(self).__name__,
             self[0], self[1], self[2])
 
     def __str__(self):
@@ -276,7 +273,7 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return '%s((%.4f, %.4f, %.4f, %.4f, %.4f))' % (self.__class__.__name__,
+        return '%s((%.4f, %.4f, %.4f, %.4f, %.4f))' % (type(self).__name__,
             self[0], self[1], self[2], self[3], self[4])
 
     def __str__(self):
@@ -412,7 +409,7 @@ class Quaternion(tuple):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return '%s(%f, %s)' % (self.__class__.__name__, self[0], self[1])
+        return '%s(%f, %s)' % (type(self).__name__, self[0], self[1])
 
     def __str__(self):
         """\
@@ -507,7 +504,7 @@ class Rotation(object):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return '%s(%s)' % (self.__class__.__name__, str(self.Q))
+        return '%s(%s)' % (type(self).__name__, str(self.Q))
 
     def __eq__(self, r):
         """\
@@ -819,7 +816,7 @@ class Pose(object):
         @return: String representations of T and R.
         @rtype: C{str}
         """
-        return '%s(%s, %s)' % (self.__class__.__name__, self._T, self._R)
+        return '%s(%s, %s)' % (type(self).__name__, self._T, self._R)
 
     @property
     def nonzero(self):
