@@ -531,6 +531,19 @@ def getposition(ex, args, response='pickle'):
         return str(ex.model[args[0]].config)
 
 @command
+def getjoints(ex, args, response='pickle'):
+    """\
+    Get the joint information dict (names, types, limits, home positions) from
+    a robot.
+
+    usage: %s robot
+    """
+    if response != 'pickle':
+        raise CommandError('command cannot return %s response' % response)
+    assert isinstance(ex.model[args[0]], Robot)
+    return pickle.dumps(ex.model[args[0]].joints)
+
+@command
 def strength(ex, args, response='pickle'):
     """\
     Return the coverage strength of the specified point with respect to the

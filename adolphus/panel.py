@@ -17,6 +17,7 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import pkg_resources
+from math import pi
 from sys import stdin, stdout
 from copy import copy
 
@@ -260,12 +261,43 @@ class Panel(gtk.Window):
             super(Panel.RobotFrame, self).__init__('Robot')
             self.obj = obj
             self.command = command
+            joints = self.command('getjoints %s' % self.obj)
+            table = gtk.Table(3, len(joints))
+            table.set_border_width(5)
+            table.set_row_spacings(5)
+            table.set_col_spacings(5)
+            self.add(table)
+            self.joint = []
+            for i, joint in enumerate(joints):
+                table.attach(gtk.Label(joint['name']), 0, 1, i, i + 1, xoptions=0)
+                if joint['type'] == 'revolute':
+                    inc = pi / 180.0
+                elif joint['type'] == 'prismatic':
+                    inc = (joint['limits'][1] - joint['limits'][0]) / 100.0
+                self.joint.append(gtk.Adjustment(joint['home'],
+                    joint['limits'][0], joint['limits'][1], inc, inc, 0.0))
+                spin = gtk.SpinButton(self.joint[-1])
+                spin.set_width_chars(8)
+                spin.set_numeric(True)
+                spin.set_digits(2)
+                table.attach(spin, 1, 2, i, i + 1, xoptions=0)
+                slider = gtk.HScale(self.joint[-1])
+                slider.set_draw_value(False)
+                table.attach(slider, 2, 3, i, i + 1)
+                self.joint[-1].connect('value-changed', self._set_data)
+            self.update_data()
 
         def update_data(self):
-            pass
+            config = self.command('getposition %s' % self.obj)
+            for i in range(len(config)):
+                self.joint[i].set_value(config[i])
 
         def set_data(self):
-            pass
+            self.command('setposition %s ' % self.obj + \
+                ' '.join(['%g' % joint.get_value() for joint in self.joint]))
+
+        def _set_data(self, widget, data=None):
+            self.set_data()
 
 
     class LineLaserFrame(gtk.Frame):
