@@ -580,6 +580,8 @@ class Camera(SceneObject):
                  min(self.zres(task_params['res_min'][1]),
                      self.zc(task_params['blur_max'][1] * \
                      min(self._params['s']))[1])]
+        if not z_lim[0] < z_lim[1]:
+            return []
         hull = []
         for z in z_lim:
             hull += [Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
