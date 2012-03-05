@@ -212,20 +212,23 @@ class Panel(gtk.Window):
         def __init__(self, obj, command):
             super(Panel.CameraFrame, self).__init__('Camera', obj, command)
             self.par = {}
+            labels = {'f': 'f', 'A': 'A', 'zS': 'zS', 's': 's', 'o': 'o',
+                      'dim': 'D'}
             table = gtk.Table(3, 6)
             table.set_border_width(5)
             table.set_row_spacings(5)
             table.set_col_spacings(5)
             self.add(table)
             for i, param in enumerate(['f', 'A', 'zS']):
-                table.attach(gtk.Label(param), 0, 1, i, i + 1, xoptions=0)
+                table.attach(gtk.Label(labels[param]), 0, 1, i, i + 1,
+                    xoptions=0)
                 self.par[param] = NumericEntry()
                 self.par[param].set_alignment(0.5)
                 self.connect_entry(self.par[param])
                 table.attach(self.par[param], 1, 2, i, i + 1)
-            # FIXME: 'dim' isn't very pretty in the panel
             for i, param in enumerate(['s', 'o', 'dim']):
-                table.attach(gtk.Label(param), 2, 3, i, i + 1, xoptions=0)
+                table.attach(gtk.Label(labels[param]), 2, 3, i, i + 1,
+                    xoptions=0)
                 self.par[param] = []
                 for j in range(2):
                     self.par[param].append(NumericEntry())
@@ -331,12 +334,38 @@ class Panel(gtk.Window):
         """
         def __init__(self, obj, command):
             super(Panel.LineLaserFrame, self).__init__('Line Laser', obj, command)
+            self.par = {}
+            labels = {'fan': u'\u03bb', 'depth': 'zP'}
+            table = gtk.Table(1, 5)
+            table.set_border_width(5)
+            table.set_row_spacings(5)
+            table.set_col_spacings(5)
+            self.add(table)
+            for i, param in enumerate(labels.keys()):
+                table.attach(gtk.Label(labels[param]), i * 2, i * 2 + 1, 0, 1,
+                    xoptions=0)
+                self.par[param] = NumericEntry()
+                self.par[param].set_alignment(0.5)
+                self.connect_entry(self.par[param])
+                table.attach(self.par[param], i * 2 + 1, i * 2 + 2, 0, 1)
+            self.guide = gtk.ToggleButton('Triangle')
+            self.guide.set_active((self.obj in self.command('activeguides')))
+            self.guide.connect('toggled', self._guide)
+            table.attach(self.guide, 4, 5, 0, 1, xoptions=gtk.FILL)
+            self.update_data()
 
         def update_data(self):
-            pass
+            params = self.command('getparams %s' % self.obj)
+            for param in params:
+                self.par[param].set_text(str(params[param]))
 
         def set_data(self):
-            pass
+            for param in self.par:
+                value = self.par[param].get_text()
+                self.command('setparam %s %s %s' % (self.obj, param, value))
+
+        def _guide(self, widget, data=None):
+            self.command('guide %s' % self.obj)
 
 
     class TaskFrame(ControlBox):
