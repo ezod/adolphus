@@ -385,7 +385,8 @@ class RangeModel(Model):
 
         rcl_cache = {}
         cache_key = hash(tuple(task.original.keys())) + \
-                    hash(tuple(task.params.values())) + \
+                    hash(tuple([tuple(v) if hasattr(v, '__iter__') else v \
+                    for v in task.params.values()])) + \
                     hash(taxis) + hash(original_pose)
 
         try:
