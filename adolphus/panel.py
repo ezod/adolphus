@@ -238,11 +238,11 @@ class Panel(gtk.Window):
             self.active = gtk.CheckButton('Active')
             self.active.connect('toggled', self._set_data)
             table.attach(self.active, 5, 6, 0, 1, xoptions=gtk.FILL)
-            self.frustum = gtk.ToggleButton('Frustum')
-            self.frustum.set_active((self.obj in self.command('activeguides')))
-            self.frustum.set_sensitive(True if self.active_task else False)
-            self.frustum.connect('toggled', self._frustum)
-            table.attach(self.frustum, 5, 6, 2, 3, xoptions=gtk.FILL)
+            self.guide = gtk.ToggleButton('Frustum')
+            self.guide.set_active((self.obj in self.command('activeguides')))
+            self.guide.set_sensitive(True if self.active_task else False)
+            self.guide.connect('toggled', self._guide)
+            table.attach(self.guide, 5, 6, 2, 3, xoptions=gtk.FILL)
             self.update_data()
 
         def update_data(self):
@@ -265,12 +265,15 @@ class Panel(gtk.Window):
             if not self.active.get_active() == \
                 self.command('getactive %s' % self.obj):
                 self.command('setactive %s' % self.obj)
+            if self.obj in self.command('activeguides'):
+                self.command('guide %s' % self.obj)
+                self.command('guide %s %s' % (self.obj, self.active_task))
 
         def set_active_task(self, task):
             super(Panel.CameraFrame, self).set_active_task(task)
-            self.frustum.set_sensitive(True if self.active_task else False)
+            self.guide.set_sensitive(True if self.active_task else False)
 
-        def _frustum(self, widget, data=None):
+        def _guide(self, widget, data=None):
             if self.active_task:
                 self.command('guide %s %s' % (self.obj, self.active_task))
 
@@ -341,7 +344,7 @@ class Panel(gtk.Window):
             table.set_row_spacings(5)
             table.set_col_spacings(5)
             self.add(table)
-            for i, param in enumerate(labels.keys()):
+            for i, param in enumerate(['fan', 'depth']):
                 table.attach(gtk.Label(labels[param]), i * 2, i * 2 + 1, 0, 1,
                     xoptions=0)
                 self.par[param] = NumericEntry()
@@ -363,6 +366,9 @@ class Panel(gtk.Window):
             for param in self.par:
                 value = self.par[param].get_text()
                 self.command('setparam %s %s %s' % (self.obj, param, value))
+            if self.obj in self.command('activeguides'):
+                self.command('guide %s' % self.obj)
+                self.command('guide %s' % self.obj)
 
         def _guide(self, widget, data=None):
             self.command('guide %s' % self.obj)
@@ -382,6 +388,7 @@ class Panel(gtk.Window):
             # refresh guides on task change
             if self.active_task == self.obj:
                 for key in self.command('activeguides'):
+                    self.command('guide %s' % key)
                     self.command('guide %s %s' % (key, self.obj))
 
 
