@@ -52,17 +52,17 @@ class LineLaser(SceneObject):
     """\
     Line laser class.
     """
-    def __init__(self, name, fan, depth, pose=Pose(), mount_pose=Pose(),
-                 mount=None, primitives=[], triangles=[]):
+    param_keys = ['fan', 'depth']
+
+    def __init__(self, name, params, pose=Pose(), mount_pose=Pose(), mount=None,
+                 primitives=[], triangles=[]):
         """\
         Constructor.
 
         @param name: The name of the laser.
         @type name: C{str}
-        @param fan: Fan angle of the laser line.
-        @type fan: L{Angle}
-        @param depth: Projection depth of the laser line.
-        @type depth: C{float}
+        @param params: The laser paramters.
+        @type params: C{dict}
         @param pose: Pose of the laser in space (optional).
         @type pose: L{Pose}
         @param mount_pose: The transformation to the mounting end (optional).
@@ -76,8 +76,12 @@ class LineLaser(SceneObject):
         """
         super(LineLaser, self).__init__(name, pose=pose, mount_pose=mount_pose,
             mount=mount, primitives=primitives, triangles=triangles)
-        self._fan = Angle(fan)
-        self._depth = depth
+        self._params = {}
+        for param in params:
+            try:
+                self.setparam(param, params[param])
+            except KeyError:
+                pass
 
     def _pose_changed_hook(self):
         """\
@@ -90,18 +94,41 @@ class LineLaser(SceneObject):
         super(LineLaser, self)._pose_changed_hook()
 
     @property
-    def fan(self):
+    def params(self):
         """\
-        Fan angle.
+        Laser parameters.
         """
-        return self._fan
+        return self._params
 
-    @property
-    def depth(self):
+    def getparam(self, param):
         """\
-        Projection depth.
+        Retrieve a laser parameter.
+
+        @param param: The name of the parameter to retrieve.
+        @type param: C{str}
+        @return: The value of the parameter.
+        @rtype: C{object}
         """
-        return self._depth
+        return self._params[param]
+
+    def setparam(self, param, value):
+        """\
+        Set a laser parameter.
+
+        @param param: The name of the paramater to set.
+        @type param: C{str}
+        @param value: The value to which to set the parameter.
+        @type value: C{float} or C{list} of C{float}
+        """
+        if not param in self.param_keys:
+            raise KeyError(param)
+        if param == 'fan':
+            value = Angle(value)
+        self._params[param] = value
+        try:
+            del self._triangle
+        except AttributeError:
+            pass
 
     @property
     def triangle(self):
@@ -111,10 +138,10 @@ class LineLaser(SceneObject):
         try:
             return self._triangle
         except AttributeError:
-            width = self._depth * tan(self._fan / 2.0)
+            width = self._params['depth'] * tan(self._params['fan'] / 2.0)
             self._triangle = Triangle((self.pose.T,
-                self.pose.map(Point((-width, 0, self._depth))),
-                self.pose.map(Point((width, 0, self._depth)))))
+                self.pose.map(Point((-width, 0, self._params['depth']))),
+                self.pose.map(Point((width, 0, self._params['depth'])))))
             return self._triangle
 
     def occluded_by(self, triangle, task_params):
@@ -138,9 +165,10 @@ class LineLaser(SceneObject):
         @return: Triangle primitives.
         @rtype: C{list} of C{dict}
         """
-        width = self._depth * tan(self._fan / 2.0)
-        return [{'type': 'curve', 'color': (1, 0, 0), 'pos': [(0, 0, 0),
-            (-width, 0, self._depth), (width, 0, self._depth), (0, 0, 0)]}]
+        width = self._params['depth'] * tan(self._params['fan'] / 2.0)
+        return [{'type': 'curve', 'color': (1, 0, 0),
+            'pos': [(0, 0, 0), (-width, 0, self._params['depth']),
+            (width, 0, self._params['depth']), (0, 0, 0)]}]
 
 
 class RangeCamera(Camera):

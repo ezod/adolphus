@@ -446,7 +446,7 @@ def setparam(ex, args):
 @command
 def getparams(ex, args, response='pickle'):
     """\
-    Get the parameters of a camera or task.
+    Get the parameters of an object.
 
     usage: %s object
     """

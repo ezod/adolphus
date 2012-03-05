@@ -230,9 +230,9 @@ class YAMLParser(object):
                         pose=pose, mount_pose=mount_pose, primitives=primitives,
                         active=active, triangles=triangles)
                 elif objecttype == 'lasers':
-                    rmodel[obj['name']] = LineLaser(obj['name'], obj['fan'],
-                        obj['depth'], pose=pose, mount_pose=mount_pose,
-                        primitives=primitives, triangles=triangles)
+                    rmodel[obj['name']] = LineLaser(obj['name'], obj, pose=pose,
+                    mount_pose=mount_pose, primitives=primitives,
+                    triangles=triangles)
                 elif objecttype == 'robots':
                     pieces = self._parse_pieces(obj['robot'])
                     config = obj['config'] if 'config' in obj else None
