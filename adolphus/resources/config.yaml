@@ -11,3 +11,15 @@ keybindings:
     up:           shiftcenter 0 30 0
     page down:    shiftcenter 0 0 -30
     page up:      shiftcenter 0 0 30
+
+mousebindings:
+    posable:
+        shift:      modify
+    camera:
+        none:       setactive
+        shift:      modify
+        ctrl:       guide
+        alt:        cameraview
+    linelaser:
+        shift:      modify
+        ctrl:       guide

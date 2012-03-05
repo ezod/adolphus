@@ -104,8 +104,10 @@ def loadconfig(ex, args):
             'resources/config.yaml'))
     try:
         ex.keybindings = config['keybindings']
+        ex.mousebindings = config['mousebindings']
     except KeyError:
         ex.keybindings = {}
+        ex.mousebindings = {}
 
 @command
 def event(ex, args):

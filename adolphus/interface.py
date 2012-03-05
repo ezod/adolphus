@@ -198,6 +198,7 @@ class Experiment(Thread):
         self.model = Model()
         self.tasks = {}
         self.keybindings = {}
+        self.mousebindings = {}
 
         # center marker
         self.centerdot = Sprite([{'type':       'sphere',
@@ -360,13 +361,17 @@ class Experiment(Thread):
                         continue
                     try:
                         if m.ctrl:
-                            self.execute(obj.click_actions['ctrl'])
+                            self.execute(self.mousebindings[type(obj).__name__.\
+                                lower()]['ctrl'] + ' ' + obj.name)
                         elif m.alt:
-                            self.execute(obj.click_actions['alt'])
+                            self.execute(self.mousebindings[type(obj).__name__.\
+                                lower()]['alt'] + ' ' + obj.name)
                         elif m.shift:
-                            self.execute(obj.click_actions['shift'])
+                            self.execute(self.mousebindings[type(obj).__name__.\
+                                lower()]['shift'] + ' ' + obj.name)
                         else:
-                            self.execute(obj.click_actions['none'])
+                            self.execute(self.mousebindings[type(obj).__name__.\
+                                lower()]['none'] + ' ' + obj.name)
                     except KeyError:
                         pass
                     except commands.CommandError as e:

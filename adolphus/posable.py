@@ -256,7 +256,6 @@ class SceneObject(Posable, Visualizable):
                 triangle.mount = self
                 self.triangles.add(triangle)
             self._triangles_view = False
-        self.click_actions = {'shift':  'modify %s' % name}
 
     def _pose_changed_hook(self):
         """\

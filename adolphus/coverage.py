@@ -314,10 +314,6 @@ class Camera(SceneObject):
             except KeyError:
                 pass
         self.active = active
-        self.click_actions = {'none':   'setactive %s' % name,
-                              'alt':    'cameraview %s' % name,
-                              'shift':  'modify %s' % name,
-                              'ctrl':   'guide %s' % name}
 
     @property
     def params(self):

@@ -78,8 +78,6 @@ class LineLaser(SceneObject):
             mount=mount, primitives=primitives, triangles=triangles)
         self._fan = Angle(fan)
         self._depth = depth
-        self.click_actions = {'shift':  'modify %s' % name,
-                              'ctrl':   'guide %s' % name}
 
     def _pose_changed_hook(self):
         """\
