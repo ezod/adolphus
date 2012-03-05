@@ -456,14 +456,16 @@ def getparams(ex, args, response='pickle'):
 
     usage: %s object
     """
+    try:
+        params = ex.model[args[0]].params
+    except KeyError:
+        params = ex.tasks[args[0]].params
     if response == 'pickle':
-        return pickle.dumps(ex.model[args[0]].params)
+        return pickle.dumps(params)
     elif response == 'csv':
-        return ','.join([str(ex.model[args[0]].params[p]) \
-            for p in ex.model[args[0]].params]) + '#'
+        return ','.join([':'.join([p, str(params[p])]) for p in params]) + '#'
     elif response == 'text':
-        return '\n'.join(['%s: %s' % (p, str(ex.model[args[0]].params[p])) \
-            for p in ex.model[args[0]].params])
+        return '\n'.join(['%s: %s' % (p, str(params[p])) for p in params])
 
 @command
 def setactive(ex, args):
