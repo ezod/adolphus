@@ -9,6 +9,7 @@ modeling laser line based range imaging cameras.
 """
 
 from math import pi, sin, tan, atan
+from copy import copy
 
 from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
 from .coverage import PointCache, Task, Camera, Model
@@ -24,7 +25,7 @@ class RangeTask(Task):
         - C{hres_min}: minimum height resolution (mm/pixel), ideal/acceptable.
         - C{inc_angle_max}: max. laser incidence angle (radians).
     """
-    defaults = Task.defaults
+    defaults = copy(Task.defaults)
     defaults['hres_min'] = [float('inf')] * 2
     defaults['inc_angle_max'] = pi / 2.0
     _lt_params = Task._lt_params + ['hres_min']

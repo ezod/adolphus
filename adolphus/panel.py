@@ -247,7 +247,7 @@ class Panel(gtk.Window):
 
         def update_data(self):
             params = self.command('getparams %s' % self.obj)
-            for param in params:
+            for param in self.par:
                 if hasattr(params[param], '__iter__'):
                     for i in range(len(params[param])):
                         self.par[param][i].set_text(str(params[param][i]))
@@ -359,7 +359,7 @@ class Panel(gtk.Window):
 
         def update_data(self):
             params = self.command('getparams %s' % self.obj)
-            for param in params:
+            for param in self.par:
                 self.par[param].set_text(str(params[param]))
 
         def set_data(self):
@@ -380,11 +380,56 @@ class Panel(gtk.Window):
         """
         def __init__(self, obj, command):
             super(Panel.TaskFrame, self).__init__('Task', obj, command)
+            self.par = {}
+            labels = {'ocular': 'O', 'boundary_padding': u'\u03b3',
+                      'res_min': u'R\u21a5', 'res_max': u'R\u21a7',
+                      'blur_max': 'c', 'angle_max': u'\u03b6',
+                      'hres_min': u'H\u21a5', 'inc_angle_max': u'\u03c9c'}
+            params = self.command('getparams %s' % self.obj)
+            range_task = 'inc_angle_max' in params
+            table = gtk.Table(6 if range_task else 5, 5)
+            table.set_border_width(5)
+            table.set_row_spacings(5)
+            table.set_col_spacings(5)
+            self.add(table)
+            for i, param in enumerate(['ocular', 'boundary_padding'] + \
+                (['inc_angle_max'] if range_task else [])):
+                table.attach(gtk.Label(labels[param]), 0, 1, i + 1, i + 2,
+                    xoptions=0)
+                self.par[param] = NumericEntry()
+                self.par[param].set_alignment(0.5)
+                self.connect_entry(self.par[param])
+                table.attach(self.par[param], 1, 2, i + 1, i + 2)
+            table.attach(gtk.Label('Ideal'), 3, 4, 0, 1)
+            table.attach(gtk.Label('Accept'), 4, 5, 0, 1)
+            for i, param in enumerate(['res_min', 'res_max', 'blur_max',
+                'angle_max'] + (['hres_min'] if range_task else [])):
+                table.attach(gtk.Label(labels[param]), 2, 3, i + 1, i + 2,
+                    xoptions=0)
+                self.par[param] = []
+                for j in range(2):
+                    self.par[param].append(NumericEntry())
+                    self.par[param][-1].set_alignment(0.5)
+                    self.connect_entry(self.par[param][-1])
+                    table.attach(self.par[param][-1], 3 + j, 4 + j, i + 1, i + 2)
+            self.update_data()
 
         def update_data(self):
-            pass
+            params = self.command('getparams %s' % self.obj)
+            for param in self.par:
+                if hasattr(params[param], '__iter__'):
+                    for i in range(len(params[param])):
+                        self.par[param][i].set_text(str(params[param][i]))
+                else:
+                    self.par[param].set_text(str(params[param]))
 
         def set_data(self):
+            for param in self.par:
+                if hasattr(self.par[param], '__iter__'):
+                    value = ' '.join([p.get_text() for p in self.par[param]])
+                else:
+                    value = self.par[param].get_text()
+                self.command('setparam %s %s %s' % (self.obj, param, value))
             # refresh guides on task change
             if self.active_task == self.obj:
                 for key in self.command('activeguides'):
