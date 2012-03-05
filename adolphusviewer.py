@@ -35,7 +35,8 @@ def viewer_main(modelfile=None, config='', zoom=False, server=False,
     experiment = Experiment(zoom=zoom)
     if modelfile:
         experiment.execute('loadmodel %s' % modelfile)
-    experiment.execute('loadconfig %s' % config)
+    if not server:
+        experiment.execute('loadconfig %s' % config)
     experiment.start()
     if server:
         receiver = Thread(target=receive, args=(experiment, response))

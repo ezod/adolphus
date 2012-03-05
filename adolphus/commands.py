@@ -105,10 +105,16 @@ def loadconfig(ex, args):
         config = yaml.load(pkg_resources.resource_string(__name__,
             'resources/config.yaml'))
     try:
+        ex.prompt_enabled = config['prompt']
+    except KeyError:
+        ex.prompt_enabled = False
+    try:
         ex.keybindings = config['keybindings']
-        ex.mousebindings = config['mousebindings']
     except KeyError:
         ex.keybindings = {}
+    try:
+        ex.mousebindings = config['mousebindings']
+    except KeyError:
         ex.mousebindings = {}
 
 @command

@@ -1,3 +1,5 @@
+prompt:     True
+
 keybindings:
     f2:           coverage
     f5:           triangles

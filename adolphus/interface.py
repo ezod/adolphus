@@ -197,6 +197,7 @@ class Experiment(Thread):
         # model and configuration data
         self.model = Model()
         self.tasks = {}
+        self.prompt_enabled = False
         self.keybindings = {}
         self.mousebindings = {}
 
@@ -436,7 +437,7 @@ class Experiment(Thread):
             # process keyboard events
             if self.display.kb.keys:
                 k = self.display.kb.getkey()
-                if k == '\n':
+                if self.prompt_enabled and k == '\n':
                     cmd = self.display.prompt('Command:')
                     if cmd:
                         try:
