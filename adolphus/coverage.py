@@ -115,28 +115,23 @@ class Task(Posable):
 
         - C{ocular}: mutual camera coverage degree (number of cameras).
         - C{boundary_padding}: degradation boundary around image (pixels).
-        - C{res_max_ideal}: upper limit of ideal resolution range (mm/pixel).
-        - C{res_max_acceptable}: max. acceptable resolution (mm/pixel).
-        - C{res_min_ideal}: lower limit of ideal resolution range (mm/pixel).
-        - C{res_min_acceptable}: min. acceptable resolution (mm/pixel).
-        - C{blur_max_ideal}: ideal max. blur circle diameter (pixels).
-        - C{blur_max_acceptable}: max. acceptable blur circle diameter (pixels).
-        - C{angle_max_ideal}: ideal max. view angle (radians).
-        - C{angle_max_acceptable}: max. acceptable view angle (radians).
+        - C{res_max}: maximum resolution (mm/pixel), ideal/acceptable.
+        - C{res_min}: minimum resolution (mm/pixel), ideal/acceptable.
+        - C{blur_max}: maximum blur circle diameter (pixels), ideal/acceptable.
+        - C{angle_max}: maximum view angle (radians), ideal/acceptable.
 
     See L{Task.defaults} for default (permissive) values. Note that subclasses
     may define additional task parameters.
     """
     defaults = {'ocular': 1,
                 'boundary_padding': 0.0,
-                'res_max_ideal': 0.0,
-                'res_max_acceptable': 0.0,
-                'res_min_ideal': float('inf'),
-                'res_min_acceptable': float('inf'),
-                'blur_max_ideal': 1.0,
-                'blur_max_acceptable': float('inf'),
-                'angle_max_ideal': pi / 2.0,
-                'angle_max_acceptable': pi / 2.0}
+                'res_max': [0.0] * 2,
+                'res_min': [float('inf')] * 2,
+                'blur_max': [1.0, float('inf')],
+                'angle_max': [pi / 2.0] * 2}
+
+    _gt_params = ['res_max']
+    _lt_params = ['res_min', 'blur_max', 'angle_max']
 
     def __init__(self, params, original, pose=Pose(), mount=None):
         """\
@@ -230,41 +225,24 @@ class Task(Posable):
         @param value: The value to which to set the parameter.
         @type value: C{float}
         """
-        if (param.endswith('max') or param.endswith('min')) \
-        and param + '_ideal' in self.defaults \
-        and param + '_acceptable' in self.defaults:
-            self._params[param + '_ideal'] = value
-            self._params[param + '_acceptable'] = value
-            return
         if not param in self.defaults:
             raise KeyError(param)
+        if hasattr(self.defaults[param], '__iter__'):
+            if isinstance(value, Number):
+                value = [value] * 2
+            else:
+                value = [self.defaults[param][i] if value[i] == 'default' \
+                    else value[i] for i in range(2)]
+                try:
+                    if param in self._gt_params:
+                        assert value[0] >= value[1]
+                    elif param in self._lt_params:
+                        assert value[0] <= value[1]
+                except AssertionError:
+                    raise ValueError('invalid value pair for %s' % param)
         if param == 'ocular':
             value = int(value)
         self._params[param] = value
-        if param == 'res_max_ideal':
-            self._params['res_max_acceptable'] = \
-                min(value, self.getparam('res_max_acceptable'))
-        elif param == 'res_max_acceptable':
-            self._params['res_max_ideal'] = \
-                max(value, self.getparam('res_max_ideal'))
-        elif param == 'res_min_ideal':
-            self._params['res_min_acceptable'] = \
-                max(value, self.getparam('res_min_acceptable'))
-        elif param == 'res_min_acceptable':
-            self._params['res_min_ideal'] = \
-                min(value, self.getparam('res_min_ideal'))
-        elif param == 'angle_max_ideal':
-            self._params['angle_max_acceptable'] = \
-                max(value, self.getparam('angle_max_acceptable'))
-        elif param == 'angle_max_acceptable':
-            self._params['angle_max_ideal'] = \
-                min(value, self.getparam('angle_max_ideal'))
-        elif param == 'blur_max_ideal':
-            self._params['blur_max_acceptable'] = \
-                max(value, self.getparam('blur_max_acceptable'))
-        elif param == 'blur_max_acceptable':
-            self._params['angle_max_ideal'] = \
-                min(value, self.getparam('blur_max_ideal'))
 
     def visualize(self):
         """\
@@ -477,10 +455,10 @@ class Camera(SceneObject):
         @return: The resolution coverage component value in M{[0, 1]}.
         @rtype: C{float}
         """
-        zrmaxi = self.zres(tp['res_max_ideal'])
-        zrmaxa = self.zres(tp['res_max_acceptable'])
-        zrmini = self.zres(tp['res_min_ideal'])
-        zrmina = self.zres(tp['res_min_acceptable'])
+        zrmaxi = self.zres(tp['res_max'][0])
+        zrmaxa = self.zres(tp['res_max'][1])
+        zrmini = self.zres(tp['res_min'][0])
+        zrmina = self.zres(tp['res_min'][1])
         if zrmaxa == zrmaxi and zrmina == zrmini:
             return float(p.z > zrmaxa and p.z < zrmina)
         elif zrmaxa == zrmaxi:
@@ -504,11 +482,11 @@ class Camera(SceneObject):
         @return: The focus coverage component value in M{[0, 1]}.
         @rtype: C{float}
         """
-        zn, zf = self.zc(tp['blur_max_acceptable'] * min(self._params['s']))
-        if tp['blur_max_ideal'] == tp['blur_max_acceptable']:
+        zn, zf = self.zc(tp['blur_max'][1] * min(self._params['s']))
+        if tp['blur_max'][0] == tp['blur_max'][1]:
             return float(p.z > zn and p.z < zf)
         else:
-            zl, zr = self.zc(tp['blur_max_ideal'] * min(self._params['s']))
+            zl, zr = self.zc(tp['blur_max'][0] * min(self._params['s']))
             return min(max(min((p.z - zn) / (zl - zn),
                                (zf - p.z) / (zf - zr)), 0.0), 1.0)
 
@@ -528,11 +506,11 @@ class Camera(SceneObject):
         except (ValueError, AttributeError):
             # point is at the origin or is non-directional
             return 1.0
-        aa = cos(tp['angle_max_acceptable'])
-        if tp['angle_max_ideal'] == tp['angle_max_acceptable']:
+        aa = cos(tp['angle_max'][1])
+        if tp['angle_max'][0] == tp['angle_max'][1]:
             return float(sigma > aa)
         else:
-            ai = cos(tp['angle_max_ideal'])
+            ai = cos(tp['angle_max'][0])
             return min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
 
     def occluded_by(self, triangle, task_params):
@@ -550,8 +528,8 @@ class Camera(SceneObject):
         @return: True if occluded.
         @rtype: C{bool}
         """
-        z = min(self.zres(task_params['res_min_acceptable']),
-                self.zc(task_params['blur_max_acceptable'] * \
+        z = min(self.zres(task_params['res_min'][1]),
+                self.zc(task_params['blur_max'][1] * \
                 min(self._params['s']))[1])
         hull = [Point(),
                 Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
@@ -596,11 +574,11 @@ class Camera(SceneObject):
         @return: Frustum primitives.
         @rtype: C{list} of C{dict}
         """
-        z_lim = [max(self.zres(task_params['res_max_acceptable']),
-                     self.zc(task_params['blur_max_acceptable'] * \
+        z_lim = [max(self.zres(task_params['res_max'][1]),
+                     self.zc(task_params['blur_max'][1] * \
                      min(self._params['s']))[0]),
-                 min(self.zres(task_params['res_min_acceptable']),
-                     self.zc(task_params['blur_max_acceptable'] * \
+                 min(self.zres(task_params['res_min'][1]),
+                     self.zc(task_params['blur_max'][1] * \
                      min(self._params['s']))[1])]
         hull = []
         for z in z_lim:
@@ -718,8 +696,7 @@ class Model(dict):
             self._oc_needs_update[ckey] = True
 
     def _update_occlusion_cache(self, task_params):
-        key = (task_params['res_min_acceptable'],
-               task_params['blur_max_acceptable'])
+        key = (task_params['res_min'][1], task_params['blur_max'][1])
         if not key in self._occlusion_cache:
             self._occlusion_cache[key] = {}
             self._oc_updated[key] = {}

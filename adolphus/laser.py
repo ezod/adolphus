@@ -19,33 +19,15 @@ class RangeTask(Task):
     """\
     Range imaging task model class.
 
-    The L{RangeTask} adds height resolution to the set of task parameters:
+    The L{RangeTask} adds to the set of task parameters:
 
-        - C{hres_min_ideal}: ideal min. height resolution (mm/pixel).
-        - C{hres_min_acceptable}: min. acceptable height resolution (mm/pixel).
+        - C{hres_min}: minimum height resolution (mm/pixel), ideal/acceptable.
         - C{inc_angle_max}: max. laser incidence angle (radians).
     """
     defaults = Task.defaults
-    defaults['hres_min_ideal'] = float('inf')
-    defaults['hres_min_acceptable'] = float('inf')
+    defaults['hres_min'] = [float('inf')] * 2
     defaults['inc_angle_max'] = pi / 2.0
-
-    def setparam(self, param, value):
-        """\
-        Set a camera parameter.
-
-        @param param: The name of the paramater to set.
-        @type param: C{str}
-        @param value: The value to which to set the parameter.
-        @type value: C{object}
-        """
-        super(RangeTask, self).setparam(param, value)
-        if param == 'hres_min_ideal':
-            self._params['hres_min_acceptable'] = \
-                max(value, self.getparam('hres_min_acceptable'))
-        elif param == 'hres_min_acceptable':
-            self._params['hres_min_ideal'] = \
-                min(value, self.getparam('hres_min_ideal'))
+    _lt_params = Task._lt_params + ['hres_min']
 
 
 class LineLaser(SceneObject):
@@ -212,11 +194,11 @@ class RangeCamera(Camera):
         mr = ascale * float(self._params['dim'][1]) / self.fov['tav']
         zhres = lambda resolution: mr * resolution
         try:
-            zhmini = zhres(tp['hres_min_ideal'])
+            zhmini = zhres(tp['hres_min'][0])
         except ZeroDivisionError:
             zhmini = float('inf')
         try:
-            zhmina = zhres(tp['hres_min_acceptable'])
+            zhmina = zhres(tp['hres_min'][1])
         except ZeroDivisionError:
             zhmina = float('inf')
         if zhmina == zhmini:
