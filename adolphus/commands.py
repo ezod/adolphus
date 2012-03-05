@@ -85,6 +85,8 @@ def loadmodel(ex, args):
     cameranames(ex, [])
     for sceneobject in ex.model:
         ex.model[sceneobject].visible = False
+        for triangle in ex.model[sceneobject].triangles:
+            triangle.visible = False
     ex.model, ex.tasks = YAMLParser(args[0]).experiment
     ex.model.visualize()
     ex.display.select()
