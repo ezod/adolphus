@@ -107,14 +107,33 @@ class Panel(gtk.Window):
     """\
     Control panel window.
     """
-    class PosableFrame(gtk.Frame):
+    class ControlBox(gtk.Frame):
+        """\
+        Object control box base class.
+        """
+        def __init__(self, label, obj, command):
+            super(Panel.ControlBox, self).__init__(label)
+            self.obj = obj
+            self.command = command
+
+        def connect_entry(self, widget):
+            for signal in ['activate', 'focus-out-event']:
+                widget.connect(signal, self._set_data)
+
+        def _update_data(self, widget, data=None):
+            self.update_data()
+
+        def _set_data(self, widget, data=None):
+            self.set_data()
+            self.update_data()
+
+
+    class PosableFrame(ControlBox):
         """\
         Object control frame for L{Posable} objects.
         """
         def __init__(self, obj, command):
-            super(Panel.PosableFrame, self).__init__('Pose')
-            self.obj = obj
-            self.command = command
+            super(Panel.PosableFrame, self).__init__('Pose', obj, command)
             table = gtk.Table(3, 5)
             table.set_border_width(5)
             table.set_row_spacings(5)
@@ -127,6 +146,7 @@ class Panel(gtk.Window):
             for i in range(3):
                 self.t.append(NumericEntry())
                 self.t[-1].set_alignment(0.5)
+                self.connect_entry(self.t[-1])
                 table.attach(self.t[-1], 1, 2, i, i + 1)
             table.attach(gtk.Label(u'\u03b8'), 2, 3, 0, 1, xoptions=0)
             table.attach(gtk.Label(u'\u03c6'), 2, 3, 1, 2, xoptions=0)
@@ -135,6 +155,7 @@ class Panel(gtk.Window):
             for i in range(3):
                 self.r.append(NumericEntry())
                 self.r[-1].set_alignment(0.5)
+                self.connect_entry(self.r[-1])
                 table.attach(self.r[-1], 3, 4, i, i + 1)
             self.absolute = gtk.RadioButton(label='Absolute')
             self.absolute.connect('toggled', self._update_data)
@@ -166,61 +187,43 @@ class Panel(gtk.Window):
             else:
                 self.command('setrelativepose %s' % pose)
 
-        def _update_data(self, widget, data=None):
-            self.update_data()
-
         def _modify(self, widget, data=None):
             if widget.get_active():
                 self.command('modify %s' % self.obj)
             else:
                 self.command('modify')
+                self.update_data()
 
 
-    class CameraFrame(gtk.Frame):
+    class CameraFrame(ControlBox):
         """\
         Object control frame for L{Camera} objects.
         """
         def __init__(self, obj, command):
-            super(Panel.CameraFrame, self).__init__('Camera')
-            self.obj = obj
-            self.command = command
+            super(Panel.CameraFrame, self).__init__('Camera', obj, command)
             self.par = {}
             table = gtk.Table(3, 6)
             table.set_border_width(5)
             table.set_row_spacings(5)
             table.set_col_spacings(5)
             self.add(table)
-            table.attach(gtk.Label('f'), 0, 1, 0, 1, xoptions=0)
-            table.attach(gtk.Label('A'), 0, 1, 1, 2, xoptions=0)
-            table.attach(gtk.Label('zS'), 0, 1, 2, 3, xoptions=0)
-            self.par['f'] = NumericEntry()
-            self.par['f'].set_alignment(0.5)
-            table.attach(self.par['f'], 1, 2, 0, 1)
-            self.par['A'] = NumericEntry()
-            self.par['A'].set_alignment(0.5)
-            table.attach(self.par['A'], 1, 2, 1, 2)
-            self.par['zS'] = NumericEntry()
-            self.par['zS'].set_alignment(0.5)
-            table.attach(self.par['zS'], 1, 2, 2, 3)
-            table.attach(gtk.Label('s'), 2, 3, 0, 1, xoptions=0)
-            table.attach(gtk.Label('o'), 2, 3, 1, 2, xoptions=0)
-            table.attach(gtk.Label('D'), 2, 3, 2, 3, xoptions=0)
-            self.par['s'] = []
-            for i in range(2):
-                self.par['s'].append(NumericEntry())
-                self.par['s'][-1].set_alignment(0.5)
-                table.attach(self.par['s'][-1], 3 + i, 4 + i, 0, 1)
-            self.par['o'] = []
-            for i in range(2):
-                self.par['o'].append(NumericEntry())
-                self.par['o'][-1].set_alignment(0.5)
-                table.attach(self.par['o'][-1], 3 + i, 4 + i, 1, 2)
-            self.par['dim'] = []
-            for i in range(2):
-                self.par['dim'].append(NumericEntry())
-                self.par['dim'][-1].set_alignment(0.5)
-                table.attach(self.par['dim'][-1], 3 + i, 4 + i, 2, 3)
+            for i, param in enumerate(['f', 'A', 'zS']):
+                table.attach(gtk.Label(param), 0, 1, i, i + 1, xoptions=0)
+                self.par[param] = NumericEntry()
+                self.par[param].set_alignment(0.5)
+                self.connect_entry(self.par[param])
+                table.attach(self.par[param], 1, 2, i, i + 1)
+            # FIXME: 'dim' isn't very pretty in the panel
+            for i, param in enumerate(['s', 'o', 'dim']):
+                table.attach(gtk.Label(param), 2, 3, i, i + 1, xoptions=0)
+                self.par[param] = []
+                for j in range(2):
+                    self.par[param].append(NumericEntry())
+                    self.par[param][-1].set_alignment(0.5)
+                    self.connect_entry(self.par[param][-1])
+                    table.attach(self.par[param][-1], 3 + j, 4 + j, i, i + 1)
             self.active = gtk.CheckButton('Active')
+            self.active.connect('toggled', self._set_data)
             table.attach(self.active, 5, 6, 0, 1, xoptions=gtk.FILL)
             frustum = gtk.ToggleButton('Frustum')
             frustum.connect('toggled', self._frustum)
@@ -253,14 +256,12 @@ class Panel(gtk.Window):
             pass
 
 
-    class RobotFrame(gtk.Frame):
+    class RobotFrame(ControlBox):
         """\
         Object control frame for L{Robot} objects.
         """
         def __init__(self, obj, command):
-            super(Panel.RobotFrame, self).__init__('Robot')
-            self.obj = obj
-            self.command = command
+            super(Panel.RobotFrame, self).__init__('Robot', obj, command)
             joints = self.command('getjoints %s' % self.obj)
             table = gtk.Table(4, len(joints))
             table.set_border_width(5)
@@ -304,16 +305,15 @@ class Panel(gtk.Window):
 
         def _set_data(self, widget, data=None):
             self.set_data()
+            # no need to update robot data, too slow anyway
 
 
-    class LineLaserFrame(gtk.Frame):
+    class LineLaserFrame(ControlBox):
         """\
         Object control frame for L{LineLaser} objects.
         """
         def __init__(self, obj, command):
-            super(Panel.LineLaserFrame, self).__init__('Line Laser')
-            self.obj = obj
-            self.command = command
+            super(Panel.LineLaserFrame, self).__init__('Line Laser', obj, command)
 
         def update_data(self):
             pass
@@ -322,14 +322,12 @@ class Panel(gtk.Window):
             pass
 
 
-    class TaskFrame(gtk.Frame):
+    class TaskFrame(ControlBox):
         """\
         Object control frame for L{Task} objects.
         """
         def __init__(self, obj, command):
-            super(Panel.TaskFrame, self).__init__('Task')
-            self.obj = obj
-            self.command = command
+            super(Panel.TaskFrame, self).__init__('Task', obj, command)
 
         def update_data(self):
             pass
@@ -438,17 +436,6 @@ class Panel(gtk.Window):
         self.controlbox.set_border_width(5)
         sw.add_with_viewport(self.controlbox)
         vpaned.add2(sw)
-
-        # control update/commit buttons
-        hbox = gtk.HBox()
-        hbox.set_spacing(5)
-        update = gtk.Button('Update')
-        update.connect('clicked', self._update_data)
-        hbox.pack_start(update)
-        commit = gtk.Button('Commit')
-        commit.connect('clicked', self._set_data)
-        hbox.pack_start(commit)
-        vbox.pack_start(hbox, expand=False)
 
         # show panel
         self.show_all()
