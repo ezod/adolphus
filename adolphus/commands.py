@@ -444,10 +444,14 @@ def setparam(ex, args):
 
     usage: %s object parameter value*
     """
-    if len(args) == 3:
-        ex.model[args[0]].setparam(args[1], float(args[2]))
+    if args[0] in ex.model:
+        obj = ex.model[args[0]]
     else:
-        ex.model[args[0]].setparam(args[1], [float(a) for a in args[2:]])
+        obj = ex.tasks[args[0]]
+    if len(args) == 3:
+        obj.setparam(args[1], float(args[2]))
+    else:
+        obj.setparam(args[1], [float(a) for a in args[2:]])
 
 @command
 def getparams(ex, args, response='pickle'):
