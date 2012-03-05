@@ -236,6 +236,15 @@ def guide(ex, args):
         ex.guides[args[0]].frame = ex.model[args[0]].actuals['main']
 
 @command
+def activeguides(ex, args, response='pickle'):
+    if response == 'pickle':
+        return pickle.dumps(ex.guides.keys())
+    elif response == 'csv':
+        return ','.join(ex.guides.keys()) + '#'
+    elif response == 'text':
+        return ' '.join(ex.guides.keys())
+
+@command
 def cameraview(ex, args):
     """\
     Switch to camera view for the specified camera.

@@ -115,10 +115,17 @@ class Panel(gtk.Window):
             super(Panel.ControlBox, self).__init__(label)
             self.obj = obj
             self.command = command
+            self.active_task = None
 
         def connect_entry(self, widget):
             for signal in ['activate', 'focus-out-event']:
                 widget.connect(signal, self._set_data)
+
+        def set_active_task(self, task):
+            self.active_task = task
+
+        def cleanup(self):
+            pass
 
         def _update_data(self, widget, data=None):
             self.update_data()
@@ -187,6 +194,9 @@ class Panel(gtk.Window):
             else:
                 self.command('setrelativepose %s' % pose)
 
+        def cleanup(self):
+            self.command('modify')
+
         def _modify(self, widget, data=None):
             if widget.get_active():
                 self.command('modify %s' % self.obj)
@@ -225,9 +235,11 @@ class Panel(gtk.Window):
             self.active = gtk.CheckButton('Active')
             self.active.connect('toggled', self._set_data)
             table.attach(self.active, 5, 6, 0, 1, xoptions=gtk.FILL)
-            frustum = gtk.ToggleButton('Frustum')
-            frustum.connect('toggled', self._frustum)
-            table.attach(frustum, 5, 6, 2, 3, xoptions=gtk.FILL)
+            self.frustum = gtk.ToggleButton('Frustum')
+            self.frustum.set_active((self.obj in self.command('activeguides')))
+            self.frustum.set_sensitive(True if self.active_task else False)
+            self.frustum.connect('toggled', self._frustum)
+            table.attach(self.frustum, 5, 6, 2, 3, xoptions=gtk.FILL)
             self.update_data()
 
         def update_data(self):
@@ -238,8 +250,7 @@ class Panel(gtk.Window):
                         self.par[param][i].set_text(str(params[param][i]))
                 else:
                     self.par[param].set_text(str(params[param]))
-            active = self.command('getactive %s' % self.obj)
-            self.active.set_active(active)
+            self.active.set_active(self.command('getactive %s' % self.obj))
 
         def set_data(self):
             for param in self.par:
@@ -252,8 +263,13 @@ class Panel(gtk.Window):
                 self.command('getactive %s' % self.obj):
                 self.command('setactive %s' % self.obj)
 
+        def set_active_task(self, task):
+            super(Panel.CameraFrame, self).set_active_task(task)
+            self.frustum.set_sensitive(True if self.active_task else False)
+
         def _frustum(self, widget, data=None):
-            pass
+            if self.active_task:
+                self.command('guide %s %s' % (self.obj, self.active_task))
 
 
     class RobotFrame(ControlBox):
@@ -287,6 +303,7 @@ class Panel(gtk.Window):
                 spin.set_width_chars(8)
                 spin.set_numeric(True)
                 spin.set_digits(2)
+                spin.set_alignment(0.5)
                 table.attach(spin, 2, 3, i, i + 1, xoptions=0)
                 slider = gtk.HScale(self.joint[-1])
                 slider.set_draw_value(False)
@@ -333,7 +350,10 @@ class Panel(gtk.Window):
             pass
 
         def set_data(self):
-            pass
+            # refresh guides on task change
+            if self.active_task == self.obj:
+                for key in self.command('activeguides'):
+                    self.command('guide %s %s' % (key, self.obj))
 
 
     def __init__(self, parent=None):
@@ -518,11 +538,12 @@ class Panel(gtk.Window):
 
     def _select_object(self, widget, data=None):
         model, selected = widget.get_selected_rows()
+        for child in self.controlbox.get_children():
+            child.cleanup()
+            self.controlbox.remove(child)
         try:
             obj = model.get_value(model.get_iter(selected[0]), 1)
             objclass = self.hierarchy[obj][1]
-            for child in self.controlbox.get_children():
-                self.controlbox.remove(child)
             bases = [objclass]
             while bases:
                 newbases = []
@@ -540,19 +561,28 @@ class Panel(gtk.Window):
                 self.ad_command('select')
             else:
                 self.ad_command('select %s' % obj)
+            for child in self.controlbox.get_children():
+                child.set_active_task(self.get_active_task())
         except IndexError:
             self.ad_command('select')
-        self.ad_command('modify')
 
-    def _select_task(self, widget, data=None):
+    def get_active_task(self):
         selected = self.tasklist.get_active()
         model = self.tasklist.get_model()
         if selected < 0:
+            return None
+        else:
+            return model.get_value(model.get_iter(selected), 0)
+
+    def _select_task(self, widget, data=None):
+        task = self.get_active_task()
+        for child in self.controlbox.get_children():
+            child.set_active_task(task)
+        if task is None:
             for key in self.cov:
                 self.cov[key].set_sensitive(False)
         else:
             self.cov['standard'].set_sensitive(True)
-            task = model.get_value(model.get_iter(selected), 0)
             rt = issubclass(self.hierarchy[task][1], RangeTask)
             self.cov['lr'].set_sensitive(rt)
             self.cov['rr'].set_sensitive(rt)
