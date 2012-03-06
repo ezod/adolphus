@@ -71,7 +71,7 @@ class ObjectTreeView(gtk.TreeView):
         objecttree = gtk.TreeStore(gtk.gdk.Pixbuf, gobject.TYPE_STRING)
         hiter = {}
         while hierarchy:
-            for obj in hierarchy.keys():
+            for obj in sorted(hierarchy.keys()):
                 if not hierarchy[obj][0]:
                     hiter[obj] = objecttree.append(None,
                         (self.get_icon_pixbuf(hierarchy[obj][1]), obj))
@@ -609,7 +609,9 @@ class Panel(gtk.Window):
             except (EOFError, pickle.UnpicklingError):
                 continue
         if isinstance(robj, Exception):
-            raise robj
+            error_dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, message_format=str(robj), buttons=gtk.BUTTONS_OK)
+            error_dlg.run()
+            error_dlg.destroy()
         else:
             return robj
 
@@ -620,7 +622,7 @@ class Panel(gtk.Window):
     def populate_task_list(self):
         self.tasklist.get_model().clear()
         tasks = self.ad_command('tasks')
-        for task in tasks:
+        for task in sorted(tasks):
             self.tasklist.append_text(task)
 
     def _delete_event(self, widget, data=None):
