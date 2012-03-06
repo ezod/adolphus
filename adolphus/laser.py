@@ -59,13 +59,13 @@ class LineLaser(SceneObject):
         """
         super(LineLaser, self).__init__(name, pose=pose, mount_pose=mount_pose,
             mount=mount, primitives=primitives, triangles=triangles)
+        self.paramcallbacks = {}
         self._params = {}
         for param in params:
             try:
                 self.setparam(param, params[param])
             except KeyError:
                 pass
-        self.paramcallbacks = {}
 
     def _pose_changed_hook(self):
         """\
