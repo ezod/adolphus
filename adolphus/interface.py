@@ -283,6 +283,34 @@ class Experiment(Thread):
         self.selected = selection
         self.select_time = 0
 
+    def guide(self, obj, task=None):
+        """\
+        TODO
+        """
+        if obj in self.guides:
+            self.guides[obj].visible = False
+            del self.guides[obj]
+        elif obj in self.model.cameras:
+            if len(self.tasks) == 1:
+                task = iter(self.tasks.values()).next()
+            elif len(self.tasks) > 1:
+                if task:
+                    task = self.tasks[task]
+                else:
+                    task = self.tasks[self.display.prompt('Task:')]
+            else:
+                raise ValueError('no task to parameterize frustum')
+            self.display.select()
+            self.guides[obj] = \
+                Sprite(self.model[obj].frustum_primitives(task.params))
+            self.guides[obj].frame = self.model[obj].actuals['main']
+        elif hasattr(self.model, 'lasers') and obj in self.model.lasers:
+            self.display.select()
+            self.guides[obj] = Sprite(self.model[obj].triangle_primitives())
+            self.guides[obj].frame = self.model[obj].actuals['main']
+        else:
+            raise ValueError('cannot display guide for %s' % obj)
+
     def camera_names(self):
         """\
         Toggle display of camera names.

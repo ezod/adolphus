@@ -111,18 +111,20 @@ class Panel(gtk.Window):
         """\
         Object control box base class.
         """
+        active_task = None
+
         def __init__(self, label, obj, command):
             super(Panel.ControlBox, self).__init__(label)
             self.obj = obj
             self.command = command
-            self.active_task = None
+            self._update_mask = False
 
         def connect_entry(self, widget):
             for signal in ['activate', 'focus-out-event']:
                 widget.connect(signal, self._set_data)
 
         def set_active_task(self, task):
-            self.active_task = task
+            type(self).active_task = task
 
         def cleanup(self):
             pass
@@ -131,6 +133,8 @@ class Panel(gtk.Window):
             self.update_data()
 
         def _set_data(self, widget, data=None):
+            if self._update_mask:
+                return
             self.set_data()
             self.update_data()
 
@@ -175,6 +179,7 @@ class Panel(gtk.Window):
             self.update_data()
 
         def update_data(self):
+            self._update_mask = True
             if self.absolute.get_active():
                 pose = self.command('getpose %s' % self.obj)
             else:
@@ -184,6 +189,7 @@ class Panel(gtk.Window):
             angles = pose.R.to_euler_zyx()
             for i in range(3):
                 self.r[i].set_text(str(angles[i]))
+            self._update_mask = False
 
         def set_data(self):
             pose = ' '.join([self.obj, 'euler-zyx-rad',
@@ -246,6 +252,7 @@ class Panel(gtk.Window):
             self.update_data()
 
         def update_data(self):
+            self._update_mask = True
             params = self.command('getparams %s' % self.obj)
             for param in self.par:
                 if hasattr(params[param], '__iter__'):
@@ -254,6 +261,7 @@ class Panel(gtk.Window):
                 else:
                     self.par[param].set_text(str(params[param]))
             self.active.set_active(self.command('getactive %s' % self.obj))
+            self._update_mask = False
 
         def set_data(self):
             for param in self.par:
@@ -318,15 +326,19 @@ class Panel(gtk.Window):
             self.update_data()
 
         def update_data(self):
+            self._update_mask = True
             config = self.command('getposition %s' % self.obj)
             for i in range(len(config)):
                 self.joint[i].set_value(config[i])
+            self._update_mask = False
 
         def set_data(self):
             self.command('setposition %s ' % self.obj + \
                 ' '.join(['%g' % joint.get_value() for joint in self.joint]))
 
         def _set_data(self, widget, data=None):
+            if self._update_mask:
+                return
             self.set_data()
             # no need to update robot data, too slow anyway
 
@@ -358,9 +370,11 @@ class Panel(gtk.Window):
             self.update_data()
 
         def update_data(self):
+            self._update_mask = True
             params = self.command('getparams %s' % self.obj)
             for param in self.par:
                 self.par[param].set_text(str(params[param]))
+            self._update_mask = False
 
         def set_data(self):
             for param in self.par:
@@ -415,6 +429,7 @@ class Panel(gtk.Window):
             self.update_data()
 
         def update_data(self):
+            self._update_mask = True
             params = self.command('getparams %s' % self.obj)
             for param in self.par:
                 if hasattr(params[param], '__iter__'):
@@ -422,6 +437,7 @@ class Panel(gtk.Window):
                         self.par[param][i].set_text(str(params[param][i]))
                 else:
                     self.par[param].set_text(str(params[param]))
+            self._update_mask = False
 
         def set_data(self):
             for param in self.par:

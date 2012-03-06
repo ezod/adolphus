@@ -38,7 +38,6 @@ from inspect import getargspec
 
 from .geometry import Angle, Point, DirectionalPoint, Quaternion, Rotation, Pose
 from .robot import Robot
-from .sprite import Sprite
 from .yamlparser import YAMLParser
 
 
@@ -221,27 +220,7 @@ def guide(ex, args):
 
     usage: %s object [task]
     """
-    if args[0] in ex.guides:
-        ex.guides[args[0]].visible = False
-        del ex.guides[args[0]]
-    elif args[0] in ex.model.cameras:
-        if len(ex.tasks) == 1:
-            task = iter(ex.tasks.values()).next()
-        elif len(ex.tasks) > 1:
-            try:
-                task = ex.tasks[args[1]]
-            except IndexError:
-                task = ex.tasks[ex.display.prompt('Task:')]
-        else:
-            raise CommandError('no task to parameterize frustum')
-        ex.display.select()
-        ex.guides[args[0]] = \
-            Sprite(ex.model[args[0]].frustum_primitives(task.params))
-        ex.guides[args[0]].frame = ex.model[args[0]].actuals['main']
-    elif hasattr(ex.model, 'lasers') and args[0] in ex.model.lasers:
-        ex.display.select()
-        ex.guides[args[0]] = Sprite(ex.model[args[0]].triangle_primitives())
-        ex.guides[args[0]].frame = ex.model[args[0]].actuals['main']
+    ex.guide(args[0], task=(args[1] if len(args) > 1 else None))
 
 @command
 def activeguides(ex, args, response='pickle'):
