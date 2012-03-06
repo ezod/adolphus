@@ -12,6 +12,7 @@ classes.
 from math import cos, tan, atan, pi
 from numbers import Number
 from itertools import combinations
+from copy import deepcopy
 
 try:
     import hypergraph
@@ -248,7 +249,20 @@ class Task(Posable):
         """\
         Visualize the task model.
         """
-        self.mapped.visualize()
+        try:
+            del self.vis
+        except AttributeError:
+            pass
+        self.vis = deepcopy(self.mapped)
+        self.vis.visualize()
+
+    def update_visualization(self):
+        """\
+        Update the task model visualization, if it exists.
+        """
+        if self.vis:
+            del self.vis
+            self.visualize()
 
 
 class Camera(SceneObject):

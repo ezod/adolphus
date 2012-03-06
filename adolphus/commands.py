@@ -33,7 +33,6 @@ except ImportError:
 
 import yaml
 from math import pi
-from copy import deepcopy
 from inspect import getargspec
 
 from .geometry import Angle, Point, DirectionalPoint, Quaternion, Rotation, Pose
@@ -315,10 +314,8 @@ def getpose(ex, args, response='pickle'):
     
     usage: %s name [rformat]
     """
-    try:
-        pose = ex.model[args[0]].pose
-    except KeyError:
-        pose = ex.tasks[args[0]].pose
+    obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
+    pose = obj.pose
     rformat = args[1] if len(args) > 1 else 'quaternion'
     if response == 'pickle':
         return pickle.dumps(pose)
@@ -334,10 +331,8 @@ def getrelativepose(ex, args, response='pickle'):
 
     usage: %s name [rformat]
     """
-    try:
-        pose = ex.model[args[0]].relative_pose
-    except KeyError:
-        pose = ex.tasks[args[0]].relative_pose
+    obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
+    pose = obj.relative_pose
     rformat = args[1] if len(args) > 1 else 'quaternion'
     if response == 'pickle':
         return pickle.dumps(pose)
@@ -381,11 +376,12 @@ def setpose(ex, args):
 
     usage: %s name rformat x y z [rotation]
     """
+    obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
     pose = parse_pose(args[1:])
-    ex.model[args[0]].set_absolute_pose(pose)
-    ex.model[args[0]].update_visualization()
-    if ex.modifier.parent == ex.model[args[0]]:
-        ex.modifier.pos = ex.model[args[0]].pose.T
+    obj.set_absolute_pose(pose)
+    obj.update_visualization()
+    if ex.modifier.parent == obj:
+        ex.modifier.pos = obj.pose.T
 
 @command
 def setrelativepose(ex, args):
@@ -394,11 +390,12 @@ def setrelativepose(ex, args):
 
     usage: %s name rformat x y z [rotation]
     """
+    obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
     pose = parse_pose(args[1:])
-    ex.model[args[0]].set_relative_pose(pose)
-    ex.model[args[0]].update_visualization()
-    if ex.modifier.parent == ex.model[args[0]]:
-        ex.modifier.pos = ex.model[args[0]].pose.T
+    obj.set_relative_pose(pose)
+    obj.update_visualization()
+    if ex.modifier.parent == obj:
+        ex.modifier.pos = obj.pose.T
 
 @command
 def modify(ex, args):
@@ -408,13 +405,17 @@ def modify(ex, args):
     
     usage: %s [name]
     """
-    if len(args) and not ex.modifier.parent == ex.model[args[0]]:
-            ex.modifier.pos = ex.model[args[0]].pose.T
-            ex.modifier.visible = True
-            ex.modifier.parent = ex.model[args[0]]
-    else:
+    try:
+        obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
+        if ex.modifier.parent == obj:
+            raise IndexError
+    except IndexError:
         ex.modifier.visible = False
         ex.modifier.parent = None
+    else:
+        ex.modifier.pos = obj.pose.T
+        ex.modifier.visible = True
+        ex.modifier.parent = obj
 
 @command
 def setparam(ex, args):
@@ -423,10 +424,7 @@ def setparam(ex, args):
 
     usage: %s object parameter value*
     """
-    if args[0] in ex.model:
-        obj = ex.model[args[0]]
-    else:
-        obj = ex.tasks[args[0]]
+    obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
     if len(args) == 3:
         obj.setparam(args[1], float(args[2]))
     else:
@@ -439,10 +437,8 @@ def getparams(ex, args, response='pickle'):
 
     usage: %s object
     """
-    try:
-        params = ex.model[args[0]].params
-    except KeyError:
-        params = ex.tasks[args[0]].params
+    obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
+    params = obj.params
     if response == 'pickle':
         return pickle.dumps(params)
     elif response == 'csv':
@@ -586,10 +582,20 @@ def showtask(ex, args):
     
     usage: %s task
     """
-    clear(ex, [])
-    for arg in args:
-        ex.coverage[arg] = deepcopy(ex.tasks[args[0]].mapped)
-        ex.coverage[arg].visualize()
+    ex.tasks[args[0]].visualize()
+
+@command
+def hidetasks(ex, args):
+    """\
+    Hide task points.
+
+    usage %s
+    """
+    for task in ex.tasks:
+        try:
+            del ex.tasks[task].vis
+        except AttributeError:
+            pass
 
 @command
 def coverage(ex, args, response='pickle'):

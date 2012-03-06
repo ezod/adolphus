@@ -662,6 +662,8 @@ class Panel(gtk.Window):
         for child in self.controlbox.get_children():
             child.cleanup()
             self.controlbox.remove(child)
+        self.ad_command('hidetasks')
+        self.ad_command('select')
         try:
             obj = model.get_value(model.get_iter(selected[0]), 1)
             objclass = self.hierarchy[obj][1]
@@ -679,16 +681,13 @@ class Panel(gtk.Window):
                 bases = newbases
             self.controlbox.show_all()
             if issubclass(objclass, Task):
-                self.ad_command('select')
                 self.ad_command('showtask %s' % obj)
             else:
-                self.ad_command('clear')
                 self.ad_command('select %s' % obj)
             for child in self.controlbox.get_children():
                 child.set_active_task(self.get_active_task())
         except IndexError:
-            self.ad_command('select')
-            self.ad_command('clear')
+            pass
 
     def get_active_task(self):
         selected = self.tasklist.get_active()
