@@ -15,13 +15,11 @@ keybindings:
     page up:      shiftcenter 0 0 30
 
 mousebindings:
-    posable:
+    sceneobject:
         shift:      modify
     camera:
         none:       setactive
-        shift:      modify
         ctrl:       guide
         alt:        cameraview
     linelaser:
-        shift:      modify
         ctrl:       guide

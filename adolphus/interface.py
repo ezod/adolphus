@@ -405,23 +405,21 @@ class Experiment(Thread):
                         assert isinstance(obj, SceneObject)
                     except (AttributeError, AssertionError):
                         continue
-                    try:
-                        if m.ctrl:
-                            self.execute(self.mousebindings[type(obj).__name__.\
-                                lower()]['ctrl'] + ' ' + obj.name)
-                        elif m.alt:
-                            self.execute(self.mousebindings[type(obj).__name__.\
-                                lower()]['alt'] + ' ' + obj.name)
-                        elif m.shift:
-                            self.execute(self.mousebindings[type(obj).__name__.\
-                                lower()]['shift'] + ' ' + obj.name)
+                    mod = 'ctrl' if m.ctrl else ('alt' if m.alt else \
+                          ('shift' if m.shift else 'none'))
+                    objtype = type(obj)
+                    while True:
+                        try:
+                            self.execute(self.mousebindings[\
+                                objtype.__name__.lower()][mod] + ' ' + obj.name)
+                        except KeyError:
+                            if objtype == SceneObject:
+                                break
+                            objtype = objtype.__bases__[0]
+                        except commands.CommandError as e:
+                            self.display.message(str(e))
                         else:
-                            self.execute(self.mousebindings[type(obj).__name__.\
-                                lower()]['none'] + ' ' + obj.name)
-                    except KeyError:
-                        pass
-                    except commands.CommandError as e:
-                        self.display.message(str(e))
+                            break
                 elif m.drag == 'left' and m.pick in self.modifier.objects:
                     m.pick.color = (0, 1, 0)
                     if isinstance(m.pick, visual.arrow):
