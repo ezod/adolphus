@@ -43,6 +43,7 @@ class Display(visual.display):
         self.range = 1500
         self.rmin = 30
         self.rmax = 18000
+        self.message_time = 0
         self._stored_view = None
 
         # command/message box
@@ -122,6 +123,7 @@ class Display(visual.display):
         @param text: The message to display.
         @type text: C{str}
         """
+        self.message_time = 0
         if not text:
             self._messagebox.visible = False
         else:
@@ -140,7 +142,7 @@ class Display(visual.display):
         cmd = ''
         process_cmd = False
         while True:
-            visual.rate(100)
+            visual.rate(vsettings['rate'] * 2)
             if self.kb.keys:
                 k = self.kb.getkey()
                 if k == '\n':
@@ -193,6 +195,7 @@ class Experiment(Thread):
         self.coverage = {}
         self.guides = {}
         self.exit = False
+        self.select_time = 0
 
         # model and configuration data
         self.model = Model()
@@ -278,6 +281,7 @@ class Experiment(Thread):
         if selection:
             selection.highlight()
         self.selected = selection
+        self.select_time = 0
 
     def camera_names(self):
         """\
@@ -335,16 +339,23 @@ class Experiment(Thread):
         zoom = False
         moving = None
         rotating = None
-        msgctr = 0
         # event loop
         while not self.exit:
             visual.rate(vsettings['rate'])
             # clear mesages after a while
             if self.display._messagebox.visible:
-                msgctr += 1
-            if msgctr > 10 * max(len(self.display._messagebox.text), 10):
+                self.display.message_time += 1
+            if self.display.message_time > (vsettings['rate'] / 5) * \
+                max(len(self.display._messagebox.text), 10):
                 self.display.message()
-                msgctr = 0
+            # clear selection highlight after a while
+            if self.selected:
+                self.select_time += 1
+            else:
+                self.select_time = 0
+            if self.select_time > vsettings['rate'] * 2:
+                self.selected.unhighlight()
+                self.select_time = 0
             # process mouse events
             if self.display.mouse.events:
                 m = self.display.mouse.getevent()
