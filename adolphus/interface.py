@@ -285,7 +285,13 @@ class Experiment(Thread):
 
     def guide(self, obj, task=None):
         """\
-        TODO
+        Toggle display of guide (e.g. frustum, triangle) for an object that
+        supports it. Will prompt for a task if appropriate.
+
+        @param obj: The object ID to display a guide for.
+        @type obj: C{str}
+        @param task: The task ID to use (optional).
+        @type task: C{str}
         """
         if obj in self.guides:
             self.guides[obj].visible = False
