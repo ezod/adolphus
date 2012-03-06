@@ -48,7 +48,7 @@ class ObjectTreeView(gtk.TreeView):
         Constructor.
         """
         super(ObjectTreeView, self).__init__()
-        col = gtk.TreeViewColumn('Object')
+        col = gtk.TreeViewColumn('Object Browser')
         pixbuf = gtk.CellRendererPixbuf()
         col.pack_start(pixbuf, expand=False)
         col.add_attribute(pixbuf, 'pixbuf', 0)
@@ -248,7 +248,10 @@ class Panel(gtk.Window):
             self.guide.set_active((self.obj in self.command('activeguides')))
             self.guide.set_sensitive(True if self.active_task else False)
             self.guide.connect('toggled', self._guide)
-            table.attach(self.guide, 5, 6, 2, 3, xoptions=gtk.FILL)
+            table.attach(self.guide, 5, 6, 1, 2, xoptions=gtk.FILL)
+            self.camview = gtk.ToggleButton('View')
+            self.camview.connect('toggled', self._camview)
+            table.attach(self.camview, 5, 6, 2, 3, xoptions=gtk.FILL)
             self.update_data()
 
         def update_data(self):
@@ -277,6 +280,10 @@ class Panel(gtk.Window):
                 self.command('guide %s' % self.obj)
                 self.command('guide %s %s' % (self.obj, self.active_task))
 
+        def cleanup(self):
+            if self.camview.get_active():
+                self.command('cameraview')
+
         def set_active_task(self, task):
             super(Panel.CameraFrame, self).set_active_task(task)
             self.guide.set_sensitive(True if self.active_task else False)
@@ -284,6 +291,12 @@ class Panel(gtk.Window):
         def _guide(self, widget, data=None):
             if self.active_task:
                 self.command('guide %s %s' % (self.obj, self.active_task))
+
+        def _camview(self, widget, data=None):
+            if self.camview.get_active():
+                self.command('cameraview %s' % self.obj)
+            else:
+                self.command('cameraview')
 
 
     class RobotFrame(ControlBox):
@@ -488,13 +501,6 @@ class Panel(gtk.Window):
         menubar.add(menuc)
         menuc = gtk.MenuItem('View')
         menu = gtk.Menu()
-        menui = gtk.MenuItem('Clear Points')
-        menui.connect('activate', self._clear)
-        menu.add(menui)
-        menu.add(gtk.SeparatorMenuItem())
-        menui = gtk.CheckMenuItem('Camera Names')
-        menui.connect('activate', self._cameranames)
-        menu.add(menui)
         menui = gtk.CheckMenuItem('Axes')
         menui.connect('activate', self._axes)
         menu.add(menui)
@@ -504,6 +510,17 @@ class Panel(gtk.Window):
         menu.add(gtk.SeparatorMenuItem())
         menui = gtk.MenuItem('Set Center...')
         menui.connect('activate', self._setcenter)
+        menu.add(menui)
+        menu.add(gtk.SeparatorMenuItem())
+        self.menui_cameranames = gtk.CheckMenuItem('Camera Names')
+        self.menui_cameranames.connect('activate', self._cameranames)
+        menu.add(self.menui_cameranames)
+        self.menui_triangles = gtk.CheckMenuItem('Occluding Triangles')
+        self.menui_triangles.connect('activate', self._triangles)
+        menu.add(self.menui_triangles)
+        menu.add(gtk.SeparatorMenuItem())
+        menui = gtk.MenuItem('Clear Points')
+        menui.connect('activate', self._clear)
         menu.add(menui)
         menuc.set_submenu(menu)
         menubar.add(menuc)
@@ -553,6 +570,10 @@ class Panel(gtk.Window):
         self.controlbox.set_border_width(5)
         sw.add_with_viewport(self.controlbox)
         vpaned.add2(sw)
+
+        # status bar
+        self.status = gtk.Statusbar()
+        vbox.pack_start(self.status, expand=False)
 
         # show panel
         self.show_all()
@@ -628,6 +649,9 @@ class Panel(gtk.Window):
         dialog.add_filter(filt)
         response = dialog.run()
         if response == gtk.RESPONSE_OK:
+            self.menui_cameranames.set_active(False)
+            self.menui_triangles.set_active(False)
+            self.status.pop(self.status.get_context_id('coverage'))
             self.ad_command('loadmodel %s' % dialog.get_filename())
             self.populate_object_tree()
             self.populate_task_list()
@@ -722,8 +746,17 @@ class Panel(gtk.Window):
     def _centerdot(self, wiget, data=None):
         self.ad_command('centerdot')
 
+    def _triangles(self, widget, data=None):
+        self.ad_command('triangles')
+
     def _coverage_standard(self, widget, data=None):
         selected = self.tasklist.get_active()
         model = self.tasklist.get_model()
         task = model.get_value(model.get_iter(selected), 0)
-        self.ad_command('coverage %s' % task)
+        self.status.pop(self.status.get_context_id('coverage'))
+        self.status.push(self.status.get_context_id('coverage'),
+            'Calculating coverage for task \'%s\'...' % task)
+        performance = self.ad_command('coverage %s' % task)
+        self.status.pop(self.status.get_context_id('coverage'))
+        self.status.push(self.status.get_context_id('coverage'),
+            'Coverage for task \'%s\': %.4f' % (task, performance[task]))
