@@ -620,7 +620,6 @@ def coverage(ex, args, response='pickle'):
     usage: %s task
     """
     clear(ex, [])
-    ex.display.message('Calculating coverage...')
     try:
         ex.display.userspin = False
         performance = {}
@@ -651,7 +650,6 @@ def lrcoverage(ex, args, response='pickle'):
     usage: %s task [tx ty tz]
     """
     clear(ex, [])
-    ex.display.message('Calculating range imaging coverage...')
     try:
         ex.display.userspin = False
         try:
