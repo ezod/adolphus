@@ -680,12 +680,15 @@ class Panel(gtk.Window):
             self.controlbox.show_all()
             if issubclass(objclass, Task):
                 self.ad_command('select')
+                self.ad_command('showtask %s' % obj)
             else:
+                self.ad_command('clear')
                 self.ad_command('select %s' % obj)
             for child in self.controlbox.get_children():
                 child.set_active_task(self.get_active_task())
         except IndexError:
             self.ad_command('select')
+            self.ad_command('clear')
 
     def get_active_task(self):
         selected = self.tasklist.get_active()
