@@ -609,7 +609,8 @@ class Panel(gtk.Window):
             except (EOFError, pickle.UnpicklingError):
                 continue
         if isinstance(robj, Exception):
-            error_dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, message_format=str(robj), buttons=gtk.BUTTONS_OK)
+            error_dlg = gtk.MessageDialog(type=gtk.MESSAGE_ERROR,
+                message_format=str(robj), buttons=gtk.BUTTONS_OK)
             error_dlg.run()
             error_dlg.destroy()
         else:
