@@ -285,6 +285,7 @@ class Camera(SceneObject):
         """
         super(Camera, self).__init__(name, pose=pose, mount_pose=mount_pose,
             mount=mount, primitives=primitives, triangles=triangles)
+        self.paramcallbacks = {}
         self._params = {}
         for param in params:
             try:
@@ -331,6 +332,8 @@ class Camera(SceneObject):
                 del self._mr
             except AttributeError:
                 pass
+        for callback in self.paramcallbacks.values():
+            callback()
 
     @property
     def fov(self):
@@ -626,6 +629,8 @@ class Model(dict):
                 self._oc_updated[ckey][key] = False
                 self._oc_needs_update[ckey] = True
         value.posecallbacks['occlusion_cache'] = callback
+        if hasattr(value, 'paramcallbacks'):
+            value.paramcallbacks['occlusion_cache'] = callback
         if isinstance(value, Camera):
             self.cameras.add(key)
         super(Model, self).__setitem__(key, value)

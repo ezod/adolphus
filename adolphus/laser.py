@@ -65,6 +65,7 @@ class LineLaser(SceneObject):
                 self.setparam(param, params[param])
             except KeyError:
                 pass
+        self.paramcallbacks = {}
 
     def _pose_changed_hook(self):
         """\
@@ -112,6 +113,8 @@ class LineLaser(SceneObject):
             del self._triangle
         except AttributeError:
             pass
+        for callback in self.paramcallbacks.values():
+            callback()
 
     @property
     def triangle(self):
@@ -280,9 +283,11 @@ class RangeModel(Model):
                     self._clear_caches()
                 try:
                     del self[self._active_laser].posecallbacks['rc_cache']
+                    del self[self._active_laser].paramcallbacks['rc_cache']
                 except KeyError:
                     pass
                 self[value].posecallbacks['rc_cache'] = callback
+                self[value].paramcallbacks['rc_cache'] = callback
             self._active_laser = value
         else:
             raise KeyError('invalid laser %s' % value)
