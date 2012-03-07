@@ -178,6 +178,21 @@ class RangeCamera(Camera):
             self._mr = float(self._params['dim'][0]) / self.fov['tah']
             return self.zres(resolution)
 
+    def zhres(self, resolution, angle):
+        """\
+        Return the depth at which the specified height resolution occurs, for
+        the given angle (with respect to the projection axis).
+
+        @param resolution: Height resolution in millimeters per pixel.
+        @type resolution: C{float}
+        @param angle: The angle to the point.
+        @type angle: L{Angle}
+        @return: Depth (distance along camera M{z}-axis).
+        @rtype: C{float}
+        """
+        mr = sin(angle) * float(self._params['dim'][1]) / self.fov['tav']
+        return mr * resolution
+
     def ch(self, p, tp):
         """\
         Height resolution component of the coverage function. Returns zero
@@ -192,17 +207,15 @@ class RangeCamera(Camera):
         @rtype: C{float}
         """
         try:
-            ascale = sin(p.direction_unit.angle(-p))
+            angle = p.direction_unit.angle(-p)
         except AttributeError:
             return 0.0
-        mr = ascale * float(self._params['dim'][1]) / self.fov['tav']
-        zhres = lambda resolution: mr * resolution
         try:
-            zhmini = zhres(tp['hres_min'][0])
+            zhmini = self.zhres(tp['hres_min'][0], angle)
         except ZeroDivisionError:
             zhmini = float('inf')
         try:
-            zhmina = zhres(tp['hres_min'][1])
+            zhmina = self.zhres(tp['hres_min'][1], angle)
         except ZeroDivisionError:
             zhmina = float('inf')
         if zhmina == zhmini:
