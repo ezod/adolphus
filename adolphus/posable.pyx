@@ -7,8 +7,8 @@ Posable objects module.
 @license: GPL-3
 """
 
-from .geometry import Point, Pose, Triangle
-from .visualization import visual, Visualizable
+from geometry import Point, Pose, Triangle
+from visualization import visual, Visualizable
 
 
 class Posable(object):
@@ -27,7 +27,7 @@ class Posable(object):
         """\
         Constructor.
 
-        @param pose: The pose of the object (optional).
+        @param pose: The relative pose of the object (optional).
         @type pose: L{Pose}
         @param mount_pose: The transformation to the mounting end (optional).
         @type mount_pose: L{Pose}
@@ -41,8 +41,7 @@ class Posable(object):
         self._mount = None
         self.mount = mount
 
-    @property
-    def pose(self):
+    def get_absolute_pose(self):
         """\
         The (absolute) pose of the object.
         """
@@ -55,12 +54,27 @@ class Posable(object):
                 self._absolute_pose = self._pose
             return self._absolute_pose
 
-    @property
-    def relative_pose(self):
+    def set_absolute_pose(self, value):
+        try:
+            self._pose = value - self.mount.mount_pose()
+        except AttributeError:
+            self._pose = value
+        self._pose_changed_hook()
+
+    absolute_pose = property(get_absolute_pose, set_absolute_pose)
+    pose = absolute_pose
+
+    def get_relative_pose(self):
         """\
         The relative pose of the object.
         """
         return self._pose
+
+    def set_relative_pose(self, value):
+        self._pose = value
+        self._pose_changed_hook()
+
+    relative_pose = property(get_relative_pose, set_relative_pose)
 
     def _pose_changed_hook(self):
         """\
@@ -75,15 +89,13 @@ class Posable(object):
         for callback in self.posecallbacks.values():
             callback()
 
-    @property
-    def mount(self):
+    def get_mount(self):
         """\
         The mount of this posable.
         """
         return self._mount
 
-    @mount.setter
-    def mount(self, value):
+    def set_mount(self, value):
         try:
             del self._absolute_pose
         except AttributeError:
@@ -96,30 +108,7 @@ class Posable(object):
         for child in self.children:
             child._pose_changed_hook()
 
-    def set_absolute_pose(self, pose):
-        """\
-        Set the absolute (world frame) pose of the object. If the object is
-        mounted, this computes the necessary relative pose to achieve the
-        specified absolute pose.
-
-        @param pose: The absolute pose to set.
-        @type pose: L{Pose}
-        """
-        try:
-            self._pose = pose - self.mount.mount_pose()
-        except AttributeError:
-            self._pose = pose
-        self._pose_changed_hook()
-
-    def set_relative_pose(self, pose):
-        """\
-        Set the relative (mounted) pose of the object.
-
-        @param pose: The relative pose to set.
-        @type pose: L{Pose}
-        """
-        self._pose = pose
-        self._pose_changed_hook()
+    mount = property(get_mount, set_mount)
 
     def mount_pose(self):
         """\
@@ -162,8 +151,7 @@ class OcclusionTriangle(Posable, Visualizable):
                        'shape':     polygon}]
         Visualizable.__init__(self, primitives)
 
-    @property
-    def pose(self):
+    def get_absolute_pose(self):
         """\
         The pose of the triangle. Triangles ignore the mount pose of the parent
         object when mounted, to simplify manual definition.

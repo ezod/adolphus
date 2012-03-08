@@ -11,9 +11,9 @@ modeling laser line based range imaging cameras.
 from math import pi, sin, tan, atan
 from copy import copy
 
-from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
-from .coverage import PointCache, Task, Camera, Model
-from .posable import SceneObject
+from geometry import Angle, Pose, Point, DirectionalPoint, Triangle
+from coverage import PointCache, Task, Camera, Model
+from posable import SceneObject
 
 
 class RangeTask(Task):
@@ -274,8 +274,7 @@ class RangeModel(Model):
         self.lasers.discard(key)
         super(RangeModel, self).__delitem__(key)
 
-    @property
-    def active_laser(self):
+    def get_active_laser(self):
         """\
         The active line laser.
         """
@@ -287,8 +286,7 @@ class RangeModel(Model):
         else:
             raise RuntimeError('no active laser specified from multiple lasers')
 
-    @active_laser.setter
-    def active_laser(self, value):
+    def set_active_laser(self, value):
         if value in self.lasers:
             if value != self._active_laser:
                 self._clear_caches()
@@ -304,6 +302,8 @@ class RangeModel(Model):
             self._active_laser = value
         else:
             raise KeyError('invalid laser %s' % value)
+
+    active_laser = property(get_active_laser, set_active_laser)
 
     def _clear_caches(self):
         self._rcl_cache = {}
@@ -418,7 +418,7 @@ class RangeModel(Model):
                         continue
                     else:
                         pose = self._rcl_cache[cache_key][point][1]
-                        task.mount.set_absolute_pose(original_pose + pose)
+                        task.mount.absolute_pose = original_pose + pose
                 else:
                     lp = self[self.active_laser].triangle.intersection(point,
                         point + taxis, limit=False)
@@ -426,7 +426,7 @@ class RangeModel(Model):
                         coverage[point] = 0.0
                         continue
                     pose = Pose(T=(lp - point))
-                    task.mount.set_absolute_pose(original_pose + pose)
+                    task.mount.absolute_pose = original_pose + pose
                     mdp = DirectionalPoint(tuple(pose.map(point)) + (rho, eta))
                     occluded, inc_angle = self.occluded(mdp, self.active_laser)
                     if occluded or inc_angle > task.params['inc_angle_max']:
@@ -437,7 +437,7 @@ class RangeModel(Model):
             if not cache_key in self._rcl_cache:
                 self._rcl_cache[cache_key] = rcl_cache
         finally:
-            task.mount.set_absolute_pose(original_pose)
+            task.mount.absolute_pose = original_pose
             self._oc_mask = oc_mask_original
 
         return coverage

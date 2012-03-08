@@ -56,15 +56,13 @@ class Sprite(visual.frame):
         self._highlighted = False
         self.parent = parent
 
-    @property
-    def opacity(self):
+    def get_opacity(self):
         """\
         Sprite opacity.
         """
         return self._opacity
 
-    @opacity.setter
-    def opacity(self, value):
+    def set_opacity(self, value):
         for i, member in enumerate(self.members):
             try:
                 try:
@@ -74,6 +72,8 @@ class Sprite(visual.frame):
             except RuntimeError:
                 pass
         self._opacity = value
+
+    opacity = property(get_opacity, set_opacity)
 
     def highlight(self, color=(0, 1, 0)):
         """\

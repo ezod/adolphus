@@ -19,6 +19,8 @@ NAME = 'adolphus'
 URL = 'http://github.com/ezod/adolphus'
 PACKAGE = 'adolphus'
 
+CYTHON_MODULES = ['coverage', 'geometry', 'laser', 'posable', 'robot']
+
 
 class GenerateDoc(Command):
     user_options = []
@@ -69,5 +71,5 @@ setup(
     package_data = {PACKAGE: ['resources/*.*', 'resources/*/*.*']},
     test_suite = 'test',
     cmdclass = {'doc': GenerateDoc, 'sdist': CheckSdist},
-    ext_modules = [Extension('%s.geometry' % NAME, ['%s/geometry.c' % NAME])],
+    ext_modules = [Extension('%s.%s' % (NAME, module), ['%s/%s.c' % (NAME, module)]) for module in CYTHON_MODULES],
 )

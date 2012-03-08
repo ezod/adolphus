@@ -10,8 +10,8 @@ Robot module.
 from math import pi
 from functools import reduce
 
-from .geometry import Point, Rotation, Pose
-from .posable import SceneObject
+from geometry import Point, Rotation, Pose
+from posable import SceneObject
 
 
 class RobotPiece(SceneObject):
@@ -81,8 +81,7 @@ class Robot(SceneObject):
             self.config = config
         self._visible = False
 
-    @property
-    def config(self):
+    def get_config(self):
         """\
         The configuration of this robot.
 
@@ -90,32 +89,33 @@ class Robot(SceneObject):
         """
         return self._config
 
-    @config.setter
-    def config(self, value):
+    def set_config(self, value):
         if not len(value) == len(self.pieces):
             raise ValueError('incorrect configuration length')
         for i, position in enumerate(value):
             try:
-                self.pieces[i + 1].set_relative_pose(self.generate_joint_pose(\
-                    self.joints[i], position))
+                self.pieces[i + 1].relative_pose = \
+                    self.generate_joint_pose(self.joints[i], position)
             except IndexError:
                 self._mount_pose = \
                     self.generate_joint_pose(self.joints[i], position)
             self._config[i] = position
         self._pose_changed_hook()
 
-    @property
-    def visible(self):
+    config = property(get_config, set_config)
+
+    def get_visible(self):
         """\
         Visibility of this robot.
         """
         return self._visible
 
-    @visible.setter
-    def visible(self, value):
+    def set_visible(self, value):
         self._visible = value
         for piece in self.pieces:
             piece.visible = value
+
+    visible = property(get_visible, set_visible)
 
     def highlight(self, color=(0, 1, 0)):
         """\
@@ -143,8 +143,7 @@ class Robot(SceneObject):
         """
         return self.pieces[-1].mount_pose()
 
-    @property
-    def pose(self):
+    def get_absolute_pose(self):
         """\
         The pose of the robot.
         """

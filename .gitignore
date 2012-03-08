@@ -7,4 +7,4 @@ doc/
 build/
 dist/
 *.so
-adolphus/geometry.c
+adolphus/*.c

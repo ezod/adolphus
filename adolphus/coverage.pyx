@@ -19,9 +19,9 @@ try:
 except ImportError:
     hypergraph = None
 
-from .geometry import Point, Pose, Triangle, triangle_frustum_intersection
-from .posable import Posable, SceneObject
-from .visualization import Visualizable
+from geometry import Point, Pose, Triangle, triangle_frustum_intersection
+from posable import Posable, SceneObject
+from visualization import Visualizable
 
 
 class PointCache(dict):

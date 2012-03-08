@@ -378,7 +378,7 @@ def setpose(ex, args):
     """
     obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
     pose = parse_pose(args[1:])
-    obj.set_absolute_pose(pose)
+    obj.absolute_pose = pose
     obj.update_visualization()
     if ex.modifier.parent == obj:
         ex.modifier.pos = obj.pose.T
@@ -392,7 +392,7 @@ def setrelativepose(ex, args):
     """
     obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
     pose = parse_pose(args[1:])
-    obj.set_relative_pose(pose)
+    obj.relative_pose = pose
     obj.update_visualization()
     if ex.modifier.parent == obj:
         ex.modifier.pos = obj.pose.T

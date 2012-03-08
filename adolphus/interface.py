@@ -442,7 +442,7 @@ class Experiment(Thread):
                     newpose = Pose(self.modifier.parent.pose.T + moving * \
                         (newpos * moving - lastpos * moving),
                         self.modifier.parent.pose.R)
-                    self.modifier.parent.set_absolute_pose(newpose)
+                    self.modifier.parent.absolute_pose = newpose
                     self.modifier.pos = self.modifier.parent.pose.T
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
@@ -459,7 +459,7 @@ class Experiment(Thread):
                         parent.pose.R + Rotation.from_axis_angle(\
                         copysign(zdiff.mag, zdiff.z) * 0.01,
                         (-self.modifier.parent.pose).R.rotate(rotating)))
-                    self.modifier.parent.set_absolute_pose(newpose)
+                    self.modifier.parent.absolute_pose = newpose
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif zoom:

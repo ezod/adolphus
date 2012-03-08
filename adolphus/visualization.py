@@ -58,18 +58,18 @@ class Visualizable(object):
     def __del__(self):
         self.visible = False
 
-    @property
-    def visible(self):
+    def get_visible(self):
         """\
         Visibility of this visualizable.
         """
         return self._visible
 
-    @visible.setter
-    def visible(self, value):
+    def set_visible(self, value):
         for display in self.actuals:
             self.actuals[display].visible = value
         self._visible = value
+
+    visible = property(get_visible, set_visible)
 
     def highlight(self, color=(0, 1, 0)):
         """\
