@@ -47,12 +47,14 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(self.p - self.dp, Point((10, 3, -4)))
 
     def test_point_mul_div(self):
-        self.assertEqual(self.p * Point((2, 1, 3)), 25)
         self.assertEqual(self.p * 1.5, Point((4.5, 6, 7.5)))
         self.assertEqual(self.p / 2, Point((1.5, 2, 2.5)))
 
-    def test_point_pow(self):
-        self.assertEqual(self.p ** Point((1, 2, 1)), Point((-6, 2, 2)))
+    def test_point_dot(self):
+        self.assertEqual(self.p.dot(Point((2, 1, 3))), 25)
+
+    def test_point_cross(self):
+        self.assertEqual(self.p.cross(Point((1, 2, 1))), Point((-6, 2, 2)))
 
     def test_point_neg(self):
         self.assertEqual(-self.p, Point((-3, -4, -5)))

@@ -440,7 +440,7 @@ class Experiment(Thread):
                     point=self.modifier.pos)
                 if newpos != lastpos:
                     newpose = Pose(self.modifier.parent.pose.T + moving * \
-                        (newpos * moving - lastpos * moving),
+                        (newpos.dot(moving) - lastpos.dot(moving)),
                         self.modifier.parent.pose.R)
                     self.modifier.parent.absolute_pose = newpose
                     self.modifier.pos = self.modifier.parent.pose.T

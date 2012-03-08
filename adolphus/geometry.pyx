@@ -81,7 +81,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return type(self)(tuple([self[i] + p[i] for i in range(3)]) + self[3:])
+        return Point((self[0] + p[0], self[1] + p[1], self[2] + p[2]))
 
     def __sub__(self, p):
         """\
@@ -92,34 +92,29 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return type(self)(tuple([self[i] - p[i] for i in range(3)]) + self[3:])
+        return Point((self[0] - p[0], self[1] - p[1], self[2] - p[2]))
 
-    def __mul__(self, p):
+    def __mul__(self, double p):
         """\
-        Scalar multiplication (if C{p} is a scalar) or dot product (if C{p} is a
-        vector).
+        Scalar multiplication.
 
         @param p: The operand scalar or vector.
-        @type p: C{float} or L{Point}
+        @type p: C{float}
         @return: Result vector.
         @rtype: L{Point}
         """
-        try:
-            return self[0] * p[0] + self[1] * p[1] + self[2] * p[2]
-        except TypeError:
-            return type(self)(tuple([self[i] * p for i in range(3)]) + self[3:])
+        return Point((self[0] * p, self[1] * p, self[2] * p))
 
-    def __rmul__(self, p):
+    def __rmul__(self, double p):
         """\
-        Scalar multiplication (if C{p} is a scalar) or dot product (if C{p} is a
-        vector).
+        Scalar multiplication.
 
         @param p: The operand scalar or vector.
-        @type p: C{float} or L{Point}
+        @type p: C{float}
         @return: Result vector.
         @rtype: L{Point}
         """
-        return self.__mul__(p)
+        return Point((self[0] * p, self[1] * p, self[2] * p))
 
     def __div__(self, double p):
         """\
@@ -130,19 +125,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return type(self)(tuple([self[i] / p for i in range(3)]) + self[3:])
-
-    def __pow__(self, p):
-        """\
-        Cross product.
-
-        @param p: The operand vector.
-        @type p: L{Point}
-        @return: Result vector.
-        @rtype: L{Point}
-        """
-        return type(self)(tuple([self[(i + 1) % 3] * p[(i + 2) % 3] - \
-            self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)]) + self[3:])
+        return Point((self[0] / p, self[1] / p, self[2] / p))
 
     def __neg__(self):
         """\
@@ -183,6 +166,29 @@ class Point(tuple):
     @property
     def z(self):
         return self[2]
+
+    def dot(self, p):
+        """\
+        Dot product.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Dot product.
+        @rtype: C{float}
+        """
+        return self[0] * p[0] + self[1] * p[1] + self[2] * p[2]
+
+    def cross(self, p):
+        """\
+        Cross product.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Cross product vector.
+        @rtype: L{Point}
+        """
+        return Point([self[(i + 1) % 3] * p[(i + 2) % 3] - \
+            self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)])
 
     @property
     def magnitude(self):
@@ -239,7 +245,7 @@ class Point(tuple):
         @return: Angle in radians.
         @rtype: L{Angle}
         """
-        return Angle(acos(p.unit * self.unit))
+        return Angle(acos(p.unit.dot(self.unit)))
 
 
 class DirectionalPoint(Point):
@@ -255,6 +261,66 @@ class DirectionalPoint(Point):
             iterable[3] -= 2. * (iterable[3] - pi)
             iterable[4] += pi
         return Point.__new__(cls, iterable)
+
+    def __add__(self, p):
+        """\
+        Vector addition.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint((self[0] + p[0], self[1] + p[1], self[2] + p[2],
+            self[3], self[4]))
+
+    def __sub__(self, p):
+        """\
+        Vector subtraction.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint((self[0] - p[0], self[1] - p[1], self[2] - p[2],
+            self[3], self[4]))
+
+    def __mul__(self, double p):
+        """\
+        Scalar multiplication.
+
+        @param p: The operand scalar or vector.
+        @type p: C{float}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint((self[0] * p, self[1] * p, self[2] * p,
+            self[3], self[4]))
+
+    def __rmul__(self, double p):
+        """\
+        Scalar multiplication.
+
+        @param p: The operand scalar or vector.
+        @type p: C{float}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint((self[0] * p, self[1] * p, self[2] * p,
+            self[3], self[4]))
+
+    def __div__(self, double p):
+        """\
+        Scalar division.
+
+        @param p: The scalar divisor.
+        @type p: C{float}
+        @return: Result vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint((self[0] / p, self[1] / p, self[2] / p,
+            self[3], self[4]))
 
     def __neg__(self):
         """\
@@ -284,6 +350,18 @@ class DirectionalPoint(Point):
         @rtype: C{str}
         """
         return '(%.4f, %.4f, %.4f, %.4f, %.4f)' % self
+
+    def cross(self, p):
+        """\
+        Cross product.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: Cross product vector.
+        @rtype: L{DirectionalPoint}
+        """
+        return DirectionalPoint([self[(i + 1) % 3] * p[(i + 2) % 3] - \
+            self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)] + self[3:])
 
     @property
     def rho(self):
@@ -379,8 +457,8 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(((self[0] * q[0] - self[1] * q[1]),
-            (self[0] * q[1] + q[0] * self[1] + self[1] ** q[1])))
+        return Quaternion(((self[0] * q[0] - self[1].dot(q[1])),
+            (self[0] * q[1] + q[0] * self[1] + self[1].cross(q[1]))))
 
     def __div__(self, double q):
         """\
@@ -907,7 +985,7 @@ class Face(object):
         try:
             return self._normal
         except AttributeError:
-            self._normal = (self.edges[0] ** self.edges[1]).unit
+            self._normal = (self.edges[0].cross(self.edges[1])).unit
             return self._normal
 
     @property
@@ -922,7 +1000,7 @@ class Face(object):
             return self._planing_pose
         except AttributeError:
             angle = self.normal.angle(Point((0, 0, 1)))
-            axis = self.normal ** Point((0, 0, 1))
+            axis = self.normal.cross(Point((0, 0, 1)))
             try:
                 R = Rotation.from_axis_angle(angle, axis)
             except ValueError:
@@ -966,20 +1044,20 @@ class Triangle(Face):
         cdef double det, inv_det, u, v, t
         origin_end = end - origin
         direction = origin_end.unit
-        P = direction ** -self.edges[2]
-        det = self.edges[0] * P
+        P = direction.cross(-self.edges[2])
+        det = self.edges[0].dot(P)
         if det > -1e-4 and det < 1e-4:
             return None
         inv_det = 1.0 / det
         T = origin - self.vertices[0]
-        u = (T * P) * inv_det
+        u = (T.dot(P)) * inv_det
         if u < 0 or u > 1.0:
             return None
-        Q = T ** self.edges[0]
-        v = (direction * Q) * inv_det
+        Q = T.cross(self.edges[0])
+        v = (direction.dot(Q)) * inv_det
         if v < 0 or u + v > 1.0:
             return None
-        t = (-self.edges[2] * Q) * inv_det
+        t = (Q.dot(-self.edges[2])) * inv_det
         if limit and (t < 1e-04 or t > origin_end.magnitude - 1e-04):
             return None
         return origin + t * direction
@@ -1000,8 +1078,8 @@ class Triangle(Face):
         """
         dvs = {}
         for one, two in [(self, other), (other, self)]:
-            dvs[two] = [one.normal * two.vertices[i] + \
-                (-one.normal * one.vertices[0]) for i in range(3)]
+            dvs[two] = [two.vertices[i].dot(one.normal) + \
+                (one.vertices[0].dot(-one.normal)) for i in range(3)]
             if all([dv > 1e-4 for dv in dvs[two]]) \
             or all([dv < -1e-4 for dv in dvs[two]]):
                 return False
@@ -1013,7 +1091,7 @@ class Triangle(Face):
             # TODO: and vice versa (Haines 1994)
             return False
         else:
-            axis = max(enumerate(self.normal ** other.normal),
+            axis = max(enumerate(self.normal.cross(other.normal)),
                 key=lambda x: x[1])[0]
             t = {self: [], other: []}
             for triangle in (self, other):
@@ -1053,7 +1131,7 @@ def which_side(points, direction, vertex):
     cdef double t
     positive, negative = 0, 0
     for point in points:
-        t = direction * (point - vertex)
+        t = direction.dot((point - vertex))
         if t > 0:
             positive += 1
         elif t < 0:
@@ -1093,7 +1171,7 @@ def triangle_frustum_intersection(triangle, hull):
         return False
     for fedge, fvertex in edges:
         for i in range(3):
-            direction = fedge ** triangle.edges[i]
+            direction = fedge.cross(triangle.edges[i])
             side0 = which_side(hull, direction, fvertex)
             if side0 == 0:
                 continue

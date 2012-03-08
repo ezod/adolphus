@@ -385,7 +385,7 @@ class RangeModel(Model):
             raise TypeError('task is not a range coverage task')
         if not taxis:
             taxis = self[self.active_laser].triangle.normal
-        elif not taxis * self[self.active_laser].triangle.normal:
+        elif not taxis.dot(self[self.active_laser].triangle.normal):
             raise ValueError('transport axis parallel to laser plane')
         rho, eta = self[self.active_laser].pose.map(\
             DirectionalPoint((0, 0, 0, pi, 0)))[3:5]
