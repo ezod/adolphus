@@ -428,7 +428,7 @@ class Experiment(Thread):
                             self.display.forward, point=self.modifier.pos)
                     else:
                         rotating = Point(*m.pick.axis).unit
-                        lastpos = self.display.mouse.project(normal=rotating,
+                        lastpos = self.display.mouse.project(normal=tuple(rotating),
                             point=self.modifier.pos)
                 elif m.drop == 'left' and (moving or rotating):
                     for member in self.modifier.objects:
@@ -439,15 +439,15 @@ class Experiment(Thread):
                 newpos = self.display.mouse.project(normal=self.display.forward,
                     point=self.modifier.pos)
                 if newpos != lastpos:
-                    newpose = Pose(self.modifier.parent.pose.T + moving * \
-                        (newpos.dot(moving) - lastpos.dot(moving)),
+                    newpose = Pose(self.modifier.parent.pose.T + moving *\
+                        (moving.dot(newpos) - moving.dot(lastpos)),
                         self.modifier.parent.pose.R)
                     self.modifier.parent.absolute_pose = newpose
-                    self.modifier.pos = self.modifier.parent.pose.T
+                    self.modifier.pos = tuple(self.modifier.parent.pose.T)
                     self.modifier.parent.update_visualization()
                     lastpos = newpos
             elif rotating:
-                newpos = self.display.mouse.project(normal=rotating,
+                newpos = self.display.mouse.project(normal=tuple(rotating),
                     point=self.modifier.pos)
                 if newpos != lastpos:
                     planex = -self.display.up.cross(self.display.forward)

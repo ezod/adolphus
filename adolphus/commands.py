@@ -381,7 +381,7 @@ def setpose(ex, args):
     obj.absolute_pose = pose
     obj.update_visualization()
     if ex.modifier.parent == obj:
-        ex.modifier.pos = obj.pose.T
+        ex.modifier.pos = tuple(obj.pose.T)
 
 @command
 def setrelativepose(ex, args):
@@ -395,7 +395,7 @@ def setrelativepose(ex, args):
     obj.relative_pose = pose
     obj.update_visualization()
     if ex.modifier.parent == obj:
-        ex.modifier.pos = obj.pose.T
+        ex.modifier.pos = tuple(obj.pose.T)
 
 @command
 def modify(ex, args):
@@ -413,7 +413,7 @@ def modify(ex, args):
         ex.modifier.visible = False
         ex.modifier.parent = None
     else:
-        ex.modifier.pos = obj.pose.T
+        ex.modifier.pos = tuple(obj.pose.T)
         ex.modifier.visible = True
         ex.modifier.parent = obj
 
