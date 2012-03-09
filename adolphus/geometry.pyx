@@ -535,7 +535,7 @@ cdef class Rotation:
         self.Q = Q.unit()
 
     def __reduce__(self):
-        return (Quaternion, (self.Q))
+        return (Quaternion, (self.Q,))
 
     def __hash__(self):
         return hash(self.Q)
