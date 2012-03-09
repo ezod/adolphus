@@ -100,7 +100,7 @@ cdef class Point:
         """
         return Point(self.x - p.x, self.y - p.y, self.z - p.z)
 
-    def __mul__(self, s):
+    def __mul__(self, double s):
         """\
         Scalar multiplication.
 
@@ -109,12 +109,9 @@ cdef class Point:
         @return: Result vector.
         @rtype: L{Point}
         """
-        if isinstance(self, Number):
-            return Point(s.x * self, s.y * self, s.z * self)
-        else:
-            return Point(self.x * s, self.y * s, self.z * s)
+        return Point(self.x * s, self.y * s, self.z * s)
 
-    def __div__(self, s):
+    def __div__(self, double s):
         """\
         Scalar division.
 
@@ -123,10 +120,7 @@ cdef class Point:
         @return: Result vector.
         @rtype: L{Point}
         """
-        if isinstance(self, Number):
-            return Point(s.x / self, s.y / self, s.z / self)
-        else:
-            return Point(self.x / s, self.y / s, self.z / s)
+        return Point(self.x / s, self.y / s, self.z / s)
 
     def __neg__(self):
         """\
@@ -309,7 +303,7 @@ cdef class DirectionalPoint(Point):
         except AttributeError:
             return Point(self.x - p.x, self.y - p.y, self.z - p.z)
 
-    def __mul__(self, s):
+    def __mul__(self, double s):
         """\
         Scalar multiplication.
 
@@ -318,18 +312,8 @@ cdef class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        if isinstance(self, Number):
-            try:
-                return DirectionalPoint(s.x * self, s.y * self, s.z * self,
-                    s.rho, s.eta)
-            except AttributeError:
-                return Point(s.x * self, s.y * self, s.z * self)
-        else:
-            try:
-                return DirectionalPoint(self.x * s, self.y * s, self.z * s,
-                    self.rho, self.eta)
-            except AttributeError:
-                return Point(self.x * s, self.y * s, self.z * s)
+        return DirectionalPoint(self.x * s, self.y * s, self.z * s,
+            self.rho, self.eta)
 
     def __div__(self, double s):
         """\
@@ -340,18 +324,8 @@ cdef class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        if isinstance(self, Number):
-            try:
-                return DirectionalPoint(s.x / self, s.y / self, s.z / self,
-                    s.rho, s.eta)
-            except AttributeError:
-                return Point(s.x / self, s.y / self, s.z / self)
-        else:
-            try:
-                return DirectionalPoint(self.x / s, self.y / s, self.z / s,
-                    self.rho, self.eta)
-            except AttributeError:
-                return Point(self.x / s, self.y / s, self.z / s)
+        return DirectionalPoint(self.x / s, self.y / s, self.z / s,
+            self.rho, self.eta)
 
     def __neg__(self):
         """\
@@ -461,18 +435,18 @@ cdef class Quaternion:
         @rtype: L{Quaternion}
         """
         return Quaternion(self.a * q.a - self.v.dot(q.v),
-                          self.a * q.v + q.a * self.v + self.v.cross(q.v))
+                          q.v * self.a + self.v * q.a + self.v.cross(q.v))
 
-    def __div__(self, double q):
+    def __div__(self, double s):
         """\
         Scalar division.
 
-        @param q: The scalar divisor.
-        @type q: C{float}
+        @param s: The scalar divisor.
+        @type s: C{float}
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a / q, self.v / q)
+        return Quaternion(self.a / s, self.v / s)
 
     def __neg__(self):
         """\
@@ -691,8 +665,8 @@ class Rotation(object):
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        return Rotation(Quaternion(cos(theta / 2.0), sin(theta / 2.0) \
-            * axis.unit))
+        return Rotation(Quaternion(cos(theta / 2.0),
+                                   axis.unit * sin(theta / 2.0)))
 
     @staticmethod
     def from_euler(convention, angles):
@@ -1065,7 +1039,7 @@ class Triangle(Face):
         t = (Q.dot(-self.edges[2])) * inv_det
         if limit and (t < 1e-04 or t > origin_end.magnitude - 1e-04):
             return None
-        return origin + t * direction
+        return origin + direction * t
 
     def overlap(self, other):
         """\
