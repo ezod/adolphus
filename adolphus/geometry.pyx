@@ -831,6 +831,7 @@ cdef class Pose:
         @return: The mapped point/vector.
         @rtype: L{Point}
         """
+        cdef Point unit
         cdef double rho, eta
         q = self.R.rotate(p)
         try:
@@ -838,11 +839,11 @@ cdef class Pose:
             try:
                 rho = acos(unit.z)
             except ValueError:
-                if unit[2] > 0:
+                if unit.z > 0:
                     rho = 0.0
                 else:
                     rho = pi
-            eta = atan2(unit[1], unit[0])
+            eta = atan2(unit.y, unit.x)
             return DirectionalPoint(q.x, q.y, q.z, rho, eta) + self.T
         except AttributeError:
             return q + self.T
@@ -941,7 +942,7 @@ class Triangle(Face):
         """
         super(Triangle, self).__init__(vertices)
 
-    def intersection(self, origin, end, limit=True):
+    def intersection(self, Point origin, Point end, bool limit=True):
         """\
         Return the point of intersection of the line or line segment between the
         two given points with this triangle.
@@ -958,6 +959,7 @@ class Triangle(Face):
         @return: The point of intersection.
         @rtype: L{Point}
         """
+        cdef Point origin_end, direction, P, T, Q
         cdef double det, inv_det, u, v, t
         origin_end = end - origin
         direction = origin_end.unit
@@ -1027,7 +1029,7 @@ class Triangle(Face):
         return True
 
 
-def which_side(points, direction, vertex):
+def which_side(points, Point direction, Point vertex):
     """\
     Check which side of the projection of the given vertex onto the given
     direction the projections of the given points lie upon.
