@@ -82,9 +82,9 @@ class Display(visual.display):
                                  'center': tuple(self.center),
                                  'fov': self.fov,
                                  'range': self.range}
-            self.center = camera.pose.map((0, 0, camera.getparam('zS')))
-            self.forward = camera.pose.R.rotate((0, 0, 1))
-            self.up = camera.pose.R.rotate((0, -1, 0))
+            self.center = tuple(camera.pose.map(Point(0, 0, camera.getparam('zS'))))
+            self.forward = tuple(camera.pose.R.rotate(Point(0, 0, 1)))
+            self.up = tuple(camera.pose.R.rotate(Point(0, -1, 0)))
             self.fov = max(camera.fov['ah'], camera.fov['av'])
             # FIXME: zoom still isn't exactly right
             self.range = max(camera.fov['tahl'], camera.fov['tahr'],
@@ -440,7 +440,7 @@ class Experiment(Thread):
                     point=self.modifier.pos)
                 if newpos != lastpos:
                     newpose = Pose(self.modifier.parent.pose.T + moving *\
-                        (moving.dot(newpos) - moving.dot(lastpos)),
+                        (moving.dot(Point(*newpos)) - moving.dot(Point(*lastpos))),
                         self.modifier.parent.pose.R)
                     self.modifier.parent.absolute_pose = newpose
                     self.modifier.pos = tuple(self.modifier.parent.pose.T)
