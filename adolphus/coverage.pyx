@@ -91,12 +91,13 @@ class PointCache(dict):
             pass
         primitives = []
         for point in set([point for point in self if self[point]]):
-            primitives.append({'type': 'sphere', 'pos': point[:3],
-                'radius': 3 * scale, 'color': color, 'opacity': self[point]})
+            primitives.append({'type': 'sphere', 'pos': (point.x, point.y,
+                point.z), 'radius': 3 * scale, 'color': color,
+                'opacity': self[point]})
             try:
-                primitives.append({'type': 'arrow', 'pos': point[:3],
-                    'axis': point.direction_unit * 30 * scale, 'color': color,
-                    'opacity': self[point]})
+                primitives.append({'type': 'arrow', 'pos': (point.x, point.y,
+                    point.z), 'axis': tuple(point.direction_unit * 30 * scale),
+                    'color': color, 'opacity': self[point]})
             except AttributeError:
                 pass
         self.visual = Visualizable(primitives=primitives)
