@@ -75,6 +75,9 @@ cdef class Point:
         if t == 3:
             return not eq
 
+    cpdef Point _add(self, Point p):
+        return Point(self.x + p.x, self.y + p.y, self.z + p.z)
+
     def __add__(self, Point p):
         """\
         Vector addition.
@@ -84,8 +87,11 @@ cdef class Point:
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(self.x + p.x, self.y + p.y, self.z + p.z)
+        return self._add(p)
 
+    cpdef Point _sub(self, Point p):
+        return Point(self.x - p.x, self.y - p.y, self.z - p.z)
+        
     def __sub__(self, Point p):
         """\
         Vector subtraction.
@@ -95,8 +101,11 @@ cdef class Point:
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(self.x - p.x, self.y - p.y, self.z - p.z)
+        return self._sub(p)
 
+    cpdef Point _mul(self, double s):
+        return Point(self.x * s, self.y * s, self.z * s)
+        
     def __mul__(self, double s):
         """\
         Scalar multiplication.
@@ -106,8 +115,11 @@ cdef class Point:
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(self.x * s, self.y * s, self.z * s)
+        return self._mul(s)
 
+    cpdef Point _div(self, double s):
+        return Point(self.x / s, self.y / s, self.z / s)
+        
     def __div__(self, double s):
         """\
         Scalar division.
@@ -117,7 +129,7 @@ cdef class Point:
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(self.x / s, self.y / s, self.z / s)
+        return self._div(s)
 
     def __neg__(self):
         """\
@@ -267,57 +279,19 @@ cdef class DirectionalPoint(Point):
         if t == 3:
             return not eq
 
-    def __add__(self, Point p):
-        """\
-        Vector addition.
+    cpdef DirectionalPoint _add(self, Point p):
+        return DirectionalPoint(self.x + p.x, self.y + p.y, self.z + p.z,
+            self.rho, self.eta)
 
-        @param p: The operand vector.
-        @type p: L{Point}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
-        try:
-            return DirectionalPoint(self.x + p.x, self.y + p.y, self.z + p.z,
-                self.rho, self.eta)
-        except AttributeError:
-            return Point(self.x + p.x, self.y + p.y, self.z + p.z)
+    cpdef DirectionalPoint _sub(self, Point p):
+        return DirectionalPoint(self.x - p.x, self.y - p.y, self.z - p.z,
+            self.rho, self.eta)
 
-    def __sub__(self, Point p):
-        """\
-        Vector subtraction.
-
-        @param p: The operand vector.
-        @type p: L{Point}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
-        try:
-            return DirectionalPoint(self.x - p.x, self.y - p.y, self.z - p.z,
-                self.rho, self.eta)
-        except AttributeError:
-            return Point(self.x - p.x, self.y - p.y, self.z - p.z)
-
-    def __mul__(self, double s):
-        """\
-        Scalar multiplication.
-
-        @param s: The operand scalar.
-        @type s: C{float}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
+    cpdef DirectionalPoint _mul(self, double s):
         return DirectionalPoint(self.x * s, self.y * s, self.z * s,
             self.rho, self.eta)
 
-    def __div__(self, double s):
-        """\
-        Scalar division.
-
-        @param p: The scalar divisor.
-        @type p: C{float}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
+    cpdef DirectionalPoint _div(self, double s):
         return DirectionalPoint(self.x / s, self.y / s, self.z / s,
             self.rho, self.eta)
 
@@ -393,6 +367,9 @@ cdef class Quaternion:
         if t == 3:
             return not (abs(self.a - q.a) < EPSILON and self.v == q.v)
 
+    cpdef Quaternion _add(self, Quaternion q):
+        return Quaternion(self.a + q.a, self.v + q.v)
+
     def __add__(self, Quaternion q):
         """\
         Quaternion addition.
@@ -402,7 +379,10 @@ cdef class Quaternion:
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a + q.a, self.v + q.v)
+        return self._add(q)
+
+    cpdef Quaternion _sub(self, Quaternion q):
+        return Quaternion(self.a - q.a, self.v - q.v)
 
     def __sub__(self, Quaternion q):
         """\
@@ -413,7 +393,11 @@ cdef class Quaternion:
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a - q.a, self.v - q.v)
+        return self._sub(q)
+
+    cpdef Quaternion _mul(self, Quaternion q):
+        return Quaternion(self.a * q.a - self.v.dot(q.v),
+            q.v._mul(self.a) + self.v._mul(q.a) + self.v.cross(q.v))
 
     def __mul__(self, Quaternion q):
         """\
@@ -424,8 +408,10 @@ cdef class Quaternion:
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a * q.a - self.v.dot(q.v),
-                          q.v * self.a + self.v * q.a + self.v.cross(q.v))
+        return self._mul(q)
+
+    cpdef Quaternion _div(self, double s):
+        return Quaternion(self.a / s, self.v / s)
 
     def __div__(self, double s):
         """\
@@ -436,7 +422,7 @@ cdef class Quaternion:
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(self.a / s, self.v / s)
+        return self._div(s)
 
     def __neg__(self):
         """\
@@ -535,7 +521,7 @@ cdef class Rotation:
         self.Q = Q.unit()
 
     def __reduce__(self):
-        return (Quaternion, (self.Q,))
+        return (Rotation, (self.Q,))
 
     def __hash__(self):
         return hash(self.Q)
@@ -555,6 +541,9 @@ cdef class Rotation:
         elif t == 3:
             return not self.Q == r.Q
 
+    cpdef Rotation _add(self, Rotation other):
+        return Rotation(self.Q._mul(other.Q))
+
     def __add__(self, Rotation other):
         """\
         Rotation composition.
@@ -564,7 +553,7 @@ cdef class Rotation:
         @return: The composed rotation.
         @rtype: L{Rotation}
         """
-        return Rotation(self.Q * other.Q)
+        return self._add(other)
 
     def __sub__(self, Rotation other):
         """\
@@ -575,7 +564,7 @@ cdef class Rotation:
         @return: The composed rotation.
         @rtype: L{Rotation}
         """
-        return self.__add__(-other)
+        return self._add(-other)
 
     def __neg__(self):
         """\
@@ -595,7 +584,7 @@ cdef class Rotation:
         @return: The rotated vector.
         @rtype: L{Point}
         """
-        return (self.Q * Quaternion(0, p) * self.Q.inverse()).v
+        return (self.Q._mul(Quaternion(0, p))._mul(self.Q.inverse())).v
 
     @classmethod
     def from_rotation_matrix(cls, R):
@@ -766,6 +755,13 @@ cdef class Pose:
         elif t == 3:
             return not (self.T == p.T and self.R == p.R)
 
+    cpdef Pose _add(self, Pose other):
+        cdef Point Tnew
+        cdef Rotation Rnew
+        Tnew = other.R.rotate(self.T)._add(other.T)
+        Rnew = other.R._add(self.R)
+        return Pose(Tnew, Rnew)
+        
     def __add__(self, Pose other):
         """\
         Pose composition: M{PB(PA(x)) = (PA + PB)(x)}.
@@ -775,11 +771,7 @@ cdef class Pose:
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        cdef Point Tnew
-        cdef Rotation Rnew
-        Tnew = other.R.rotate(self.T) + other.T
-        Rnew = other.R + self.R
-        return Pose(Tnew, Rnew)
+        return self._add(other)
 
     def __sub__(self, Pose other):
         """\
@@ -790,7 +782,7 @@ cdef class Pose:
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        return self.__add__(-other)
+        return self._add(-other)
 
     def __neg__(self):
         """\
@@ -815,6 +807,25 @@ cdef class Pose:
         """
         return '%s(%s, %s)' % (type(self).__name__, self.T, self.R)
 
+    cpdef Point _map(self, Point p):
+        cdef Point unit
+        return self.R.rotate(p)._add(self.T)
+        
+    cpdef Point _dmap(self, Point p):
+        cdef Point unit
+        cdef double rho, eta
+        q = self.R.rotate(p)
+        unit = self.R.rotate(p.direction_unit())
+        try:
+            rho = acos(unit.z)
+        except ValueError:
+            if unit.z > 0:
+                rho = 0.0
+            else:
+                rho = pi
+        eta = atan2(unit.y, unit.x)
+        return DirectionalPoint(q.x, q.y, q.z, rho, eta)._add(self.T)
+
     def map(self, Point p):
         """\
         Map a point/vector through this pose.
@@ -824,22 +835,10 @@ cdef class Pose:
         @return: The mapped point/vector.
         @rtype: L{Point}
         """
-        cdef Point unit
-        cdef double rho, eta
-        q = self.R.rotate(p)
-        try:
-            unit = self.R.rotate(p.direction_unit())
-            try:
-                rho = acos(unit.z)
-            except ValueError:
-                if unit.z > 0:
-                    rho = 0.0
-                else:
-                    rho = pi
-            eta = atan2(unit.y, unit.x)
-            return DirectionalPoint(q.x, q.y, q.z, rho, eta) + self.T
-        except AttributeError:
-            return q + self.T
+        if type(p) is DirectionalPoint:
+            return self._dmap(p)
+        else:
+            return self._map(p)
 
 
 class Face(object):
@@ -954,14 +953,14 @@ class Triangle(Face):
         """
         cdef Point origin_end, direction, P, T, Q
         cdef double det, inv_det, u, v, t
-        origin_end = end - origin
+        origin_end = end._sub(origin)
         direction = origin_end.unit()
         P = direction.cross(-self.edges[2])
         det = self.edges[0].dot(P)
         if det > -EPSILON and det < EPSILON:
             return None
         inv_det = 1.0 / det
-        T = origin - self.vertices[0]
+        T = origin._sub(self.vertices[0])
         u = (T.dot(P)) * inv_det
         if u < 0 or u > 1.0:
             return None
@@ -1043,7 +1042,7 @@ def which_side(points, Point direction, Point vertex):
     cdef double t
     positive, negative = 0, 0
     for point in points:
-        t = direction.dot((point - vertex))
+        t = direction.dot(point._sub(vertex))
         if t > 0:
             positive += 1
         elif t < 0:
