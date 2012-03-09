@@ -368,7 +368,7 @@ cdef class Quaternion:
             return not (abs(self.a - q.a) < EPSILON and self.v == q.v)
 
     cpdef Quaternion _add(self, Quaternion q):
-        return Quaternion(self.a + q.a, self.v + q.v)
+        return Quaternion(self.a + q.a, self.v._add(q.v))
 
     def __add__(self, Quaternion q):
         """\
@@ -382,7 +382,7 @@ cdef class Quaternion:
         return self._add(q)
 
     cpdef Quaternion _sub(self, Quaternion q):
-        return Quaternion(self.a - q.a, self.v - q.v)
+        return Quaternion(self.a - q.a, self.v._sub(q.v))
 
     def __sub__(self, Quaternion q):
         """\
