@@ -66,9 +66,7 @@ cdef class Point:
     def __getitem__(self, i):
         return (self.x, self.y, self.z).__getitem__(i)
 
-    def __richcmp__(self, p, int t):
-        if not type(p) is Point:
-            return False
+    def __richcmp__(self, Point p, int t):
         eq = abs(self.x - p.x) < EPSILON and \
              abs(self.y - p.y) < EPSILON and \
              abs(self.z - p.z) < EPSILON
@@ -77,7 +75,7 @@ cdef class Point:
         if t == 3:
             return not eq
 
-    def __add__(self, p):
+    def __add__(self, Point p):
         """\
         Vector addition.
 
@@ -88,7 +86,7 @@ cdef class Point:
         """
         return Point(self.x + p.x, self.y + p.y, self.z + p.z)
 
-    def __sub__(self, p):
+    def __sub__(self, Point p):
         """\
         Vector subtraction.
 
@@ -149,7 +147,7 @@ cdef class Point:
         """
         return '(%.4f, %.4f, %.4f)' % (self.x, self.y, self.z)
 
-    def dot(self, p):
+    def dot(self, Point p):
         """\
         Dot product.
 
@@ -160,7 +158,7 @@ cdef class Point:
         """
         return self.x * p.x + self.y * p.y + self.z * p.z
 
-    def cross(self, p):
+    def cross(self, Point p):
         """\
         Cross product.
 
@@ -169,8 +167,9 @@ cdef class Point:
         @return: Cross product vector.
         @rtype: L{Point}
         """
-        return Point(*[self[(i + 1) % 3] * p[(i + 2) % 3] - \
-            self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)])
+        return Point(self.y * p.z - self.z * p.y,
+                     self.z * p.x - self.x * p.z,
+                     self.x * p.y - self.y * p.x)
 
     @property
     def magnitude(self):
@@ -206,7 +205,7 @@ cdef class Point:
             except ZeroDivisionError:
                 raise ValueError('cannot normalize a zero vector')
 
-    def euclidean(self, p):
+    def euclidean(self, Point p):
         """\
         Return the Euclidean distance from this point to another.
 
@@ -219,7 +218,7 @@ cdef class Point:
                     (self.y - p.y) ** 2 + \
                     (self.z - p.z) ** 2)
 
-    def angle(self, p):
+    def angle(self, Point p):
         """\
         Return the angle between this vector and another.
     
@@ -259,9 +258,7 @@ cdef class DirectionalPoint(Point):
     def __getitem__(self, i):
         return (self.x, self.y, self.z, self.rho, self.eta).__getitem__(i)
 
-    def __richcmp__(self, p, int t):
-        if not type(p) is DirectionalPoint:
-            return False
+    def __richcmp__(self, DirectionalPoint p, int t):
         eq = abs(self.x - p.x) < EPSILON and \
              abs(self.y - p.y) < EPSILON and \
              abs(self.z - p.z) < EPSILON and \
@@ -272,7 +269,7 @@ cdef class DirectionalPoint(Point):
         if t == 3:
             return not eq
 
-    def __add__(self, p):
+    def __add__(self, Point p):
         """\
         Vector addition.
 
@@ -287,7 +284,7 @@ cdef class DirectionalPoint(Point):
         except AttributeError:
             return Point(self.x + p.x, self.y + p.y, self.z + p.z)
 
-    def __sub__(self, p):
+    def __sub__(self, Point p):
         """\
         Vector subtraction.
 
@@ -389,9 +386,6 @@ cdef class Quaternion:
         return (Quaternion, (self.a, self.v))
 
     def __hash__(self):
-        """\
-        Hash function.
-        """
         return hash(self.a) + hash(self.v)
 
     def __richcmp__(self, q, int t):
@@ -535,11 +529,11 @@ cdef class Quaternion:
             return self._inverse
 
 
-class Rotation(object):
+cdef class Rotation:
     """\
     3D Euclidean rotation class. Handles multiple representations of SO(3).
     """
-    __slots__ = ['Q']
+    cdef public Quaternion Q
 
     def __init__(self, Q=Quaternion(1, Point(0, 0, 0))):
         """\
@@ -547,11 +541,11 @@ class Rotation(object):
         """
         self.Q = Q.unit
 
-    def __getstate__(self):
-        return self.Q
+    def __reduce__(self):
+        return (Quaternion, (self.Q))
 
-    def __setstate__(self, state):
-        self.Q = state
+    def __hash__(self):
+        return hash(self.Q)
 
     def __repr__(self):
         """\
@@ -562,21 +556,13 @@ class Rotation(object):
         """
         return '%s(%s)' % (type(self).__name__, str(self.Q))
 
-    def __eq__(self, r):
-        """\
-        Equality function.
-
-        @param r: The other rotation.
-        @type r: L{Rotation}
-        @return: True if equal.
-        @rtype: C{bool}
-        """
-        try:
+    def __richcmp__(self, Rotation r, int t):
+        if t == 2:
             return self.Q == r.Q
-        except AttributeError:
-            return False
+        elif t == 3:
+            return not self.Q == r.Q
 
-    def __add__(self, other):
+    def __add__(self, Rotation other):
         """\
         Rotation composition.
 
@@ -587,7 +573,7 @@ class Rotation(object):
         """
         return Rotation(self.Q * other.Q)
 
-    def __sub__(self, other):
+    def __sub__(self, Rotation other):
         """\
         Rotation composition with the inverse.
 
@@ -607,16 +593,7 @@ class Rotation(object):
         """
         return Rotation(self.Q.inverse)
 
-    def __hash__(self):
-        """\
-        Hash.
-
-        @return: Hash of this rotation.
-        @rtype: C{int}
-        """
-        return hash(self.Q)
-
-    def rotate(self, p):
+    def rotate(self, Point p):
         """\
         Rotate a vector.
 
@@ -627,8 +604,8 @@ class Rotation(object):
         """
         return (self.Q * Quaternion(0, p) * self.Q.inverse).v
 
-    @staticmethod
-    def from_rotation_matrix(R):
+    @classmethod
+    def from_rotation_matrix(cls, R):
         """\
         Generate the internal quaternion representation from a rotation matrix.
 
@@ -651,8 +628,8 @@ class Rotation(object):
             R[1][0] - R[0][1])
         return Rotation(Quaternion(a, Point(b, c, d)))
 
-    @staticmethod
-    def from_axis_angle(double theta, axis):
+    @classmethod
+    def from_axis_angle(cls, double theta, axis):
         """\
         Generate the internal quaternion representation from an axis and
         angle representation.
@@ -667,8 +644,8 @@ class Rotation(object):
         return Rotation(Quaternion(cos(theta / 2.0),
                                    axis.unit * sin(theta / 2.0)))
 
-    @staticmethod
-    def from_euler(convention, angles):
+    @classmethod
+    def from_euler(cls, convention, angles):
         """\
         Generate the internal quaternion representation from Euler angles.
 
@@ -763,13 +740,16 @@ class Rotation(object):
         return (theta, phi, psi)
 
 
-class Pose(object):
+cdef class Pose:
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
-    __slots__ = ['_T', '_R', '_inverse']
+    cdef readonly Point T
+    cdef readonly Rotation R
+    cdef Pose _inverse
+    cdef bool _inverse_c
 
-    def __init__(self, T=Point(0, 0, 0), R=Rotation()):
+    def __cinit__(self, T=Point(0, 0, 0), R=Rotation()):
         """\
         Constructor.
 
@@ -778,48 +758,22 @@ class Pose(object):
         @param R: The 3x3 rotation matrix.
         @type R: L{Rotation}
         """
-        self._T = T
-        self._R = R
-    
-    @property
-    def T(self):
-        """\
-        Translation vector of this pose.
+        self.T = T
+        self.R = R
+   
+    def __reduce__(self):
+        return (Pose, (self.T, self.R))
+        
+    def __hash__(self):
+        return hash(self.T) + hash(self.R)
 
-        @rtype: L{Point}
-        """
-        return self._T
+    def __richcmp__(self, Pose p, int t):
+        if t == 2:
+            return self.T == p.T and self.R == p.R
+        elif t == 3:
+            return not (self.T == p.T and self.R == p.R)
 
-    @property
-    def R(self):
-        """\
-        Rotation component of this pose.
-
-        @rtype: L{Rotation}
-        """
-        return self._R
-
-    def __getstate__(self):
-        return self._T, self._R
-
-    def __setstate__(self, state):
-        self._T, self._R = state
-
-    def __eq__(self, other):
-        """\
-        Equality function.
-
-        @param other: The other pose.
-        @type other: L{Pose}
-        @return: True if equal.
-        @rtype: C{bool}
-        """
-        try:
-            return self._T == other.T and self._R == other.R
-        except AttributeError:
-            return False
-
-    def __add__(self, other):
+    def __add__(self, Pose other):
         """\
         Pose composition: M{PB(PA(x)) = (PA + PB)(x)}.
 
@@ -828,11 +782,13 @@ class Pose(object):
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        Tnew = other.R.rotate(self._T) + other.T
-        Rnew = other.R + self._R
+        cdef Point Tnew
+        cdef Rotation Rnew
+        Tnew = other.R.rotate(self.T) + other.T
+        Rnew = other.R + self.R
         return Pose(Tnew, Rnew)
 
-    def __sub__(self, other):
+    def __sub__(self, Pose other):
         """\
         Pose composition with the inverse.
     
@@ -850,20 +806,12 @@ class Pose(object):
         @return: Inverted pose.
         @rtype: L{Pose}
         """
-        try:
+        if self._inverse_c:
             return self._inverse
-        except AttributeError:
-            self._inverse = Pose(-(-self._R).rotate(self._T), -self._R)
+        else:
+            self._inverse = Pose(-(-self.R).rotate(self.T), -self.R)
+            self._inverse_c = True
             return self._inverse
-
-    def __hash__(self):
-        """\
-        Hash.
-
-        @return: Hash of this pose.
-        @rtype: C{int}
-        """
-        return hash(self._T) + hash(self._R)
 
     def __repr__(self):
         """\
@@ -872,9 +820,9 @@ class Pose(object):
         @return: String representations of T and R.
         @rtype: C{str}
         """
-        return '%s(%s, %s)' % (type(self).__name__, self._T, self._R)
+        return '%s(%s, %s)' % (type(self).__name__, self.T, self.R)
 
-    def map(self, p):
+    def map(self, Point p):
         """\
         Map a point/vector through this pose.
 
@@ -884,9 +832,9 @@ class Pose(object):
         @rtype: L{Point}
         """
         cdef double rho, eta
-        q = self._R.rotate(p)
+        q = self.R.rotate(p)
         try:
-            unit = self._R.rotate(p.direction_unit)
+            unit = self.R.rotate(p.direction_unit)
             try:
                 rho = acos(unit.z)
             except ValueError:
@@ -895,9 +843,9 @@ class Pose(object):
                 else:
                     rho = pi
             eta = atan2(unit[1], unit[0])
-            return DirectionalPoint(q.x, q.y, q.z, rho, eta) + self._T
+            return DirectionalPoint(q.x, q.y, q.z, rho, eta) + self.T
         except AttributeError:
-            return q + self._T
+            return q + self.T
 
 
 class Face(object):
