@@ -548,11 +548,11 @@ class Camera(SceneObject):
         z = min(self.zres(task_params['res_min'][1]),
                 self.zc(task_params['blur_max'][1] * \
                 min(self._params['s']))[1])
-        hull = [Point(),
-                Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
-                Point((self.fov['tahl'] * z, self.fov['tavb'] * z, z)),
-                Point((self.fov['tahr'] * z, self.fov['tavb'] * z, z)),
-                Point((self.fov['tahr'] * z, self.fov['tavt'] * z, z))]
+        hull = [Point(0, 0, 0),
+                Point(self.fov['tahl'] * z, self.fov['tavt'] * z, z),
+                Point(self.fov['tahl'] * z, self.fov['tavb'] * z, z),
+                Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
+                Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
         ctriangle = Triangle([(-self.pose).map(v) \
             for v in triangle.mapped_triangle.vertices])
         return triangle_frustum_intersection(ctriangle, hull)
@@ -601,10 +601,10 @@ class Camera(SceneObject):
             return []
         hull = []
         for z in z_lim:
-            hull += [Point((self.fov['tahl'] * z, self.fov['tavt'] * z, z)),
-                     Point((self.fov['tahl'] * z, self.fov['tavb'] * z, z)),
-                     Point((self.fov['tahr'] * z, self.fov['tavb'] * z, z)),
-                     Point((self.fov['tahr'] * z, self.fov['tavt'] * z, z))]
+            hull += [Point(self.fov['tahl'] * z, self.fov['tavt'] * z, z),
+                     Point(self.fov['tahl'] * z, self.fov['tavb'] * z, z),
+                     Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
+                     Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
         return [{'type': 'curve', 'color': (1, 0, 0), 'pos': hull[i:i + 4] + \
             hull[i:i + 1]} for i in range(0, 16, 4)] + [{'type': 'curve',
             'color': (1, 0, 0), 'pos': [hull[i], hull[i + 4]]} for i in range(4)]

@@ -11,6 +11,11 @@ geometric descriptor functions for features.
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 from random import uniform, gauss
 from functools import reduce
+from numbers import Number
+from cpython cimport bool
+
+
+EPSILON = 1e-4
 
 
 class Angle(float):
@@ -30,15 +35,24 @@ class Angle(float):
         return Angle(-float(self))
 
 
-class Point(tuple):
+cdef class Point:
     """\
     3D point (vector) class.
     """
-    def __new__(cls, iterable=(0.0, 0.0, 0.0)):
+    cdef public double x, y, z
+    cdef double _magnitude
+    cdef Point _unit
+    cdef bool _magnitude_c, _unit_c
+
+    def __cinit__(self, x, y, z, *args):
         """\
         Constructor.
         """
-        return tuple.__new__(cls, iterable)
+        self.x = x
+        self.y = y
+        self.z = z
+        self._magnitude_c = False
+        self._unit_c = False
 
     def __hash__(self):
         """\
@@ -47,30 +61,22 @@ class Point(tuple):
         """
         return hash(repr(self))
 
-    def __eq__(self, p):
-        """\
-        Equality function.
+    def __reduce__(self):
+        return (Point, (self.x, self.y, self.z))
 
-        @param p: The other point.
-        @type p: L{Point}
-        @return: True if equal.
-        @rtype: C{bool}
-        """
-        try:
-            return all([abs(self[i] - p[i]) < 1e-4 for i in range(len(self))])
-        except (AttributeError, IndexError):
+    def __getitem__(self, i):
+        return (self.x, self.y, self.z).__getitem__(i)
+
+    def __richcmp__(self, p, int t):
+        if not type(p) is Point:
             return False
-
-    def __neq__(self, p):
-        """\
-        Inequality function.
-
-        @param p: The other point.
-        @type p: L{Point}
-        @return: True if not equal.
-        @rtype: C{bool}
-        """
-        return not self.__eq__(p)
+        eq = abs(self.x - p.x) < EPSILON and \
+             abs(self.y - p.y) < EPSILON and \
+             abs(self.z - p.z) < EPSILON
+        if t == 2:
+            return eq
+        if t == 3:
+            return not eq
 
     def __add__(self, p):
         """\
@@ -81,7 +87,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point((self[0] + p[0], self[1] + p[1], self[2] + p[2]))
+        return Point(self.x + p.x, self.y + p.y, self.z + p.z)
 
     def __sub__(self, p):
         """\
@@ -92,40 +98,35 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point((self[0] - p[0], self[1] - p[1], self[2] - p[2]))
+        return Point(self.x - p.x, self.y - p.y, self.z - p.z)
 
-    def __mul__(self, double p):
+    def __mul__(self, s):
         """\
         Scalar multiplication.
 
-        @param p: The operand scalar or vector.
-        @type p: C{float}
+        @param s: The operand scalar.
+        @type s: C{float}
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point((self[0] * p, self[1] * p, self[2] * p))
+        if isinstance(self, Number):
+            return Point(s.x * self, s.y * self, s.z * self)
+        else:
+            return Point(self.x * s, self.y * s, self.z * s)
 
-    def __rmul__(self, double p):
-        """\
-        Scalar multiplication.
-
-        @param p: The operand scalar or vector.
-        @type p: C{float}
-        @return: Result vector.
-        @rtype: L{Point}
-        """
-        return Point((self[0] * p, self[1] * p, self[2] * p))
-
-    def __div__(self, double p):
+    def __div__(self, s):
         """\
         Scalar division.
 
-        @param p: The scalar divisor.
-        @type p: C{float}
+        @param s: The scalar divisor.
+        @type s: C{float}
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point((self[0] / p, self[1] / p, self[2] / p))
+        if isinstance(self, Number):
+            return Point(s.x / self, s.y / self, s.z / self)
+        else:
+            return Point(self.x / s, self.y / s, self.z / s)
 
     def __neg__(self):
         """\
@@ -134,7 +135,7 @@ class Point(tuple):
         @return: Result vector.
         @rtype: L{Point}
         """
-        return type(self)([-self[i] for i in range(3)])
+        return Point(-self.x, -self.y, -self.z)
 
     def __repr__(self):
         """\
@@ -143,8 +144,8 @@ class Point(tuple):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return '%s((%.4f, %.4f, %.4f))' % (type(self).__name__,
-            self[0], self[1], self[2])
+        return '%s(%.4f, %.4f, %.4f)' % (type(self).__name__,
+            self.x, self.y, self.z)
 
     def __str__(self):
         """\
@@ -153,19 +154,7 @@ class Point(tuple):
         @return: Vector string.
         @rtype: C{str}
         """
-        return '(%.4f, %.4f, %.4f)' % self
-
-    @property
-    def x(self):
-        return self[0]
-
-    @property
-    def y(self):
-        return self[1]
-
-    @property
-    def z(self):
-        return self[2]
+        return '(%.4f, %.4f, %.4f)' % (self.x, self.y, self.z)
 
     def dot(self, p):
         """\
@@ -176,7 +165,7 @@ class Point(tuple):
         @return: Dot product.
         @rtype: C{float}
         """
-        return self[0] * p[0] + self[1] * p[1] + self[2] * p[2]
+        return self.x * p.x + self.y * p.y + self.z * p.z
 
     def cross(self, p):
         """\
@@ -187,7 +176,7 @@ class Point(tuple):
         @return: Cross product vector.
         @rtype: L{Point}
         """
-        return Point([self[(i + 1) % 3] * p[(i + 2) % 3] - \
+        return Point(*[self[(i + 1) % 3] * p[(i + 2) % 3] - \
             self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)])
 
     @property
@@ -197,11 +186,11 @@ class Point(tuple):
 
         @rtype: C{float}
         """
-        cdef int i
-        try:
+        if self._magnitude_c:
             return self._magnitude
-        except AttributeError:
-            self._magnitude = sqrt(sum([self[i] ** 2 for i in range(3)]))
+        else:
+            self._magnitude = sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+            self._magnitude_c = True
             return self._magnitude
 
     @property
@@ -211,19 +200,18 @@ class Point(tuple):
 
         @rtype: L{Point}
         """
-        cdef int i
         cdef double m
-        try:
+        if self._unit_c:
             return self._unit
-        except AttributeError:
+        else:
             m = self.magnitude
             try:
-                self._unit = Point([self[i] / m for i in range(3)])
+                unit = self / m
+                self._unit = Point(unit.x, unit.y, unit.z)
+                self._unit_c = True
                 return self._unit
             except ZeroDivisionError:
                 raise ValueError('cannot normalize a zero vector')
-
-    normal = unit
 
     def euclidean(self, p):
         """\
@@ -234,7 +222,9 @@ class Point(tuple):
         @return: Euclidean distance.
         @rtype: C{float}
         """
-        return sqrt(sum([(self[i] - p[i]) ** 2 for i in range(3)]))
+        return sqrt((self.x - p.x) ** 2 + \
+                    (self.y - p.y) ** 2 + \
+                    (self.z - p.z) ** 2)
 
     def angle(self, p):
         """\
@@ -248,19 +238,46 @@ class Point(tuple):
         return Angle(acos(p.unit.dot(self.unit)))
 
 
-class DirectionalPoint(Point):
+cdef class DirectionalPoint(Point):
     """\
     3D directional point (spatial-directional vector) class.
     """
-    def __new__(cls, iterable=(0.0, 0.0, 0.0, 0.0, 0.0)):
+    cdef public object rho, eta
+
+    def __cinit__(self, x, y, z, rho, eta, *args):
         """\
         Constructor.
         """
-        iterable = list(iterable[:3]) + [Angle(iterable[3]), Angle(iterable[4])]
-        if iterable[3] > pi:
-            iterable[3] -= 2. * (iterable[3] - pi)
-            iterable[4] += pi
-        return Point.__new__(cls, iterable)
+        self.rho, self.eta = Angle(rho), Angle(eta)
+        if self.rho > pi:
+            self.rho -= 2. * (self.rho - pi)
+            self.eta += pi
+
+    def __reduce__(self):
+        return (DirectionalPoint, (self.x, self.y, self.z, self.rho, self.eta))
+
+    def __hash__(self):
+        """\
+        Hash function. Intentionally collides on points which are very close to
+        each other (per the string representation precision).
+        """
+        return hash(repr(self))
+
+    def __getitem__(self, i):
+        return (self.x, self.y, self.z, self.rho, self.eta).__getitem__(i)
+
+    def __richcmp__(self, p, int t):
+        if not type(p) is DirectionalPoint:
+            return False
+        eq = abs(self.x - p.x) < EPSILON and \
+             abs(self.y - p.y) < EPSILON and \
+             abs(self.z - p.z) < EPSILON and \
+             abs(self.rho - p.rho) < EPSILON and \
+             abs(self.eta - p.eta) < EPSILON
+        if t == 2:
+            return eq
+        if t == 3:
+            return not eq
 
     def __add__(self, p):
         """\
@@ -271,8 +288,11 @@ class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint((self[0] + p[0], self[1] + p[1], self[2] + p[2],
-            self[3], self[4]))
+        try:
+            return DirectionalPoint(self.x + p.x, self.y + p.y, self.z + p.z,
+                self.rho, self.eta)
+        except AttributeError:
+            return Point(self.x + p.x, self.y + p.y, self.z + p.z)
 
     def __sub__(self, p):
         """\
@@ -283,34 +303,35 @@ class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint((self[0] - p[0], self[1] - p[1], self[2] - p[2],
-            self[3], self[4]))
+        try:
+            return DirectionalPoint(self.x - p.x, self.y - p.y, self.z - p.z,
+                self.rho, self.eta)
+        except AttributeError:
+            return Point(self.x - p.x, self.y - p.y, self.z - p.z)
 
-    def __mul__(self, double p):
+    def __mul__(self, s):
         """\
         Scalar multiplication.
 
-        @param p: The operand scalar or vector.
-        @type p: C{float}
+        @param s: The operand scalar.
+        @type s: C{float}
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint((self[0] * p, self[1] * p, self[2] * p,
-            self[3], self[4]))
+        if isinstance(self, Number):
+            try:
+                return DirectionalPoint(s.x * self, s.y * self, s.z * self,
+                    s.rho, s.eta)
+            except AttributeError:
+                return Point(s.x * self, s.y * self, s.z * self)
+        else:
+            try:
+                return DirectionalPoint(self.x * s, self.y * s, self.z * s,
+                    self.rho, self.eta)
+            except AttributeError:
+                return Point(self.x * s, self.y * s, self.z * s)
 
-    def __rmul__(self, double p):
-        """\
-        Scalar multiplication.
-
-        @param p: The operand scalar or vector.
-        @type p: C{float}
-        @return: Result vector.
-        @rtype: L{DirectionalPoint}
-        """
-        return DirectionalPoint((self[0] * p, self[1] * p, self[2] * p,
-            self[3], self[4]))
-
-    def __div__(self, double p):
+    def __div__(self, double s):
         """\
         Scalar division.
 
@@ -319,8 +340,18 @@ class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint((self[0] / p, self[1] / p, self[2] / p,
-            self[3], self[4]))
+        if isinstance(self, Number):
+            try:
+                return DirectionalPoint(s.x / self, s.y / self, s.z / self,
+                    s.rho, s.eta)
+            except AttributeError:
+                return Point(s.x / self, s.y / self, s.z / self)
+        else:
+            try:
+                return DirectionalPoint(self.x / s, self.y / s, self.z / s,
+                    self.rho, self.eta)
+            except AttributeError:
+                return Point(self.x / s, self.y / s, self.z / s)
 
     def __neg__(self):
         """\
@@ -329,8 +360,8 @@ class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint(tuple([-self[i] for i in range(3)]) + \
-                                (self[3] + pi, self[4]))
+        return DirectionalPoint(-self.x, -self.y, -self.z,
+            self.rho + pi, self.eta)
 
     def __repr__(self):
         """\
@@ -339,8 +370,8 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return '%s((%.4f, %.4f, %.4f, %.4f, %.4f))' % (type(self).__name__,
-            self[0], self[1], self[2], self[3], self[4])
+        return '%s(%.4f, %.4f, %.4f, %.4f, %.4f)' % (type(self).__name__,
+            self.x, self.y, self.z, self.rho, self.eta)
 
     def __str__(self):
         """\
@@ -349,27 +380,8 @@ class DirectionalPoint(Point):
         @return: Spatial-directional vector string.
         @rtype: C{str}
         """
-        return '(%.4f, %.4f, %.4f, %.4f, %.4f)' % self
-
-    def cross(self, p):
-        """\
-        Cross product.
-
-        @param p: The operand vector.
-        @type p: L{Point}
-        @return: Cross product vector.
-        @rtype: L{DirectionalPoint}
-        """
-        return DirectionalPoint([self[(i + 1) % 3] * p[(i + 2) % 3] - \
-            self[(i + 2) % 3] * p[(i + 1) % 3] for i in range(3)] + self[3:])
-
-    @property
-    def rho(self):
-        return self[3]
-
-    @property
-    def eta(self):
-        return self[4]
+        return '(%.4f, %.4f, %.4f, %.4f, %.4f)' % \
+            (self.x, self.y, self.z, self.rho, self.eta)
 
     @property
     def direction_unit(self):
@@ -378,55 +390,46 @@ class DirectionalPoint(Point):
 
         @rtype: L{Point}
         """
-        return Point((sin(self[3]) * cos(self[4]),
-                      sin(self[3]) * sin(self[4]), cos(self[3])))
+        return Point(sin(self.rho) * cos(self.eta),
+                     sin(self.rho) * sin(self.eta), cos(self.rho))
 
 
-class Quaternion(tuple):
+cdef class Quaternion:
     """\
     Quaternion class.
     """
-    def __new__(cls, iterable=(1.0, Point())):
+    cdef public double a
+    cdef public Point v
+    cdef double _magnitude
+    cdef Quaternion _unit, _conjugate, _inverse
+    cdef bool _magnitude_c, _unit_c, _conjugate_c, _inverse_c
+
+    def __cinit__(self, a, v):
+        self.a = a
+        self.v = v
+        self._magnitude_c = False
+        self._unit_c = False
+        self._conjugate_c = False
+        self._inverse_c = False
+
+    def __reduce__(self):
+        return (Quaternion, (self.a, self.v))
+
+    def __hash__(self):
         """\
-        Constructor.
+        Hash function.
         """
-        return tuple.__new__(cls, (iterable[0], Point(iterable[1][:3])))
+        return hash(self.a) + hash(self.v)
 
-    @property
-    def a(self):
-        return self[0]
-
-    @property
-    def v(self):
-        return self[1]
-
-    @property
-    def b(self):
-        return self[1][0]
-
-    @property
-    def c(self):
-        return self[1][1]
-
-    @property
-    def d(self):
-        return self[1][2]
-
-    def __eq__(self, q):
-        """\
-        Equality function.
-
-        @param q: The other quaternion.
-        @type q: L{Quaternion}
-        @return: True if equal.
-        @rtype: C{bool}
-        """
-        try:
-            return all([self[i] == q[i] for i in range(2)])
-        except AttributeError:
+    def __richcmp__(self, q, int t):
+        if not isinstance(q, Quaternion):
             return False
+        if t == 2:
+            return abs(self.a - q.a) < EPSILON and self.v == q.v
+        if t == 3:
+            return not (abs(self.a - q.a) < EPSILON and self.v == q.v)
 
-    def __add__(self, q):
+    def __add__(self, Quaternion q):
         """\
         Quaternion addition.
 
@@ -435,9 +438,9 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion([self[i] + q[i] for i in range(2)])
+        return Quaternion(self.a + q.a, self.v + q.v)
 
-    def __sub__(self, q):
+    def __sub__(self, Quaternion q):
         """\
         Quaternion subtraction.
 
@@ -446,9 +449,9 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion([self[i] - q[i] for i in range(2)])
+        return Quaternion(self.a - q.a, self.v - q.v)
 
-    def __mul__(self, q):
+    def __mul__(self, Quaternion q):
         """\
         Quaternion multiplication.
 
@@ -457,8 +460,8 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(((self[0] * q[0] - self[1].dot(q[1])),
-            (self[0] * q[1] + q[0] * self[1] + self[1].cross(q[1]))))
+        return Quaternion(self.a * q.a - self.v.dot(q.v),
+                          self.a * q.v + q.a * self.v + self.v.cross(q.v))
 
     def __div__(self, double q):
         """\
@@ -469,7 +472,7 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion((self[0] / q, self[1] / q))
+        return Quaternion(self.a / q, self.v / q)
 
     def __neg__(self):
         """\
@@ -478,7 +481,7 @@ class Quaternion(tuple):
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion((-self[0], -self[1]))
+        return Quaternion(-self.a, -self.v)
 
     def __repr__(self):
         """\
@@ -487,7 +490,7 @@ class Quaternion(tuple):
         @return: Canonical string representation.
         @rtype: C{str}
         """
-        return '%s(%f, %s)' % (type(self).__name__, self[0], self[1])
+        return '%s(%f, %s)' % (type(self).__name__, self.a, self.v)
 
     def __str__(self):
         """\
@@ -496,7 +499,7 @@ class Quaternion(tuple):
         @return: Vector string.
         @rtype: C{str}
         """
-        return '(%.2f, %s)' % self
+        return '(%.4f, %s)' % (self.a, self.v)
 
     @property
     def magnitude(self):
@@ -505,11 +508,12 @@ class Quaternion(tuple):
 
         @rtype: C{float}
         """
-        try:
+        if self._magnitude_c:
             return self._magnitude
-        except AttributeError:
-            self._magnitude = sqrt(self[0] ** 2 + \
-                sum([self[1][i] ** 2 for i in range(3)]))
+        else:
+            self._magnitude = sqrt(self.a ** 2 + self.v.x ** 2 + \
+                                   self.v.y ** 2 + self.v.z ** 2)
+            self._magnitude_c = True
             return self._magnitude
 
     @property
@@ -519,16 +523,15 @@ class Quaternion(tuple):
 
         @rtype: L{Quaternion}
         """
-        try:
+        if self._unit_c:
             return self._unit
-        except AttributeError:
+        else:
             try:
                 self._unit = self / self.magnitude
+                self._unit_c = True
                 return self._unit
             except ZeroDivisionError:
                 raise ValueError('cannot normalize a zero quaternion')
-
-    normal = unit
 
     @property
     def conjugate(self):
@@ -537,10 +540,11 @@ class Quaternion(tuple):
 
         @rtype: L{Quaternion}
         """
-        try:
+        if self._conjugate_c:
             return self._conjugate
-        except AttributeError:
-            self._conjugate = Quaternion((self[0], -self[1]))
+        else:
+            self._conjugate = Quaternion(self.a, -self.v)
+            self._conjugate_c = True
             return self._conjugate
 
     @property
@@ -550,10 +554,11 @@ class Quaternion(tuple):
 
         @rtype: L{Quaternion}
         """
-        try:
+        if self._inverse_c:
             return self._inverse
-        except AttributeError:
+        else:
             self._inverse = self.conjugate / (self.magnitude ** 2)
+            self._inverse_c = True
             return self._inverse
 
 
@@ -563,7 +568,7 @@ class Rotation(object):
     """
     __slots__ = ['Q']
 
-    def __init__(self, Q=Quaternion()):
+    def __init__(self, Q=Quaternion(1, Point(0, 0, 0))):
         """\
         Constructor.
         """
@@ -647,7 +652,7 @@ class Rotation(object):
         @return: The rotated vector.
         @rtype: L{Point}
         """
-        return (self.Q * Quaternion((0.0, p)) * self.Q.inverse)[1]
+        return (self.Q * Quaternion(0, p) * self.Q.inverse).v
 
     @staticmethod
     def from_rotation_matrix(R):
@@ -671,7 +676,7 @@ class Rotation(object):
             R[0][2] - R[2][0])
         d = copysign(0.5 * sqrt(1 - R[0][0] - R[1][1] + R[2][2]),
             R[1][0] - R[0][1])
-        return Rotation(Quaternion((a, Point((b, c, d)))))
+        return Rotation(Quaternion(a, Point(b, c, d)))
 
     @staticmethod
     def from_axis_angle(double theta, axis):
@@ -686,8 +691,8 @@ class Rotation(object):
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        return Rotation(Quaternion((cos(theta / 2.0), sin(theta / 2.0) \
-            * axis.unit)))
+        return Rotation(Quaternion(cos(theta / 2.0), sin(theta / 2.0) \
+            * axis.unit))
 
     @staticmethod
     def from_euler(convention, angles):
@@ -722,9 +727,9 @@ class Rotation(object):
         a, b, c, d = [sum([qterm(eulerquat[convention][i + j * 2]) \
                       for i in range(2)]) for j in range(4)]
         if a > 0:
-            return Rotation(Quaternion((a, Point((-b, -c, -d)))))
+            return Rotation(Quaternion(a, Point(-b, -c, -d)))
         else:
-            return Rotation(Quaternion((-a, Point((b, c, d)))))
+            return Rotation(Quaternion(-a, Point(b, c, d)))
 
     def to_rotation_matrix(self):
         """\
@@ -765,7 +770,7 @@ class Rotation(object):
         try:
             return (theta, self.Q.v.unit)
         except ValueError:
-            return (theta, Point((1.0, 0.0, 0.0)))
+            return (theta, Point(1.0, 0.0, 0.0))
 
     def to_euler_zyx(self):
         """\
@@ -776,8 +781,8 @@ class Rotation(object):
         @rtype: C{tuple} of L{Angle}
         """
         cdef double a, b, c, d
-        a = self.Q[0]
-        b, c, d = self.Q[1]
+        a = self.Q.a
+        b, c, d = self.Q.v.x, self.Q.v.y, self.Q.v.z
         theta = Angle(atan2(2.0 * (c * d - a * b),
                             1.0 - 2.0 * (b ** 2 + c ** 2)))
         phi = Angle(-asin(2.0 * (a * c + d * b)))
@@ -791,7 +796,7 @@ class Pose(object):
     """
     __slots__ = ['_T', '_R', '_inverse']
 
-    def __init__(self, T=Point(), R=Rotation()):
+    def __init__(self, T=Point(0, 0, 0), R=Rotation()):
         """\
         Constructor.
 
@@ -926,7 +931,7 @@ class Pose(object):
                 else:
                     rho = pi
             eta = atan2(unit[1], unit[0])
-            return DirectionalPoint(tuple(q) + (rho, eta)) + self._T
+            return DirectionalPoint(q.x, q.y, q.z, rho, eta) + self._T
         except AttributeError:
             return q + self._T
 
@@ -999,8 +1004,8 @@ class Face(object):
         try:
             return self._planing_pose
         except AttributeError:
-            angle = self.normal.angle(Point((0, 0, 1)))
-            axis = self.normal.cross(Point((0, 0, 1)))
+            angle = self.normal.angle(Point(0, 0, 1))
+            axis = self.normal.cross(Point(0, 0, 1))
             try:
                 R = Rotation.from_axis_angle(angle, axis)
             except ValueError:
@@ -1192,7 +1197,7 @@ def random_unit_vector():
     @rtype: L{Point}
     """
     while True:
-        rv = Point((uniform(-1, 1), uniform(-1, 1), uniform(-1, 1)))
+        rv = Point(uniform(-1, 1), uniform(-1, 1), uniform(-1, 1))
         if rv.magnitude < 1:
             return rv.unit
 
@@ -1237,6 +1242,6 @@ def gaussian_pose_error(pose, double tsigma, double rsigma):
     @rtype: L{Pose}
     """
     T, R = pose.T, pose.R
-    T = Point((gauss(T.x, tsigma), gauss(T.y, tsigma), gauss(T.z, tsigma)))
+    T = Point(gauss(T.x, tsigma), gauss(T.y, tsigma), gauss(T.z, tsigma))
     R += Rotation.from_euler('zyx', [Angle(gauss(0, rsigma)) for i in range(3)])
     return Pose(T=T, R=R)

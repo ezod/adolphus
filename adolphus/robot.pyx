@@ -191,9 +191,9 @@ class Robot(SceneObject):
         if joint['type'] == 'revolute':
             position *= pi / 180.0
             return Pose(R=Rotation.from_axis_angle(position,
-                Point(joint['axis'])))
+                Point(*joint['axis'])))
         elif joint['type'] == 'prismatic':
-            return Pose(T=(position * Point(joint['axis'])))
+            return Pose(T=(position * Point(*joint['axis'])))
         else:
             raise ValueError('invalid joint type')
 

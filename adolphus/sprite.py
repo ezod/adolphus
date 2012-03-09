@@ -112,8 +112,8 @@ class Sprite(visual.frame):
         @param pose: The pose.
         @type pose: L{Pose}
         """
-        self.pos = pose.T
+        self.pos = tuple(pose.T)
         self.axis = (1, 0, 0)
         self.up = (1, 0, 0)
         angle, axis = pose.R.to_axis_angle()
-        self.rotate(axis=axis, angle=angle)
+        self.rotate(axis=tuple(axis), angle=angle)

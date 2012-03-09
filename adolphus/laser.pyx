@@ -126,8 +126,8 @@ class LineLaser(SceneObject):
         except AttributeError:
             width = self._params['depth'] * tan(self._params['fan'] / 2.0)
             self._triangle = Triangle((self.pose.T,
-                self.pose.map(Point((-width, 0, self._params['depth']))),
-                self.pose.map(Point((width, 0, self._params['depth'])))))
+                self.pose.map(Point(-width, 0, self._params['depth'])),
+                self.pose.map(Point(width, 0, self._params['depth']))))
             return self._triangle
 
     def occluded_by(self, triangle, task_params):
@@ -388,7 +388,7 @@ class RangeModel(Model):
         elif not taxis.dot(self[self.active_laser].triangle.normal):
             raise ValueError('transport axis parallel to laser plane')
         rho, eta = self[self.active_laser].pose.map(\
-            DirectionalPoint((0, 0, 0, pi, 0)))[3:5]
+            DirectionalPoint(0, 0, 0, pi, 0))[3:5]
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
 
@@ -427,7 +427,8 @@ class RangeModel(Model):
                         continue
                     pose = Pose(T=(lp - point))
                     task.mount.absolute_pose = original_pose + pose
-                    mdp = DirectionalPoint(tuple(pose.map(point)) + (rho, eta))
+                    mp = pose.map(point)
+                    mdp = DirectionalPoint(mp.x, mp.y, mp.z, rho, eta)
                     occluded, inc_angle = self.occluded(mdp, self.active_laser)
                     if occluded or inc_angle > task.params['inc_angle_max']:
                         coverage[point] = 0.0

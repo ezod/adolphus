@@ -77,12 +77,12 @@ class YAMLParser(object):
         @rtype: L{Pose}
         """
         if 'T' in pose:
-            T = Point(pose['T'])
+            T = Point(*pose['T'])
         else:
-            T = Point()
+            T = Point(0, 0, 0)
         if 'R' in pose:
             if pose['Rformat'] == 'quaternion':
-                R = Rotation(Quaternion(pose['R']))
+                R = Rotation(Quaternion(pose['R'][0], Point(*pose['R'][1])))
             elif pose['Rformat'] == 'matrix':
                 R = Rotation.from_rotation_matrix(pose['R'])
             elif pose['Rformat'].startswith('axis-angle'):
@@ -91,14 +91,14 @@ class YAMLParser(object):
                     angle = pose['R'][0] * pi / 180.0
                 else:
                     angle = pose['R'][0]
-                R = Rotation.from_axis_angle(angle, Point(pose['R'][1]))
+                R = Rotation.from_axis_angle(angle, Point(*pose['R'][1]))
             elif pose['Rformat'].startswith('euler'):
                 convention, unit = pose['Rformat'].split('-')[1:]
                 if unit == 'deg':
                     R = [r * pi / 180.0 for r in pose['R']]
                 else:
                     R = pose['R']
-                R = Rotation.from_euler(convention, (R[0], R[1], R[2]))
+                R = Rotation.from_euler(convention, Point(R[0], R[1], R[2]))
             else:
                 raise ValueError('unrecognized rotation format')
         else:
@@ -283,14 +283,14 @@ class YAMLParser(object):
                         rho, eta = rhor[0], etar[0]
                         while rho - rhor[1] < 1e-4 and rho - pi < 1e-4:
                             if abs(rho) < 1e-4 or abs(rho - pi) < 1e-4:
-                                yield DirectionalPoint((x, y, z, rho, 0.0))
+                                yield DirectionalPoint(x, y, z, rho, 0.0)
                             else:
                                 while eta - etar[1] < 1e-4 and eta < 2 * pi:
-                                    yield DirectionalPoint((x, y, z, rho, eta))
+                                    yield DirectionalPoint(x, y, z, rho, eta)
                                     eta += pi / ddiv
                             rho += pi / ddiv
                     else:
-                        yield Point((x, y, z))
+                        yield Point(x, y, z)
                     z += step
                 z = zr[0]
                 y += step
@@ -334,9 +334,9 @@ class YAMLParser(object):
             part_model = PointCache()
             for point in task['points']:
                 if len(point) == 3:
-                    point = Point(point)
+                    point = Point(*point)
                 elif len(point) == 5:
-                    point = DirectionalPoint(point)
+                    point = DirectionalPoint(*point)
                 part_model[point] = 1.0
             whole_model |= part_model
         params = task['parameters'] if 'parameters' in task else {}

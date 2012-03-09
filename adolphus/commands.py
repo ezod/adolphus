@@ -53,8 +53,8 @@ def command(f):
                 return f(ex, args, response)
             except CommandError as e:
                 raise e
-            except Exception, e:
-                raise CommandError('%s: %s' % (type(e).__name__, e))
+            #except Exception, e:
+            #    raise CommandError('%s: %s' % (type(e).__name__, e))
         wrapped.response = True
     else:
         def wrapped(ex, args):
@@ -62,8 +62,8 @@ def command(f):
                 return f(ex, args)
             except CommandError as e:
                 raise e
-            except Exception, e:
-                raise CommandError('%s: %s' % (type(e).__name__, e))
+            #except Exception, e:
+            #    raise CommandError('%s: %s' % (type(e).__name__, e))
         wrapped.response = False
     wrapped.__doc__ = f.__doc__
     commands[f.__name__] = wrapped
@@ -190,7 +190,7 @@ def getcenter(ex, args, response='pickle'):
     usage: %s
     """
     if response == 'pickle':
-        return pickle.dumps(Point(ex.centerdot.pos))
+        return pickle.dumps(Point(*ex.centerdot.pos))
     elif response == 'csv':
         return '%s,%s,%s#' % tuple(ex.centerdot.pos)
     elif response == 'text':
@@ -343,9 +343,9 @@ def getrelativepose(ex, args, response='pickle'):
 
 def parse_pose(args):
     numeric = lambda l: [float(n) for n in l]
-    T = Point(numeric(args[1:4]))
+    T = Point(*numeric(args[1:4]))
     if args[0] == 'quaternion':
-        R = Rotation(Quaternion([float(args[4]), numeric(args[5:8])]))
+        R = Rotation(Quaternion(float(args[4]), Point(*numeric(args[5:8]))))
     elif args[0] == 'matrix':
         R = Rotation.from_rotation_matrix([numeric(args[4:7]),
                                            numeric(args[7:10]),
@@ -356,7 +356,7 @@ def parse_pose(args):
             angle = Angle(float(args[4]) * pi / 180.0)
         else:
             angle = Angle(args[4])
-        R = Rotation.from_axis_angle(angle, Point(numeric(args[5:8])))
+        R = Rotation.from_axis_angle(angle, Point(*numeric(args[5:8])))
     elif args[0].startswith('euler'):
         convention, unit = args[0].split('-')[1:]
         angles = numeric(args[4:7])
@@ -553,9 +553,9 @@ def strength(ex, args, response='pickle'):
     """
     task = ex.tasks[args.pop(0)]
     if len(args) == 3:
-        p = Point([float(args[i]) for i in range(3)])
+        p = Point(*[float(args[i]) for i in range(3)])
     elif len(args) == 5:
-        p = DirectionalPoint([float(args[i]) for i in range(5)])
+        p = DirectionalPoint(*[float(args[i]) for i in range(5)])
     else:
         raise CommandError('invalid point')
     strength = ex.model.strength(p, task.params)
@@ -638,7 +638,7 @@ def lrcoverage(ex, args, response='pickle'):
     try:
         ex.display.userspin = False
         try:
-            taxis = Point([float(t) for t in args[1:4]])
+            taxis = Point(*[float(t) for t in args[1:4]])
         except IndexError:
             taxis = None
         ex.coverage['range'] = ex.model.range_coverage_linear(\

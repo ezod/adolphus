@@ -141,7 +141,7 @@ class OcclusionTriangle(Posable, Visualizable):
         @param mount: The mount of the triangle (optional).
         @type mount: L{Posable}
         """
-        vertices = [Point(vertex) for vertex in vertices]
+        vertices = [Point(*vertex) for vertex in vertices]
         planing_pose = Triangle(vertices).planing_pose
         self.triangle = Triangle([planing_pose.map(v) for v in vertices])
         Posable.__init__(self, pose=(-planing_pose + pose), mount=mount)
