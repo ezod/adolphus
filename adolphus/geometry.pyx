@@ -147,7 +147,7 @@ cdef class Point:
         """
         return '(%.4f, %.4f, %.4f)' % (self.x, self.y, self.z)
 
-    def dot(self, Point p):
+    cpdef double dot(self, Point p):
         """\
         Dot product.
 
@@ -158,7 +158,7 @@ cdef class Point:
         """
         return self.x * p.x + self.y * p.y + self.z * p.z
 
-    def cross(self, Point p):
+    cpdef Point cross(self, Point p):
         """\
         Cross product.
 
@@ -171,8 +171,7 @@ cdef class Point:
                      self.z * p.x - self.x * p.z,
                      self.x * p.y - self.y * p.x)
 
-    @property
-    def magnitude(self):
+    cpdef double magnitude(self):
         """\
         Magnitude of this vector.
 
@@ -185,8 +184,7 @@ cdef class Point:
             self._magnitude_c = True
             return self._magnitude
 
-    @property
-    def unit(self):
+    cpdef Point unit(self):
         """\
         Unit vector in the direction of this vector.
 
@@ -196,7 +194,7 @@ cdef class Point:
         if self._unit_c:
             return self._unit
         else:
-            m = self.magnitude
+            m = self.magnitude()
             try:
                 unit = self / m
                 self._unit = Point(unit.x, unit.y, unit.z)
@@ -205,7 +203,7 @@ cdef class Point:
             except ZeroDivisionError:
                 raise ValueError('cannot normalize a zero vector')
 
-    def euclidean(self, Point p):
+    cpdef double euclidean(self, Point p):
         """\
         Return the Euclidean distance from this point to another.
 
@@ -227,7 +225,7 @@ cdef class Point:
         @return: Angle in radians.
         @rtype: L{Angle}
         """
-        return Angle(acos(p.unit.dot(self.unit)))
+        return Angle(acos(p.unit().dot(self.unit())))
 
 
 cdef class DirectionalPoint(Point):
@@ -353,8 +351,7 @@ cdef class DirectionalPoint(Point):
         return '(%.4f, %.4f, %.4f, %.4f, %.4f)' % \
             (self.x, self.y, self.z, self.rho, self.eta)
 
-    @property
-    def direction_unit(self):
+    cpdef Point direction_unit(self):
         """\
         Unit vector representation of the direction of this directional point.
 
@@ -468,8 +465,7 @@ cdef class Quaternion:
         """
         return '(%.4f, %s)' % (self.a, self.v)
 
-    @property
-    def magnitude(self):
+    cpdef double magnitude(self):
         """\
         Magnitude (norm) of this quaternion.
 
@@ -483,8 +479,7 @@ cdef class Quaternion:
             self._magnitude_c = True
             return self._magnitude
 
-    @property
-    def unit(self):
+    cpdef Quaternion unit(self):
         """\
         Versor (unit quaternion) of this quaternion.
 
@@ -494,14 +489,13 @@ cdef class Quaternion:
             return self._unit
         else:
             try:
-                self._unit = self / self.magnitude
+                self._unit = self / self.magnitude()
                 self._unit_c = True
                 return self._unit
             except ZeroDivisionError:
                 raise ValueError('cannot normalize a zero quaternion')
 
-    @property
-    def conjugate(self):
+    cpdef Quaternion conjugate(self):
         """\
         Conjugate of this quaternion.
 
@@ -514,8 +508,7 @@ cdef class Quaternion:
             self._conjugate_c = True
             return self._conjugate
 
-    @property
-    def inverse(self):
+    cpdef Quaternion inverse(self):
         """\
         Multiplicative inverse of this quaternion.
 
@@ -524,7 +517,7 @@ cdef class Quaternion:
         if self._inverse_c:
             return self._inverse
         else:
-            self._inverse = self.conjugate / (self.magnitude ** 2)
+            self._inverse = self.conjugate() / (self.magnitude() ** 2)
             self._inverse_c = True
             return self._inverse
 
@@ -539,7 +532,7 @@ cdef class Rotation:
         """\
         Constructor.
         """
-        self.Q = Q.unit
+        self.Q = Q.unit()
 
     def __reduce__(self):
         return (Quaternion, (self.Q))
@@ -582,7 +575,7 @@ cdef class Rotation:
         @return: The composed rotation.
         @rtype: L{Rotation}
         """
-        return self.__add__(other.inverse)
+        return self.__add__(-other)
 
     def __neg__(self):
         """\
@@ -591,7 +584,7 @@ cdef class Rotation:
         @return: The inverse rotation.
         @rtype: L{Rotation}
         """
-        return Rotation(self.Q.inverse)
+        return Rotation(self.Q.inverse())
 
     def rotate(self, Point p):
         """\
@@ -602,7 +595,7 @@ cdef class Rotation:
         @return: The rotated vector.
         @rtype: L{Point}
         """
-        return (self.Q * Quaternion(0, p) * self.Q.inverse).v
+        return (self.Q * Quaternion(0, p) * self.Q.inverse()).v
 
     @classmethod
     def from_rotation_matrix(cls, R):
@@ -642,7 +635,7 @@ cdef class Rotation:
         @rtype: L{Rotation}
         """
         return Rotation(Quaternion(cos(theta / 2.0),
-                                   axis.unit * sin(theta / 2.0)))
+                                   axis.unit() * sin(theta / 2.0)))
 
     @classmethod
     def from_euler(cls, convention, angles):
@@ -716,9 +709,9 @@ cdef class Rotation:
         @return: Axis and angle rotation form.
         @rtype: C{tuple} of L{Angle} and L{Point}
         """
-        theta = Angle(copysign(2.0 * acos(self.Q.a), self.Q.v.magnitude))
+        theta = Angle(copysign(2.0 * acos(self.Q.a), self.Q.v.magnitude()))
         try:
-            return (theta, self.Q.v.unit)
+            return (theta, self.Q.v.unit())
         except ValueError:
             return (theta, Point(1.0, 0.0, 0.0))
 
@@ -835,7 +828,7 @@ cdef class Pose:
         cdef double rho, eta
         q = self.R.rotate(p)
         try:
-            unit = self.R.rotate(p.direction_unit)
+            unit = self.R.rotate(p.direction_unit())
             try:
                 rho = acos(unit.z)
             except ValueError:
@@ -903,7 +896,7 @@ class Face(object):
         try:
             return self._normal
         except AttributeError:
-            self._normal = (self.edges[0].cross(self.edges[1])).unit
+            self._normal = (self.edges[0].cross(self.edges[1])).unit()
             return self._normal
 
     @property
@@ -962,7 +955,7 @@ class Triangle(Face):
         cdef Point origin_end, direction, P, T, Q
         cdef double det, inv_det, u, v, t
         origin_end = end - origin
-        direction = origin_end.unit
+        direction = origin_end.unit()
         P = direction.cross(-self.edges[2])
         det = self.edges[0].dot(P)
         if det > -EPSILON and det < EPSILON:
@@ -977,7 +970,7 @@ class Triangle(Face):
         if v < 0 or u + v > 1.0:
             return None
         t = (Q.dot(-self.edges[2])) * inv_det
-        if limit and (t < 1e-04 or t > origin_end.magnitude - 1e-04):
+        if limit and (t < 1e-04 or t > origin_end.magnitude() - 1e-04):
             return None
         return origin + direction * t
 
@@ -1112,8 +1105,8 @@ def random_unit_vector():
     """
     while True:
         rv = Point(uniform(-1, 1), uniform(-1, 1), uniform(-1, 1))
-        if rv.magnitude < 1:
-            return rv.unit
+        if rv.magnitude() < 1:
+            return rv.unit()
 
 
 def pose_error(pose, taxis, double terror, raxis, double rerror):
@@ -1136,8 +1129,8 @@ def pose_error(pose, taxis, double terror, raxis, double rerror):
     @rtype: L{Pose}
     """
     T, R = pose.T, pose.R
-    T += terror * taxis.unit
-    R = Rotation.from_axis_angle(rerror, raxis.unit) + R
+    T += terror * taxis.unit()
+    R = Rotation.from_axis_angle(rerror, raxis.unit()) + R
     return Pose(T=T, R=R)
 
 

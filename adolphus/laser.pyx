@@ -207,7 +207,7 @@ class RangeCamera(Camera):
         @rtype: C{float}
         """
         try:
-            angle = p.direction_unit.angle(-p)
+            angle = p.direction_unit().angle(-p)
         except AttributeError:
             return 0.0
         try:
@@ -237,7 +237,7 @@ class RangeCamera(Camera):
         """
         cp = (-self.pose).map(point)
         try:
-            if abs(cp.direction_unit.x) > EPSILON:
+            if abs(cp.direction_unit().x) > EPSILON:
                 raise ValueError('point is not aligned for range coverage')
         except AttributeError:
             raise TypeError('point must be directional for range coverage')

@@ -61,21 +61,21 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(-self.dp, DirectionalPoint(7, -1, -9, 1.3 + pi, 0.2))
 
     def test_point_magnitude(self):
-        self.assertEqual(self.p.magnitude, sqrt(sum([self.p[i] ** 2 for i in range(3)])))
+        self.assertEqual(self.p.magnitude(), sqrt(sum([self.p[i] ** 2 for i in range(3)])))
 
     def test_point_unit(self):
-        m = self.p.magnitude
-        self.assertEqual(self.p.unit, Point(*[self.p[i] / m for i in range(3)]))
+        m = self.p.magnitude()
+        self.assertEqual(self.p.unit(), Point(*[self.p[i] / m for i in range(3)]))
 
     def test_point_euclidean(self):
-        self.assertEqual(self.p.euclidean(Point(0, 0, 0)), self.p.magnitude)
+        self.assertEqual(self.p.euclidean(Point(0, 0, 0)), self.p.magnitude())
 
     def test_point_angle(self):
         self.assertTrue(abs(float(self.p.angle(-self.p)) - pi) < 1e-4)
 
     def test_point_direction_unit(self):
         rho, eta = self.dp.rho, self.dp.eta
-        self.assertEqual(self.dp.direction_unit, Point(sin(rho) * cos(eta), sin(rho) * sin(eta), cos(rho)))
+        self.assertEqual(self.dp.direction_unit(), Point(sin(rho) * cos(eta), sin(rho) * sin(eta), cos(rho)))
 
     def test_rotation_rotate_point(self):
         r = Point(3, -4, -5)

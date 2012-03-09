@@ -96,7 +96,7 @@ class PointCache(dict):
                 'opacity': self[point]})
             try:
                 primitives.append({'type': 'arrow', 'pos': (point.x, point.y,
-                    point.z), 'axis': tuple(point.direction_unit * 30 * scale),
+                    point.z), 'axis': tuple(point.direction_unit() * 30 * scale),
                     'color': color, 'opacity': self[point]})
             except AttributeError:
                 pass
@@ -520,7 +520,7 @@ class Camera(SceneObject):
         @rtype: C{float}
         """
         try:
-            sigma = -(p.unit).dot(p.direction_unit)
+            sigma = -(p.unit()).dot(p.direction_unit())
         except (ValueError, AttributeError):
             # point is at the origin or is non-directional
             return 1.0
