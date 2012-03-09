@@ -13,7 +13,7 @@ import pkg_resources
 from math import pi
 from functools import reduce
 
-from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
+from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion, EPSILON
 from .posable import OcclusionTriangle, SceneObject
 from .coverage import PointCache, Task, Model
 from .laser import RangeTask, LineLaser, RangeModel
@@ -281,11 +281,11 @@ class YAMLParser(object):
                 while z <= zr[1]:
                     if ddiv:
                         rho, eta = rhor[0], etar[0]
-                        while rho - rhor[1] < 1e-4 and rho - pi < 1e-4:
-                            if abs(rho) < 1e-4 or abs(rho - pi) < 1e-4:
+                        while rho - rhor[1] < EPSILON and rho - pi < EPSILON:
+                            if abs(rho) < EPSILON or abs(rho - pi) < EPSILON:
                                 yield DirectionalPoint(x, y, z, rho, 0.0)
                             else:
-                                while eta - etar[1] < 1e-4 and eta < 2 * pi:
+                                while eta - etar[1] < EPSILON and eta < 2 * pi:
                                     yield DirectionalPoint(x, y, z, rho, eta)
                                     eta += pi / ddiv
                             rho += pi / ddiv

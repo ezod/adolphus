@@ -11,7 +11,6 @@ geometric descriptor functions for features.
 from math import pi, sqrt, sin, cos, asin, acos, atan2, copysign
 from random import uniform, gauss
 from functools import reduce
-from numbers import Number
 from cpython cimport bool
 
 
@@ -875,15 +874,6 @@ class Pose(object):
         """
         return '%s(%s, %s)' % (type(self).__name__, self._T, self._R)
 
-    @property
-    def nonzero(self):
-        """\
-        Check if this pose transformation has any effect.
-
-        @rtype: C{bool}
-        """
-        return not abs(sum(self._T)) < 1e-4 and abs(sum(self._R.Q.v)) < 1e-4
-
     def map(self, p):
         """\
         Map a point/vector through this pose.
@@ -1025,7 +1015,7 @@ class Triangle(Face):
         direction = origin_end.unit
         P = direction.cross(-self.edges[2])
         det = self.edges[0].dot(P)
-        if det > -1e-4 and det < 1e-4:
+        if det > -EPSILON and det < EPSILON:
             return None
         inv_det = 1.0 / det
         T = origin - self.vertices[0]
@@ -1059,10 +1049,10 @@ class Triangle(Face):
         for one, two in [(self, other), (other, self)]:
             dvs[two] = [two.vertices[i].dot(one.normal) + \
                 (one.vertices[0].dot(-one.normal)) for i in range(3)]
-            if all([dv > 1e-4 for dv in dvs[two]]) \
-            or all([dv < -1e-4 for dv in dvs[two]]):
+            if all([dv > EPSILON for dv in dvs[two]]) \
+            or all([dv < -EPSILON for dv in dvs[two]]):
                 return False
-        if all([abs(dv) < 1e-4 for dv in dvs[self]]):
+        if all([abs(dv) < EPSILON for dv in dvs[self]]):
             # TODO: handle coplanar case for completeness
             # TODO: project both triangles onto axis-aligned plane (which?)
             # TODO: check edges of self for intersection with edges of other

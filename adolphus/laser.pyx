@@ -11,7 +11,7 @@ modeling laser line based range imaging cameras.
 from math import pi, sin, tan, atan
 from copy import copy
 
-from geometry import Angle, Pose, Point, DirectionalPoint, Triangle
+from geometry import Angle, Pose, Point, DirectionalPoint, Triangle, EPSILON
 from coverage import PointCache, Task, Camera, Model
 from posable import SceneObject
 
@@ -237,7 +237,7 @@ class RangeCamera(Camera):
         """
         cp = (-self.pose).map(point)
         try:
-            if abs(cp.direction_unit.x) > 1e-4:
+            if abs(cp.direction_unit.x) > EPSILON:
                 raise ValueError('point is not aligned for range coverage')
         except AttributeError:
             raise TypeError('point must be directional for range coverage')
