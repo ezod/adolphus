@@ -11,7 +11,8 @@ modeling laser line based range imaging cameras.
 from math import pi, sin, tan, atan
 from copy import copy
 
-from geometry import Angle, Pose, Point, DirectionalPoint, Triangle, EPSILON
+from geometry import Angle, Pose, Point, DirectionalPoint, Triangle
+from geometry cimport Triangle
 from coverage import PointCache, Task, Camera, Model
 from posable import SceneObject
 
@@ -237,7 +238,7 @@ class RangeCamera(Camera):
         """
         cp = self.pose.inverse().map(point)
         try:
-            if abs(cp.direction_unit().x) > EPSILON:
+            if abs(cp.direction_unit().x) > 1e-4:
                 raise ValueError('point is not aligned for range coverage')
         except AttributeError:
             raise TypeError('point must be directional for range coverage')
@@ -327,22 +328,24 @@ class RangeModel(Model):
         @return: True if occluded, plus incidence angle.
         @rtype: C{bool}, C{float}
         """
+        cdef Triangle triangle
         if not isinstance(self[obj], LineLaser):
             return super(RangeModel, self).occluded(point, obj,
                 task_params=task_params)
         if task_params:
             key = self._update_occlusion_cache(task_params)
-            tset = set([t for ts in \
+            tset = set([t.mapped_triangle for ts in \
                 [self._occlusion_cache[key][obj][sceneobject] \
                 for sceneobject in self] for t in ts])
         else:
-            tset = set([t for ts in [self[sceneobject].triangles \
-                for sceneobject in self] for t in ts])
+            tset = set([t.mapped_triangle for ts in \
+                [self[sceneobject].triangles for sceneobject in self] \
+                for t in ts])
         d = self[obj].pose.T.euclidean(point)
         ds = float('inf')
         surface = None
         for triangle in tset:
-            ip = triangle.intersection(self[obj].pose.T, point, limit=False)
+            ip = triangle.intersection(self[obj].pose.T, point, False)
             if not ip:
                 continue
             di = self[obj].pose.T.euclidean(ip)
@@ -381,6 +384,7 @@ class RangeModel(Model):
         @return: The coverage model.
         @rtype: L{PointCache}
         """
+        cdef Triangle triangle
         if not isinstance(task, RangeTask):
             raise TypeError('task is not a range coverage task')
         if not taxis:
@@ -421,7 +425,7 @@ class RangeModel(Model):
                         task.mount.absolute_pose = original_pose + pose
                 else:
                     lp = self[self.active_laser].triangle.intersection(point,
-                        point + taxis, limit=False)
+                        point + taxis, False)
                     if not lp:
                         coverage[point] = 0.0
                         continue

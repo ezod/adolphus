@@ -20,6 +20,7 @@ except ImportError:
     hypergraph = None
 
 from geometry import Point, Pose, Triangle, triangle_frustum_intersection
+from geometry cimport Point, Triangle
 from posable import Posable, SceneObject
 from visualization import Visualizable
 
@@ -760,7 +761,7 @@ class Model(dict):
         self._oc_needs_update[key] = False
         return key
 
-    def occluded(self, point, obj, task_params=None):
+    def occluded(self, Point point, obj, task_params=None):
         """\
         Return whether the specified point is occluded with respect to the
         specified object. If task parameters are specified, an occlusion cache
@@ -775,16 +776,18 @@ class Model(dict):
         @return: True if occluded.
         @rtype: C{bool}
         """
+        cdef Triangle triangle
         if task_params:
             key = self._update_occlusion_cache(task_params)
-            tset = set([t for ts in \
+            tset = set([t.mapped_triangle for ts in \
                 [self._occlusion_cache[key][obj][sceneobject] \
                 for sceneobject in self] for t in ts])
         else:
-            tset = set([t for ts in [self[sceneobject].triangles \
-                for sceneobject in self] for t in ts])
+            tset = set([t.mapped_triangle for ts in \
+                [self[sceneobject].triangles for sceneobject in self] \
+                for t in ts])
         for triangle in tset:
-            if triangle.intersection(self[obj].pose.T, point):
+            if triangle.intersection(self[obj].pose.T, point, True):
                 return True
         return False
 

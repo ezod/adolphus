@@ -14,9 +14,6 @@ from functools import reduce
 from cpython cimport bool
 
 
-EPSILON = 1e-4
-
-
 class Angle(float):
     """\
     Angle class. All operations are modulo 2S{pi}.
@@ -39,7 +36,7 @@ cdef class Point:
     3D point (vector) class.
 
     Note that the hash and equality functions for points intentionally collide
-    on points which are very close to each other (no greater than EPSILON in any
+    on points which are very close to each other (no greater than 1e-4 in any
     dimension) to allow for identity despite small errors, important for point
     caching and other coverage functionality.
     """
@@ -61,9 +58,9 @@ cdef class Point:
         return (self.x, self.y, self.z).__getitem__(i)
 
     def __richcmp__(self, Point p, int t):
-        eq = abs(self.x - p.x) < EPSILON and \
-             abs(self.y - p.y) < EPSILON and \
-             abs(self.z - p.z) < EPSILON
+        eq = abs(self.x - p.x) < 1e-4 and \
+             abs(self.y - p.y) < 1e-4 and \
+             abs(self.z - p.z) < 1e-4
         if t == 2:
             return eq
         if t == 3:
@@ -264,11 +261,11 @@ cdef class DirectionalPoint(Point):
         return (self.x, self.y, self.z, self.rho, self.eta).__getitem__(i)
 
     def __richcmp__(self, DirectionalPoint p, int t):
-        eq = abs(self.x - p.x) < EPSILON and \
-             abs(self.y - p.y) < EPSILON and \
-             abs(self.z - p.z) < EPSILON and \
-             abs(self.rho - p.rho) < EPSILON and \
-             abs(self.eta - p.eta) < EPSILON
+        eq = abs(self.x - p.x) < 1e-4 and \
+             abs(self.y - p.y) < 1e-4 and \
+             abs(self.z - p.z) < 1e-4 and \
+             abs(self.rho - p.rho) < 1e-4 and \
+             abs(self.eta - p.eta) < 1e-4
         if t == 2:
             return eq
         if t == 3:
@@ -351,9 +348,9 @@ cdef class Quaternion:
         if not isinstance(q, Quaternion):
             return False
         if t == 2:
-            return abs(self.a - q.a) < EPSILON and self.v == q.v
+            return abs(self.a - q.a) < 1e-4 and self.v == q.v
         if t == 3:
-            return not (abs(self.a - q.a) < EPSILON and self.v == q.v)
+            return not (abs(self.a - q.a) < 1e-4 and self.v == q.v)
 
     cpdef Quaternion _add(self, Quaternion q):
         return Quaternion(self.a + q.a, self.v._add(q.v))
@@ -902,7 +899,19 @@ cdef class Triangle(Face):
     """\
     Triangle class.
     """
-    cpdef Point intersection(self, Point origin, Point end, bool limit=True):
+    def __init__(self, vertices):
+        """\
+        Constructor.
+
+        @param v: Vertices (in counterclockwise order looking at the face).
+        @type v: C{tuple} of L{Point}
+        """
+        self._vertex_0 = self.vertices[0]
+        self._edge_0 = self.edges()[0]
+        self._edge_1 = self.edges()[1]
+        self._edge_2 = self.edges()[2]
+
+    cpdef Point intersection(self, Point origin, Point end, bool limit):
         """\
         Return the point of intersection of the line or line segment between the
         two given points with this triangle.
@@ -923,23 +932,23 @@ cdef class Triangle(Face):
         cdef double det, inv_det, u, v, t
         origin_end = end._sub(origin)
         direction = origin_end.unit()
-        P = direction.cross(self.edges()[2]._neg())
-        det = self.edges()[0].dot(P)
-        if det > -EPSILON and det < EPSILON:
+        P = direction.cross(self._edge_2._neg())
+        det = self._edge_0.dot(P)
+        if det > -1e-4 and det < 1e-4:
             return None
         inv_det = 1.0 / det
-        T = origin._sub(self.vertices[0])
+        T = origin._sub(self._vertex_0)
         u = (T.dot(P)) * inv_det
         if u < 0 or u > 1.0:
             return None
-        Q = T.cross(self.edges()[0])
+        Q = T.cross(self._edge_0)
         v = (direction.dot(Q)) * inv_det
         if v < 0 or u + v > 1.0:
             return None
-        t = (Q.dot(-self.edges()[2])) * inv_det
+        t = (Q.dot(self._edge_2._neg())) * inv_det
         if limit and (t < 1e-04 or t > origin_end.magnitude() - 1e-04):
             return None
-        return origin + direction * t
+        return origin._add(direction._mul(t))
 
     cpdef bool overlap(self, Triangle other):
         """\
@@ -960,15 +969,15 @@ cdef class Triangle(Face):
         dvs = {}
         dvs[other] = [other.vertices[i].dot(self.normal()) + \
             (self.vertices[0].dot(self.normal()._neg())) for i in range(3)]
-        if all([dv > EPSILON for dv in dvs[other]]) \
-        or all([dv < -EPSILON for dv in dvs[other]]):
+        if all([dv > 1e-4 for dv in dvs[other]]) \
+        or all([dv < -1e-4 for dv in dvs[other]]):
             return False
         dvs[self] = [self.vertices[i].dot(other.normal()) + \
             (other.vertices[0].dot(other.normal()._neg())) for i in range(3)]
-        if all([dv > EPSILON for dv in dvs[self]]) \
-        or all([dv < -EPSILON for dv in dvs[self]]):
+        if all([dv > 1e-4 for dv in dvs[self]]) \
+        or all([dv < -1e-4 for dv in dvs[self]]):
             return False
-        if all([abs(dv) < EPSILON for dv in dvs[self]]):
+        if all([abs(dv) < 1e-4 for dv in dvs[self]]):
             # TODO: handle coplanar case for completeness
             # project both triangles onto axis-aligned plane (which?)
             # check edges of self for intersection with edges of other

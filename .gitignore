@@ -8,3 +8,4 @@ build/
 dist/
 *.so
 adolphus/*.c
+adolphus/*.html
