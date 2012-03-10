@@ -142,9 +142,9 @@ class OcclusionTriangle(Posable, Visualizable):
         @type mount: L{Posable}
         """
         vertices = [Point(*vertex) for vertex in vertices]
-        planing_pose = Triangle(vertices).planing_pose
+        planing_pose = Triangle(vertices).planing_pose()
         self.triangle = Triangle([planing_pose.map(v) for v in vertices])
-        Posable.__init__(self, pose=(-planing_pose + pose), mount=mount)
+        Posable.__init__(self, pose=(planing_pose.inverse() + pose), mount=mount)
         polygon = visual.Polygon([v[0:2] for v in self.triangle.vertices])
         primitives = [{'type':      'extrusion',
                        'pos':       [(0, 0, 0.5), (0, 0, -0.5)],

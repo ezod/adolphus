@@ -50,8 +50,6 @@ cdef class Point:
         self.x = x
         self.y = y
         self.z = z
-        self._magnitude_c = False
-        self._unit_c = False
 
     def __hash__(self):
         """\
@@ -131,6 +129,9 @@ cdef class Point:
         """
         return self._div(s)
 
+    cpdef Point _neg(self):
+        return Point(-self.x, -self.y, -self.z)
+        
     def __neg__(self):
         """\
         Negation.
@@ -138,7 +139,7 @@ cdef class Point:
         @return: Result vector.
         @rtype: L{Point}
         """
-        return Point(-self.x, -self.y, -self.z)
+        return self._neg()
 
     def __repr__(self):
         """\
@@ -246,7 +247,7 @@ cdef class DirectionalPoint(Point):
     """
     cdef public object rho, eta
 
-    def __cinit__(self, x, y, z, rho, eta, *args):
+    def __cinit__(self, x, y, z, rho, eta):
         """\
         Constructor.
         """
@@ -295,6 +296,10 @@ cdef class DirectionalPoint(Point):
         return DirectionalPoint(self.x / s, self.y / s, self.z / s,
             self.rho, self.eta)
 
+    cpdef DirectionalPoint _neg(self):
+        return DirectionalPoint(-self.x, -self.y, -self.z,
+            self.rho + pi, self.eta)
+
     def __neg__(self):
         """\
         Negation.
@@ -302,8 +307,7 @@ cdef class DirectionalPoint(Point):
         @return: Result vector.
         @rtype: L{DirectionalPoint}
         """
-        return DirectionalPoint(-self.x, -self.y, -self.z,
-            self.rho + pi, self.eta)
+        return self._neg()
 
     def __repr__(self):
         """\
@@ -348,10 +352,6 @@ cdef class Quaternion:
     def __cinit__(self, a, v):
         self.a = a
         self.v = v
-        self._magnitude_c = False
-        self._unit_c = False
-        self._conjugate_c = False
-        self._inverse_c = False
 
     def __reduce__(self):
         return (Quaternion, (self.a, self.v))
@@ -424,6 +424,9 @@ cdef class Quaternion:
         """
         return self._div(s)
 
+    cpdef Quaternion _neg(self):
+        return Quaternion(-self.a, -self.v)
+
     def __neg__(self):
         """\
         Negation.
@@ -431,7 +434,7 @@ cdef class Quaternion:
         @return: Result quaternion.
         @rtype: L{Quaternion}
         """
-        return Quaternion(-self.a, -self.v)
+        return self._neg()
 
     def __repr__(self):
         """\
@@ -573,6 +576,9 @@ cdef class Rotation:
         @return: The inverse rotation.
         @rtype: L{Rotation}
         """
+        return self.inverse()
+
+    cpdef Rotation inverse(self):
         return Rotation(self.Q.inverse())
 
     def rotate(self, Point p):
@@ -782,7 +788,7 @@ cdef class Pose:
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        return self._add(-other)
+        return self._add(other._neg())
 
     def __neg__(self):
         """\
@@ -791,12 +797,7 @@ cdef class Pose:
         @return: Inverted pose.
         @rtype: L{Pose}
         """
-        if self._inverse_c:
-            return self._inverse
-        else:
-            self._inverse = Pose(-(-self.R).rotate(self.T), -self.R)
-            self._inverse_c = True
-            return self._inverse
+        return self.inverse()
 
     def __repr__(self):
         """\
@@ -806,6 +807,15 @@ cdef class Pose:
         @rtype: C{str}
         """
         return '%s(%s, %s)' % (type(self).__name__, self.T, self.R)
+
+    cpdef Pose inverse(self):
+        if self._inverse_c:
+            return self._inverse
+        else:
+            self._inverse = Pose((self.R.inverse()).rotate(self.T)._neg(),
+                self.R.inverse())
+            self._inverse_c = True
+            return self._inverse
 
     cpdef Point _map(self, Point p):
         cdef Point unit
@@ -841,13 +851,17 @@ cdef class Pose:
             return self._map(p)
 
 
-class Face(object):
+cdef class Face:
     """\
     Face class.
     """
-    __slots__ = ['vertices', '_edges', '_normal', '_planing_pose']
+    cdef public object vertices
+    cdef object _edges
+    cdef Point _normal
+    cdef Pose _planing_pose
+    cdef bool _edges_c, _normal_c, _planing_pose_c
 
-    def __init__(self, vertices):
+    def __cinit__(self, vertices):
         """\
         Constructor.
 
@@ -856,85 +870,65 @@ class Face(object):
         """
         self.vertices = tuple(vertices)
 
-    def __getstate__(self):
-        return self.vertices
-
-    def __setstate__(self, state):
-        self.vertices = state
+    def __reduce__(self):
+        return (Face, (self.vertices,))
 
     def __hash__(self):
-        """\
-        Hash.
-
-        @return: Hash of this pose.
-        @rtype: C{int}
-        """
         return hash(self.vertices)
 
-    @property
-    def edges(self):
+    cpdef object edges(self):
         """\
         Edges of this face.
 
         @rtype: C{list} of L{Point}
         """
-        try:
+        if self._edges_c:
             return self._edges
-        except AttributeError:
+        else:
             self._edges = [self.vertices[(i + 1) % len(self.vertices)] \
                 - self.vertices[i] for i in range(len(self.vertices))]
+            self._edges_c = True
             return self._edges
 
-    @property
-    def normal(self):
+    cpdef Point normal(self):
         """\
         Normal vector to this face.
 
         @rtype: L{Point}
         """
-        try:
+        if self._normal_c:
             return self._normal
-        except AttributeError:
-            self._normal = (self.edges[0].cross(self.edges[1])).unit()
+        else:
+            self._normal = (self.edges()[0].cross(self.edges()[1])).unit()
+            self._normal_c = True
             return self._normal
 
-    @property
-    def planing_pose(self):
+    cpdef Pose planing_pose(self):
         """\
         Pose which transforms this face into the x-y plane, with the first
         vertex at the origin.
 
         @rtype: L{Pose}
         """
-        try:
+        if self._planing_pose_c:
             return self._planing_pose
-        except AttributeError:
-            angle = self.normal.angle(Point(0, 0, 1))
-            axis = self.normal.cross(Point(0, 0, 1))
+        else:
+            angle = self.normal().angle(Point(0, 0, 1))
+            axis = self.normal().cross(Point(0, 0, 1))
             try:
                 R = Rotation.from_axis_angle(angle, axis)
             except ValueError:
                 R = Rotation()
-            self._planing_pose = Pose(T=-R.rotate(self.vertices[0]), R=R)
+            self._planing_pose = Pose(T=R.rotate(self.vertices[0])._neg(), R=R)
+            self._planing_pose_c = True
             return self._planing_pose
 
 
-class Triangle(Face):
+cdef class Triangle(Face):
     """\
     Triangle class.
     """
-    __slots__ = ['vertices', '_edges', '_normal', '_planing_pose']
-
-    def __init__(self, vertices):
-        """\
-        Constructor.
-
-        @param v: Vertices.
-        @type v: C{tuple} of L{Point}
-        """
-        super(Triangle, self).__init__(vertices)
-
-    def intersection(self, Point origin, Point end, bool limit=True):
+    cpdef Point intersection(self, Point origin, Point end, bool limit=True):
         """\
         Return the point of intersection of the line or line segment between the
         two given points with this triangle.
@@ -955,8 +949,8 @@ class Triangle(Face):
         cdef double det, inv_det, u, v, t
         origin_end = end._sub(origin)
         direction = origin_end.unit()
-        P = direction.cross(-self.edges[2])
-        det = self.edges[0].dot(P)
+        P = direction.cross(self.edges()[2]._neg())
+        det = self.edges()[0].dot(P)
         if det > -EPSILON and det < EPSILON:
             return None
         inv_det = 1.0 / det
@@ -964,16 +958,16 @@ class Triangle(Face):
         u = (T.dot(P)) * inv_det
         if u < 0 or u > 1.0:
             return None
-        Q = T.cross(self.edges[0])
+        Q = T.cross(self.edges()[0])
         v = (direction.dot(Q)) * inv_det
         if v < 0 or u + v > 1.0:
             return None
-        t = (Q.dot(-self.edges[2])) * inv_det
+        t = (Q.dot(-self.edges()[2])) * inv_det
         if limit and (t < 1e-04 or t > origin_end.magnitude() - 1e-04):
             return None
         return origin + direction * t
 
-    def overlap(self, other):
+    cpdef bool overlap(self, Triangle other):
         """\
         Return whether this triangle intersects another.
 
@@ -987,23 +981,29 @@ class Triangle(Face):
         @return: True if the triangles intersect one another.
         @rtype: C{bool}
         """
+        cdef Triangle triangle
+        cdef int axis
         dvs = {}
-        for one, two in [(self, other), (other, self)]:
-            dvs[two] = [two.vertices[i].dot(one.normal) + \
-                (one.vertices[0].dot(-one.normal)) for i in range(3)]
-            if all([dv > EPSILON for dv in dvs[two]]) \
-            or all([dv < -EPSILON for dv in dvs[two]]):
-                return False
+        dvs[other] = [other.vertices[i].dot(self.normal()) + \
+            (self.vertices[0].dot(self.normal()._neg())) for i in range(3)]
+        if all([dv > EPSILON for dv in dvs[other]]) \
+        or all([dv < -EPSILON for dv in dvs[other]]):
+            return False
+        dvs[self] = [self.vertices[i].dot(other.normal()) + \
+            (other.vertices[0].dot(other.normal()._neg())) for i in range(3)]
+        if all([dv > EPSILON for dv in dvs[self]]) \
+        or all([dv < -EPSILON for dv in dvs[self]]):
+            return False
         if all([abs(dv) < EPSILON for dv in dvs[self]]):
             # TODO: handle coplanar case for completeness
-            # TODO: project both triangles onto axis-aligned plane (which?)
-            # TODO: check edges of self for intersection with edges of other
-            # TODO: check vertex of self for point-in-triangle with other
-            # TODO: and vice versa (Haines 1994)
+            # project both triangles onto axis-aligned plane (which?)
+            # check edges of self for intersection with edges of other
+            # check vertex of self for point-in-triangle with other
+            # and vice versa (Haines 1994)
             return False
         else:
-            axis = max(enumerate(self.normal.cross(other.normal)),
-                key=lambda x: x[1])[0]
+            normal = tuple(self.normal().cross(other.normal()))
+            axis = normal.index(max(normal))
             t = {self: [], other: []}
             for triangle in (self, other):
                 signs = [dv > 0 for dv in dvs[triangle]]
@@ -1021,7 +1021,7 @@ class Triangle(Face):
         return True
 
 
-def which_side(points, Point direction, Point vertex):
+cdef int which_side(object points, Point direction, Point vertex):
     """\
     Check which side of the projection of the given vertex onto the given
     direction the projections of the given points lie upon.
@@ -1055,7 +1055,7 @@ def which_side(points, Point direction, Point vertex):
         return -1
 
 
-def triangle_frustum_intersection(triangle, hull):
+cpdef bool triangle_frustum_intersection(Triangle triangle, object hull):
     """\
     Check whether a triangle intersects a frustum.
 
@@ -1069,6 +1069,7 @@ def triangle_frustum_intersection(triangle, hull):
     @return: True if the triangle intersects the frustum.
     @rtype: C{bool}
     """
+    cdef int side0, side1
     edges = [(hull[i] - hull[0], hull[0]) for i in range(1, 5)] + \
             [(hull[(i + 1) % 4 + 1] - hull[i + 1], hull[i + 1]) \
             for i in range(4)]
@@ -1076,13 +1077,13 @@ def triangle_frustum_intersection(triangle, hull):
             [Face([hull[0], hull[i + 1], hull[(i + 1) % 4 + 1]]) \
             for i in range(4)]
     for face in faces:
-        if which_side(triangle.vertices, face.normal, face.vertices[0]) > 0:
+        if which_side(triangle.vertices, face.normal(), face.vertices[0]) > 0:
             return False
-    if which_side(hull, triangle.normal, triangle.vertices[0]) > 0:
+    if which_side(hull, triangle.normal(), triangle.vertices[0]) > 0:
         return False
     for fedge, fvertex in edges:
         for i in range(3):
-            direction = fedge.cross(triangle.edges[i])
+            direction = fedge.cross(triangle.edges()[i])
             side0 = which_side(hull, direction, fvertex)
             if side0 == 0:
                 continue
