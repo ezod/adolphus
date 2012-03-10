@@ -13,7 +13,8 @@ import pkg_resources
 from math import pi
 from functools import reduce
 
-from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion, EPSILON
+from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
+from .geometry import EPSILON
 from .posable import OcclusionTriangle, SceneObject
 from .coverage import PointCache, Task, Model
 from .laser import RangeTask, LineLaser, RangeModel

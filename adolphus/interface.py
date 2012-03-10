@@ -82,7 +82,8 @@ class Display(visual.display):
                                  'center': tuple(self.center),
                                  'fov': self.fov,
                                  'range': self.range}
-            self.center = tuple(camera.pose.map(Point(0, 0, camera.getparam('zS'))))
+            self.center = tuple(camera.pose.map(Point(0, 0,
+                camera.getparam('zS'))))
             self.forward = tuple(camera.pose.R.rotate(Point(0, 0, 1)))
             self.up = tuple(camera.pose.R.rotate(Point(0, -1, 0)))
             self.fov = max(camera.fov['ah'], camera.fov['av'])
@@ -428,8 +429,8 @@ class Experiment(Thread):
                             self.display.forward, point=self.modifier.pos)
                     else:
                         rotating = Point(*m.pick.axis).unit()
-                        lastpos = self.display.mouse.project(normal=tuple(rotating),
-                            point=self.modifier.pos)
+                        lastpos = self.display.mouse.project(normal=tuple(\
+                            rotating), point=self.modifier.pos)
                 elif m.drop == 'left' and (moving or rotating):
                     for member in self.modifier.objects:
                         member.color = (0, 0.25, 0.75)
@@ -440,8 +441,8 @@ class Experiment(Thread):
                     point=self.modifier.pos)
                 if newpos != lastpos:
                     newpose = Pose(self.modifier.parent.pose.T + moving *\
-                        (moving.dot(Point(*newpos)) - moving.dot(Point(*lastpos))),
-                        self.modifier.parent.pose.R)
+                        (moving.dot(Point(*newpos)) - moving.dot(\
+                        Point(*lastpos))), self.modifier.parent.pose.R)
                     self.modifier.parent.absolute_pose = newpose
                     self.modifier.pos = tuple(self.modifier.parent.pose.T)
                     self.modifier.parent.update_visualization()

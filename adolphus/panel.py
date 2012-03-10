@@ -361,7 +361,8 @@ class Panel(gtk.Window):
         Object control frame for L{LineLaser} objects.
         """
         def __init__(self, obj, command):
-            super(Panel.LineLaserFrame, self).__init__('Line Laser', obj, command)
+            super(Panel.LineLaserFrame, self).__init__('Line Laser', obj,
+                command)
             self.par = {}
             labels = {'fan': u'\u03bb', 'depth': 'zP'}
             table = gtk.Table(1, 5)
@@ -438,7 +439,8 @@ class Panel(gtk.Window):
                     self.par[param].append(NumericEntry())
                     self.par[param][-1].set_alignment(0.5)
                     self.connect_entry(self.par[param][-1])
-                    table.attach(self.par[param][-1], 3 + j, 4 + j, i + 1, i + 2)
+                    table.attach(self.par[param][-1], 3 + j, 4 + j, i + 1,
+                        i + 2)
             self.update_data()
 
         def update_data(self):

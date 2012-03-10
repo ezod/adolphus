@@ -96,8 +96,8 @@ class PointCache(dict):
                 'opacity': self[point]})
             try:
                 primitives.append({'type': 'arrow', 'pos': (point.x, point.y,
-                    point.z), 'axis': tuple(point.direction_unit() * 30 * scale),
-                    'color': color, 'opacity': self[point]})
+                    point.z), 'axis': tuple(point.direction_unit() * 30 * \
+                    scale), 'color': color, 'opacity': self[point]})
             except AttributeError:
                 pass
         self.visual = Visualizable(primitives=primitives)
@@ -607,8 +607,9 @@ class Camera(SceneObject):
                      Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
                      Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
         return [{'type': 'curve', 'color': (1, 0, 0), 'pos': hull[i:i + 4] + \
-            hull[i:i + 1]} for i in range(0, 16, 4)] + [{'type': 'curve',
-            'color': (1, 0, 0), 'pos': [hull[i], hull[i + 4]]} for i in range(4)]
+            hull[i:i + 1]} for i in range(0, 16, 4)] + \
+            [{'type': 'curve', 'color': (1, 0, 0),
+            'pos': [hull[i], hull[i + 4]]} for i in range(4)]
 
 
 class Model(dict):
