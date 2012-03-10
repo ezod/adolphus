@@ -393,7 +393,7 @@ class Camera(SceneObject):
         @return: The subpixel coordinates of the point (if any).
         @rtype: C{tuple} of C{float}
         """
-        cp = self.pose.inverse().map(point)
+        cp = self.pose.inverse()._map(point)
         if self.cv(cp, {'boundary_padding': 0.0}):
             return tuple([(self._params['f'] / self._params['s'][i]) * \
                 (cp[i] / cp.z) + self._params['o'][i] for i in range(2)])
@@ -554,7 +554,7 @@ class Camera(SceneObject):
                 Point(self.fov['tahl'] * z, self.fov['tavb'] * z, z),
                 Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
                 Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
-        ctriangle = Triangle([self.pose.inverse().map(v) \
+        ctriangle = Triangle([self.pose.inverse()._map(v) \
             for v in triangle.mapped_triangle.vertices])
         return triangle_frustum_intersection(ctriangle, hull)
 

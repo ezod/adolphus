@@ -126,8 +126,8 @@ class LineLaser(SceneObject):
         except AttributeError:
             width = self._params['depth'] * tan(self._params['fan'] / 2.0)
             self._triangle = Triangle((self.pose.T,
-                self.pose.map(Point(-width, 0, self._params['depth'])),
-                self.pose.map(Point(width, 0, self._params['depth']))))
+                self.pose._map(Point(-width, 0, self._params['depth'])),
+                self.pose._map(Point(width, 0, self._params['depth']))))
             return self._triangle
 
     def occluded_by(self, triangle, task_params):
@@ -235,7 +235,7 @@ class RangeCamera(Camera):
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
-        cp = (-self.pose).map(point)
+        cp = self.pose.inverse().map(point)
         try:
             if abs(cp.direction_unit().x) > EPSILON:
                 raise ValueError('point is not aligned for range coverage')
@@ -352,7 +352,7 @@ class RangeModel(Model):
                 ds = di
                 surface = triangle
         if surface and ds - d < 1e-04:
-            ln = (-self[obj].pose).map(surface.mapped_triangle.normal())
+            ln = self[obj].pose.inverse()._map(surface.mapped_triangle.normal())
             angle = atan(ln.x / ln.z)
         else:
             angle = None
@@ -387,7 +387,7 @@ class RangeModel(Model):
             taxis = self[self.active_laser].triangle.normal()
         elif not taxis.dot(self[self.active_laser].triangle.normal()):
             raise ValueError('transport axis parallel to laser plane')
-        rho, eta = self[self.active_laser].pose.map(\
+        rho, eta = self[self.active_laser].pose._dmap(\
             DirectionalPoint(0, 0, 0, pi, 0))[3:5]
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
@@ -427,7 +427,7 @@ class RangeModel(Model):
                         continue
                     pose = Pose(T=(lp - point))
                     task.mount.absolute_pose = original_pose + pose
-                    mp = pose.map(point)
+                    mp = pose._map(point)
                     mdp = DirectionalPoint(mp.x, mp.y, mp.z, rho, eta)
                     occluded, inc_angle = self.occluded(mdp, self.active_laser)
                     if occluded or inc_angle > task.params['inc_angle_max']:

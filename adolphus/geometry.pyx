@@ -799,7 +799,6 @@ cdef class Pose:
             return self._inverse
 
     cpdef Point _map(self, Point p):
-        cdef Point unit
         return self.R.rotate(p)._add(self.T)
         
     cpdef Point _dmap(self, Point p):
