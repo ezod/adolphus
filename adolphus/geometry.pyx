@@ -38,11 +38,6 @@ cdef class Point:
     """\
     3D point (vector) class.
     """
-    cdef public double x, y, z
-    cdef double _magnitude
-    cdef Point _unit
-    cdef bool _magnitude_c, _unit_c
-
     def __cinit__(self, x, y, z, *args):
         """\
         Constructor.
@@ -245,8 +240,6 @@ cdef class DirectionalPoint(Point):
     """\
     3D directional point (spatial-directional vector) class.
     """
-    cdef public object rho, eta
-
     def __cinit__(self, x, y, z, rho, eta):
         """\
         Constructor.
@@ -343,12 +336,6 @@ cdef class Quaternion:
     """\
     Quaternion class.
     """
-    cdef public double a
-    cdef public Point v
-    cdef double _magnitude
-    cdef Quaternion _unit, _conjugate, _inverse
-    cdef bool _magnitude_c, _unit_c, _conjugate_c, _inverse_c
-
     def __cinit__(self, a, v):
         self.a = a
         self.v = v
@@ -515,8 +502,6 @@ cdef class Rotation:
     """\
     3D Euclidean rotation class. Handles multiple representations of SO(3).
     """
-    cdef public Quaternion Q
-
     def __init__(self, Q=Quaternion(1, Point(0, 0, 0))):
         """\
         Constructor.
@@ -732,11 +717,6 @@ cdef class Pose:
     """\
     Pose (rigid 3D Euclidean transformation) class.
     """
-    cdef readonly Point T
-    cdef readonly Rotation R
-    cdef Pose _inverse
-    cdef bool _inverse_c
-
     def __cinit__(self, T=Point(0, 0, 0), R=Rotation()):
         """\
         Constructor.
@@ -855,12 +835,6 @@ cdef class Face:
     """\
     Face class.
     """
-    cdef public object vertices
-    cdef object _edges
-    cdef Point _normal
-    cdef Pose _planing_pose
-    cdef bool _edges_c, _normal_c, _planing_pose_c
-
     def __cinit__(self, vertices):
         """\
         Constructor.
