@@ -37,6 +37,11 @@ class Angle(float):
 cdef class Point:
     """\
     3D point (vector) class.
+
+    Note that the hash and equality functions for points intentionally collide
+    on points which are very close to each other (no greater than EPSILON in any
+    dimension) to allow for identity despite small errors, important for point
+    caching and other coverage functionality.
     """
     def __cinit__(self, x, y, z, *args):
         """\
@@ -47,10 +52,6 @@ cdef class Point:
         self.z = z
 
     def __hash__(self):
-        """\
-        Hash function. Intentionally collides on points which are very close to
-        each other (per the string representation precision).
-        """
         return hash(repr(self))
 
     def __reduce__(self):
