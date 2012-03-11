@@ -1062,7 +1062,7 @@ cpdef bool triangle_frustum_intersection(Triangle triangle, object hull):
     for face in faces:
         if which_side(triangle.vertices, face.normal(), face.vertices[0]) > 0:
             return False
-    if which_side(hull, triangle.normal(), triangle.vertices[0]) > 0:
+    if which_side(hull, triangle.normal(), triangle._vertex_0) > 0:
         return False
     for fedge, fvertex in edges:
         for i in range(3):

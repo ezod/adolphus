@@ -532,7 +532,7 @@ class Camera(SceneObject):
             ai = cos(tp['angle_max'][0])
             return min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
 
-    def occluded_by(self, triangle, task_params):
+    def occluded_by(self, Triangle triangle, object task_params):
         """\
         Return whether this camera's field of view is occluded (in part) by the
         specified triangle.
@@ -547,6 +547,8 @@ class Camera(SceneObject):
         @return: True if occluded.
         @rtype: C{bool}
         """
+        cdef Triangle ctriangle
+        cdef double z
         z = min(self.zres(task_params['res_min'][1]),
                 self.zc(task_params['blur_max'][1] * \
                 min(self._params['s']))[1])
@@ -556,7 +558,7 @@ class Camera(SceneObject):
                 Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
                 Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
         ctriangle = Triangle([self.pose.inverse()._map(v) \
-            for v in triangle.mapped_triangle.vertices])
+            for v in triangle.vertices])
         return triangle_frustum_intersection(ctriangle, hull)
 
     def strength(self, point, task_params):
@@ -743,7 +745,8 @@ class Model(dict):
                         self._occlusion_cache[key][obj][sceneobject] = \
                             set([triangle for triangle in \
                             self[sceneobject].triangles if \
-                            self[obj].occluded_by(triangle, task_params)])
+                            self[obj].occluded_by(triangle.mapped_triangle,
+                                task_params)])
                 remainder.remove(obj)
         for sceneobject in self:
             if not self._oc_updated[key][sceneobject]:
@@ -756,7 +759,8 @@ class Model(dict):
                         self._occlusion_cache[key][obj][sceneobject] = \
                             set([triangle for triangle in \
                             self[sceneobject].triangles if \
-                            self[obj].occluded_by(triangle, task_params)])
+                            self[obj].occluded_by(triangle.mapped_triangle,
+                                task_params)])
                 self._oc_updated[key][sceneobject] = True
         self._oc_needs_update[key] = False
         return key

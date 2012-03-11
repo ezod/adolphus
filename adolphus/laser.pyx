@@ -12,7 +12,7 @@ from math import pi, sin, tan, atan
 from copy import copy
 
 from geometry import Angle, Pose, Point, DirectionalPoint, Triangle
-from geometry cimport Triangle
+from geometry cimport Point, Triangle
 from coverage import PointCache, Task, Camera, Model
 from posable import SceneObject
 
@@ -131,19 +131,17 @@ class LineLaser(SceneObject):
                 self.pose._map(Point(width, 0, self._params['depth']))))
             return self._triangle
 
-    def occluded_by(self, triangle, task_params):
+    def occluded_by(self, Triangle triangle, *args):
         """\
         Return whether this laser's projection plane is occluded (in part) by
         the specified triangle.
 
         @param triangle: The triangle to check.
         @type triangle: L{OcclusionTriangle}
-        @param task_params: Task parameters (not used).
-        @type task_params: C{dict}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        return self.triangle.overlap(triangle.mapped_triangle)
+        return self.triangle.overlap(triangle)
 
     def triangle_primitives(self):
         """\
@@ -328,7 +326,9 @@ class RangeModel(Model):
         @return: True if occluded, plus incidence angle.
         @rtype: C{bool}, C{float}
         """
-        cdef Triangle triangle
+        cdef Triangle triangle, surface
+        cdef Point ip
+        cdef double d, ds, di
         if not isinstance(self[obj], LineLaser):
             return super(RangeModel, self).occluded(point, obj,
                 task_params=task_params)
