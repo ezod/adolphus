@@ -152,7 +152,8 @@ class YAMLParser(object):
                 with open(self._external_path(path, filename), 'r') as f:
                     for line in f.readlines():
                         triangles.append({'vertices': [[float(c) for c in \
-                        line.split(' ')][i * 3:i * 3 + 3] for i in range(3)]})
+                        line.rstrip().split(' ')][i * 3:i * 3 + 3] \
+                        for i in range(3)]})
             parsed_triangles = []
             for triangle in triangles:
                 try:
