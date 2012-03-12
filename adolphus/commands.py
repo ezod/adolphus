@@ -81,6 +81,7 @@ def loadmodel(ex, args):
     modify(ex, [])
     cameraview(ex, [])
     cameranames(ex, [])
+    hidetasks(ex, [])
     for sceneobject in ex.model:
         ex.model[sceneobject].visible = False
         for triangle in ex.model[sceneobject].triangles:
