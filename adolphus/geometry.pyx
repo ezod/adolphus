@@ -766,7 +766,7 @@ cdef class Pose:
         @return: Composed transformation.
         @rtype: L{Pose}
         """
-        return self._add(other._neg())
+        return self._add(other.inverse())
 
     def __neg__(self):
         """\
