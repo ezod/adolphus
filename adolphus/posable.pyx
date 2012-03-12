@@ -148,7 +148,7 @@ class OcclusionTriangle(Posable, Visualizable):
             mount=mount)
         polygon = visual.Polygon([v[0:2] for v in self.triangle.vertices])
         primitives = [{'type':      'extrusion',
-                       'pos':       [(0, 0, 0.5), (0, 0, -0.5)],
+                       'pos':       [(0, 0, 0.01), (0, 0, -0.01)],
                        'shape':     polygon}]
         Visualizable.__init__(self, primitives)
 

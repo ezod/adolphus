@@ -160,7 +160,10 @@ class YAMLParser(object):
                     triangle['pose'] = self._parse_pose(triangle['pose'])
                 except KeyError:
                     pass
-                parsed_triangles.append(OcclusionTriangle(**triangle))
+                try:
+                    parsed_triangles.append(OcclusionTriangle(**triangle))
+                except ValueError:
+                    pass
             return parsed_triangles
         except KeyError:
             return []

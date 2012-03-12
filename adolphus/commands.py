@@ -285,7 +285,7 @@ def format_pose_text(pose, rformat):
     @return: The formatted pose.
     @rtype: C{str}
     """
-    tstr = 'T: (%.2f, %.2f, %.2f)\n' % pose.T
+    tstr = 'T: (%.2f, %.2f, %.2f)\n' % tuple(pose.T)
     if rformat == 'quaternion':
         return tstr + 'R: %s' % (pose.R.Q,)
     elif rformat == 'matrix':
@@ -297,11 +297,12 @@ def format_pose_text(pose, rformat):
     elif rformat == 'axis-angle':
         angle, axis = pose.R.to_axis_angle()
         return tstr + \
-            u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' % ((angle,) + axis)
+            u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' \
+                % ((angle,) + tuple(axis))
     elif rformat == 'euler-zyx':
         return tstr + \
             u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
-            % pose.R.to_euler_zyx()
+                % pose.R.to_euler_zyx()
     else:
         raise CommandError('invalid rotation format')
 
@@ -639,7 +640,7 @@ def lrcoverage(ex, args, response='pickle'):
         ex.display.userspin = False
         try:
             taxis = Point(*[float(t) for t in args[1:4]])
-        except IndexError:
+        except (TypeError, IndexError):
             taxis = None
         ex.coverage['range'] = ex.model.range_coverage_linear(\
             ex.tasks[args[0]], taxis=taxis)

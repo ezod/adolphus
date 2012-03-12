@@ -605,10 +605,10 @@ class Camera(SceneObject):
             return []
         hull = []
         for z in z_lim:
-            hull += [Point(self.fov['tahl'] * z, self.fov['tavt'] * z, z),
-                     Point(self.fov['tahl'] * z, self.fov['tavb'] * z, z),
-                     Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
-                     Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
+            hull += [(self.fov['tahl'] * z, self.fov['tavt'] * z, z),
+                     (self.fov['tahl'] * z, self.fov['tavb'] * z, z),
+                     (self.fov['tahr'] * z, self.fov['tavb'] * z, z),
+                     (self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
         return [{'type': 'curve', 'color': (1, 0, 0), 'pos': hull[i:i + 4] + \
             hull[i:i + 1]} for i in range(0, 16, 4)] + \
             [{'type': 'curve', 'color': (1, 0, 0),
