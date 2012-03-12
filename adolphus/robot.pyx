@@ -79,6 +79,10 @@ class Robot(SceneObject):
         self._config = [joint['home'] for joint in self.joints]
         if config:
             self.config = config
+        else:
+            self._mount_pose = self.generate_joint_pose(self.joints[i],
+                self.joints[-1]['home']) + (self.pieces[-1].mount_pose() - \
+                self.pose)
         self._visible = False
 
     def get_config(self):
@@ -98,7 +102,8 @@ class Robot(SceneObject):
                     self.generate_joint_pose(self.joints[i], position)
             except IndexError:
                 self._mount_pose = \
-                    self.generate_joint_pose(self.joints[i], position)
+                    self.generate_joint_pose(self.joints[i], position) + \
+                    (self.pieces[-1].mount_pose() - self.pose)
             self._config[i] = position
         self._pose_changed_hook()
 
@@ -133,15 +138,6 @@ class Robot(SceneObject):
         """
         for piece in self.pieces:
             piece.unhighlight()
-
-    def mount_pose(self):
-        """\
-        Return the overall pose transformation to the end effector.
-
-        @return: The overall end effector pose.
-        @rtype: L{Pose}
-        """
-        return self.pieces[-1].mount_pose()
 
     def get_absolute_pose(self):
         """\
