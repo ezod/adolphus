@@ -547,7 +547,7 @@ class Camera(SceneObject):
                 Point(self.fov['tahl'] * z, self.fov['tavb'] * z, z),
                 Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
                 Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
-        ctriangle = Triangle([self.pose.inverse()._map(v) \
+        ctriangle = Triangle(*[self.pose.inverse()._map(v) \
             for v in triangle.vertices])
         return triangle_frustum_intersection(ctriangle, hull)
 

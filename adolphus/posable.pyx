@@ -142,8 +142,8 @@ class OcclusionTriangle(Posable, Visualizable):
         @type mount: L{Posable}
         """
         vertices = [Point(*vertex) for vertex in vertices]
-        planing_pose = Triangle(vertices).planing_pose()
-        self.triangle = Triangle([planing_pose.map(v) for v in vertices])
+        planing_pose = Triangle(*vertices).planing_pose()
+        self.triangle = Triangle(*[planing_pose.map(v) for v in vertices])
         Posable.__init__(self, pose=(planing_pose.inverse() + pose),
             mount=mount)
         try:
@@ -192,7 +192,7 @@ class OcclusionTriangle(Posable, Visualizable):
         try:
             return self._mapped_triangle
         except AttributeError:
-            self._mapped_triangle = self.triangle.pose_map(self.pose)
+            self._mapped_triangle = self.triangle.pose_map(self.get_absolute_pose())
             return self._mapped_triangle
 
 

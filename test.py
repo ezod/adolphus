@@ -90,16 +90,16 @@ class TestGeometry(unittest.TestCase):
         self.assertEqual(m, self.P2.map(self.dp))
 
     def test_triangle_intersection(self):
-        triangle = Triangle((Point(-3, -3, 0), Point(-3, 2, 0), Point(4, 1, 0)))
+        triangle = Triangle(Point(-3, -3, 0), Point(-3, 2, 0), Point(4, 1, 0))
         self.assertTrue(triangle.intersection(Point(-1, -1, 3), Point(-1, -1, -3), True))
         self.assertTrue(triangle.intersection(Point(-1, -1, -3), Point(-1, -1, 3), True))
         self.assertFalse(triangle.intersection(Point(5, 5, 3), Point(5, 5, -3), True))
         self.assertFalse(triangle.intersection(Point(5, 5, 3), Point(5, 5, 1), True))
 
     def test_triangle_overlap(self):
-        triangles = [Triangle((Point(0, 0, 0), Point(10, 2, 0), Point(8, 0, 6))),
-                     Triangle((Point(0, 2, 1), Point(4, -7, 2), Point(7, 3, 3))),
-                     Triangle((Point(-1, -1, -1), Point(-1, -2, 2), Point(-5, -1, -1)))]
+        triangles = [Triangle(Point(0, 0, 0), Point(10, 2, 0), Point(8, 0, 6)),
+                     Triangle(Point(0, 2, 1), Point(4, -7, 2), Point(7, 3, 3)),
+                     Triangle(Point(-1, -1, -1), Point(-1, -2, 2), Point(-5, -1, -1))]
         self.assertTrue(triangles[0].overlap(triangles[1]))
         self.assertTrue(triangles[1].overlap(triangles[0]))
         self.assertFalse(triangles[0].overlap(triangles[2]))

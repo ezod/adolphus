@@ -126,9 +126,9 @@ class LineLaser(SceneObject):
             return self._triangle
         except AttributeError:
             width = self._params['depth'] * tan(self._params['fan'] / 2.0)
-            self._triangle = Triangle((self.pose.T,
+            self._triangle = Triangle(self.pose.T,
                 self.pose._map(Point(-width, 0, self._params['depth'])),
-                self.pose._map(Point(width, 0, self._params['depth']))))
+                self.pose._map(Point(width, 0, self._params['depth'])))
             return self._triangle
 
     def occluded_by(self, Triangle triangle, *args):

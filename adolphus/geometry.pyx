@@ -832,14 +832,14 @@ cdef class Face:
     """\
     Face class.
     """
-    def __cinit__(self, vertices):
+    def __cinit__(self, *args):
         """\
         Constructor.
 
         @param v: Vertices (in counterclockwise order looking at the face).
         @type v: C{tuple} of L{Point}
         """
-        self.vertices = tuple(vertices)
+        self.vertices = args
 
     def __reduce__(self):
         return (Face, (self.vertices,))
@@ -899,7 +899,7 @@ cdef class Triangle(Face):
     """\
     Triangle class.
     """
-    def __init__(self, vertices):
+    def __init__(self, *args):
         """\
         Constructor.
 
@@ -922,9 +922,9 @@ cdef class Triangle(Face):
         @return: The mapped triangle.
         @rtype: L{Triangle}
         """
-        return Triangle((pose.map(self._vertex_0),
-                         pose.map(self._vertex_1),
-                         pose.map(self._vertex_2)))
+        return Triangle(pose._map(self._vertex_0),
+                        pose._map(self._vertex_1),
+                        pose._map(self._vertex_2))
 
     cpdef Point intersection(self, Point origin, Point end, bool limit):
         """\
@@ -980,7 +980,8 @@ cdef class Triangle(Face):
         @rtype: C{bool}
         """
         cdef Triangle triangle
-        cdef int axis
+        cdef int i, axis, odd
+        cdef float dv
         dvs = {}
         dvs[other] = [other.vertices[i].dot(self.normal()) + \
             (self.vertices[0].dot(self.normal()._neg())) for i in range(3)]
@@ -1036,6 +1037,7 @@ cdef int which_side(object points, Point direction, Point vertex):
     @return: 0 if positive side, -1 if negative side, 0 if both.
     @rtype: C{int}
     """
+    cdef Point point
     cdef int positive, negative
     cdef double t
     positive, negative = 0, 0
@@ -1067,12 +1069,13 @@ cpdef bool triangle_frustum_intersection(Triangle triangle, object hull):
     @return: True if the triangle intersects the frustum.
     @rtype: C{bool}
     """
-    cdef int side0, side1
+    cdef Point fedge, fvertex
+    cdef int i, side0, side1
     edges = [(hull[i] - hull[0], hull[0]) for i in range(1, 5)] + \
             [(hull[(i + 1) % 4 + 1] - hull[i + 1], hull[i + 1]) \
             for i in range(4)]
-    faces = [Face([hull[4], hull[3], hull[2], hull[1]])] + \
-            [Face([hull[0], hull[i + 1], hull[(i + 1) % 4 + 1]]) \
+    faces = [Face(hull[4], hull[3], hull[2], hull[1])] + \
+            [Face(hull[0], hull[i + 1], hull[(i + 1) % 4 + 1]) \
             for i in range(4)]
     for face in faces:
         if which_side(triangle.vertices, face.normal(), face.vertices[0]) > 0:
