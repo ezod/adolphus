@@ -698,14 +698,6 @@ class Model(dict):
         """
         if sceneobject in self:
             self._oc_mask.add(sceneobject)
-        try:
-            del self[sceneobject].posecallbacks['occlusion_cache']
-        except KeyError:
-            pass
-        try:
-            del self[sceneobject].paramcallbacks['occlusion_cache']
-        except (AttributeError, KeyError):
-            pass
 
     def occlusion_cache_unmask(self, sceneobject):
         """\
@@ -718,13 +710,6 @@ class Model(dict):
         for ckey in self._occlusion_cache:
             self._oc_updated[ckey][sceneobject] = False
             self._oc_needs_update[ckey] = True
-        def callback():
-            for ckey in self._occlusion_cache:
-                self._oc_updated[ckey][sceneobject] = False
-                self._oc_needs_update[ckey] = True
-        self[sceneobject].posecallbacks['occlusion_cache'] = callback
-        if hasattr(self[sceneobject], 'paramcallbacks'):
-            self[sceneobject].paramcallbacks['occlusion_cache'] = callback
 
     def _update_occlusion_cache(self, task_params=None):
         if task_params:

@@ -388,9 +388,9 @@ class RangeModel(Model):
         original_pose = task.mount.pose
         task_original = PointCache(task.mapped)
 
-        oc_mask_original = self.oc_mask
+        oc_mask_original = self._oc_mask
         def oc_mask_target(obj):
-            self.occlusion_cache_mask(obj.name)
+            self._oc_mask.add(obj.name)
             for child in obj.children:
                 if isinstance(child, SceneObject):
                     oc_mask_target(child)
@@ -435,8 +435,6 @@ class RangeModel(Model):
                 self._rcl_cache[cache_key] = rcl_cache
         finally:
             task.mount.absolute_pose = original_pose
-            for obj in self.oc_mask:
-                if not obj in oc_mask_original:
-                    self.occlusion_cache_unmask(obj)
+            self._oc_mask = oc_mask_original
 
         return coverage
