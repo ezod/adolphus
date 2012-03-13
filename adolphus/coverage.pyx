@@ -85,6 +85,7 @@ class PointCache(dict):
         @param scale: The relative scale of the points.
         @type scale: C{float}
         """
+        # TODO: some convenient way to change the scale globally
         try:
             self.visual.visible = False
             del self.visual
@@ -222,10 +223,13 @@ class Task(Posable):
             raise KeyError(param)
         if hasattr(self.defaults[param], '__iter__'):
             if isinstance(value, Number):
+                # Split single-valued parameters into pairs, if appropriate.
                 value = [value] * 2
             else:
+                # Replace 'default' with the numerical default value.
                 value = [self.defaults[param][i] if value[i] == 'default' \
                     else value[i] for i in range(2)]
+                # Ensure that pairs of values are valid.
                 try:
                     if param in self._gt_params:
                         assert value[0] >= value[1]
@@ -233,6 +237,7 @@ class Task(Posable):
                         assert value[0] <= value[1]
                 except AssertionError:
                     raise ValueError('invalid value pair for %s' % param)
+        # The 'ocular' parameter is integer-valued.
         if param == 'ocular':
             value = int(value)
         self._params[param] = value
@@ -241,6 +246,8 @@ class Task(Posable):
         """\
         Visualize the task model.
         """
+        # Ducktype visualizable by visualizing a deep copy of the mapped point
+        # cache object.
         try:
             del self.vis
         except AttributeError:
@@ -329,15 +336,21 @@ class Camera(SceneObject):
         """
         if not param in self.param_keys:
             raise KeyError(param)
+        # Split the 's' parameter into a pair if specified as a single value.
         if param == 's' and isinstance(value, Number):
             value = [value, value]
         self._params[param] = value
+        # Clear cached values if they depend on the parameter.
         if param in ['f', 's', 'o', 'dim']:
             try:
                 del self._fov
+            except AttributeError:
+                pass
+            try:
                 del self._mr
             except AttributeError:
                 pass
+        # Fire parameter change callbacks.
         for callback in self.paramcallbacks.values():
             callback()
 
@@ -353,7 +366,7 @@ class Camera(SceneObject):
             return self._fov
         except AttributeError:
             self._fov = {}
-            # horizontal
+            # Horizontal field of view values.
             self._fov['ahl'] = 2.0 * atan((self._params['o'][0] * \
                 self._params['s'][0]) / (2.0 * self._params['f']))
             self._fov['ahr'] = 2.0 * atan(((self._params['dim'][0] - \
@@ -363,7 +376,7 @@ class Camera(SceneObject):
             self._fov['tahl'] = -tan(self._fov['ahl'])
             self._fov['tahr'] = tan(self._fov['ahr'])
             self._fov['tah'] = self._fov['tahr'] - self._fov['tahl']
-            # vertical
+            # Vertical field of view values.
             self._fov['avt'] = 2.0 * atan((self._params['o'][1] * \
                 self._params['s'][1]) / (2.0 * self._params['f']))
             self._fov['avb'] = 2.0 * atan(((self._params['dim'][1] - \
@@ -423,6 +436,7 @@ class Camera(SceneObject):
                 * self._params['zS']) / (self._params['A'] \
                 * self._params['f'] + s * c * (self._params['zS'] \
                 - self._params['f'])))
+        # If the second result is negative, it is (effectively) infinite depth.
         if r[1] <= 0:
             r[1] = float('inf')
         return tuple(r)
@@ -511,9 +525,11 @@ class Camera(SceneObject):
         @rtype: C{float}
         """
         try:
+            # Find the cosine of the angle between the ray from the camera to
+            # the point and the direction of the directional point.
             sigma = -(p.unit()).dot(p.direction_unit())
         except (ValueError, AttributeError):
-            # point is at the origin or is non-directional
+            # Point is at the origin or is non-directional.
             return 1.0
         aa = cos(tp['angle_max'][1])
         if tp['angle_max'][0] == tp['angle_max'][1]:
@@ -539,16 +555,19 @@ class Camera(SceneObject):
         """
         cdef Triangle ctriangle
         cdef double z
+        # Calculate the maximum depth of coverage in the frustum.
         z = min(self.zres(task_params['res_min'][1]),
                 self.zc(task_params['blur_max'][1] * \
                 min(self._params['s']))[1])
+        # Build a pyramid containing the frustum.
         hull = [Point(0, 0, 0),
                 Point(self.fov['tahl'] * z, self.fov['tavt'] * z, z),
                 Point(self.fov['tahl'] * z, self.fov['tavb'] * z, z),
                 Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
                 Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
-        ctriangle = Triangle(*[self.pose.inverse()._map(v) \
-            for v in triangle.vertices])
+        # Map the triangle to camera coordinates.
+        ctriangle = triangle.pose_map(self.pose.inverse())
+        # Return whether an intersection exists.
         return triangle_frustum_intersection(ctriangle, hull)
 
     def strength(self, point, task_params):
@@ -564,7 +583,9 @@ class Camera(SceneObject):
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
+        # Map the point to camera coordinates.
         cp = self.pose.inverse().map(point)
+        # Return the coverage value.
         return self.cv(cp, task_params) * self.cr(cp, task_params) \
              * self.cf(cp, task_params) * self.cd(cp, task_params)
 
@@ -572,6 +593,7 @@ class Camera(SceneObject):
         """\
         Update the visualization for camera active state and pose.
         """
+        # TODO: use something else for active, so camera triangles can be seen
         self.opacity = 1.0 if self.active else 0.2
         super(Camera, self).update_visualization()
 
@@ -585,20 +607,24 @@ class Camera(SceneObject):
         @return: Frustum primitives.
         @rtype: C{list} of C{dict}
         """
+        # Find the minimum and maximum depths of coverage in the frustum.
         z_lim = [max(self.zres(task_params['res_max'][1]),
                      self.zc(task_params['blur_max'][1] * \
                      min(self._params['s']))[0]),
                  min(self.zres(task_params['res_min'][1]),
                      self.zc(task_params['blur_max'][1] * \
                      min(self._params['s']))[1])]
+        # No primitives if no coverage.
         if not z_lim[0] < z_lim[1]:
             return []
+        # Otherwise, generate the hull.
         hull = []
         for z in z_lim:
             hull += [(self.fov['tahl'] * z, self.fov['tavt'] * z, z),
                      (self.fov['tahl'] * z, self.fov['tavb'] * z, z),
                      (self.fov['tahr'] * z, self.fov['tavb'] * z, z),
                      (self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
+        # Return the primitives based on the hull.
         return [{'type': 'curve', 'color': (1, 0, 0), 'pos': hull[i:i + 4] + \
             hull[i:i + 1]} for i in range(0, 16, 4)] + \
             [{'type': 'curve', 'color': (1, 0, 0),
@@ -630,9 +656,11 @@ class Model(dict):
         self._oc_mask = set()
 
     def __setitem__(self, key, value):
+        # Mark occlusion cache for update.
         for ckey in self._occlusion_cache:
             self._oc_updated[ckey][key] = False
             self._oc_needs_update[ckey] = True
+        # Register pose/parameter change callbacks.
         def callback():
             for ckey in self._occlusion_cache:
                 self._oc_updated[ckey][key] = False
@@ -640,6 +668,7 @@ class Model(dict):
         value.posecallbacks['occlusion_cache'] = callback
         if hasattr(value, 'paramcallbacks'):
             value.paramcallbacks['occlusion_cache'] = callback
+        # If this is a camera, add it to the camera set.
         if isinstance(value, Camera):
             self.cameras.add(key)
         super(Model, self).__setitem__(key, value)
@@ -713,10 +742,12 @@ class Model(dict):
 
     def _update_occlusion_cache(self, task_params=None):
         if task_params:
+            # The key is a hash on the values defining the frustum depth.
             key = (task_params['res_min'][1], task_params['blur_max'][1])
         else:
             key = None
         if not key in self._occlusion_cache:
+            # Build a new occlusion cache entry if necessary.
             self._occlusion_cache[key] = {}
             self._oc_updated[key] = {}
             for sceneobject in self:
@@ -724,8 +755,10 @@ class Model(dict):
             self._oc_needs_update[key] = True
         elif not self._oc_needs_update[key]:
             return key
+        # Build a set of objects which can be occluded (e.g. cameras).
         obj_set = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
             for oc_set in self.oc_sets]))
+        # Update cache for all objects for any occludables needing update.
         for obj in set(obj_set):
             if not self._oc_updated[key][obj]:
                 self._occlusion_cache[key][obj] = set()
@@ -740,6 +773,7 @@ class Model(dict):
                             if self[obj].occluded_by(mt, task_params):
                                 self._occlusion_cache[key][obj].add(mt)
                 obj_set.remove(obj)
+        # Update cache for all occludables for any objects needing update.
         for sceneobject in self:
             if not self._oc_updated[key][sceneobject]:
                 for obj in obj_set:
@@ -795,18 +829,24 @@ class Model(dict):
         @rtype: C{float}
         """
         maxstrength = 0.0
+        # If there are no views, this loop does nothing and 0.0 is returned.
         for view in self.views(ocular=task_params['ocular'], subset=subset):
+            # The view has at least one camera, so minstrength will be
+            # overwritten with the minimum strength within the view.
             minstrength = float('inf')
             for camera in view:
+                # Check the coverage strength for this camera.
                 strength = self[camera].strength(point, task_params)
-                # the following should short-circuit if strength = 0, and not
-                # incur a performance hit for the occlusion check
+                # The following should short-circuit if strength = 0, and thus
+                # not incur a performance hit for the occlusion check.
                 if not strength or self.occluded(point, camera, task_params):
                     minstrength = 0.0
                     break
                 elif strength < minstrength:
                     minstrength = strength
+            # Update the maximum strength for any view.
             maxstrength = max(maxstrength, minstrength)
+            # If the strength is 1.0, return it immediately.
             if maxstrength == 1.0:
                 break
         return maxstrength
@@ -825,6 +865,7 @@ class Model(dict):
         """
         coverage = PointCache()
         for point in task.mapped:
+            # Calculate coverage strength for each mapped task point.
             coverage[point] = self.strength(point, task.params, subset)
         return coverage
 

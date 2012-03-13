@@ -55,9 +55,12 @@ class Robot(SceneObject):
                  occlusion=True):
         super(Robot, self).__init__(name, pose=pose, mount=mount)
         self.pieces = []
+        # The first piece is mounted on the robot's mount, and its relative
+        # pose is always equal to the robot's relative pose.
         nextpose = pose
         for i, piece in enumerate(pieces):
             offset = piece['offset']
+            # Mount each piece after the first on its predecessor.
             try:
                 mount = self.pieces[i - 1]
             except IndexError:
@@ -80,6 +83,7 @@ class Robot(SceneObject):
         if config:
             self.config = config
         else:
+            # The mount pose of the robot is that of the last piece.
             self._mount_pose = self.generate_joint_pose(self.joints[i],
                 self.joints[-1]['home']) + (self.pieces[-1].mount_pose() - \
                 self.pose)
@@ -101,6 +105,7 @@ class Robot(SceneObject):
                 self.pieces[i + 1].relative_pose = \
                     self.generate_joint_pose(self.joints[i], position)
             except IndexError:
+                # The mount pose of the robot is that of the last piece.
                 self._mount_pose = \
                     self.generate_joint_pose(self.joints[i], position) + \
                     (self.pieces[-1].mount_pose() - self.pose)
@@ -207,7 +212,7 @@ class Robot(SceneObject):
     @property
     def triangles(self):
         """\
-        Occluding triangles.
+        Occluding triangles (of all pieces, combined).
         """
         return reduce(lambda a, b: a | b,
             [piece.triangles for piece in self.pieces])

@@ -142,10 +142,14 @@ class OcclusionTriangle(Posable, Visualizable):
         @type mount: L{Posable}
         """
         vertices = [Point(*vertex) for vertex in vertices]
+        # The x-y mapped triangle is stored, and the inverse of the planing
+        # pose is composed onto the given relative pose. Among other things,
+        # this avoids strange visualization behavior.
         planing_pose = Triangle(*vertices).planing_pose()
         self.triangle = Triangle(*[planing_pose.map(v) for v in vertices])
         Posable.__init__(self, pose=(planing_pose.inverse() + pose),
             mount=mount)
+        # Attempt to build the primitive set (relies on Visual).
         try:
             polygon = visual.Polygon([v[0:2] for v in self.triangle.vertices])
         except AttributeError:
@@ -192,7 +196,7 @@ class OcclusionTriangle(Posable, Visualizable):
         try:
             return self._mapped_triangle
         except AttributeError:
-            self._mapped_triangle = self.triangle.pose_map(self.get_absolute_pose())
+            self._mapped_triangle = self.triangle.pose_map(self.pose)
             return self._mapped_triangle
 
 
@@ -230,7 +234,7 @@ class SceneObject(Posable, Visualizable):
         try:
             self.triangles = set()
         except AttributeError:
-            # child class handles triangles separately
+            # Child class handles triangles separately.
             pass
         else:
             for triangle in triangles:
@@ -277,8 +281,10 @@ class SceneObject(Posable, Visualizable):
         Toggle display of occluding triangles in the visualization. This fades
         the object sprites so that the opaque triangles can be seen clearly.
         """
+        # Triangles are always visualized if there are no primitives.
         if not self.primitives:
             return
+        # Otherwise, toggle visualization of triangles.
         if self._triangles_view:
             self.opacity = 1.0
             self.update_visualization()
@@ -297,6 +303,7 @@ class SceneObject(Posable, Visualizable):
         Visualize this object. If no sprites are defined, the attached
         occluding triangles are visualized instead.
         """
+        # Always visualize triangles if there are no primitives.
         if not self.primitives:
             for triangle in self.triangles:
                 triangle.visualize()
