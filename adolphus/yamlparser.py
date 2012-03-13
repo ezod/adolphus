@@ -11,7 +11,7 @@ import os
 import yaml
 import pkg_resources
 from math import pi
-from functools import reduce
+from itertools import chain
 
 from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import OcclusionTriangle, SceneObject
@@ -215,17 +215,17 @@ class YAMLParser(object):
                 mount_pose = self._parse_pose(obj['mount_pose']) \
                     if 'mount_pose' in obj else Pose()
                 if 'sprites' in obj:
-                    primitives = reduce(lambda a, b: a + b,
+                    primitives = list(chain.from_iterable(\
                         [self._parse_primitives(sprite) \
-                        for sprite in obj['sprites']])
+                        for sprite in obj['sprites']]))
                 else:
                     primitives = []
                 occlusion = bool(obj['occlusion']) \
                     if 'occlusion' in obj else True
                 if occlusion and 'sprites' in obj:
-                    triangles = reduce(lambda a, b: a + b,
+                    triangles = list(chain.from_iterable(\
                         [self._parse_triangles(sprite, self._path) \
-                        for sprite in obj['sprites']])
+                        for sprite in obj['sprites']]))
                 else:
                     triangles = []
                 if objecttype == 'cameras':
