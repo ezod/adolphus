@@ -141,9 +141,9 @@ class Robot(SceneObject):
 
     def get_absolute_pose(self):
         """\
-        The pose of the robot.
+        The (absolute) pose of the robot.
         """
-        return self.pieces[0].pose
+        return self.pieces[0].get_absolute_pose()
 
     def set_absolute_pose(self, pose):
         """\
@@ -154,6 +154,15 @@ class Robot(SceneObject):
         """
         self.pieces[0].set_absolute_pose(pose)
         super(Robot, self).set_absolute_pose(pose)
+    
+    absolute_pose = property(get_absolute_pose, set_absolute_pose)
+    pose = absolute_pose
+
+    def get_relative_pose(self):
+        """\
+        The relative pose of the robot.
+        """
+        return self.pieces[0].get_relative_pose()
 
     def set_relative_pose(self, pose):
         """\
@@ -164,6 +173,8 @@ class Robot(SceneObject):
         """
         self.pieces[0].set_relative_pose(pose)
         super(Robot, self).set_relative_pose(pose)
+
+    relative_pose = property(get_relative_pose, set_relative_pose)
 
     @staticmethod
     def generate_joint_pose(joint, position=None):

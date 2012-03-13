@@ -48,15 +48,15 @@ class Posable(object):
         try:
             return self._absolute_pose
         except AttributeError:
-            if self.mount:
-                self._absolute_pose = self._pose + self.mount.mount_pose()
+            if self._mount:
+                self._absolute_pose = self._pose._add(self._mount.mount_pose())
             else:
                 self._absolute_pose = self._pose
             return self._absolute_pose
 
     def set_absolute_pose(self, value):
         try:
-            self._pose = value - self.mount.mount_pose()
+            self._pose = value._add(self._mount.mount_pose().inverse())
         except AttributeError:
             self._pose = value
         self._pose_changed_hook()
@@ -119,7 +119,7 @@ class Posable(object):
         @return: The overall pose.
         @rtype: L{Pose}
         """
-        return self._mount_pose + self.pose
+        return self._mount_pose._add(self.get_absolute_pose())
 
 
 class OcclusionTriangle(Posable, Visualizable):
@@ -146,11 +146,15 @@ class OcclusionTriangle(Posable, Visualizable):
         self.triangle = Triangle([planing_pose.map(v) for v in vertices])
         Posable.__init__(self, pose=(planing_pose.inverse() + pose),
             mount=mount)
-        polygon = visual.Polygon([v[0:2] for v in self.triangle.vertices])
-        primitives = [{'type':      'extrusion',
-                       'pos':       [(0, 0, 0.01), (0, 0, -0.01)],
-                       'shape':     polygon}]
-        Visualizable.__init__(self, primitives)
+        try:
+            polygon = visual.Polygon([v[0:2] for v in self.triangle.vertices])
+        except AttributeError:
+            primitives = []
+        else:
+            primitives = [{'type':      'extrusion',
+                           'pos':       [(0, 0, 0.01), (0, 0, -0.01)],
+                           'shape':     polygon}]
+        Visualizable.__init__(self, primitives=primitives)
 
     def get_absolute_pose(self):
         """\
@@ -161,10 +165,13 @@ class OcclusionTriangle(Posable, Visualizable):
             return self._absolute_pose
         except AttributeError:
             if self.mount:
-                self._absolute_pose = self._pose + self.mount.pose
+                self._absolute_pose = self._pose._add(self._mount.pose)
             else:
                 self._absolute_pose = self._pose
             return self._absolute_pose
+
+    absolute_pose = property(get_absolute_pose, Posable.set_absolute_pose)
+    pose = absolute_pose
 
     def _pose_changed_hook(self):
         """\
@@ -176,16 +183,16 @@ class OcclusionTriangle(Posable, Visualizable):
             pass
         Posable._pose_changed_hook(self)
 
-    @property
+    mount_pose = get_absolute_pose
+
     def mapped_triangle(self):
         """\
-        Pose-mapped triangle.
+        Return the pose-mapped triangle.
         """
         try:
             return self._mapped_triangle
         except AttributeError:
-            self._mapped_triangle = Triangle([self.pose.map(v) \
-                for v in self.triangle.vertices])
+            self._mapped_triangle = self.triangle.pose_map(self.pose)
             return self._mapped_triangle
 
 

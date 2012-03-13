@@ -78,7 +78,8 @@ cdef class Face:
 
 
 cdef class Triangle(Face):
-    cdef Point _vertex_0, _edge_0, _edge_1, _edge_2
+    cdef Point _vertex_0, _vertex_1, _vertex_2, _edge_0, _edge_1, _edge_2
+    cpdef Triangle pose_map(self, Pose pose)
     cpdef Point intersection(self, Point origin, Point end, bool limit)
     cpdef bool overlap(self, Triangle other)
 

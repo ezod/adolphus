@@ -907,9 +907,24 @@ cdef class Triangle(Face):
         @type v: C{tuple} of L{Point}
         """
         self._vertex_0 = self.vertices[0]
+        self._vertex_1 = self.vertices[1]
+        self._vertex_2 = self.vertices[2]
         self._edge_0 = self.edges()[0]
         self._edge_1 = self.edges()[1]
         self._edge_2 = self.edges()[2]
+
+    cpdef Triangle pose_map(self, Pose pose):
+        """\
+        Map triangle through a pose.
+
+        @param pose: The pose through which to map the triangle.
+        @type pose: L{Pose}
+        @return: The mapped triangle.
+        @rtype: L{Triangle}
+        """
+        return Triangle((pose.map(self._vertex_0),
+                         pose.map(self._vertex_1),
+                         pose.map(self._vertex_2)))
 
     cpdef Point intersection(self, Point origin, Point end, bool limit):
         """\

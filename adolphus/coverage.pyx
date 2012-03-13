@@ -186,16 +186,6 @@ class Task(Posable):
             return self._mapped
 
     @property
-    def pose(self):
-        """\
-        The pose of the task model.
-        """
-        if self.mount:
-            return self._pose + self.mount.mount_pose()
-        else:
-            return self._pose
-
-    @property
     def params(self):
         """\
         Task parameters, with defaults filled in for missing values.
@@ -743,10 +733,10 @@ class Model(dict):
                     if key is None or sceneobject in self._oc_mask:
                         for triangle in self[sceneobject].triangles:
                             self._occlusion_cache[key][obj].add(\
-                                triangle.mapped_triangle)
+                                triangle.mapped_triangle())
                     else:
                         for triangle in self[sceneobject].triangles:
-                            mt = triangle.mapped_triangle
+                            mt = triangle.mapped_triangle()
                             if self[obj].occluded_by(mt, task_params):
                                 self._occlusion_cache[key][obj].add(mt)
                 obj_set.remove(obj)
@@ -756,10 +746,10 @@ class Model(dict):
                     if key is None or sceneobject in self._oc_mask:
                         for triangle in self[sceneobject].triangles:
                             self._occlusion_cache[key][obj].add(\
-                                triangle.mapped_triangle)
+                                triangle.mapped_triangle())
                     else:
                         for triangle in self[sceneobject].triangles:
-                            mt = triangle.mapped_triangle
+                            mt = triangle.mapped_triangle()
                             if self[obj].occluded_by(mt, task_params):
                                 self._occlusion_cache[key][obj].add(mt)
                             else:
