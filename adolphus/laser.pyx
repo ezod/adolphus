@@ -332,19 +332,11 @@ class RangeModel(Model):
         if not isinstance(self[obj], LineLaser):
             return super(RangeModel, self).occluded(point, obj,
                 task_params=task_params)
-        if task_params:
-            key = self._update_occlusion_cache(task_params)
-            tset = set([t.mapped_triangle for ts in \
-                [self._occlusion_cache[key][obj][sceneobject] \
-                for sceneobject in self] for t in ts])
-        else:
-            tset = set([t.mapped_triangle for ts in \
-                [self[sceneobject].triangles for sceneobject in self] \
-                for t in ts])
+        key = self._update_occlusion_cache(task_params)
         d = self[obj].pose.T.euclidean(point)
         ds = float('inf')
         surface = None
-        for triangle in tset:
+        for triangle in self._occlusion_cache[key][obj]:
             ip = triangle.intersection(self[obj].pose.T, point, False)
             if not ip:
                 continue
@@ -355,7 +347,7 @@ class RangeModel(Model):
                 ds = di
                 surface = triangle
         if surface and ds - d < 1e-04:
-            ln = self[obj].pose.inverse()._map(surface.mapped_triangle.normal())
+            ln = self[obj].pose.inverse()._map(surface.normal())
             angle = atan(ln.x / ln.z)
         else:
             angle = None

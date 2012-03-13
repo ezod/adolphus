@@ -721,8 +721,11 @@ class Model(dict):
             self._oc_updated[ckey][sceneobject] = False
             self._oc_needs_update[ckey] = True
 
-    def _update_occlusion_cache(self, task_params):
-        key = (task_params['res_min'][1], task_params['blur_max'][1])
+    def _update_occlusion_cache(self, task_params=None):
+        if task_params:
+            key = (task_params['res_min'][1], task_params['blur_max'][1])
+        else:
+            key = None
         if not key in self._occlusion_cache:
             self._occlusion_cache[key] = {}
             self._oc_updated[key] = {}
@@ -730,37 +733,37 @@ class Model(dict):
                 self._oc_updated[key][sceneobject] = False
             self._oc_needs_update[key] = True
         elif not self._oc_needs_update[key]:
-            return key 
-        remainder = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
+            return key
+        obj_set = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
             for oc_set in self.oc_sets]))
-        for obj in set(remainder):
+        for obj in set(obj_set):
             if not self._oc_updated[key][obj]:
-                self._occlusion_cache[key][obj] = {}
+                self._occlusion_cache[key][obj] = set()
                 for sceneobject in self:
-                    if sceneobject in self._oc_mask:
-                        self._occlusion_cache[key][obj][sceneobject] = \
-                            set([triangle for triangle in \
-                            self[sceneobject].triangles])
+                    if key is None or sceneobject in self._oc_mask:
+                        for triangle in self[sceneobject].triangles:
+                            self._occlusion_cache[key][obj].add(\
+                                triangle.mapped_triangle)
                     else:
-                        self._occlusion_cache[key][obj][sceneobject] = \
-                            set([triangle for triangle in \
-                            self[sceneobject].triangles if \
-                            self[obj].occluded_by(triangle.mapped_triangle,
-                                task_params)])
-                remainder.remove(obj)
+                        for triangle in self[sceneobject].triangles:
+                            mt = triangle.mapped_triangle
+                            if self[obj].occluded_by(mt, task_params):
+                                self._occlusion_cache[key][obj].add(mt)
+                obj_set.remove(obj)
         for sceneobject in self:
             if not self._oc_updated[key][sceneobject]:
-                for obj in remainder:
-                    if sceneobject in self._oc_mask:
-                        self._occlusion_cache[key][obj][sceneobject] = \
-                            set([triangle for triangle in \
-                            self[sceneobject].triangles])
+                for obj in obj_set:
+                    if key is None or sceneobject in self._oc_mask:
+                        for triangle in self[sceneobject].triangles:
+                            self._occlusion_cache[key][obj].add(\
+                                triangle.mapped_triangle)
                     else:
-                        self._occlusion_cache[key][obj][sceneobject] = \
-                            set([triangle for triangle in \
-                            self[sceneobject].triangles if \
-                            self[obj].occluded_by(triangle.mapped_triangle,
-                                task_params)])
+                        for triangle in self[sceneobject].triangles:
+                            mt = triangle.mapped_triangle
+                            if self[obj].occluded_by(mt, task_params):
+                                self._occlusion_cache[key][obj].add(mt)
+                            else:
+                                self._occlusion_cache[key][obj].discard(mt)
                 self._oc_updated[key][sceneobject] = True
         self._oc_needs_update[key] = False
         return key
@@ -781,16 +784,8 @@ class Model(dict):
         @rtype: C{bool}
         """
         cdef Triangle triangle
-        if task_params:
-            key = self._update_occlusion_cache(task_params)
-            tset = set([t.mapped_triangle for ts in \
-                [self._occlusion_cache[key][obj][sceneobject] \
-                for sceneobject in self] for t in ts])
-        else:
-            tset = set([t.mapped_triangle for ts in \
-                [self[sceneobject].triangles for sceneobject in self] \
-                for t in ts])
-        for triangle in tset:
+        key = self._update_occlusion_cache(task_params)
+        for triangle in self._occlusion_cache[key][obj]:
             if triangle.intersection(self[obj].pose.T, point, True):
                 return True
         return False

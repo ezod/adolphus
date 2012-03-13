@@ -131,17 +131,17 @@ class TestModel01(unittest.TestCase):
         self.assertEqual(self.model.performance(self.tasks['R2']), 0.0)
 
     def test_occlusion_cache(self):
-        depth = self.model._update_occlusion_cache(self.tasks['R1'].params)
-        self.assertTrue(self.model._occlusion_cache[depth]['C']['P1'])
-        self.assertFalse(self.model._occlusion_cache[depth]['C']['P2'])
+        key = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertTrue(all([t.mapped_triangle in self.model._occlusion_cache[key]['C'] for t in self.model['P1'].triangles]))
+        self.assertFalse(any([t.mapped_triangle in self.model._occlusion_cache[key]['C'] for t in self.model['P2'].triangles]))
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(-pi / 2.0, Point(1, 0, 0))))
-        depth = self.model._update_occlusion_cache(self.tasks['R1'].params)
-        self.assertFalse(self.model._occlusion_cache[depth]['C']['P1'])
-        self.assertTrue(self.model._occlusion_cache[depth]['C']['P2'])
+        key = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertFalse(any([t.mapped_triangle in self.model._occlusion_cache[key]['C'] for t in self.model['P1'].triangles]))
+        self.assertTrue(all([t.mapped_triangle in self.model._occlusion_cache[key]['C'] for t in self.model['P2'].triangles]))
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(pi, Point(1, 0, 0))))
-        depth = self.model._update_occlusion_cache(self.tasks['R1'].params)
-        self.assertFalse(self.model._occlusion_cache[depth]['C']['P1'])
-        self.assertFalse(self.model._occlusion_cache[depth]['C']['P2'])
+        key = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertFalse(any([t.mapped_triangle in self.model._occlusion_cache[key]['C'] for t in self.model['P1'].triangles]))
+        self.assertFalse(any([t.mapped_triangle in self.model._occlusion_cache[key]['C'] for t in self.model['P2'].triangles]))
 
 
 if __name__ == '__main__':
