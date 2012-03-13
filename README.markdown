@@ -12,7 +12,7 @@ See our [screencast] [screencast] for an introduction.
 ## Dependencies
 
 Adolphus requires [Python] [python] 2.6 or later, [PyYAML] [pyyaml] 3.09 or
-later, and [setuptools] [setuptools].
+later, [Cython] [cython] 0.14 or later, and [setuptools] [setuptools].
 
 [Visual] [visual] 5.4 or later is required for 3D visualization and interaction
 (optional, recommended). [PyGTK] [pygtk] 2.22 or later is required for the
@@ -23,14 +23,12 @@ interactive tool panel (optional).
 
 ## Development
 
-### Geometry Module
+### Cython Modules
 
-[Cython] [cython] 0.14 or later is required for development involving the
-geometry module. After modifying `geometry.pyx`, be sure to regenerate the C
-source and build it in-place for testing by issuing the following commands in
-the repository root:
+After modifying any `.pyx` file, regenerate the C source and build it in-place
+for testing by issuing the following commands in the repository root:
 
-    cython adolphus/geometry.pyx
+    cython adolphus/*.pyx
     python setup.py build_ext --inplace
 
 
