@@ -847,6 +847,15 @@ cdef class Face:
     def __hash__(self):
         return hash(self.vertices)
 
+    def __repr__(self):
+        """\
+        Canonical string representation.
+
+        @return: Canonical string representation.
+        @rtype: C{str}
+        """
+        return '%s(%s)' % (type(self).__name__, self.vertices)
+
     cpdef object edges(self):
         """\
         Edges of this face.
