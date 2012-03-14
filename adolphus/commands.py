@@ -629,10 +629,9 @@ def coverage(ex, args, response='pickle'):
         ex.display.userspin = True
 
 @command
-def lrcoverage(ex, args, response='pickle'):
+def rangecoverage(ex, args, response='pickle'):
     """\
-    Return the linear range imaging coverage performance based on laser and
-    transport parameters.
+    TODO
 
     usage: %s task [tx ty tz]
     """
@@ -643,8 +642,8 @@ def lrcoverage(ex, args, response='pickle'):
             taxis = Point(*[float(t) for t in args[1:4]])
         except (TypeError, IndexError):
             taxis = None
-        ex.coverage['range'] = ex.model.range_coverage_linear(\
-            ex.tasks[args[0]], taxis=taxis)
+        ex.coverage['range'] = ex.model.range_coverage(\
+            ex.tasks[args[0]], 'LinearTarget', taxis=taxis)
         ex.coverage['range'].visualize()
         performance = ex.model.performance(ex.tasks[args[0]],
             coverage=ex.coverage['range'])

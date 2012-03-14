@@ -12,7 +12,6 @@ from math import pi, sin, tan, atan
 from copy import copy
 
 from geometry import Angle, Pose, Point, DirectionalPoint, Triangle
-from geometry cimport Point, Triangle
 from coverage import PointCache, Task, Camera, Model
 from posable import SceneObject
 
@@ -131,7 +130,7 @@ class LineLaser(SceneObject):
                 self.pose._map(Point(width, 0, self._params['depth'])))
             return self._triangle
 
-    def occluded_by(self, Triangle triangle, *args):
+    def occluded_by(self, triangle, *args):
         """\
         Return whether this laser's projection plane is occluded (in part) by
         the specified triangle.
@@ -261,7 +260,6 @@ class RangeModel(Model):
     def __init__(self):
         self.lasers = set()
         self._active_laser = None
-        self._rcl_cache = {}
         super(RangeModel, self).__init__()
 
     def __setitem__(self, key, value):
@@ -287,26 +285,11 @@ class RangeModel(Model):
 
     def set_active_laser(self, value):
         if value in self.lasers:
-            if value != self._active_laser:
-                self._clear_caches()
-                def callback():
-                    self._clear_caches()
-                try:
-                    del self[self._active_laser].posecallbacks['rc_cache']
-                    del self[self._active_laser].paramcallbacks['rc_cache']
-                except KeyError:
-                    pass
-                self[value].posecallbacks['rc_cache'] = callback
-                self[value].paramcallbacks['rc_cache'] = callback
             self._active_laser = value
         else:
             raise KeyError('invalid laser %s' % value)
 
     active_laser = property(get_active_laser, set_active_laser)
-
-    def _clear_caches(self):
-        self._rcl_cache = {}
-        # TODO: delete rotary range coverage cache
 
     def occluded(self, point, obj, task_params=None):
         """\
@@ -326,9 +309,6 @@ class RangeModel(Model):
         @return: True if occluded, plus incidence angle.
         @rtype: C{bool}, C{float}
         """
-        cdef Triangle triangle, surface
-        cdef Point ip
-        cdef double d, ds, di
         if not isinstance(self[obj], LineLaser):
             return super(RangeModel, self).occluded(point, obj,
                 task_params=task_params)
@@ -353,7 +333,61 @@ class RangeModel(Model):
             angle = None
         return False, angle
 
-    def range_coverage_linear(self, task, taxis=None, subset=None):
+    class Transport(object):
+        def __init__(self, model):
+            self.model = model
+            self.laser = self.model[self.model.active_laser]
+
+        def __enter__(self):
+            self.original_pose = self.tobject.pose
+            self.original_oc_mask = copy(self.model._oc_mask)
+            self.oc_mask(self.tobject)
+            return self
+
+        def __exit__(self, exc_type, exc_value, exc_traceback):
+            self.model._oc_mask = self.original_oc_mask
+            self.tobject.set_absolute_pose(self.original_pose)
+
+        def oc_mask(self, sceneobject):
+            self.model.occlusion_cache_mask(sceneobject.name)
+            for child in sceneobject.children:
+                if isinstance(child, SceneObject):
+                    self.oc_mask(child)
+
+        @property
+        def tobject(self):
+            raise NotImplementedError
+
+        def transport(self):
+            raise NotImplementedError
+
+    class LinearTargetTransport(Transport):
+        def __init__(self, model, taxis=None):
+            super(RangeModel.LinearTargetTransport, self).__init__(model)
+            if not taxis:
+                self.taxis = self.laser.triangle.normal()
+            elif not taxis.dot(self.laser.triangle.normal()):
+                raise ValueError('transport axis parallel to laser plane')
+            else:
+                self.taxis = taxis
+        
+        @property
+        def tobject(self):
+            return self.task.mount
+
+        def transport(self):
+            rho, eta = self.laser.pose._dmap(DirectionalPoint(0, 0, 0, pi, 0))[3:5]
+            task_original = PointCache(self.task.mapped)
+            for point in task_original:
+                lp = self.laser.triangle.intersection(point, point + self.taxis, False)
+                if not lp:
+                    yield point, None
+                pose = Pose(T=(lp - point))
+                self.tobject.absolute_pose = self.original_pose + pose
+                mp = pose._map(point)
+                yield point, DirectionalPoint(mp.x, mp.y, mp.z, rho, eta)
+
+    def range_coverage(self, task, transport, subset=None, **kwargs):
         """\
         Return the coverage model using a linear range coverage scheme. It is
         assumed that the specified task is mounted on the target object, which
@@ -369,72 +403,26 @@ class RangeModel(Model):
 
         @param task: The range coverage task.
         @type task: L{Task}
-        @param taxis: The transport axis (defaults to laser plane normal).
-        @type taxis: L{Point}
+        @param transport:
+        @type transport: C{str}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @return: The coverage model.
         @rtype: L{PointCache}
         """
-        cdef Triangle triangle
         if not isinstance(task, RangeTask):
             raise TypeError('task is not a range coverage task')
-        if not taxis:
-            taxis = self[self.active_laser].triangle.normal()
-        elif not taxis.dot(self[self.active_laser].triangle.normal()):
-            raise ValueError('transport axis parallel to laser plane')
-        rho, eta = self[self.active_laser].pose._dmap(\
-            DirectionalPoint(0, 0, 0, pi, 0))[3:5]
-        original_pose = task.mount.pose
-        task_original = PointCache(task.mapped)
-
-        oc_mask_original = self._oc_mask
-        def oc_mask_target(obj):
-            self._oc_mask.add(obj.name)
-            for child in obj.children:
-                if isinstance(child, SceneObject):
-                    oc_mask_target(child)
-        oc_mask_target(task.mount)
-
         coverage = PointCache()
-
-        rcl_cache = {}
-        cache_key = hash(tuple(task.original.keys())) + \
-                    hash(tuple([tuple(v) if hasattr(v, '__iter__') else v \
-                    for v in task.params.values()])) + \
-                    hash(taxis) + hash(original_pose)
-
-        try:
-            for point in task_original:
-                if cache_key in self._rcl_cache:
-                    try:
-                        mdp = self._rcl_cache[cache_key][point][0]
-                    except KeyError:
-                        coverage[point] = 0.0
-                        continue
-                    else:
-                        pose = self._rcl_cache[cache_key][point][1]
-                        task.mount.absolute_pose = original_pose + pose
-                else:
-                    lp = self[self.active_laser].triangle.intersection(point,
-                        point + taxis, False)
-                    if not lp:
-                        coverage[point] = 0.0
-                        continue
-                    pose = Pose(T=(lp - point))
-                    task.mount.absolute_pose = original_pose + pose
-                    mp = pose._map(point)
-                    mdp = DirectionalPoint(mp.x, mp.y, mp.z, rho, eta)
-                    occluded, inc_angle = self.occluded(mdp, self.active_laser)
-                    if occluded or inc_angle > task.params['inc_angle_max']:
-                        coverage[point] = 0.0
-                        continue
-                    rcl_cache[point] = (mdp, pose)
+        transport = RangeModel.LinearTargetTransport(self)
+        transport.task = task
+        with transport:
+            for point, mdp in transport.transport():
+                if not mdp:
+                    coverage[point] = 0.0
+                    continue
+                occluded, inc_angle = self.occluded(mdp, self.active_laser)
+                if occluded or inc_angle > task.params['inc_angle_max']:
+                    coverage[point] = 0.0
+                    continue
                 coverage[point] = self.strength(mdp, task.params, subset=subset)
-            if not cache_key in self._rcl_cache:
-                self._rcl_cache[cache_key] = rcl_cache
-        finally:
-            task.mount.absolute_pose = original_pose
-            self._oc_mask = oc_mask_original
-
         return coverage
