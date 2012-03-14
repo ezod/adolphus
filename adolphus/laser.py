@@ -11,9 +11,9 @@ modeling laser line based range imaging cameras.
 from math import pi, sin, tan, atan
 from copy import copy
 
-from geometry import Angle, Pose, Point, DirectionalPoint, Triangle
-from coverage import PointCache, Task, Camera, Model
-from posable import SceneObject
+from .geometry import Angle, Pose, Point, DirectionalPoint, Triangle
+from .coverage import PointCache, Task, Camera, Model
+from .posable import SceneObject
 
 
 class RangeTask(Task):

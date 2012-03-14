@@ -19,10 +19,9 @@ try:
 except ImportError:
     hypergraph = None
 
-from geometry import Point, Pose, Triangle, triangle_frustum_intersection
-from geometry cimport Point, Triangle
-from posable import Posable, SceneObject
-from visualization import Visualizable
+from .geometry import Point, Pose, Triangle, triangle_frustum_intersection
+from .posable import Posable, SceneObject
+from .visualization import Visualizable
 
 
 class PointCache(dict):
@@ -538,7 +537,7 @@ class Camera(SceneObject):
             ai = cos(tp['angle_max'][0])
             return min(max((sigma - aa) / (ai - aa), 0.0), 1.0)
 
-    def occluded_by(self, Triangle triangle, object task_params):
+    def occluded_by(self, triangle, task_params):
         """\
         Return whether this camera's field of view is occluded (in part) by the
         specified triangle.
@@ -553,8 +552,6 @@ class Camera(SceneObject):
         @return: True if occluded.
         @rtype: C{bool}
         """
-        cdef Triangle ctriangle
-        cdef double z
         # Calculate the maximum depth of coverage in the frustum.
         z = min(self.zres(task_params['res_min'][1]),
                 self.zc(task_params['blur_max'][1] * \
@@ -798,7 +795,7 @@ class Model(dict):
         self._oc_needs_update[key] = False
         return key
 
-    def occluded(self, Point point, obj, task_params=None):
+    def occluded(self, point, obj, task_params=None):
         """\
         Return whether the specified point is occluded with respect to the
         specified object. If task parameters are specified, an occlusion cache
@@ -813,7 +810,6 @@ class Model(dict):
         @return: True if occluded.
         @rtype: C{bool}
         """
-        cdef Triangle triangle
         key = self._update_occlusion_cache(task_params)
         for triangle in self._occlusion_cache[key][obj].values():
             if triangle.intersection(self[obj].pose.T, point, True):
