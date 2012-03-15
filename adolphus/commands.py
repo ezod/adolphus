@@ -37,6 +37,7 @@ from inspect import getargspec
 
 from .geometry import Angle, Point, DirectionalPoint, Quaternion, Rotation, Pose
 from .robot import Robot
+from .laser import RangeModel
 from .yamlparser import YAMLParser
 
 
@@ -629,7 +630,7 @@ def coverage(ex, args, response='pickle'):
         ex.display.userspin = True
 
 @command
-def rangecoverage(ex, args, response='pickle'):
+def rangecoveragelt(ex, args, response='pickle'):
     """\
     TODO
 
@@ -643,7 +644,7 @@ def rangecoverage(ex, args, response='pickle'):
         except (TypeError, IndexError):
             taxis = None
         ex.coverage['range'] = ex.model.range_coverage(\
-            ex.tasks[args[0]], 'LinearTarget', taxis=taxis)
+            ex.tasks[args[0]], RangeModel.LinearTargetTransport, taxis=taxis)
         ex.coverage['range'].visualize()
         performance = ex.model.performance(ex.tasks[args[0]],
             coverage=ex.coverage['range'])

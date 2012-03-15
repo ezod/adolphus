@@ -334,21 +334,41 @@ class RangeModel(Model):
         return False, angle
 
     class Transport(object):
+        """\
+        Transport base class.
+        """
         def __init__(self, model):
+            """\
+            Constructor.
+
+            @param model: The parent system model.
+            @type model: L{RangeModel}
+            """
             self.model = model
             self.laser = self.model[self.model.active_laser]
 
         def __enter__(self):
+            # Store the original object pose.
             self.original_pose = self.tobject.pose
+            # Mask the object from the occlusion cache.
             self.original_oc_mask = copy(self.model._oc_mask)
             self.oc_mask(self.tobject)
             return self
 
         def __exit__(self, exc_type, exc_value, exc_traceback):
-            self.model._oc_mask = self.original_oc_mask
+            # Restore the object to its original pose.
             self.tobject.set_absolute_pose(self.original_pose)
+            # Restore the original occlusion cache mask.
+            self.model._oc_mask = self.original_oc_mask
 
         def oc_mask(self, sceneobject):
+            """\
+            Recursively add a scene object and its children to the occlusion
+            cache mask.
+
+            @param sceneobject: The object to mask.
+            @type sceneobject: L{SceneObject}
+            """
             self.model.occlusion_cache_mask(sceneobject.name)
             for child in sceneobject.children:
                 if isinstance(child, SceneObject):
@@ -356,55 +376,96 @@ class RangeModel(Model):
 
         @property
         def tobject(self):
+            """\
+            The object to be transported.
+
+            @rtype: L{SceneObject}
+            """
             raise NotImplementedError
 
         def transport(self):
+            """\
+            Generator which performs the transport and yields the original task
+            points and their transported directional point counterparts.
+
+            @return: Task point and mapped directional point pair.
+            @rtype: L{Point}, L{DirectionalPoint}
+            """
             raise NotImplementedError
 
     class LinearTargetTransport(Transport):
+        """\
+        Linear target transport class. Translates the inspection target linearly
+        along a specified axis through the laser plane. Assumes that the task's
+        mount is the object to be transported.
+        """
         def __init__(self, model, taxis=None):
+            """\
+            Constructor.
+
+            @param model: The parent system model.
+            @type model: L{RangeModel}
+            @param taxis: The axis along which to transport the object.
+            @type taxis: L{Point}
+            """
             super(RangeModel.LinearTargetTransport, self).__init__(model)
             if not taxis:
+                # Translate normal to the laser plane if no axis is specified.
                 self.taxis = self.laser.triangle.normal()
             elif not taxis.dot(self.laser.triangle.normal()):
+                # Verify that the specified axis is not parallel.
                 raise ValueError('transport axis parallel to laser plane')
             else:
                 self.taxis = taxis
         
         @property
         def tobject(self):
+            """\
+            The object to be transported (the task's mount).
+
+            @rtype: L{SceneObject}
+            """
             return self.task.mount
 
         def transport(self):
-            rho, eta = self.laser.pose._dmap(DirectionalPoint(0, 0, 0, pi, 0))[3:5]
+            """\
+            Generator which performs the transport and yields the original task
+            points and their transported directional point counterparts.
+
+            @return: Task point and mapped directional point pair.
+            @rtype: L{Point}, L{DirectionalPoint}
+            """
+            # Obtain angles for a directional point along the projection axis.
+            rho, eta = self.laser.pose._dmap(\
+                DirectionalPoint(0, 0, 0, pi, 0))[3:5]
+            # Store the original set of mapped task points of the task.
             task_original = PointCache(self.task.mapped)
             for point in task_original:
-                lp = self.laser.triangle.intersection(point, point + self.taxis, False)
+                lp = self.laser.triangle.intersection(point, point + self.taxis,
+                    False)
+                # If no intersection exists, point is not covered by the laser.
                 if not lp:
                     yield point, None
+                # Translate object such that the point lies in the laser plane.
                 pose = Pose(T=(lp - point))
                 self.tobject.absolute_pose = self.original_pose + pose
+                # Yield the mapped directional point.
                 mp = pose._map(point)
                 yield point, DirectionalPoint(mp.x, mp.y, mp.z, rho, eta)
 
-    def range_coverage(self, task, transport, subset=None, **kwargs):
+    def range_coverage(self, task, transport_class, subset=None, **kwargs):
         """\
-        Return the coverage model using a linear range coverage scheme. It is
-        assumed that the specified task is mounted on the target object, which
-        will be moved linearly along the transport axis through the laser
-        plane. Binary laser coverage is computed, and covered points are
-        converted to directional points in the laser plane for camera coverage
-        per L{RangeCamera}.
+        Return the range coverage model according to the given transport class.
+        Assumptions about the configuration of objects are detailed in the
+        transport classes.
 
-        This function caches the laser coverage calculations, which might
-        otherwise be repeated many times during tests or optimization. A cache
-        entry is specific to the task, transport axis, and initial target pose,
-        and is cleared if the active laser is changed or has its pose modified.
+        Supplementary keyword arguments are passed through to the transport
+        class constructor.
 
         @param task: The range coverage task.
         @type task: L{Task}
-        @param transport:
-        @type transport: C{str}
+        @param transport_class: Transport class.
+        @type transport_class: C{type} inherited from L{RangeModel.Transport}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @return: The coverage model.
@@ -413,16 +474,19 @@ class RangeModel(Model):
         if not isinstance(task, RangeTask):
             raise TypeError('task is not a range coverage task')
         coverage = PointCache()
-        transport = RangeModel.LinearTargetTransport(self)
+        transport = transport_class(self)
+        # Give the transport object a task context (required).
         transport.task = task
         with transport:
             for point, mdp in transport.transport():
                 if not mdp:
                     coverage[point] = 0.0
                     continue
+                # Compute the laser coverage (occlusion and incidence angle).
                 occluded, inc_angle = self.occluded(mdp, self.active_laser)
                 if occluded or inc_angle > task.params['inc_angle_max']:
                     coverage[point] = 0.0
                     continue
+                # Compute the camera coverage.
                 coverage[point] = self.strength(mdp, task.params, subset=subset)
         return coverage
