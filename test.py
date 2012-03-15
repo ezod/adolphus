@@ -132,16 +132,16 @@ class TestModel01(unittest.TestCase):
 
     def test_occlusion_cache(self):
         key = self.model._update_occlusion_cache(self.tasks['R1'].params)
-        self.assertTrue(all([t.mapped_triangle() in self.model._occlusion_cache[key]['C'] for t in self.model['P1'].triangles]))
-        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'] for t in self.model['P2'].triangles]))
+        self.assertTrue(all([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P1'].triangles]))
+        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P2'].triangles]))
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(-pi / 2.0, Point(1, 0, 0))))
         key = self.model._update_occlusion_cache(self.tasks['R1'].params)
-        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'] for t in self.model['P1'].triangles]))
-        self.assertTrue(all([t.mapped_triangle() in self.model._occlusion_cache[key]['C'] for t in self.model['P2'].triangles]))
+        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P1'].triangles]))
+        self.assertTrue(all([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P2'].triangles]))
         self.model['C'].set_absolute_pose(Pose(R=Rotation.from_axis_angle(pi, Point(1, 0, 0))))
         key = self.model._update_occlusion_cache(self.tasks['R1'].params)
-        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'] for t in self.model['P1'].triangles]))
-        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'] for t in self.model['P2'].triangles]))
+        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P1'].triangles]))
+        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P2'].triangles]))
 
 
 if __name__ == '__main__':
