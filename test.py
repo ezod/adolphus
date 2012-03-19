@@ -129,6 +129,8 @@ class TestModel01(unittest.TestCase):
     def test_performance(self):
         self.assertTrue(self.model.performance(self.tasks['R1']) > 0)
         self.assertEqual(self.model.performance(self.tasks['R2']), 0.0)
+        self.model['C'].setparam('zS', 600.0)
+        self.assertEqual(self.model.performance(self.tasks['R1']), 0.0)
 
     def test_occlusion_cache(self):
         key = self.model._update_occlusion_cache(self.tasks['R1'].params)
@@ -142,6 +144,19 @@ class TestModel01(unittest.TestCase):
         key = self.model._update_occlusion_cache(self.tasks['R1'].params)
         self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P1'].triangles]))
         self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P2'].triangles]))
+        self.model['C'].set_absolute_pose(Pose())
+        key = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertTrue(all([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P1'].triangles]))
+        self.model['C'].setparam('zS', 600.0)
+        key = self.model._update_occlusion_cache(self.tasks['R1'].params)
+        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P1'].triangles]))
+        self.assertFalse(any([t.mapped_triangle() in self.model._occlusion_cache[key]['C'].values() for t in self.model['P2'].triangles]))
+
+    def test_robot_occlusion(self):
+        self.model['RV1A'].set_config([90.0, 72.0, 60.0, 0.0, 0.0, 0.0, 0.0])
+        self.assertEqual(self.model.performance(self.tasks['R1']), 0.0)
+        self.model['RV1A'].set_config([110.0, 72.0, 60.0, 0.0, 0.0, 0.0, 0.0])
+        self.assertTrue(self.model.performance(self.tasks['R1']) > 0)
 
 
 if __name__ == '__main__':
