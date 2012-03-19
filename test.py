@@ -108,6 +108,64 @@ class TestGeometry(unittest.TestCase):
         self.assertFalse(triangles[2].overlap(triangles[1]))
 
 
+class TestPosable(unittest.TestCase):
+    """\
+    Tests for the posable module.
+    """
+    def setUp(self):
+        self.model, self.tasks = YAMLParser('test/posable.yaml').experiment
+        self.value = 0
+
+    def test_get_pose(self):
+        self.assertEqual(self.model['Plate'].get_absolute_pose(), Pose())
+        self.assertEqual(self.model['Plate'].get_relative_pose(), Pose())
+        self.assertEqual(self.model['Plate'].pose, Pose())
+        self.assertEqual(self.model['Block'].get_absolute_pose(), Pose(T=Point(32, 8, 3.2)))
+        self.assertEqual(self.model['Block'].get_relative_pose(), Pose(T=Point(32, 8, 0)))
+        self.assertEqual(self.model['Block'].pose, Pose(T=Point(32, 8, 3.2)))
+
+    def test_set_pose(self):
+        self.model['Plate'].set_absolute_pose(Pose(T=Point(25, 0, 0)))
+        self.assertEqual(self.model['Plate'].pose, Pose(T=Point(25, 0, 0)))
+        self.model['Plate'].pose = Pose(T=Point(50, 0, 0))
+        self.assertEqual(self.model['Plate'].pose, Pose(T=Point(50, 0, 0)))
+        self.assertEqual(self.model['Block'].get_relative_pose(), Pose(T=Point(32, 8, 0)))
+        self.assertEqual(self.model['Block'].pose, Pose(T=Point(82, 8, 3.2)))
+        self.model['Block'].set_relative_pose(Pose(T=Point(16, 8, 0)))
+        self.assertEqual(self.model['Plate'].pose, Pose(T=Point(50, 0, 0)))
+        self.assertEqual(self.model['Block'].pose, Pose(T=Point(66, 8, 3.2)))
+
+    def test_hook(self):
+        def callback():
+            self.value += 1
+        self.model['Block'].posecallbacks['test'] = callback
+        self.model['Block'].set_relative_pose(Pose(T=Point(16, 8, 0)))
+        self.assertEqual(self.value, 1)
+        self.model['Plate'].set_absolute_pose(Pose(T=Point(50, 0, 0)))
+        self.assertEqual(self.value, 2)
+        self.model['Block'].mount = None
+        self.model['Plate'].set_absolute_pose(Pose(T=Point(100, 0, 0)))
+        self.assertEqual(self.value, 2)
+        del self.model['Block'].posecallbacks['test']
+        self.model['Block'].set_absolute_pose(Pose())
+        self.assertEqual(self.value, 2)
+
+    def test_mount(self):
+        self.assertEqual(self.model['Plate'].mount_pose(), Pose(T=Point(0, 0, 3.2)))
+        self.assertEqual(self.model['Block'].mount, self.model['Plate'])
+        self.assertTrue(self.model['Block'] in self.model['Plate'].children)
+        self.model['Block'].mount = None
+        self.assertEqual(self.model['Block'].mount, None)
+        self.assertFalse(self.model['Block'] in self.model['Plate'].children)
+        self.assertEqual(self.model['Block'].get_absolute_pose(), Pose(T=Point(32, 8, 0)))
+        self.model['Plate'].set_absolute_pose(Pose(T=Point(25, 0, 0)))
+        self.assertEqual(self.model['Block'].get_absolute_pose(), Pose(T=Point(32, 8, 0)))
+        self.model['Block'].mount = self.model['Plate']
+        self.assertEqual(self.model['Block'].mount, self.model['Plate'])
+        self.assertTrue(self.model['Block'] in self.model['Plate'].children)
+        self.assertEqual(self.model['Block'].get_absolute_pose(), Pose(T=Point(57, 8, 3.2)))
+
+
 class TestModel01(unittest.TestCase):
     """\
     Test model 01.

@@ -1,0 +1,19 @@
+model:
+    name:           Posable Test
+
+    scene:
+        - name:         Plate
+          sprites:      [scene/block.third.10x4.yaml]
+          mount_pose:
+            T:              [0, 0, 3.2]
+        - name:         Block
+          sprites:      [scene/block.full.4x2.yaml]
+          mount:        Plate
+          pose:
+            T:              [32, 8, 0]
+
+tasks:
+    - name:         R1
+      mount:        Plate
+      points:
+        - [0, 0, 3.2]
