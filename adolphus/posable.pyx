@@ -8,10 +8,11 @@ Posable objects module.
 """
 
 from geometry import Point, Pose, Triangle
+from geometry cimport Pose
 from visualization import visual, Visualizable
 
 
-class Posable(object):
+cdef class Posable:
     """\
     Posable base class.
 
@@ -23,7 +24,8 @@ class Posable(object):
     on which it is mounted. The mount pose is a pose relative to the object
     describing the "starting point" of the pose of a mounted object.
     """
-    def __init__(self, pose=Pose(), mount_pose=Pose(), mount=None):
+    def __init__(self, Pose pose=Pose(), Pose mount_pose=Pose(),
+                 Posable mount=None):
         """\
         Constructor.
 
@@ -39,74 +41,69 @@ class Posable(object):
         self.children = set()
         self.posecallbacks = {}
         self._mount = None
-        self.mount = mount
+        self.set_mount(mount)
 
-    def get_absolute_pose(self):
+    cpdef Pose get_absolute_pose(self):
         """\
         The (absolute) pose of the object.
         """
-        try:
+        if self._absolute_pose_c:
             return self._absolute_pose
-        except AttributeError:
-            if self._mount:
-                self._absolute_pose = self._pose._add(self._mount.mount_pose())
-            else:
+        else:
+            if self._mount is None:
                 self._absolute_pose = self._pose
+            else:
+                self._absolute_pose = self._pose._add(self._mount.mount_pose())
+            self._absolute_pose_c = True
             return self._absolute_pose
 
-    def set_absolute_pose(self, value):
-        try:
-            self._pose = value._add(self._mount.mount_pose().inverse())
-        except AttributeError:
-            self._pose = value
-        self._pose_changed_hook()
+    cpdef set_absolute_pose(self, Pose value):
+        if value != self.get_absolute_pose():
+            if self._mount is None:
+                self._pose = value
+            else:
+                self._pose = value._add(self._mount.mount_pose().inverse())
+            self._pose_changed_hook()
 
     absolute_pose = property(get_absolute_pose, set_absolute_pose)
     pose = absolute_pose
 
-    def get_relative_pose(self):
+    cpdef Pose get_relative_pose(self):
         """\
         The relative pose of the object.
         """
         return self._pose
 
-    def set_relative_pose(self, value):
-        self._pose = value
-        self._pose_changed_hook()
+    cpdef set_relative_pose(self, Pose value):
+        if value != self._pose:
+            self._pose = value
+            self._pose_changed_hook()
 
     relative_pose = property(get_relative_pose, set_relative_pose)
 
-    def _pose_changed_hook(self):
+    cpdef _pose_changed_hook(self):
         """\
         Hook called on pose change.
         """
-        try:
-            del self._absolute_pose
-        except AttributeError:
-            pass
+        self._absolute_pose_c = False
         for child in self.children:
             child._pose_changed_hook()
         for callback in self.posecallbacks.values():
             callback()
 
-    def get_mount(self):
+    cpdef Posable get_mount(self):
         """\
         The mount of this posable.
         """
         return self._mount
 
-    def set_mount(self, value):
-        try:
-            del self._absolute_pose
-        except AttributeError:
-            pass
+    cpdef set_mount(self, Posable value):
         if self._mount:
             self._mount.children.discard(self)
         self._mount = value
         if value:
             value.children.add(self)
-        for child in self.children:
-            child._pose_changed_hook()
+        self._pose_changed_hook()
 
     mount = property(get_mount, set_mount)
 
@@ -130,7 +127,7 @@ class OcclusionTriangle(Posable, Visualizable):
     it to be posed and visualized. Usually, this class is instantiated based on
     occluding triangle definitions in L{SceneObject} sprites.
     """
-    def __init__(self, vertices, pose=Pose(), mount=None):
+    def __init__(self, vertices, Pose pose=Pose(), Posable mount=None):
         """\
         Constructor.
 
@@ -160,21 +157,25 @@ class OcclusionTriangle(Posable, Visualizable):
                            'shape':     polygon}]
         Visualizable.__init__(self, primitives=primitives)
 
+    def set_absolute_pose(self, Pose value):
+        Posable.set_absolute_pose(self, value)
+
     def get_absolute_pose(self):
         """\
         The pose of the triangle. Triangles ignore the mount pose of the parent
         object when mounted, to simplify manual definition.
         """
-        try:
+        if self._absolute_pose_c:
             return self._absolute_pose
-        except AttributeError:
-            if self.mount:
-                self._absolute_pose = self._pose._add(self._mount.pose)
-            else:
+        else:
+            if self._mount is None:
                 self._absolute_pose = self._pose
+            else:
+                self._absolute_pose = self._pose._add(self._mount.pose)
+            self._absolute_pose_c = True
             return self._absolute_pose
 
-    absolute_pose = property(get_absolute_pose, Posable.set_absolute_pose)
+    absolute_pose = property(get_absolute_pose, set_absolute_pose)
     pose = absolute_pose
 
     def _pose_changed_hook(self):
@@ -250,31 +251,7 @@ class SceneObject(Posable, Visualizable):
             del self._bounding_box
         except AttributeError:
             pass
-        super(SceneObject, self)._pose_changed_hook()
-
-    @property
-    def bounding_box(self):
-        """\
-        Axis-aligned bounding box of occluding triangles.
-        """
-        try:
-            return self._bounding_box
-        except AttributeError:
-            if not self.triangles:
-                self._bounding_box = None
-            else:
-                vertices = set([vertex for triangles in [[v for v in \
-                    t.mapped_triangle.vertices] for t in self.triangles] \
-                    for vertex in triangles])
-                p = vertices.pop()
-                self._bounding_box = [[p.x, p.x], [p.y, p.y], [p.z, p.z]]
-                for p in vertices:
-                    for i in range(3):
-                        if p[i] < self._bounding_box[i][0]:
-                            self._bounding_box[i][0] = p[i]
-                        elif p[i] > self._bounding_box[i][1]:
-                            self._bounding_box[i][1] = p[i]
-            return self._bounding_box
+        Posable._pose_changed_hook(self)
 
     def toggle_triangles(self):
         """\
