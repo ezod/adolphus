@@ -144,11 +144,12 @@ class TestPosable(unittest.TestCase):
         self.model['Plate'].set_absolute_pose(Pose(T=Point(50, 0, 0)))
         self.assertEqual(self.value, 2)
         self.model['Block'].mount = None
+        self.assertEqual(self.value, 3)
         self.model['Plate'].set_absolute_pose(Pose(T=Point(100, 0, 0)))
-        self.assertEqual(self.value, 2)
+        self.assertEqual(self.value, 3)
         del self.model['Block'].posecallbacks['test']
         self.model['Block'].set_absolute_pose(Pose())
-        self.assertEqual(self.value, 2)
+        self.assertEqual(self.value, 3)
 
     def test_mount(self):
         self.assertEqual(self.model['Plate'].mount_pose(), Pose(T=Point(0, 0, 3.2)))
