@@ -564,7 +564,7 @@ cdef class Rotation:
     cpdef Rotation inverse(self):
         return Rotation(self.Q.inverse())
 
-    def rotate(self, Point p):
+    cpdef Point rotate(self, Point p):
         """\
         Rotate a vector.
 
@@ -813,7 +813,7 @@ cdef class Pose:
         eta = atan2(unit.y, unit.x)
         return DirectionalPoint(q.x, q.y, q.z, rho, eta)._add(self.T)
 
-    def map(self, Point p):
+    cpdef Point map(self, Point p):
         """\
         Map a point/vector through this pose.
 

@@ -53,6 +53,7 @@ cdef class Rotation:
     cdef public Quaternion Q
     cpdef Rotation _add(self, Rotation other)
     cpdef Rotation inverse(self)
+    cpdef Point rotate(self, Point p)
 
 
 cdef class Pose:
@@ -64,6 +65,7 @@ cdef class Pose:
     cpdef Pose inverse(self)
     cpdef Point _map(self, Point p)
     cpdef Point _dmap(self, Point p)
+    cpdef Point map(self, Point p)
 
 
 cdef class Face:
