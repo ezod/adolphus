@@ -1,5 +1,5 @@
 """\
-Coverage module.
+Adolphus - Multi-Camera System Coverage Modeling Suite
 
 @author: Aaron Mavrinac
 @organization: University of Windsor

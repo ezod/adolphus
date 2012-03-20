@@ -7,9 +7,15 @@ Posable objects module.
 @license: GPL-3
 """
 
+VISUAL_ENABLED = True
+try:
+    import visual
+except ImportError:
+    VISUAL_ENABLED = False
+
 from geometry import Point, Pose, Triangle
 from geometry cimport Pose
-from visualization import visual, Visualizable
+from visualization import Visualizable
 
 
 cdef class Posable:
@@ -147,14 +153,13 @@ class OcclusionTriangle(Posable, Visualizable):
         Posable.__init__(self, pose=(planing_pose.inverse() + pose),
             mount=mount)
         # Attempt to build the primitive set (relies on Visual).
-        try:
+        if VISUAL_ENABLED:
             polygon = visual.Polygon([v[0:2] for v in self.triangle.vertices])
-        except AttributeError:
-            primitives = []
-        else:
             primitives = [{'type':      'extrusion',
                            'pos':       [(0, 0, 0.01), (0, 0, -0.01)],
                            'shape':     polygon}]
+        else:
+            primitives = []
         Visualizable.__init__(self, primitives=primitives)
 
     def set_absolute_pose(self, Pose value):
@@ -212,7 +217,7 @@ class SceneObject(Posable, Visualizable):
     L{OcclusionTriangle} objects.
     """
     def __init__(self, name, pose=Pose(), mount_pose=Pose(), mount=None,
-                 primitives=[], triangles=[]):
+                 primitives=list(), triangles=list()):
         """\
         Constructor.
 

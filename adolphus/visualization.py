@@ -10,22 +10,22 @@ Visualization helper module.
 import os
 import ctypes
 
+VISUAL_ENABLED = True
 try:
-    import visual
-except ImportError:
-    visual = None
-else:
     from .sprite import Sprite
+except ImportError:
+    VISUAL_ENABLED = False
 
 
 class VisualizationError(Exception):
+    "Visualization failed."
     pass
 
 
-vsettings = {'rate': 50, 'textsize': 6}
+VISUAL_SETTINGS = {'rate': 50, 'textsize': 6, 'scale': 1.0}
 if os.name == 'nt':
     user32 = ctypes.windll.user32
-    vsettings['textsize'] = int((user32.GetSystemMetrics(0) * \
+    VISUAL_SETTINGS['textsize'] = int((user32.GetSystemMetrics(0) * \
         user32.GetSystemMetrics(1)) / 100000)
 
 
@@ -40,7 +40,7 @@ class Visualizable(object):
     """
     displays = {}
 
-    def __init__(self, primitives=[]):
+    def __init__(self, primitives=list()):
         """\
         Constructor.
 
@@ -93,7 +93,7 @@ class Visualizable(object):
         Visualize this visualizable. Creates sprites in any "new" displays,
         and updates the visualization in all displays.
         """
-        if not visual:
+        if not VISUAL_ENABLED:
             raise VisualizationError('visual module not loaded')
         for display in self.displays:
             if display in self.actuals:

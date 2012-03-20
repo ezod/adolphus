@@ -38,7 +38,7 @@ class LineLaser(SceneObject):
     param_keys = ['fan', 'depth']
 
     def __init__(self, name, params, pose=Pose(), mount_pose=Pose(), mount=None,
-                 primitives=[], triangles=[]):
+                 primitives=list(), triangles=list()):
         """\
         Constructor.
 

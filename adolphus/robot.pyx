@@ -22,7 +22,7 @@ class RobotPiece(SceneObject):
     functionality related to its robot parent.
     """
     def __init__(self, name, parent, pose=Pose(), mount_pose=Pose(), mount=None,
-                 primitives=[], triangles=[]):
+                 primitives=list(), triangles=list()):
         super(RobotPiece, self).__init__(name, pose=pose, mount_pose=mount_pose,
               mount=mount, primitives=primitives, triangles=triangles)
         self.parent = parent
@@ -51,8 +51,8 @@ class Robot(SceneObject):
     string induces a set of such poses based on its definition (a range of
     possible joint values and whether the joint is revolute or prismatic).
     """
-    def __init__(self, name, pose=Pose(), mount=None, pieces=[], config=None,
-                 occlusion=True):
+    def __init__(self, name, pose=Pose(), mount=None, pieces=list(),
+                 config=None, occlusion=True):
         super(Robot, self).__init__(name, pose=pose, mount=mount)
         self.pieces = []
         # The first piece is mounted on the robot's mount, and its relative

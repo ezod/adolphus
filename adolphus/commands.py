@@ -44,6 +44,7 @@ from .yamlparser import YAMLParser
 commands = {}
 
 class CommandError(Exception):
+    "Command failed (usually non-fatal)."
     pass
 
 def command(f):

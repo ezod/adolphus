@@ -63,6 +63,12 @@ class Sprite(visual.frame):
         return self._opacity
 
     def set_opacity(self, value):
+        """\
+        Set the opacity of this sprite.
+
+        @param value: The value to which to set the opacity in [0, 1].
+        @type value: C{float}
+        """
         for i, member in enumerate(self.members):
             try:
                 try:

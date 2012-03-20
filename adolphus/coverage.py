@@ -14,14 +14,15 @@ from numbers import Number
 from itertools import combinations
 from copy import deepcopy
 
+HYPERGRAPH_ENABLED = True
 try:
     import hypergraph
 except ImportError:
-    hypergraph = None
+    HYPGERGRAPH_ENABLED = False
 
-from .geometry import Point, Pose, Triangle, triangle_frustum_intersection
+from .geometry import Point, Pose, triangle_frustum_intersection
 from .posable import Posable, SceneObject
-from .visualization import Visualizable
+from .visualization import Visualizable, VISUAL_SETTINGS
 
 
 class PointCache(dict):
@@ -75,16 +76,13 @@ class PointCache(dict):
         except AttributeError:
             pass
 
-    def visualize(self, color=(1, 0, 0), scale=1.0):
+    def visualize(self, color=(1, 0, 0)):
         """\
         Visualize the point cache, with opacity representing coverage strength.
 
         @param color: The color of the points.
         @type color: C{tuple} of C{float}
-        @param scale: The relative scale of the points.
-        @type scale: C{float}
         """
-        # TODO: some convenient way to change the scale globally
         try:
             self.visual.visible = False
             del self.visual
@@ -93,12 +91,13 @@ class PointCache(dict):
         primitives = []
         for point in set([point for point in self if self[point]]):
             primitives.append({'type': 'sphere', 'pos': (point.x, point.y,
-                point.z), 'radius': 3 * scale, 'color': color,
-                'opacity': self[point]})
+                point.z), 'radius': 3 * VISUAL_SETTINGS['scale'],
+                'color': color, 'opacity': self[point]})
             try:
                 primitives.append({'type': 'arrow', 'pos': (point.x, point.y,
                     point.z), 'axis': tuple(point.direction_unit() * 30 * \
-                    scale), 'color': color, 'opacity': self[point]})
+                    VISUAL_SETTINGS['scale']), 'color': color,
+                    'opacity': self[point]})
             except AttributeError:
                 pass
         self.visual = Visualizable(primitives=primitives)
@@ -274,7 +273,7 @@ class Camera(SceneObject):
     param_keys = ['A', 'dim', 'f', 'o', 's', 'zS']
 
     def __init__(self, name, params, pose=Pose(), mount_pose=Pose(), mount=None,
-                 primitives=[], triangles=[], active=True):
+                 primitives=list(), triangles=list(), active=True):
         """\
         Constructor.
 
@@ -396,7 +395,7 @@ class Camera(SceneObject):
         @return: The subpixel coordinates of the point (if any).
         @rtype: C{tuple} of C{float}
         """
-        cp = self.pose.inverse()._map(point)
+        cp = self.pose.inverse().map(point)
         if self.cv(cp, {'boundary_padding': 0.0}):
             return tuple([(self._params['f'] / self._params['s'][i]) * \
                 (cp[i] / cp.z) + self._params['o'][i] for i in range(2)])
@@ -934,7 +933,7 @@ class Model(dict):
         @return: The coverage hypergraph.
         @rtype: C{Hypergraph}
         """
-        if not hypergraph:
+        if not HYPERGRAPH_ENABLED:
             raise ImportError('hypergraph module not loaded')
         active_cameras = self.active_cameras
         H = hypergraph.core.Hypergraph(vertices=active_cameras)

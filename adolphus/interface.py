@@ -7,6 +7,7 @@ Visual interface module.
 @license: GPL-3
 """
 
+import visual
 from threading import Thread, Event
 from math import copysign
 
@@ -14,8 +15,8 @@ import commands
 from .geometry import Point, Rotation, Pose
 from .coverage import Model
 from .posable import SceneObject
-from .visualization import visual, VisualizationError, Sprite, Visualizable, \
-                           vsettings
+from .visualization import VisualizationError, Sprite, Visualizable, \
+    VISUAL_SETTINGS
 
 
 class Display(visual.display):
@@ -48,7 +49,8 @@ class Display(visual.display):
 
         # command/message box
         self._messagebox = visual.label(pos=center, background=(0, 0, 0),
-            height=vsettings['textsize'] * 2, color=(1, 1, 1), visible=False)
+            height=VISUAL_SETTINGS['textsize'] * 2, color=(1, 1, 1),
+            visible=False)
 
     def set_center(self, pos=(0, 0, 0)):
         """\
@@ -143,7 +145,7 @@ class Display(visual.display):
         cmd = ''
         process_cmd = False
         while True:
-            visual.rate(vsettings['rate'] * 2)
+            visual.rate(VISUAL_SETTINGS['rate'] * 2)
             if self.kb.keys:
                 k = self.kb.getkey()
                 if k == '\n':
@@ -226,7 +228,7 @@ class Experiment(Thread):
             primitives.append({'type':          'label',
                                'pos':           axis,
                                'text':          axname,
-                               'height':        vsettings['textsize'],
+                               'height':        VISUAL_SETTINGS['textsize'],
                                'color':         [1, 1, 1],
                                'background':    [0, 0, 0]})
         self.axes = Sprite(primitives)
@@ -376,11 +378,11 @@ class Experiment(Thread):
         rotating = None
         # event loop
         while not self.exit:
-            visual.rate(vsettings['rate'])
+            visual.rate(VISUAL_SETTINGS['rate'])
             # clear mesages after a while
             if self.display._messagebox.visible:
                 self.display.message_time += 1
-            if self.display.message_time > (vsettings['rate'] / 5) * \
+            if self.display.message_time > (VISUAL_SETTINGS['rate'] / 5) * \
                 max(len(self.display._messagebox.text), 10):
                 self.display.message()
             # clear selection highlight after a while
@@ -388,7 +390,7 @@ class Experiment(Thread):
                 self.select_time += 1
             else:
                 self.select_time = 0
-            if self.select_time > vsettings['rate'] * 2:
+            if self.select_time > VISUAL_SETTINGS['rate'] * 2:
                 self.selected.unhighlight()
                 self.select_time = 0
             # process mouse events
