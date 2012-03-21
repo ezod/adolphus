@@ -55,8 +55,8 @@ def command(f):
                 return f(ex, args, response)
             except CommandError as e:
                 raise e
-            #except Exception, e:
-            #    raise CommandError('%s: %s' % (type(e).__name__, e))
+            except Exception, e:
+                raise CommandError('%s: %s' % (type(e).__name__, e))
         wrapped.response = True
     else:
         def wrapped(ex, args):
@@ -64,8 +64,8 @@ def command(f):
                 return f(ex, args)
             except CommandError as e:
                 raise e
-            #except Exception, e:
-            #    raise CommandError('%s: %s' % (type(e).__name__, e))
+            except Exception, e:
+                raise CommandError('%s: %s' % (type(e).__name__, e))
         wrapped.response = False
     wrapped.__doc__ = f.__doc__
     commands[f.__name__] = wrapped
@@ -104,7 +104,7 @@ def loadconfig(ex, args):
     except IndexError:
         import pkg_resources
         config = yaml.load(pkg_resources.resource_string(__name__,
-            'resources/config.yaml'))
+                           'resources/config.yaml'))
     try:
         ex.prompt_enabled = config['prompt']
     except KeyError:
@@ -292,20 +292,20 @@ def format_pose_text(pose, rformat):
     if rformat == 'quaternion':
         return tstr + 'R: %s' % (pose.R.Q,)
     elif rformat == 'matrix':
-        return tstr + \
-            ('R:\t%.4f\t%.4f\t%.4f\n' \
-            + '\t%.4f\t%.4f\t%.4f\n' \
-            + '\t%.4f\t%.4f\t%.4f') \
-            % tuple(pose.R.to_rotation_matrix().flatten())
+        return (tstr +
+                ('R:\t%.4f\t%.4f\t%.4f\n' +
+                 '\t%.4f\t%.4f\t%.4f\n' +
+                 '\t%.4f\t%.4f\t%.4f') %
+                tuple(pose.R.to_rotation_matrix().flatten()))
     elif rformat == 'axis-angle':
         angle, axis = pose.R.to_axis_angle()
-        return tstr + \
-            u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' \
-                % ((angle,) + tuple(axis))
+        return (tstr +
+                u'R: \u03d1 = %.2f about (%.2f, %.2f, %.2f)' %
+                ((angle,) + tuple(axis)))
     elif rformat == 'euler-zyx':
-        return tstr + \
-            u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' \
-                % pose.R.to_euler_zyx()
+        return (tstr +
+                u'R: \u03d1 = %.2f, \u03d5 = %.2f, \u0471 = %.2f' %
+                pose.R.to_euler_zyx())
     else:
         raise CommandError('invalid rotation format')
 
@@ -622,11 +622,11 @@ def coverage(ex, args, response='pickle'):
         if response == 'pickle':
             return pickle.dumps(performance)
         elif response == 'csv':
-            return ','.join(['%s:%f' % (key, performance[key]) \
-                for key in performance]) + '#'
+            return (','.join(['%s:%f' % (key, performance[key])
+                    for key in performance]) + '#')
         elif response == 'text':
-            return '\n'.join(['%s: %.4f' % (key, performance[key]) \
-                for key in performance])
+            return ('\n'.join(['%s: %.4f' % (key, performance[key])
+                    for key in performance]))
     finally:
         ex.display.userspin = True
 
@@ -644,8 +644,8 @@ def rangecoveragelt(ex, args, response='pickle'):
             taxis = Point(*[float(t) for t in args[1:4]])
         except (TypeError, IndexError):
             taxis = None
-        ex.coverage['range'] = ex.model.range_coverage(\
-            ex.tasks[args[0]], RangeModel.LinearTargetTransport, taxis=taxis)
+        ex.coverage['range'] = ex.model.range_coverage(ex.tasks[args[0]],
+                               RangeModel.LinearTargetTransport, taxis=taxis)
         ex.coverage['range'].visualize()
         performance = ex.model.performance(ex.tasks[args[0]],
             coverage=ex.coverage['range'])
