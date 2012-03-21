@@ -444,8 +444,9 @@ class RangeModel(Model):
                 lp = self.laser.triangle.intersection(point, point + self.taxis,
                     False)
                 # If no intersection exists, point is not covered by the laser.
-                if not lp:
+                if lp is None:
                     yield point, None
+                    continue
                 # Translate object such that the point lies in the laser plane.
                 pose = Pose(T=(lp - point))
                 self.tobject.absolute_pose = self.original_pose + pose
