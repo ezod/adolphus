@@ -664,8 +664,8 @@ cdef class Rotation:
         """
         cdef double a, b, c, d, Nq, s
         cdef double B, C, D, aB, aC, aD, bB, bC, bD, cC, cD, dD
-        a = self.Q[0]
-        b, c, d = self.Q[1]
+        a = self.Q.a
+        b, c, d = self.Q.v.x, self.Q.v.y, self.Q.v.z
         Nq = a ** 2 + b ** 2 + c ** 2 + d ** 2
         if Nq > 0:
             s = 2.0 / Nq
