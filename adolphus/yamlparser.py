@@ -162,13 +162,13 @@ class YAMLParser(object):
         except KeyError:
             return []
 
-    def _parse_pieces(self, robot):
+    def _parse_links(self, robot):
         """\
-        Parse the pieces of a robot from YAML.
+        Parse the links of a robot from YAML.
 
         @param robot: The YAML dict or filename of the robot.
         @type robot: C{dict} or C{str}
-        @return: The parsed robot pieces.
+        @return: The parsed robot links.
         @rtype: C{list}
         """
         path = self._path
@@ -176,11 +176,11 @@ class YAMLParser(object):
             robot_file = self._external_path(path, robot)
             robot = yaml.load(open(robot_file, 'r'))
             path = os.path.split(robot_file)[0]
-        pieces = robot['pieces']
-        for piece in pieces:
-            piece['offset'] = self._parse_pose(piece['offset'])
-            piece['triangles'] = self._parse_triangles(piece, path)
-        return pieces
+        links = robot['links']
+        for link in links:
+            link['offset'] = self._parse_pose(link['offset'])
+            link['triangles'] = self._parse_triangles(link, path)
+        return links
 
     def _parse_model(self, model):
         """\
@@ -232,10 +232,10 @@ class YAMLParser(object):
                     mount_pose=mount_pose, primitives=primitives,
                     triangles=triangles)
                 elif objecttype == 'robots':
-                    pieces = self._parse_pieces(obj['robot'])
+                    links = self._parse_links(obj['robot'])
                     config = obj['config'] if 'config' in obj else None
                     rmodel[obj['name']] = Robot(obj['name'], pose=pose,
-                        pieces=pieces, config=config, occlusion=occlusion)
+                        links=links, config=config, occlusion=occlusion)
                 else:
                     rmodel[obj['name']] = SceneObject(obj['name'], pose=pose,
                         mount_pose=mount_pose, primitives=primitives,

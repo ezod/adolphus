@@ -1,6 +1,6 @@
 description:    Mitsubishi RV-1A 6-Axis Robotic Arm
 
-pieces:
+links:
     # base
     - joint:
           name:         J1
