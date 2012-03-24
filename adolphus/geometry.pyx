@@ -18,7 +18,9 @@ class Angle(float):
     """\
     Angle class. All operations are modulo 2S{pi}.
     """
-    def __new__(cls, arg=0.0):
+    def __new__(cls, arg=0.0, unit='rad'):
+        if unit == 'deg':
+            arg *= pi / 180.0
         return float.__new__(cls, float(arg) % (2 * pi))
 
     def __add__(self, other):

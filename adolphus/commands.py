@@ -356,18 +356,12 @@ def parse_pose(args):
                                            numeric(args[10:13])])
     elif args[0].startswith('axis-angle'):
         unit = args[0].split('-')[2]
-        if unit == 'deg':
-            angle = Angle(float(args[4]) * pi / 180.0)
-        else:
-            angle = Angle(args[4])
+        angle = Angle(args[4], unit)
         R = Rotation.from_axis_angle(angle, Point(*numeric(args[5:8])))
     elif args[0].startswith('euler'):
         convention, unit = args[0].split('-')[1:]
         angles = numeric(args[4:7])
-        if unit == 'deg':
-            angles = [Angle(angle * pi / 180.0) for angle in angles]
-        else:
-            angles = [Angle(angle) for angle in angles]
+        angles = [Angle(angle, unit) for angle in angles]
         R = Rotation.from_euler(convention, angles)
     else:
         raise CommandError('invalid rotation format')

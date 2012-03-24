@@ -13,7 +13,7 @@ import pkg_resources
 from math import pi
 from itertools import chain
 
-from .geometry import Point, DirectionalPoint, Pose, Rotation, Quaternion
+from .geometry import Angle, Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import OcclusionTriangle, SceneObject
 from .coverage import PointCache, Task, Model
 from .laser import RangeTask, LineLaser, RangeModel
@@ -87,17 +87,11 @@ class YAMLParser(object):
                 R = Rotation.from_rotation_matrix(pose['R'])
             elif pose['Rformat'].startswith('axis-angle'):
                 unit = pose['Rformat'].split('-')[2]
-                if unit == 'deg':
-                    angle = pose['R'][0] * pi / 180.0
-                else:
-                    angle = pose['R'][0]
+                angle = Angle(pose['R'][0], unit)
                 R = Rotation.from_axis_angle(angle, Point(*pose['R'][1]))
             elif pose['Rformat'].startswith('euler'):
                 convention, unit = pose['Rformat'].split('-')[1:]
-                if unit == 'deg':
-                    R = [r * pi / 180.0 for r in pose['R']]
-                else:
-                    R = pose['R']
+                R = [Angle(r, unit) for r in pose['R']]
                 R = Rotation.from_euler(convention, Point(R[0], R[1], R[2]))
             else:
                 raise ValueError('unrecognized rotation format')
