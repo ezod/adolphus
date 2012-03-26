@@ -721,8 +721,31 @@ class Model(dict):
         @param sceneobject: The object to mask.
         @type sceneobject: C{str}
         """
-        if sceneobject in self:
-            self._oc_mask.add(sceneobject)
+        if not sceneobject in self:
+            raise KeyError(sceneobject)
+        # Add the object to the mask.
+        self._oc_mask.add(sceneobject)
+        # Remove the object from existing cache.
+        obj_set = set(reduce(lambda a, b: a | b, [getattr(self, oc_set) \
+            for oc_set in self.oc_sets]))
+        for ckey in self._occlusion_cache:
+            for obj in obj_set:
+                for triangle in self[sceneobject].triangles:
+                    try: 
+                        del self._occlusion_cache[ckey][obj]\
+                            [triangle.triangle]
+                    except KeyError:
+                        pass
+            self._oc_updated[ckey][sceneobject] = True
+        # Remove occlusion cache callbacks from object.
+        try:
+            del self[sceneobject].posecallbacks['occlusion_cache']
+        except (AttributeError, KeyError):
+            pass
+        try:
+            del self[sceneobject].paramcallbacks['occlusion_cache']
+        except (AttributeError, KeyError):
+            pass
 
     def occlusion_cache_unmask(self, sceneobject):
         """\
@@ -731,10 +754,20 @@ class Model(dict):
         @param sceneobject: The object to unmask.
         @type sceneobject: C{str}
         """
-        self._oc_mask.discard(sceneobject)
+        # Remove the object from the mask.
+        self._oc_mask.remove(sceneobject)
+        # Mark the occlusion cache for update.
         for ckey in self._occlusion_cache:
             self._oc_updated[ckey][sceneobject] = False
             self._oc_needs_update[ckey] = True
+        # Reinstate occlusion cache callbacks.
+        def callback():
+            for ckey in self._occlusion_cache:
+                self._oc_updated[ckey][sceneobject] = False
+                self._oc_needs_update[ckey] = True
+        self[sceneobject].posecallbacks['occlusion_cache'] = callback
+        if hasattr(self[sceneobject], 'paramcallbacks'):
+            self[sceneobject].paramcallbacks['occlusion_cache'] = callback
 
     def _update_occlusion_cache(self, task_params=None):
         if task_params:
@@ -759,7 +792,9 @@ class Model(dict):
             if not self._oc_updated[key][obj]:
                 self._occlusion_cache[key][obj] = {}
                 for sceneobject in self:
-                    if key is None or sceneobject in self._oc_mask:
+                    if sceneobject in self._oc_mask:
+                        continue
+                    if key is None:
                         for triangle in self[sceneobject].triangles:
                             self._occlusion_cache[key][obj]\
                                 [triangle.triangle] = triangle.mapped_triangle()
@@ -772,9 +807,11 @@ class Model(dict):
                 obj_set.remove(obj)
         # Update cache for all occludables for any objects needing update.
         for sceneobject in self:
+            if sceneobject in self._oc_mask:
+                continue
             if not self._oc_updated[key][sceneobject]:
                 for obj in obj_set:
-                    if key is None or sceneobject in self._oc_mask:
+                    if key is None:
                         for triangle in self[sceneobject].triangles:
                             self._occlusion_cache[key][obj]\
                                 [triangle.triangle] = triangle.mapped_triangle()
@@ -794,7 +831,7 @@ class Model(dict):
         self._oc_needs_update[key] = False
         return key
 
-    def occluded(self, point, obj, task_params=None):
+    def occluded(self, point, obj, task_params=None, triangle_set=None):
         """\
         Return whether the specified point is occluded with respect to the
         specified object. If task parameters are specified, an occlusion cache
@@ -806,16 +843,20 @@ class Model(dict):
         @type obj: C{str}
         @param task_params: Task parameters (optional).
         @type task_params: C{dict}
+        @param triangle_set: Alternative triangle set to use.
+        @type triangle_set: C{list} of L{Triangle}
         @return: True if occluded.
         @rtype: C{bool}
         """
-        key = self._update_occlusion_cache(task_params)
-        for triangle in self._occlusion_cache[key][obj].values():
+        if triangle_set is None:
+            key = self._update_occlusion_cache(task_params)
+            triangle_set = self._occlusion_cache[key][obj].values()
+        for triangle in triangle_set:
             if triangle.intersection(self[obj].pose.T, point, True):
                 return True
         return False
 
-    def strength(self, point, task_params, subset=None):
+    def strength(self, point, task_params, subset=None, triangle_set=None):
         """\
         Return the individual coverage strength of a point in the coverage
         strength model.
@@ -826,6 +867,8 @@ class Model(dict):
         @type task_params: C{dict}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
+        @param triangle_set: Set of additional triangles for occlusion.
+        @type triangle_set: C{list} of L{Triangle}
         @return: The coverage strength of the point.
         @rtype: C{float}
         """
@@ -839,8 +882,10 @@ class Model(dict):
                 # Check the coverage strength for this camera.
                 strength = self[camera].strength(point, task_params)
                 # The following should short-circuit if strength = 0, and thus
-                # not incur a performance hit for the occlusion check.
-                if not strength or self.occluded(point, camera, task_params):
+                # not incur a performance hit for the occlusion check(s).
+                if not strength or self.occluded(point, camera,
+                task_params=task_params) or (triangle_set and
+                self.occluded(point, camera, triangle_set=triangle_set)):
                     minstrength = 0.0
                     break
                 elif strength < minstrength:

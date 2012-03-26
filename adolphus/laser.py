@@ -291,7 +291,7 @@ class RangeModel(Model):
 
     active_laser = property(get_active_laser, set_active_laser)
 
-    def occluded(self, point, obj, task_params=None):
+    def occluded(self, point, obj, task_params=None, triangle_set=None):
         """\
         Return whether the specified point is occluded with respect to the
         specified object. If task parameters are specified, an occlusion cache
@@ -306,17 +306,21 @@ class RangeModel(Model):
         @type obj: C{str}
         @param task_params: Task parameters (optional).
         @type task_params: C{dict}
+        @param triangle_set: Alternative triangle set to use.
+        @type triangle_set: C{list} of L{Triangle}
         @return: True if occluded, plus incidence angle.
         @rtype: C{bool}, C{float}
         """
         if not isinstance(self[obj], LineLaser):
             return super(RangeModel, self).occluded(point, obj,
-                task_params=task_params)
-        key = self._update_occlusion_cache(task_params)
+                task_params=task_params, triangle_set=triangle_set)
+        if triangle_set is None:
+            key = self._update_occlusion_cache(task_params)
+            triangle_set = self._occlusion_cache[key][obj].values()
         d = self[obj].pose.T.euclidean(point)
         ds = float('inf')
         surface = None
-        for triangle in self._occlusion_cache[key][obj]:
+        for triangle in triangle_set:
             ip = triangle.intersection(self[obj].pose.T, point, False)
             if not ip:
                 continue
@@ -346,20 +350,20 @@ class RangeModel(Model):
             """
             self.model = model
             self.laser = self.model[self.model.active_laser]
+            self._transport_cache = []
 
         def __enter__(self):
             # Store the original object pose.
             self.original_pose = self.tobject.pose
             # Mask the object from the occlusion cache.
-            self.original_oc_mask = copy(self.model._oc_mask)
             self.oc_mask(self.tobject)
             return self
 
         def __exit__(self, exc_type, exc_value, exc_traceback):
             # Restore the object to its original pose.
             self.tobject.set_absolute_pose(self.original_pose)
-            # Restore the original occlusion cache mask.
-            self.model._oc_mask = self.original_oc_mask
+            # Unmask the object from the occlusion cache.
+            self.oc_unmask(self.tobject)
 
         def oc_mask(self, sceneobject):
             """\
@@ -373,6 +377,35 @@ class RangeModel(Model):
             for child in sceneobject.children:
                 if isinstance(child, SceneObject):
                     self.oc_mask(child)
+
+        def oc_unmask(self, sceneobject):
+            """\
+            Recursively remove a scene object and its children from the
+            occlusion cache mask.
+
+            @param sceneobject: The object to mask.
+            @type sceneobject: L{SceneObject}
+            """
+            self.model.occlusion_cache_unmask(sceneobject.name)
+            for child in sceneobject.children:
+                if isinstance(child, SceneObject):
+                    self.oc_unmask(child)
+
+        def get_triangles(self, sceneobject):
+            """\
+            Generate a set of mapped occlusion triangles from the scene object
+            and its children recursively.
+
+            @param sceneobject: The object.
+            @type sceneobject: L{SceneObject}
+            @return: The recursive set of triangles.
+            @rtype: C{list} of L{Triangle}
+            """
+            triangles = [t.mapped_triangle() for t in sceneobject.triangles]
+            for child in sceneobject.children:
+                if isinstance(child, SceneObject):
+                    triangles += self.get_triangles(child)
+            return triangles
 
         @property
         def tobject(self):
@@ -435,26 +468,34 @@ class RangeModel(Model):
             @return: Task point and mapped directional point pair.
             @rtype: L{Point}, L{DirectionalPoint}
             """
-            # Obtain angles for a directional point along the projection axis.
-            rho, eta = self.laser.pose._dmap(\
-                DirectionalPoint(0, 0, 0, pi, 0))[3:5]
-            # Store the original set of mapped task points of the task.
-            task_original = PointCache(self.task.mapped)
-            for point in task_original:
-                lp = self.laser.triangle.intersection(point, point + self.taxis,
-                    False)
-                # If no intersection exists, point is not covered by the laser.
-                if lp is None:
-                    yield point, None
-                    continue
-                # Translate object such that the point lies in the laser plane.
-                pose = Pose(T=(lp - point))
-                self.tobject.absolute_pose = self.original_pose + pose
-                # Yield the mapped directional point.
-                mp = pose._map(point)
-                yield point, DirectionalPoint(mp.x, mp.y, mp.z, rho, eta)
+            if self._transport_cache:
+                for stop in self._transport_cache:
+                    yield stop
+            else:
+                # Obtain angles for directional point along the projection axis.
+                rho, eta = self.laser.pose._dmap(\
+                    DirectionalPoint(0, 0, 0, pi, 0))[3:5]
+                # Store the original set of mapped task points of the task.
+                task_original = PointCache(self.task.mapped)
+                for point in task_original:
+                    lp = self.laser.triangle.intersection(point,
+                        point + self.taxis, False)
+                    # If no intersection exists, point not covered by the laser.
+                    if lp is None:
+                        self._transport_cache.append((point, None, None))
+                        yield self._transport_cache[-1]
+                        continue
+                    # Translate the object so the point lies in the laser plane.
+                    pose = Pose(T=(lp - point))
+                    self.tobject.absolute_pose = self.original_pose + pose
+                    # Yield the mapped directional point.
+                    mp = pose._map(point)
+                    triangles = self.get_triangles(self.tobject)
+                    self._transport_cache.append((point, DirectionalPoint(mp.x,
+                        mp.y, mp.z, rho, eta), triangles))
+                    yield self._transport_cache[-1]
 
-    def range_coverage(self, task, transport_class, subset=None, **kwargs):
+    def range_coverage(self, task, transport, subset=None, **kwargs):
         """\
         Return the range coverage model according to the given transport class.
         Assumptions about the configuration of objects are detailed in the
@@ -465,8 +506,8 @@ class RangeModel(Model):
 
         @param task: The range coverage task.
         @type task: L{Task}
-        @param transport_class: Transport class.
-        @type transport_class: C{type} inherited from L{RangeModel.Transport}
+        @param transport: Transport class.
+        @type transport: L{RangeModel.Transport}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @return: The coverage model.
@@ -475,19 +516,22 @@ class RangeModel(Model):
         if not isinstance(task, RangeTask):
             raise TypeError('task is not a range coverage task')
         coverage = PointCache()
-        transport = transport_class(self)
         # Give the transport object a task context (required).
         transport.task = task
         with transport:
-            for point, mdp in transport.transport():
+            for point, mdp, triangles in transport.transport():
                 if not mdp:
                     coverage[point] = 0.0
                     continue
                 # Compute the laser coverage (occlusion and incidence angle).
-                occluded, inc_angle = self.occluded(mdp, self.active_laser)
-                if occluded or inc_angle > task.params['inc_angle_max']:
+                occluded = self.occluded(mdp, self.active_laser)[0]
+                toccluded, inc_angle = self.occluded(mdp, self.active_laser,
+                                                     triangle_set=triangles)
+                if occluded or toccluded \
+                    or inc_angle > task.params['inc_angle_max']:
                     coverage[point] = 0.0
                     continue
                 # Compute the camera coverage.
-                coverage[point] = self.strength(mdp, task.params, subset=subset)
+                coverage[point] = self.strength(mdp, task.params, subset=subset,
+                    triangle_set=triangles)
         return coverage
