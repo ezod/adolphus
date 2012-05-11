@@ -589,10 +589,8 @@ cdef class Rotation:
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        cdef double t, r, a, b, c, d
-        t = R[0][0] + R[1][1] + R[2][2]
-        r = sqrt(1.0 + t)
-        a = 0.5 * r
+        cdef double a, b, c, d
+        a = 0.5 * sqrt(1.0 + R[0][0] + R[1][1] + R[2][2])
         b = copysign(0.5 * sqrt(1 + R[0][0] - R[1][1] - R[2][2]),
             R[2][1] - R[1][2])
         c = copysign(0.5 * sqrt(1 - R[0][0] + R[1][1] - R[2][2]),
