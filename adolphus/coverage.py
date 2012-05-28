@@ -273,7 +273,7 @@ class Camera(SceneObject):
     param_keys = ['A', 'dim', 'f', 'o', 's', 'zS']
 
     def __init__(self, name, params, pose=Pose(), mount_pose=Pose(), mount=None,
-                 primitives=list(), triangles=list(), active=True):
+                 primitives=list(), triangles=list()):
         """\
         Constructor.
 
@@ -289,8 +289,6 @@ class Camera(SceneObject):
         @type mount: C{object}
         @param primitives: Sprite primitives for the camera.
         @type primitives: C{dict}
-        @param active: Initial active state of camera (optional).
-        @type active: C{bool}
         @param triangles: The opaque triangles of this camera (optional).
         @type triangles: C{list} of L{OcclusionTriangle}
         """
@@ -303,7 +301,10 @@ class Camera(SceneObject):
                 self.setparam(param, params[param])
             except KeyError:
                 pass
-        self.active = active
+        try:
+            self.active = params['active']
+        except KeyError:
+            self.active = True
 
     @property
     def params(self):
@@ -635,8 +636,8 @@ class Model(dict):
     cameras. It maintains a set of keys which identify cameras, and provides a
     variety of coverage-related functions.
     """
-    # class of camera handled by this model class
-    camera_class = Camera
+    yaml = {'cameras': Camera, 'tasks': Task}
+
     # object types for which occlusion caching is handled by this class
     oc_sets = ['cameras']
 

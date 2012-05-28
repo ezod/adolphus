@@ -252,8 +252,8 @@ class RangeModel(Model):
     line lasers and laser occlusion, and provides range imaging coverage
     methods.
     """
-    # class of camera handled by this model class
-    camera_class = RangeCamera
+    yaml = {'cameras': RangeCamera, 'lasers': LineLaser, 'tasks': RangeTask}
+
     # object types for which occlusion caching is handled by this class
     oc_sets = ['cameras', 'lasers']
 
@@ -505,7 +505,7 @@ class RangeModel(Model):
         class constructor.
 
         @param task: The range coverage task.
-        @type task: L{Task}
+        @type task: L{RangeTask}
         @param transport: Transport class.
         @type transport: L{RangeModel.Transport}
         @param subset: Subset of cameras (defaults to all active cameras).
