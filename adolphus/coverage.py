@@ -936,6 +936,24 @@ class Model(dict):
         return sum((coverage & task.mapped).values()) / \
             float(len(task.original))
 
+    def performance_complex(self, task, subset=None, coverage=None):
+        """\
+        Return the coverage performance of this multi-camera network with
+        respect to a given task model, with the relevance function interpreted
+        as a complex feature.
+
+        @param task: The task model.
+        @type task: L{Task}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
+        @param coverage: Previously computed coverage cache for these points.
+        @type coverage: L{PointCache}
+        @return: Performance metric in [0, 1].
+        @rtype: C{float}
+        """
+        coverage = coverage or self.coverage(task, subset)
+        return min(coverage.values())
+
     def best_view(self, task, current=None, threshold=0, candidates=None):
         """\
         Return the best I{k}-view of the given task model. If the current (or
