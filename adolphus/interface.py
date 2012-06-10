@@ -311,12 +311,12 @@ class Experiment(Thread):
                 raise ValueError('no task to parameterize frustum')
             self.display.select()
             self.guides[obj] = \
-                Sprite(self.model[obj].frustum_primitives(task.params))
-            self.guides[obj].frame = self.model[obj].actuals['main']
+                Sprite(self.model[obj].frustum_primitives(task.params), \
+                    frame=self.model[obj].actuals['main'])
         elif hasattr(self.model, 'lasers') and obj in self.model.lasers:
             self.display.select()
-            self.guides[obj] = Sprite(self.model[obj].triangle_primitives())
-            self.guides[obj].frame = self.model[obj].actuals['main']
+            self.guides[obj] = Sprite(self.model[obj].triangle_primitives(), \
+                frame=self.model[obj].actuals['main'])
         else:
             raise ValueError('cannot display guide for %s' % obj)
 
