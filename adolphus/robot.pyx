@@ -53,7 +53,7 @@ class Robot(SceneObject):
     """
     def __init__(self, name, pose=Pose(), mount=None, pieces=list(),
                  config=None, occlusion=True):
-        super(Robot, self).__init__(name, pose=pose, mount=mount)
+        super(Robot, self).__init__(name, pose=pose)
         self.pieces = []
         # The first piece is mounted on the robot's mount, and its relative
         # pose is always equal to the robot's relative pose.
@@ -62,9 +62,9 @@ class Robot(SceneObject):
             offset = piece['offset']
             # Mount each piece after the first on its predecessor.
             try:
-                mount = self.pieces[i - 1]
+                pmount = self.pieces[i - 1]
             except IndexError:
-                mount = self.mount
+                pmount = mount
             try:
                 assert occlusion
                 triangles = piece['triangles']
@@ -75,7 +75,7 @@ class Robot(SceneObject):
             except KeyError:
                 primitives = []
             self.pieces.append(RobotPiece('%s-%i' % (name, i), self,
-                pose=nextpose, mount_pose=offset, mount=mount,
+                pose=nextpose, mount_pose=offset, mount=pmount,
                 primitives=primitives, triangles=triangles))
             nextpose = self.generate_joint_pose(piece['joint'])
         self.joints = [piece['joint'] for piece in pieces]
@@ -180,6 +180,21 @@ class Robot(SceneObject):
         super(Robot, self).set_relative_pose(pose)
 
     relative_pose = property(get_relative_pose, set_relative_pose)
+
+    def get_mount(self):
+        """\
+        The mount of this posable.
+        """
+        try:
+            return self.pieces[0].get_mount()
+        except AttributeError:
+            return None
+
+    def set_mount(self, value):
+        if value:
+            self.pieces[0].set_mount(value)
+
+    mount = property(get_mount, set_mount)
 
     @staticmethod
     def generate_joint_pose(joint, position=None):
