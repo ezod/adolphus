@@ -318,23 +318,17 @@ class RangeModel(Model):
             key = self._update_occlusion_cache(task_params)
             triangle_set = self._occlusion_cache[key][obj].values()
         d = self[obj].pose.T.euclidean(point)
-        ds = float('inf')
-        surface = None
+        angle = None
         for triangle in triangle_set:
             ip = triangle.intersection(self[obj].pose.T, point, False)
             if not ip:
                 continue
             di = self[obj].pose.T.euclidean(ip)
-            if di < d:
+            if di < d - 1e-4:
                 return True, None
-            elif di < ds:
-                ds = di
-                surface = triangle
-        if surface and ds - d < 1e-04:
-            ln = self[obj].pose.inverse()._map(surface.normal())
-            angle = atan(ln.x / ln.z)
-        else:
-            angle = None
+            if abs(di - d) < 1e-4:
+                ln = self[obj].pose.inverse()._map(triangle.normal())
+                angle = atan(ln.x / ln.z)
         return False, angle
 
     class Transport(object):
