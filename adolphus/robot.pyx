@@ -88,7 +88,7 @@ class Robot(SceneObject):
         @param occlusion: Enable occlusion triangles in the links if true.
         @type occlusion: C{bool}
         """
-        super(Robot, self).__init__(name, pose=pose, mount=mount)
+        super(Robot, self).__init__(name, pose=pose)
         self.links = []
         # The first link is mounted on the robot's mount, and its relative
         # pose is always equal to the robot's relative pose.
@@ -97,9 +97,9 @@ class Robot(SceneObject):
             offset = link['offset']
             # Mount each link after the first on its predecessor.
             try:
-                mount = self.links[i - 1]
+                pmount = self.links[i - 1]
             except IndexError:
-                mount = self.mount
+                pmount = mount
             try:
                 assert occlusion
                 triangles = link['triangles']
@@ -110,7 +110,7 @@ class Robot(SceneObject):
             except KeyError:
                 primitives = []
             self.links.append(RobotLink('%s-%i' % (name, i), self,
-                pose=nextpose, mount_pose=offset, mount=mount,
+                pose=nextpose, mount_pose=offset, mount=pmount,
                 primitives=primitives, triangles=triangles))
             nextpose = self.generate_joint_pose(link['joint'])
         self.joints = [link['joint'] for link in links]
@@ -215,6 +215,21 @@ class Robot(SceneObject):
         super(Robot, self).set_relative_pose(pose)
 
     relative_pose = property(get_relative_pose, set_relative_pose)
+
+    def get_mount(self):
+        """\
+        The mount of this posable.
+        """
+        try:
+            return self.pieces[0].get_mount()
+        except AttributeError:
+            return None
+
+    def set_mount(self, value):
+        if value:
+            self.pieces[0].set_mount(value)
+
+    mount = property(get_mount, set_mount)
 
     @staticmethod
     def generate_joint_pose(joint, position=None):

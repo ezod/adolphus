@@ -589,10 +589,8 @@ cdef class Rotation:
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        cdef double t, r, a, b, c, d
-        t = R[0][0] + R[1][1] + R[2][2]
-        r = sqrt(1.0 + t)
-        a = 0.5 * r
+        cdef double a, b, c, d
+        a = 0.5 * sqrt(1.0 + R[0][0] + R[1][1] + R[2][2])
         b = copysign(0.5 * sqrt(1 + R[0][0] - R[1][1] - R[2][2]),
             R[2][1] - R[1][2])
         c = copysign(0.5 * sqrt(1 - R[0][0] + R[1][1] - R[2][2]),
@@ -631,10 +629,10 @@ cdef class Rotation:
         """
         cdef double a, b, c, d
         def qterm(index):
-            bin = lambda x: [(x >> 2) % 2, (x >> 1) % 2, x % 2]
+            binarize = lambda x: [(x >> 2) % 2, (x >> 1) % 2, x % 2]
             return copysign(1, index) * reduce(lambda a, b: a * b,
                 [(sin if bit else cos)(angles[i] / 2.0) \
-                for i, bit in enumerate(bin(abs(index)))])
+                for i, bit in enumerate(binarize(abs(index)))])
         eulerquat = {'xyx': [0, -5, 1, 4, 2, 7, 3, -6],
                      'xyz': [0, -7, 1, 6, 2, -5, 3, 4],
                      'xzx': [0, -5, 1, 4, -3, 6, 2, 7],

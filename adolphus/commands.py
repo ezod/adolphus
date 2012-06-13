@@ -638,8 +638,9 @@ def rangecoveragelt(ex, args, response='pickle'):
             taxis = Point(*[float(t) for t in args[1:4]])
         except (TypeError, IndexError):
             taxis = None
+        transport = RangeModel.LinearTargetTransport(ex.model)
         ex.coverage['range'] = ex.model.range_coverage(ex.tasks[args[0]],
-                               RangeModel.LinearTargetTransport, taxis=taxis)
+                               transport, taxis=taxis)
         ex.coverage['range'].visualize()
         performance = ex.model.performance(ex.tasks[args[0]],
             coverage=ex.coverage['range'])

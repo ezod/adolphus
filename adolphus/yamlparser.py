@@ -15,9 +15,12 @@ from itertools import chain
 
 from .geometry import Angle, Point, DirectionalPoint, Pose, Rotation, Quaternion
 from .posable import OcclusionTriangle, SceneObject
-from .coverage import PointCache, Task, Model
-from .laser import RangeTask, LineLaser, RangeModel
+from .coverage import PointCache, Model
+from .laser import RangeModel
 from .robot import Robot
+
+
+modeltypes = {'standard': Model, 'range': RangeModel}
 
 
 class YAMLParser(object):
@@ -34,11 +37,15 @@ class YAMLParser(object):
         self._path = os.path.split(filename)[0]
         self._mounts = {}
         experiment = yaml.load(open(filename))
-        self.model = self._parse_model(experiment['model'])
+        try:
+            modeltype = modeltypes[experiment['type']]
+        except KeyError:
+            modeltype = modeltypes['standard']
+        self.model = self._parse_model(experiment['model'], modeltype)
         self.tasks = {}
         if 'tasks' in experiment:
             for task in experiment['tasks']:
-                self.tasks[task['name']] = self._parse_task(task)
+                self.tasks[task['name']] = self._parse_task(task, modeltype)
 
     @property
     def experiment(self):
@@ -182,23 +189,19 @@ class YAMLParser(object):
             link['triangles'] = self._parse_triangles(link, path)
         return links
 
-    def _parse_model(self, model):
+    def _parse_model(self, model, modeltype):
         """\
         Parse a multi-camera model from YAML.
 
         @param model: The YAML dict of the multi-camera model.
         @type model: C{dict}
+        @param modeltype: The model class.
+        @type modeltype: C{type}
         @return: The parsed multi-camera model.
         @rtype: L{Model}
         """
         # create model object
-        try:
-            if model['type'] == 'range':
-                rmodel = RangeModel()
-            else:
-                raise ValueError('unknown model type')
-        except KeyError:
-            rmodel = Model()
+        rmodel = modeltype()
         mounts = {}
         for objecttype in ['cameras', 'lasers', 'robots', 'scene']:
             if not objecttype in model:
@@ -222,15 +225,10 @@ class YAMLParser(object):
                         for sprite in obj['sprites']]))
                 else:
                     triangles = []
-                if objecttype == 'cameras':
-                    active = obj['active'] if 'active' in obj else True
-                    rmodel[obj['name']] = rmodel.camera_class(obj['name'], obj,
-                        pose=pose, mount_pose=mount_pose, primitives=primitives,
-                        active=active, triangles=triangles)
-                elif objecttype == 'lasers':
-                    rmodel[obj['name']] = LineLaser(obj['name'], obj, pose=pose,
-                    mount_pose=mount_pose, primitives=primitives,
-                    triangles=triangles)
+                if objecttype in rmodel.yaml:
+                    rmodel[obj['name']] = rmodel.yaml[objecttype](obj['name'],
+                        obj, pose=pose, mount_pose=mount_pose,
+                        primitives=primitives, triangles=triangles)
                 elif objecttype == 'robots':
                     links = self._parse_links(obj['robot'])
                     config = obj['config'] if 'config' in obj else None
@@ -295,22 +293,17 @@ class YAMLParser(object):
             y = yr[0]
             x += step
 
-    def _parse_task(self, task):
+    def _parse_task(self, task, modeltype):
         """\
         Parse a task model from YAML.
         
         @param task: The YAML dict of the task model.
         @type task: C{dict}
+        @param modeltype: The model class.
+        @type modeltype: C{type}
         @return: The parsed task model.
         @rtype: L{Task}
         """
-        try:
-            if task['type'] == 'range':
-                task_class = RangeTask
-            else:
-                raise ValueError('unknown task type')
-        except KeyError:
-            task_class = Task
         whole_model = PointCache()
         if 'ranges' in task:
             ddiv = task['ddiv'] if 'ddiv' in task else None
@@ -340,4 +333,5 @@ class YAMLParser(object):
         params = task['parameters'] if 'parameters' in task else {}
         pose = self._parse_pose(task['pose']) if 'pose' in task  else Pose()
         mount = self.model[task['mount']] if 'mount' in task else None
-        return task_class(params, whole_model, pose=pose, mount=mount)
+        return modeltype.yaml['tasks'](params, whole_model, pose=pose,
+                                       mount=mount)
