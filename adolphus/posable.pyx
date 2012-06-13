@@ -280,6 +280,25 @@ class SceneObject(Posable, Visualizable):
                 triangle.visible = True
         self._triangles_view = not self._triangles_view
 
+    def highlight(self, color=(0, 1, 0)):
+        """\
+        Highlight this scene object with a bright uniform color.
+
+        @param color: The color of the highlight.
+        @type color: C{tuple}
+        """
+        Visualizable.highlight(self, color)
+        for triangle in self.triangles:
+            triangle.highlight(color)
+
+    def unhighlight(self):
+        """\
+        Unhighlight this scene object (if highlighted).
+        """
+        Visualizable.unhighlight(self)
+        for triangle in self.triangles:
+            triangle.unhighlight()
+
     def visualize(self):
         """\
         Visualize this object. If no sprites are defined, the attached
