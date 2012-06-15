@@ -1,0 +1,38 @@
+description:    IDS uEye CP Camera
+primitives:
+    # lens mount
+    - type:         cylinder
+      pos:          [0, 0, -13]
+      radius:       13.5
+      axis:         [0, 0, 13]
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    # camera body
+    - type:         box
+      pos:          [0, 0, -14.5]
+      length:       29
+      height:       29
+      width:        3
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         box
+      pos:          [0, 0, -53.5]
+      length:       29
+      height:       29
+      width:        1
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         box
+      pos:          [0, -13, -34.5]
+      length:       29
+      height:       3
+      width:        37
+      color:        [0.1, 0.1, 0.1]
+      material:     plastic
+    - type:         box
+      pos:          [0, 1.5, -34.5]
+      length:       29
+      height:       26
+      width:        37
+      color:        [0.7, 0.7, 0.7]
+      material:     plastic
