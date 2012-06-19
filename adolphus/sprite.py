@@ -56,6 +56,30 @@ class Sprite(visual.frame):
         self._highlighted = False
         self.parent = parent
 
+    def __del__(self):
+        try:
+            del self.members
+            del self.primitives
+            del self.parent
+        except AttributeError:
+            pass
+
+    def get_visible(self):
+        """\
+        Sprite visibility.
+        """
+        return super(Sprite, self).get_visible()
+
+    def set_visible(self, value):
+        """\
+        Set sprite visibility.
+        """
+        for member in self.members:
+            member.visible = value
+        super(Sprite, self).set_visible(value)
+
+    visible = property(get_visible, set_visible)
+
     def get_opacity(self):
         """\
         Sprite opacity.
