@@ -15,8 +15,8 @@ import commands
 from .geometry import Point, Rotation, Pose
 from .coverage import Model
 from .posable import SceneObject
-from .visualization import VisualizationError, Sprite, Visualizable, \
-    VISUAL_SETTINGS
+from .sprite import Sprite
+from .visualization import VisualizationError, Visualizable, VISUAL_SETTINGS
 
 
 class Display(visual.display):
