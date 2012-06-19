@@ -57,12 +57,15 @@ class Sprite(visual.frame):
         self.parent = parent
 
     def __del__(self):
-        try:
-            del self.members
-            del self.primitives
-            del self.parent
-        except AttributeError:
-            pass
+        self.destroy()
+
+    def destroy(self):
+        """\
+        Remove all internal implicit and explicit references to Visual objects.
+        """
+        self.visible = False
+        del self.members
+        del self.parent
 
     def get_visible(self):
         """\

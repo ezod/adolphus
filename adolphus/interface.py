@@ -297,7 +297,7 @@ class Experiment(Thread):
         @type task: C{str}
         """
         if obj in self.guides:
-            self.guides[obj].visible = False
+            self.guides[obj].destroy()
             del self.guides[obj]
         elif obj in self.model.cameras:
             if len(self.tasks) == 1:
