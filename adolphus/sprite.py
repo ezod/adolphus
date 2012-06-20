@@ -56,15 +56,13 @@ class Sprite(visual.frame):
         self._highlighted = False
         self.parent = parent
 
-    def __del__(self):
-        self.destroy()
-
     def destroy(self):
         """\
         Remove all internal implicit and explicit references to Visual objects.
         """
         self.visible = False
         del self.members
+        del self.primitives
         del self.parent
 
     def get_visible(self):
