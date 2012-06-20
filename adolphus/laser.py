@@ -278,7 +278,7 @@ class RangeModel(Model):
         if self._active_laser:
             return self._active_laser
         elif len(self.lasers) == 1:
-            self.active_laser = iter(self.lasers).next()
+            self._active_laser = iter(self.lasers).next()
             return self._active_laser
         else:
             raise RuntimeError('no active laser specified from multiple lasers')
