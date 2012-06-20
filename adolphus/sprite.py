@@ -50,20 +50,28 @@ class Sprite(visual.frame):
                 primitive['material'] = visual.materials.texture(data=\
                     visual.materials.loadTGA(primitive['texture']),
                     mapping=primitive['mapping'])
-            primitive['frame'] = self
             self.members.append(getattr(visual, primitive['type'])(**primitive))
+            self.members[-1].frame = self
         self._opacity = 1.0
         self._highlighted = False
         self.parent = parent
+
+    def __del__(self):
+        self.destroy()
 
     def destroy(self):
         """\
         Remove all internal implicit and explicit references to Visual objects.
         """
-        self.visible = False
-        del self.members
-        del self.primitives
-        del self.parent
+        try:
+            self.visible = False
+            del self.members
+        except AttributeError:
+            pass
+        try:
+            del self.parent
+        except AttributeError:
+            pass
 
     def get_visible(self):
         """\
@@ -75,6 +83,7 @@ class Sprite(visual.frame):
         """\
         Set sprite visibility.
         """
+        # Explicitly set child visibility for memory management.
         for member in self.members:
             member.visible = value
         super(Sprite, self).set_visible(value)
