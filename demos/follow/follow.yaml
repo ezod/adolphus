@@ -1,0 +1,318 @@
+model:
+    name:           Surveillance Camera Selection
+
+    cameras:
+        - name:         A
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-7500, 11000, 2500]
+              R:            [-1.98, -0.46, 3.3616]
+              Rformat:      euler-zyx-rad
+        - name:         B
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-2000, 11000, 2500]
+              R:            [-1.84, -0.31, 3.1516]
+              Rformat:      euler-zyx-rad
+        - name:         C
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [4000, 11000, 2500]
+              R:            [-1.91, 0.79, 2.9516]
+              Rformat:      euler-zyx-rad
+        - name:         D
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-3500, 7250, 2500]
+              R:            [2.01, 0.97, 0.5516]
+              Rformat:      euler-zyx-rad
+        - name:         E
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-3500, 6500, 2500]
+              R:            [-1.97, 0.34, 2.9216]
+              Rformat:      euler-zyx-rad
+        - name:         F
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-2000, 6500, 2500]
+              R:            [-1.99, -0.95, 3.5616]
+              Rformat:      euler-zyx-rad
+        - name:         G
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [9500, 4750, 2500]
+              R:            [-1.90, 1.00, 2.8616]
+              Rformat:      euler-zyx-rad
+        - name:         H
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [2250, 2500, 2500]
+              R:            [2.04, 1.10, 0.40]
+              Rformat:      euler-zyx-rad
+        - name:         I
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-7500, 1500, 2500]
+              R:            [1.93, -1.02, 5.9716]
+              Rformat:      euler-zyx-rad
+        - name:         J
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [7000, 1250, 2500]
+              R:            [3.02, 1.24, 1.4616]
+              Rformat:      euler-zyx-rad
+        - name:         K
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [3000, -2250, 2500]
+              R:            [2.27, -1.17, -0.65]
+              Rformat:      euler-zyx-rad
+        - name:         L
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [9500, -2250, 2500]
+              R:            [2.19, 0.97, 0.58]
+              Rformat:      euler-zyx-rad
+        - name:         M
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-2000, -2750, 2500]
+              R:            [1.96, -0.44, -0.20]
+              Rformat:      euler-zyx-rad
+        - name:         N
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [3000, -3750, 2500]
+              R:            [-2.01, -1.13, 3.5816]
+              Rformat:      euler-zyx-rad
+        - name:         O
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [9500, -3750, 2500]
+              R:            [-2.07, 1.09, 2.7516]
+              Rformat:      euler-zyx-rad
+        - name:         P
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-7500, -5000, 2500]
+              R:            [-2.37, -1.10, -2.42]
+              Rformat:      euler-zyx-rad
+        - name:         Q
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-3500, -6250, 2500]
+              R:            [-2.10, 0.81, 2.6316]
+              Rformat:      euler-zyx-rad
+        - name:         R
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-2000, -6250, 2500]
+              R:            [1.87, -0.78, 6.0716]
+              Rformat:      euler-zyx-rad
+        - name:         S
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-3500, -9000, 2500]
+              R:            [-2.00, 1.13, 2.6915]
+              Rformat:      euler-zyx-rad
+        - name:         T
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [9500, -10500, 2500]
+              R:            [1.80, 0.31, 0.07]
+              Rformat:      euler-zyx-rad
+        - name:         U
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-5000, -11500, 2500]
+              R:            [1.92, 0.00, 0.00]
+              Rformat:      euler-zyx-rad
+        - name:         V
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [-2000, -11500, 2500]
+              R:            [1.84, -0.20, -0.06]
+              Rformat:      euler-zyx-rad
+        - name:         W
+          sprites:      [cameras/genericlg.yaml]
+          A:            4.5
+          f:            6
+          s:            0.00465
+          o:            [680, 512]
+          dim:          [1360, 1024]
+          zS:           2500
+          pose:
+              T:            [1500, -11500, 2500]
+              R:            [1.87, 0.37, 0.07]
+              Rformat:      euler-zyx-rad
+
+    scene:
+        - name:         Building
+          sprites:
+            - triangles:        'building.raw'
+        - name:         RealPerson
+          sprites:      [scene/fisherpriceperson.yaml]
+          mount:        Person
+          pose:
+              T:            [0, 0, 0]
+              R:            [90, [1, 0, 0]]
+              Rformat:      axis-angle-deg
+        - name:         Person
+
+tasks:
+    - name:         target
+      parameters:
+          boundary_padding:       20.0
+          res_min:                [3.0, 9.0]
+          blur_max:               ['default', 1.7204]
+          angle_max:              [0.3, 'default']
+      mount:        Person
+      points:
+        - [-400, 0, 1500]
+        - [400, 0, 1500]
+        - [0, 400, 1500]
+        - [0, -400, 1500, 1.570796327, 4.71238898]
+    - name:         scene
+      parameters:
+          boundary_padding:       20.0
+          res_min:                [3.0, 9.0]
+          blur_max:               ['default', 1.7204]
+          angle_max:              [0.3, 'default']
+      step:         250
+      ranges:
+        - x:            [-8000, 10000]
+          y:            [-12000, 11500]
+          z:            [1500, 1500]
