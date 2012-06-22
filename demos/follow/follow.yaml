@@ -283,14 +283,8 @@ model:
         - name:         Building
           sprites:
             - triangles:        'building.raw'
-        - name:         RealPerson
-          sprites:      [scene/fisherpriceperson.yaml]
-          mount:        Person
-          pose:
-              T:            [0, 0, 0]
-              R:            [90, [1, 0, 0]]
-              Rformat:      axis-angle-deg
         - name:         Person
+          sprites:      [scene/human.yaml]
 
 tasks:
     - name:         target
@@ -301,10 +295,11 @@ tasks:
           angle_max:              [0.3, 'default']
       mount:        Person
       points:
-        - [-400, 0, 1500]
-        - [400, 0, 1500]
-        - [0, 400, 1500]
-        - [0, -400, 1500, 1.570796327, 4.71238898]
+        - [-32.5, 110, 1660, 1.570796327, 1.570796327]
+        - [32.5, 110, 1660, 1.570796327, 1.570796327]
+        - [-225, 0, 1500]
+        - [225, 0, 1500]
+        - [0, 225, 1500]
     - name:         scene
       parameters:
           boundary_padding:       20.0

@@ -84,7 +84,7 @@ if __name__ == '__main__':
         if ex.exit:
             break
         # Set target pose.
-        normal = (path(t / float(args.interpolate)) - path((t - 1) \
+        normal = -(path(t / float(args.interpolate)) - path((t - 1) \
                  / float(args.interpolate))).unit()
         angle = Point(0, -1, 0).angle(normal)
         axis = Point(0, -1, 0).cross(normal)
