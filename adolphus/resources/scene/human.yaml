@@ -1,0 +1,127 @@
+description:    Standard Human
+primitives:
+    # head
+    - type:         sphere
+      pos:          [0, 0, 1660]
+      radius:       110
+      color:        [0, 0, 1]
+      material:     plastic
+    # neck
+    - type:         cylinder
+      pos:          [0, 0, 1660]
+      axis:         [0, 0, -255]
+      radius:       60
+      color:        [0, 0, 1]
+      material:     plastic
+    # torso
+    - type:         sphere
+      pos:          [0, 0, 1405]
+      radius:       140
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [0, 0, 1405]
+      axis:         [0, 0, -555]
+      radius:       140
+      color:        [0, 0, 1]
+      material:     plastic
+    # shoulders
+    - type:         cylinder
+      pos:          [195, 0, 1405]
+      radius:       55
+      axis:         [-195, 0, 100]
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         sphere
+      pos:          [195, 0, 1405]
+      radius:       55
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [-195, 0, 1405]
+      radius:       55
+      axis:         [195, 0, 100]
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         sphere
+      pos:          [-195, 0, 1405]
+      radius:       55
+      color:        [0, 0, 1]
+      material:     plastic
+    # arms
+    - type:         cylinder
+      pos:          [195, 0, 1405]
+      axis:         [0, 0, -700]
+      radius:       55
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [-195, 0, 1405]
+      axis:         [0, 0, -700]
+      radius:       55
+      color:        [0, 0, 1]
+      material:     plastic
+    # hands
+    - type:         sphere
+      pos:          [195, 0, 705]
+      radius:       55
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         sphere
+      pos:          [-195, 0, 705]
+      radius:       55
+      color:        [0, 0, 1]
+      material:     plastic
+    # legs
+    - type:         cylinder
+      pos:          [70, 0, 850]
+      axis:         [0, 0, -735]
+      radius:       65
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         cylinder
+      pos:          [-70, 0, 850]
+      axis:         [0, 0, -735]
+      radius:       65
+      color:        [0, 0, 1]
+      material:     plastic
+    # feet
+    - type:         box
+      pos:          [70, 62.5, 57.5]
+      length:       130
+      width:        115
+      height:       265
+      color:        [0, 0, 1]
+      material:     plastic
+    - type:         box
+      pos:          [-70, 62.5, 57.5]
+      length:       130
+      width:        115
+      height:       265
+      color:        [0, 0, 1]
+      material:     plastic
+triangles:
+    - vertices:
+        - [225, 0, 1435]
+        - [225, 0, 0]
+        - [-225, 0, 0]
+    - vertices:
+        - [-225, 0, 1435]
+        - [225, 0, 1435]
+        - [-225, 0, 0]
+    - vertices:
+        - [110, 0, 1770]
+        - [110, 0, 1435]
+        - [-110, 0, 1435]
+    - vertices:
+        - [-110, 0, 1770]
+        - [110, 0, 1770]
+        - [-110, 0, 1435]
+    - vertices:
+        - [0, 140, 1435]
+        - [0, 140, 0]
+        - [0, -140, 0]
+    - vertices:
+        - [0, -140, 1435]
+        - [0, 140, 1435]
+        - [0, -140, 0]
