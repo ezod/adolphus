@@ -23,14 +23,14 @@ primitives:
       color:        [0.1, 0.1, 0.1]
       material:     plastic
     - type:         box
-      pos:          [0, -13, -34.5]
+      pos:          [0, 13, -34.5]
       length:       29
       height:       3
       width:        37
       color:        [0.1, 0.1, 0.1]
       material:     plastic
     - type:         box
-      pos:          [0, 1.5, -34.5]
+      pos:          [0, -1.5, -34.5]
       length:       29
       height:       26
       width:        37
