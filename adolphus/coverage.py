@@ -60,15 +60,30 @@ class PointCache(dict):
             dl = self
         result = type(self)(dl)
         for point, value in ds.iteritems():
-            if not point in result:
-                result[point] = value
-            else:
+            if point in result:
                 result[point] = min(result[point], value)
+            else:
+                result[point] = value
         return result
 
     def __iand__(self, other):
         self = self & other
         return self
+
+    def __add__(self, other):
+        if len(self) < len(other):
+            ds = self
+            dl = other
+        else:
+            ds = other
+            dl = self
+        result = type(self)(dl)
+        for point, value in ds.iteritems():
+            if point in result:
+                result[point] += value
+            else:
+                result[point] = value
+        return result
 
     def __del__(self):
         try:
@@ -163,6 +178,19 @@ class Task(Posable):
         except AttributeError:
             pass
         super(Task, self)._pose_changed_hook()
+
+    @property
+    def weight(self):
+        """\
+        Total weight (sum, scalar cardinality) of the relevance function.
+        """
+        try:
+            return self._weight
+        except AttributeError:
+            self._weight = 0.0
+            for point in self._original.keys():
+                self._weight += self._original[point]
+            return self._weight
 
     @property
     def original(self):
@@ -904,16 +932,19 @@ class Model(dict):
         the points in a given task model.
 
         @param task: The task model.
-        @type task: L{Task}
+        @type task: L{Task} or C{list} of L{Task}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @return: The coverage model.
         @rtype: L{PointCache}
         """
+        if isinstance(task, Task):
+            task = [task]
         coverage = PointCache()
-        for point in task.mapped:
-            # Calculate coverage strength for each mapped task point.
-            coverage[point] = self.strength(point, task.params, subset)
+        for t in task:
+            for point in t.mapped:
+                # Calculate coverage strength for each mapped task point.
+                coverage[point] = self.strength(point, t.params, subset)
         return coverage
 
     def performance(self, task, subset=None, coverage=None):
@@ -924,7 +955,7 @@ class Model(dict):
         task model.
 
         @param task: The task model.
-        @type task: L{Task}
+        @type task: L{Task} or C{list} of L{Task}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @param coverage: Previously computed coverage cache for these points.
@@ -933,11 +964,16 @@ class Model(dict):
         @rtype: C{float}
         """
         coverage = coverage or self.coverage(task, subset)
-        Fn, Fd = 0.0, 0.0
+        if hasattr(task, '__iter__'):
+            relevance = reduce(lambda a, b: a + b, task.mapped)
+            weight = sum([t.weight for t in task])
+        else:
+            relevance = task.mapped
+            weight = task.weight
+        F = 0.0
         for point in coverage.keys():
-            Fn += coverage[point] * task.mapped[point]
-            Fd += task.mapped[point]
-        return Fn / Fd
+            F += coverage[point] * relevance[point]
+        return F / weight
 
     def performance_complex(self, task, subset=None, coverage=None):
         """\
@@ -946,7 +982,7 @@ class Model(dict):
         as a complex feature.
 
         @param task: The task model.
-        @type task: L{Task}
+        @type task: L{Task} or C{list} of L{Task}
         @param subset: Subset of cameras (defaults to all active cameras).
         @type subset: C{set}
         @param coverage: Previously computed coverage cache for these points.
