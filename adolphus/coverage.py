@@ -933,8 +933,11 @@ class Model(dict):
         @rtype: C{float}
         """
         coverage = coverage or self.coverage(task, subset)
-        return sum((coverage & task.mapped).values()) / \
-            float(len(task.original))
+        Fn, Fd = 0.0, 0.0
+        for point in coverage.keys():
+            Fn += coverage[point] * task.mapped[point]
+            Fd += task.mapped[point]
+        return Fn / Fd
 
     def performance_complex(self, task, subset=None, coverage=None):
         """\
