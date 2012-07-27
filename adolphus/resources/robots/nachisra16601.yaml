@@ -1,0 +1,86 @@
+description:    NACHI SRA 166-01 6-Axis Robotic Arm
+
+links:
+    # base
+    - joint:
+          name:         J1
+          type:         revolute
+          axis:         [0, 0, 1]
+          limits:       [-180, 180]
+          home:         0
+      offset:
+          T:            [0, 0, 0]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+
+    # shoulder
+    - joint:
+          name:         J2
+          type:         revolute
+          axis:         [0, 0, 0]
+          limits:       [-80, 60]
+          home:         0
+      offset:
+          T:            [0, 0, 0]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+
+    # upper arm
+    - joint:
+          name:         J3
+          type:         revolute
+          axis:         [0, 0, 0]
+          limits:       [-146.5, 150]
+          home:         90
+      offset:
+          T:            [0, 0, 0]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+
+    # elbow
+    - joint:
+          name:         J4
+          type:         revolute
+          axis:         [0, 0, 0]
+          limits:       [-360, 360]
+          home:         0
+      offset:
+          T:            [0, 0, 0]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+
+    # forearm
+    - joint:
+          name:         J5
+          type:         revolute
+          axis:         [0, 0, 0]
+          limits:       [-135, 135]
+          home:         0
+      offset:
+          T:            [0, 0, 0]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+
+    # wrist
+    - joint:
+          name:         J6
+          type:         revolute
+          axis:         [0, 0, 0]
+          limits:       [-360, 360]
+          home:         0
+      offset:
+          T:            [0, 0, 0]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
+
+    # flange (tool length)
+    - joint:
+          name:         T
+          type:         prismatic
+          axis:         [0, 0, 1]
+          limits:       [0, 1000]
+          home:         0
+      offset:
+          T:            [0, 0, 0]
+          R:            [1, [0, 0, 0]]
+          Rformat:      quaternion
