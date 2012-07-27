@@ -9,3 +9,4 @@ dist/
 *.so
 adolphus/*.c
 adolphus/*.html
+demos/follow/vgraph.pickle

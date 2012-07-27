@@ -1,0 +1,102 @@
+type:           'range'
+
+model:
+    name:           'Range Imaging Test'
+
+    cameras:
+        - name:         'A'
+          sprites:      ['cameras/sickivprangered.yaml', 'lenses/computarm3z1228cmp.yaml']
+          A:            4.4765
+          f:            12.5341
+          s:            0.00465
+          o:            [760.1805, 495.1859]
+          dim:          [1360, 1024]
+          zS:           1216.1
+          pose:
+            T:              [0, -800, 0]
+
+        - name:         'B'
+          sprites:      ['cameras/sickivprangered.yaml', 'lenses/computarm3z1228cmp.yaml']
+          A:            4.4765
+          f:            12.5341
+          s:            0.00465
+          o:            [760.1805, 495.1859]
+          dim:          [1360, 1024]
+          zS:           1216.1
+          pose:
+            T:              [0, 800, 0]
+
+    lasers:
+        - name:         'L'
+          sprites:      ['lasers/stockeryalelasirisdls.yaml']
+          fan:          1.05
+          depth:        500
+          pose:
+            T:              [0, 0, 500]
+            R:              [0, 180, 0]
+            Rformat:        'euler-zyx-deg'
+
+    scene:
+        - name:         'T'
+          sprites:      ['scene/block.third.10x4.yaml']
+          pose:
+            R:              [0, 0, 90]
+            Rformat:        'euler-zyx-deg'
+        - name:         'Ta'
+          sprites:      ['scene/block.full.4x2.yaml']
+          mount:        'T'
+          pose:
+            T:              [32, 8, 3.2]
+        - name:         'Tb'
+          sprites:      ['scene/block.full.1x1.yaml']
+          mount:        'T'
+          pose:
+            T:              [32, 0, 3.2]
+        - name:         'Tc'
+          sprites:      ['scene/block.full.2x2.yaml']
+          mount:        'T'
+          pose:
+            T:              [48, 8, 12.8]
+        - name:         'Td'
+          sprites:      ['scene/block.full.2x1.yaml']
+          mount:        'T'
+          pose:
+            T:              [8, 16, 3.2]
+        - name:         'Te'
+          sprites:      ['scene/block.full.1x1.yaml']
+          mount:        'T'
+          pose:
+            T:              [16, 16, 12.8]
+        - name:         'Tf'
+          sprites:      ['scene/block.full.1x1.yaml']
+          mount:        'T'
+          pose:
+            T:              [16, 16, 22.4]
+        - name:         'Tg'
+          sprites:      ['scene/block.full.1x1.yaml']
+          mount:        'T'
+          pose:
+            T:              [16, 16, 32]
+
+tasks:
+    - name:                     'scan'
+      type:                     'range'
+      parameters:
+          boundary_padding:       10
+          hres_min:               [0.2, 0.6]
+          res_min:                [0.2, 0.6]
+          blur_max:               ['default', 2.0]
+          angle_max:              1.0
+      mount:                    'T'
+      points:
+        - [12, 20, 14.5]
+        - [20, 20, 43.3]
+        - [36, 4, 14.5]
+        - [36, 12, 14.5]
+        - [36, 20, 14.5]
+        - [44, 12, 14.5]
+        - [44, 20, 14.5]
+        - [52, 12, 24.1]
+        - [52, 20, 24.1]
+        - [60, 12, 24.1]
+        - [60, 20, 24.1]
