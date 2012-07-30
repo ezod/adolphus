@@ -12,48 +12,71 @@ links:
           T:            [0, 0, 0]
           R:            [1, [0, 0, 0]]
           Rformat:      quaternion
+      primitives:
+        - type:         cylinder
+          pos:          [0, 0, 0]
+          radius:       255
+          axis:         [0, 0, 300]
 
     # shoulder
     - joint:
           name:         J2
           type:         revolute
-          axis:         [0, 0, 0]
-          limits:       [-80, 60]
-          home:         0
+          axis:         [0, -1, 0]
+          limits:       [-360, 360]
+          home:         90
       offset:
-          T:            [0, 0, 0]
-          R:            [1, [0, 0, 0]]
-          Rformat:      quaternion
+          T:            [305, 0, 640]
+          R:            [0, 270, 0]
+          Rformat:      euler-zyx-deg
+      primitives:
+        - type:         box
+          pos:          [0, 0, 470]
+          axis:         [0, 0, 300]
+          length:       340
+          width:        510
+          height:       510
 
     # upper arm
     - joint:
           name:         J3
           type:         revolute
-          axis:         [0, 0, 0]
+          axis:         [0, -1, 0]
           limits:       [-146.5, 150]
-          home:         90
+          home:         0
       offset:
-          T:            [0, 0, 0]
-          R:            [1, [0, 0, 0]]
-          Rformat:      quaternion
+          T:            [0, 0, 1390]
+          R:            [0, 270, 0]
+          Rformat:      euler-zyx-deg
+      primitives:
+        - type:         cylinder
+          pos:          [0, 0, 0]
+          radius:       150
+          axis:         [0, 0, 1190]
+
 
     # elbow
     - joint:
           name:         J4
           type:         revolute
-          axis:         [0, 0, 0]
+          axis:         [0, 0, 1]
           limits:       [-360, 360]
           home:         0
       offset:
-          T:            [0, 0, 0]
+          T:            [0, 0, 1160]
           R:            [1, [0, 0, 0]]
           Rformat:      quaternion
+      primitives:
+        - type:         cylinder
+          pos:          [0, 0, 0]
+          radius:       100
+          axis:         [0, 0, 1160]
 
     # forearm
     - joint:
           name:         J5
           type:         revolute
-          axis:         [0, 0, 0]
+          axis:         [0, -1, 0]
           limits:       [-135, 135]
           home:         0
       offset:
@@ -65,11 +88,11 @@ links:
     - joint:
           name:         J6
           type:         revolute
-          axis:         [0, 0, 0]
+          axis:         [0, 0, 1]
           limits:       [-360, 360]
           home:         0
       offset:
-          T:            [0, 0, 0]
+          T:            [0, 0, 225]
           R:            [1, [0, 0, 0]]
           Rformat:      quaternion
 
@@ -84,3 +107,9 @@ links:
           T:            [0, 0, 0]
           R:            [1, [0, 0, 0]]
           Rformat:      quaternion
+      primitives:
+        - type:         box
+          pos:          [0, 0, -112.5]
+          width:        225 
+          length:       120
+          height:       120
