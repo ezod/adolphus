@@ -45,7 +45,7 @@ links:
           limits:       [-146.5, 150]
           home:         0
       offset:
-          T:            [0, 0, 1390]
+          T:            [0, 0, 1190]
           R:            [0, 270, 0]
           Rformat:      euler-zyx-deg
       primitives:
@@ -63,12 +63,12 @@ links:
           limits:       [-360, 360]
           home:         0
       offset:
-          T:            [0, 0, 1160]
+          T:            [-200, 0, 1160]
           R:            [1, [0, 0, 0]]
           Rformat:      quaternion
       primitives:
         - type:         cylinder
-          pos:          [0, 0, 0]
+          pos:          [-200, 0, 0]
           radius:       100
           axis:         [0, 0, 1160]
 
