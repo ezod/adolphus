@@ -32,8 +32,6 @@ except ImportError:
     import pickle
 
 import yaml
-from math import pi
-from inspect import getargspec
 
 from .geometry import Angle, Point, DirectionalPoint, Quaternion, Rotation, Pose
 from .robot import Robot
@@ -48,32 +46,21 @@ class CommandError(Exception):
     pass
 
 def command(f):
-    if 'response' in getargspec(f).args:
-        def wrapped(ex, args, response='pickle'):
-            assert response in ['pickle', 'csv', 'text']
-            try:
-                return f(ex, args, response)
-            except CommandError as e:
-                raise e
-            except Exception, e:
-                raise CommandError('%s: %s' % (type(e).__name__, e))
-        wrapped.response = True
-    else:
-        def wrapped(ex, args):
-            try:
-                return f(ex, args)
-            except CommandError as e:
-                raise e
-            except Exception, e:
-                raise CommandError('%s: %s' % (type(e).__name__, e))
-        wrapped.response = False
+    def wrapped(ex, args, response='pickle'):
+        assert response in ['pickle', 'csv', 'text']
+        try:
+            return f(ex, args, response)
+        except CommandError as e:
+            raise e
+        except Exception, e:
+            raise CommandError('%s: %s' % (type(e).__name__, e))
     wrapped.__doc__ = f.__doc__
     commands[f.__name__] = wrapped
     return wrapped
 
 
 @command
-def loadmodel(ex, args):
+def loadmodel(ex, args, response):
     """\
     Load a model from a YAML file.
 
@@ -93,7 +80,7 @@ def loadmodel(ex, args):
     ex.display.select()
 
 @command
-def loadconfig(ex, args):
+def loadconfig(ex, args, response):
     """\
     Load viewer configuration from a YAML file.
 
@@ -119,14 +106,14 @@ def loadconfig(ex, args):
         ex.mousebindings = {}
 
 @command
-def event(ex, args):
+def event(ex, args, response):
     """\
     Set the generic experiment event.
     """
     ex.event.set()
 
 @command
-def exit(ex, args):
+def exit(ex, args, response):
     """\
     Exit the viewer.
     """
@@ -136,7 +123,7 @@ def exit(ex, args):
     ex.exit = True
 
 @command
-def clear(ex, args):
+def clear(ex, args, response):
     """\
     Clear all point coverage visualizations.
     """
@@ -144,21 +131,21 @@ def clear(ex, args):
         del ex.coverage[key]
 
 @command
-def axes(ex, args):
+def axes(ex, args, response):
     """\
     Toggle display of 3D axes.
     """
     ex.axes.visible = not ex.axes.visible
 
 @command
-def centerdot(ex, args):
+def centerdot(ex, args, response):
     """\
     Toggle display of a center indicator dot.
     """
     ex.centerdot.visible = not ex.centerdot.visible
 
 @command
-def setcenter(ex, args):
+def setcenter(ex, args, response):
     """\
     Set the position of the display center.
 
@@ -171,7 +158,7 @@ def setcenter(ex, args):
     ex.centerdot.pos = pos
 
 @command
-def shiftcenter(ex, args):
+def shiftcenter(ex, args, response):
     """\
     Shift the display center from its current position by the amount specified.
 
@@ -186,7 +173,7 @@ def shiftcenter(ex, args):
     ex.centerdot.pos = tuple(pos)
 
 @command
-def getcenter(ex, args, response='pickle'):
+def getcenter(ex, args, response):
     """\
     Get the position of the display center.
 
@@ -200,7 +187,7 @@ def getcenter(ex, args, response='pickle'):
         return '(%s, %s, %s)' % tuple(ex.centerdot.pos)
 
 @command
-def triangles(ex, args):
+def triangles(ex, args, response):
     """\
     Toggle display of occluding triangles.
     """
@@ -208,14 +195,14 @@ def triangles(ex, args):
         ex.model[sceneobject].toggle_triangles()
 
 @command
-def cameranames(ex, args):
+def cameranames(ex, args, response):
     """\
     Toggle display of camera identifiers.
     """
     ex.camera_names()
 
 @command
-def guide(ex, args):
+def guide(ex, args, response):
     """\
     Toggle display of guide (camera frustum, laser triangle) for the specified
     object.
@@ -225,7 +212,7 @@ def guide(ex, args):
     ex.guide(args[0], task=(args[1] if len(args) > 1 else None))
 
 @command
-def activeguides(ex, args, response='pickle'):
+def activeguides(ex, args, response):
     if response == 'pickle':
         return pickle.dumps(ex.guides.keys())
     elif response == 'csv':
@@ -234,7 +221,7 @@ def activeguides(ex, args, response='pickle'):
         return ' '.join(ex.guides.keys())
 
 @command
-def cameraview(ex, args):
+def cameraview(ex, args, response):
     """\
     Switch to camera view for the specified camera.
     
@@ -310,7 +297,7 @@ def format_pose_text(pose, rformat):
         raise CommandError('invalid rotation format')
 
 @command
-def getpose(ex, args, response='pickle'):
+def getpose(ex, args, response):
     """\
     Return the (absolute) pose of an object. If using CSV or text response,
     a rotation format may be specified (one of 'quaternion', 'matrix',
@@ -329,7 +316,7 @@ def getpose(ex, args, response='pickle'):
         return format_pose_text(pose, rformat)
 
 @command
-def getrelativepose(ex, args, response='pickle'):
+def getrelativepose(ex, args, response):
     """\
     Return the relative pose of an object or task.
 
@@ -368,7 +355,7 @@ def parse_pose(args):
     return Pose(T, R)
 
 @command
-def setpose(ex, args):
+def setpose(ex, args, response):
     """\
     Set the absolute pose of an object.
 
@@ -382,7 +369,7 @@ def setpose(ex, args):
         ex.modifier.pos = tuple(obj.pose.T)
 
 @command
-def setrelativepose(ex, args):
+def setrelativepose(ex, args, response):
     """\
     Set the relative pose of an object.
 
@@ -396,7 +383,7 @@ def setrelativepose(ex, args):
         ex.modifier.pos = tuple(obj.pose.T)
 
 @command
-def modify(ex, args):
+def modify(ex, args, response):
     """\
     Enable interactive pose modification for the specified object, or disable
     modification if no object is specified.
@@ -416,7 +403,7 @@ def modify(ex, args):
         ex.modifier.parent = obj
 
 @command
-def setparam(ex, args):
+def setparam(ex, args, response):
     """\
     Set a parameter of a camera or task. 
 
@@ -429,7 +416,7 @@ def setparam(ex, args):
         obj.setparam(args[1], [float(a) for a in args[2:]])
 
 @command
-def getparams(ex, args, response='pickle'):
+def getparams(ex, args, response):
     """\
     Get the parameters of an object.
 
@@ -445,7 +432,7 @@ def getparams(ex, args, response='pickle'):
         return '\n'.join(['%s: %s' % (p, str(params[p])) for p in params])
 
 @command
-def setactive(ex, args):
+def setactive(ex, args, response):
     """\
     Toggle the active state of the specified camera (or, if unspecified, that
     of all cameras).
@@ -460,7 +447,7 @@ def setactive(ex, args):
             setactive(ex, [camera])
 
 @command
-def getactive(ex, args, response='pickle'):
+def getactive(ex, args, response):
     """\
     Get the active state of the specified camera.
 
@@ -474,7 +461,7 @@ def getactive(ex, args, response='pickle'):
         return 'Active' if ex.model[args[0]].active else 'Inactive'
 
 @command
-def setactivelaser(ex, args):
+def setactivelaser(ex, args, response):
     """\
     Set the active laser to the specified laser.
 
@@ -486,7 +473,7 @@ def setactivelaser(ex, args):
         raise CommandError('not a range coverage model')
 
 @command
-def getactivelaser(ex, args, response='pickle'):
+def getactivelaser(ex, args, response):
     """\
     Get the active laser.
 
@@ -503,7 +490,7 @@ def getactivelaser(ex, args, response='pickle'):
         raise CommandError('not a range coverage model')
 
 @command
-def setposition(ex, args):
+def setposition(ex, args, response):
     """\
     Set the position of the specified robot.
 
@@ -514,7 +501,7 @@ def setposition(ex, args):
     ex.model[args[0]].update_visualization()
 
 @command
-def getposition(ex, args, response='pickle'):
+def getposition(ex, args, response):
     """\
     Get the position of the specified robot.
 
@@ -529,7 +516,7 @@ def getposition(ex, args, response='pickle'):
         return str(ex.model[args[0]].config)
 
 @command
-def getjoints(ex, args, response='pickle'):
+def getjoints(ex, args, response):
     """\
     Get the joint information dict (names, types, limits, home positions) from
     a robot.
@@ -542,7 +529,7 @@ def getjoints(ex, args, response='pickle'):
     return pickle.dumps(ex.model[args[0]].joints)
 
 @command
-def strength(ex, args, response='pickle'):
+def strength(ex, args, response):
     """\
     Return the coverage strength of the specified point with respect to the
     task parameters of the specified task.
@@ -565,7 +552,7 @@ def strength(ex, args, response='pickle'):
         return '%f' % strength
 
 @command
-def tasks(ex, args, response='pickle'):
+def tasks(ex, args, response):
     if response == 'pickle':
         return pickle.dumps(ex.tasks.keys())
     elif response == 'csv':
@@ -574,7 +561,7 @@ def tasks(ex, args, response='pickle'):
         return '\n'.join(ex.tasks.keys())
 
 @command
-def showtask(ex, args):
+def showtask(ex, args, response):
     """\
     Show the points of the specified task.
     
@@ -583,7 +570,7 @@ def showtask(ex, args):
     ex.tasks[args[0]].visualize()
 
 @command
-def hidetasks(ex, args):
+def hidetasks(ex, args, response):
     """\
     Hide task points.
 
@@ -596,7 +583,7 @@ def hidetasks(ex, args):
             pass
 
 @command
-def coverage(ex, args, response='pickle'):
+def coverage(ex, args, response):
     """\
     Return the coverage performance for the specified task(s).
 
@@ -625,7 +612,7 @@ def coverage(ex, args, response='pickle'):
         ex.display.userspin = True
 
 @command
-def rangecoveragelt(ex, args, response='pickle'):
+def rangecoveragelt(ex, args, response):
     """\
     TODO
 
@@ -654,7 +641,7 @@ def rangecoveragelt(ex, args, response='pickle'):
         ex.display.userspin = True
 
 @command
-def objecthierarchy(ex, args, response='pickle'):
+def objecthierarchy(ex, args, response):
     """\
     Return a scene object hierarchy in the form C{{'object': (parent, type)}}.
 
@@ -676,7 +663,7 @@ def objecthierarchy(ex, args, response='pickle'):
     return pickle.dumps(hierarchy)
 
 @command
-def select(ex, args):
+def select(ex, args, response):
     """\
     Select a scene object.
 
@@ -688,7 +675,7 @@ def select(ex, args):
         ex.select(ex.model[args[0]])
 
 @command
-def help(ex, args, response='pickle'):
+def help(ex, args, response):
     """\
     Print the documentation for a command.
 

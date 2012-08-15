@@ -352,10 +352,7 @@ class Experiment(Thread):
         if cmd not in commands.commands:
             raise commands.CommandError('invalid command')
         try:
-            if commands.commands[cmd].response:
-                return commands.commands[cmd](self, args, response=response)
-            else:
-                return commands.commands[cmd](self, args)
+            return commands.commands[cmd](self, args, response=response)
         except commands.CommandError as e:
             es = str(e)
             if commands.commands[cmd].__doc__:
