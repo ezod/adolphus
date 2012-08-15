@@ -60,6 +60,23 @@ def command(f):
 
 
 @command
+def alias(ex, args, response):
+    """\
+
+    usage: %s alias command [argument]*
+    """
+    def wrapped(wex, wargs, response):
+        assert response in ['pickle', 'csv', 'text']
+        try:
+            return globals()[args[1]](wex, args[2:] + wargs, response)
+        except CommandError as e:
+            raise e
+        except Exception, e:
+            raise CommandError('%s: %s' % (type(e).__name__, e))
+    wrapped.__doc__ = globals()[args[1]].__doc__
+    commands[args[0]] = wrapped
+
+@command
 def loadmodel(ex, args, response):
     """\
     Load a model from a YAML file.
