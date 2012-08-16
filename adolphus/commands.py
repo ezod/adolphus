@@ -1,14 +1,10 @@
 """\
 Standard library of interface commands.
 
-Commands are functions decorated with C{@command} and taking two positional
-arguments: a reference to the experiment object, and a list of strings
-comprising the command arguments.
-
-A command may return data in the form of a string. If so, its base function
-must accept a third (keyword) argument, C{response}, which defines the format
-accepted by the interface and may take one of the following string values
-(though it is acceptable to define base functions which reject some formats):
+Commands are functions decorated with C{@command} and taking three positional
+arguments: a reference to the experiment object, a list of strings comprising
+the command arguments, and a string specifying the return value format from the
+following:
 
   - C{pickle} - pickled Python object generated with C{pickle.dumps()}
   - C{csv} - comma-delimited values terminated with hash (C{#}) character
@@ -62,6 +58,8 @@ def command(f):
 @command
 def alias(ex, args, response):
     """\
+    Create an alias to another command, optionally forcing some or all
+    arguments.
 
     usage: %s alias command [argument]*
     """
