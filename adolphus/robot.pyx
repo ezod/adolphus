@@ -221,13 +221,13 @@ class Robot(SceneObject):
         The mount of this posable.
         """
         try:
-            return self.pieces[0].get_mount()
+            return self.links[0].get_mount()
         except AttributeError:
             return None
 
     def set_mount(self, value):
         if value:
-            self.pieces[0].set_mount(value)
+            self.links[0].set_mount(value)
 
     mount = property(get_mount, set_mount)
 
