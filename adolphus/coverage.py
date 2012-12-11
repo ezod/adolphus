@@ -366,21 +366,21 @@ class Camera(SceneObject):
         except AttributeError:
             self._fov = {}
             # Horizontal field of view values.
-            self._fov['ahl'] = 2.0 * atan((self._params['o'][0] * \
-                self._params['s'][0]) / (2.0 * self._params['f']))
-            self._fov['ahr'] = 2.0 * atan(((self._params['dim'][0] - \
+            self._fov['ahl'] = atan((self._params['o'][0] * \
+                self._params['s'][0]) / self._params['f'])
+            self._fov['ahr'] = atan(((self._params['dim'][0] - \
                 self._params['o'][0]) * self._params['s'][0]) / \
-                (2.0 * self._params['f']))
+                self._params['f'])
             self._fov['ah'] = self._fov['ahl'] + self._fov['ahr']
             self._fov['tahl'] = -tan(self._fov['ahl'])
             self._fov['tahr'] = tan(self._fov['ahr'])
             self._fov['tah'] = self._fov['tahr'] - self._fov['tahl']
             # Vertical field of view values.
-            self._fov['avt'] = 2.0 * atan((self._params['o'][1] * \
-                self._params['s'][1]) / (2.0 * self._params['f']))
-            self._fov['avb'] = 2.0 * atan(((self._params['dim'][1] - \
+            self._fov['avt'] = atan((self._params['o'][1] * \
+                self._params['s'][1]) / self._params['f'])
+            self._fov['avb'] = atan(((self._params['dim'][1] - \
                 self._params['o'][1]) * self._params['s'][1]) / \
-                (2.0 * self._params['f']))
+                self._params['f'])
             self._fov['av'] = self._fov['avt'] + self._fov['avb']
             self._fov['tavt'] = -tan(self._fov['avt'])
             self._fov['tavb'] = tan(self._fov['avb'])
