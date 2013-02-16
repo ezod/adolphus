@@ -8,7 +8,6 @@ Visualization helper module.
 """
 
 import os
-import ctypes
 
 VISUAL_ENABLED = True
 try:
@@ -22,11 +21,28 @@ class VisualizationError(Exception):
     pass
 
 
-VISUAL_SETTINGS = {'rate': 50, 'textsize': 6, 'scale': 1.0}
-if os.name == 'nt':
+if os.name == 'posix':
+    # TODO: Test on Linux.
+    # Apparently this only works on OSX > 10.8. For it to work on OSX 10.8
+    # the X11 system is requred, which needs to be installed :(
+    screen = os.popen("xdpyinfo  | grep 'dimensions:'").readlines()[0]
+    screen = screen.split( )[1].split('x')
+    width = float(screen[0])
+    height = float(screen[1])
+elif os.name == 'nt':
+    import ctypes
     user32 = ctypes.windll.user32
-    VISUAL_SETTINGS['textsize'] = int((user32.GetSystemMetrics(0) * \
-        user32.GetSystemMetrics(1)) / 100000)
+    width = float(user32.GetSystemMetrics(0))
+    height = float(user32.GetSystemMetrics(1))
+else:
+    width = 1280.0
+    height = 720.0
+
+# This relationship determines the appropiate text size for the
+# corresponsing screen aspect ratio. The relationship was calibrated
+# by testing several screen resolutions and text sizes.
+size = int(4.5**(width/height)
+VISUAL_SETTINGS = {'rate': 50, 'textsize': size, 'scale': 1.0}
 
 
 class Visualizable(object):

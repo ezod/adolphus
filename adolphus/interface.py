@@ -49,7 +49,7 @@ class Display(visual.display):
 
         # command/message box
         self._messagebox = visual.label(pos=center, background=(0, 0, 0),
-            height=VISUAL_SETTINGS['textsize'] * 2, color=(1, 1, 1),
+            height= int(VISUAL_SETTINGS['textsize'] * 1.5), color=(1, 1, 1),
             visible=False)
 
     def set_center(self, pos=(0, 0, 0)):
@@ -332,7 +332,8 @@ class Experiment(Thread):
                 self.model[camera].nametag.visible = self._camera_names
             except AttributeError:
                 self.model[camera].nametag = Sprite([{'type': 'label',
-                    'color': [1, 1, 1], 'height': 6, 'background': [0, 0, 0],
+                    'color': [1, 1, 1], 'height': VISUAL_SETTINGS['textsize'],
+                    'background': [0, 0, 0],
                     'text': camera}])
                 self.model[camera].nametag.frame = \
                     self.model[camera].actuals['main']
