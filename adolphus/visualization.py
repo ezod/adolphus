@@ -41,7 +41,7 @@ else:
 # This relationship determines the appropiate text size for the
 # corresponsing screen aspect ratio. The relationship was calibrated
 # by testing several screen resolutions and text sizes.
-size = int(4.5**(width/height)
+size = int(4.5**(width/height))
 VISUAL_SETTINGS = {'rate': 50, 'textsize': size, 'scale': 1.0}
 
 
