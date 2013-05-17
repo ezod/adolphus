@@ -23,12 +23,10 @@ class VisualizationError(Exception):
 
 if os.name == 'posix':
     # TODO: Test on Linux.
-    # Apparently this only works on OSX > 10.8. For it to work on OSX 10.8
-    # the X11 system is requred, which needs to be installed :(
-    screen = os.popen("xdpyinfo  | grep 'dimensions:'").readlines()[0]
-    screen = screen.split( )[1].split('x')
-    width = float(screen[0])
-    height = float(screen[1])
+    screen = os.popen("system_profiler SPDisplaysDataType | grep Resolution").readlines()[0]
+    screen = screen.split(':')[1][:-1].split('x')
+    width = float(screen[0][:-1])
+    height = float(screen[1][1:])
 elif os.name == 'nt':
     import ctypes
     user32 = ctypes.windll.user32
