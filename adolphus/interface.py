@@ -8,7 +8,6 @@ Visual interface module.
 """
 
 import visual
-from threading import Thread, Event
 from math import copysign
 
 import commands
@@ -165,7 +164,7 @@ class Display(visual.display):
         return cmd if process_cmd else None
 
 
-class Experiment(Thread):
+class Experiment(object):
     """\
     Experiment class.
 
@@ -189,9 +188,6 @@ class Experiment(Thread):
         self.display.select()
         self.altdisplays = []
 
-        # generic event flag
-        self.event = Event()
-
         # state variables
         self.selected = None
         self._camera_names = True
@@ -213,7 +209,7 @@ class Experiment(Thread):
                                   'color':      [0, 0, 1],
                                   'material':   visual.materials.emissive}])
         self.centerdot.visible = False
-        
+
         # axes
         primitives = []
         for i, axname in enumerate(['X', 'Y', 'Z']):
@@ -254,8 +250,6 @@ class Experiment(Thread):
         self.modifier = Sprite(primitives)
         self.modifier.visible = False
 
-        super(Experiment, self).__init__()
-
     def add_display(self, zoom=False):
         """\
         Add an alternate display to this experiment.
@@ -266,7 +260,7 @@ class Experiment(Thread):
         self.altdisplays.append(Display(zoom=zoom))
         Visualizable.displays['alt%d' % (len(self.altdisplays) - 1)] = \
             self.altdisplays[-1]
-        if self.is_alive():
+        if not self.exit:
             self.altdisplays[-1].visible = True
             for sceneobject in self.model:
                 self.model[sceneobject].visualize()
@@ -275,7 +269,7 @@ class Experiment(Thread):
     def select(self, selection=None):
         """\
         Select an object in the scene.
-        
+
         @param selection: The object to select.
         @type selection: L{SceneObject}
         """
@@ -324,7 +318,7 @@ class Experiment(Thread):
         """\
         Toggle display of camera names.
         """
-        if not self.is_alive():
+        if self.exit:
             return
         self._camera_names = not self._camera_names
         for camera in self.model.cameras:
@@ -364,7 +358,7 @@ class Experiment(Thread):
                         break
             raise commands.CommandError(es)
 
-    def run(self):
+    def start(self):
         """\
         Run this experiment.
         """

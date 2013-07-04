@@ -14,6 +14,7 @@ import argparse
 import os.path
 import numpy
 from scipy.interpolate import interp1d
+from threading import Thread
 
 try:
     import cPickle as pickle
@@ -39,6 +40,34 @@ def interpolate_points(points):
     f = [interp1d(tm, p, kind='cubic') for p in split]
     return lambda t: Point(*[f[i](t) for i in range(3)])
 
+def run(args, ex, points, path, vision_graph):
+    best = None
+    for t in range(1, args.interpolate * (len(points) - 1)):
+        if ex.exit:
+            break
+        # Set target pose.
+        normal = -(path(t / float(args.interpolate)) - path((t - 1) \
+                 / float(args.interpolate))).unit()
+        angle = Point(0, -1, 0).angle(normal)
+        axis = Point(0, -1, 0).cross(normal)
+        R = Rotation.from_axis_angle(angle, axis)
+        ex.model['Person'].set_absolute_pose(\
+            Pose(T=path(t / float(args.interpolate)), R=R))
+        ex.model['Person'].update_visualization()
+        # Compute best view.
+        current = best
+        best, score = ex.model.best_view(ex.tasks['target'],
+            current=(current and frozenset([current]) or None),
+            threshold=args.threshold)
+        best = set(best).pop()
+        if current != best:
+            ex.execute('select %s' % best)
+            ex.altdisplays[0].camera_view(ex.model[best])
+            try:
+                ex.execute('guide %s target' % current)
+            except:
+                pass
+            ex.execute('guide %s target' % best)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -78,31 +107,6 @@ if __name__ == '__main__':
         except ImportError:
             vision_graph = None
     # Run demo.
-    best = None
+    thread = Thread(target=run, args=(args, ex, points, path, vision_graph))
+    thread.start()
     ex.start()
-    for t in range(1, args.interpolate * (len(points) - 1)):
-        if ex.exit:
-            break
-        # Set target pose.
-        normal = -(path(t / float(args.interpolate)) - path((t - 1) \
-                 / float(args.interpolate))).unit()
-        angle = Point(0, -1, 0).angle(normal)
-        axis = Point(0, -1, 0).cross(normal)
-        R = Rotation.from_axis_angle(angle, axis)
-        ex.model['Person'].set_absolute_pose(\
-            Pose(T=path(t / float(args.interpolate)), R=R))
-        ex.model['Person'].update_visualization()
-        # Compute best view.
-        current = best
-        best, score = ex.model.best_view(ex.tasks['target'],
-            current=(current and frozenset([current]) or None),
-            threshold=args.threshold)
-        best = set(best).pop()
-        if current != best:
-            ex.execute('select %s' % best)
-            ex.altdisplays[0].camera_view(ex.model[best])
-            try:
-                ex.execute('guide %s target' % current)
-            except:
-                pass
-            ex.execute('guide %s target' % best)

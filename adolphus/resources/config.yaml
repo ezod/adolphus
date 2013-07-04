@@ -19,7 +19,7 @@ mousebindings:
         shift:      modify
     camera:
         none:       setactive
-        ctrl:       guide
-        alt:        cameraview
+        alt:       guide
+        ctrl:        cameraview
     linelaser:
-        ctrl:       guide
+        alt:       guide

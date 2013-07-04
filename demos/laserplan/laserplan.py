@@ -12,6 +12,7 @@ import csv
 from bisect import bisect
 from math import pi, sin, cos
 from random import gauss
+from threading import Thread
 
 try:
     import cPickle as pickle
@@ -78,7 +79,7 @@ class LensLUT(object):
                     prop * (self.values[j][i] - self.values[j][i - 1]))
         params.append(params[0] / self.fnumber)
         return params
-        
+
 
 def load_model(modelfile, cameras, fnumber):
     ex = Experiment()
@@ -163,6 +164,29 @@ def gaussian_yz_pose_error(pose, tsigma, rsigma):
     R += Rotation.from_axis_angle(Angle(gauss(0, rsigma)), Point(1, 0, 0))
     return Pose(T=T, R=R)
 
+# define fitness function
+def fitness(particle):
+    for i in range(len(cameras)):
+        x, h, d, beta = particle[4 * i: 4 * (i + 1)]
+        if d < lut[i].bounds[0] or d > lut[i].bounds[1]:
+            return -float('inf')
+        modify_camera(ex.model, cameras[i][0], lut[i], x, h, d, beta)
+    coverage = ex.model.range_coverage(ex.tasks['scan'], transport)
+    return ex.model.performance(ex.tasks['scan'], coverage=coverage)
+
+def run(args, cameras, ex, lut, bounds, transport):
+    try:
+        for best, F in pso.particle_swarm_optimize(fitness,
+            4 * len(cameras), bounds, args.size, args.omega, args.phip,
+            args.phin, args.clamp, args.it, args.af, args.cluster,
+            topology_type=args.topology, constraint_type=args.constraint):
+            print('%g' % F)
+            for c, camera in enumerate(cameras):
+                modify_camera(ex.model, camera[0], lut[c],
+                    *best[4 * c: 4 * (c + 1)])
+                ex.model[camera[0]].update_visualization()
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -192,29 +216,8 @@ if __name__ == '__main__':
     # create transport context
     transport = RangeModel.LinearTargetTransport(ex.model)
 
-    # define fitness function
-    def fitness(particle):
-        for i in range(len(cameras)):
-            x, h, d, beta = particle[4 * i: 4 * (i + 1)]
-            if d < lut[i].bounds[0] or d > lut[i].bounds[1]:
-                return -float('inf')
-            modify_camera(ex.model, cameras[i][0], lut[i], x, h, d, beta)
-        coverage = ex.model.range_coverage(ex.tasks['scan'], transport)
-        return ex.model.performance(ex.tasks['scan'], coverage=coverage)
-
+    # optimize
+    thread = Thread(target=run, args=(args, cameras, ex, lut, bounds, transport))
+    thread.start()
     # load visualization
     ex.start()
-
-    # optimize
-    try:
-        for best, F in pso.particle_swarm_optimize(fitness,
-            4 * len(cameras), bounds, args.size, args.omega, args.phip,
-            args.phin, args.clamp, args.it, args.af, args.cluster,
-            topology_type=args.topology, constraint_type=args.constraint):
-            print('%g' % F)
-            for c, camera in enumerate(cameras):
-                modify_camera(ex.model, camera[0], lut[c],
-                    *best[4 * c: 4 * (c + 1)])
-                ex.model[camera[0]].update_visualization()
-    except KeyboardInterrupt:
-        pass
