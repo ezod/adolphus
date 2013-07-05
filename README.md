@@ -19,12 +19,14 @@ The following example shows this:
 	from adolphus.interface import Experiment
 	from threading import Thread
 
-	def run(ex, ...):
+	def foo(ex, ...):
 		# user defined operations
+		bar = FooBar()
+		# Experiment related operations
 		ex.model.update_visualization()
 
 	ex = Experiment
-	thread = Thread(target=run, args=(ex, ...))
+	thread = Thread(target=foo, args=(ex, ...))
 	thread.start()
 	ex.start()
 
