@@ -84,7 +84,7 @@ cdef class Point:
 
     cpdef Point _sub(self, Point p):
         return Point(self.x - p.x, self.y - p.y, self.z - p.z)
-        
+
     def __sub__(self, Point p):
         """\
         Vector subtraction.
@@ -98,7 +98,7 @@ cdef class Point:
 
     cpdef Point _mul(self, double s):
         return Point(self.x * s, self.y * s, self.z * s)
-        
+
     def __mul__(self, double s):
         """\
         Scalar multiplication.
@@ -112,7 +112,7 @@ cdef class Point:
 
     cpdef Point _div(self, double s):
         return Point(self.x / s, self.y / s, self.z / s)
-        
+
     def __div__(self, double s):
         """\
         Scalar division.
@@ -126,7 +126,7 @@ cdef class Point:
 
     cpdef Point _neg(self):
         return Point(-self.x, -self.y, -self.z)
-        
+
     def __neg__(self):
         """\
         Negation.
@@ -227,7 +227,7 @@ cdef class Point:
     def angle(self, Point p):
         """\
         Return the angle between this vector and another.
-    
+
         @param p: The other vector.
         @type p: L{Point}
         @return: Angle in radians.
@@ -726,10 +726,10 @@ cdef class Pose:
         """
         self.T = T
         self.R = R
-   
+
     def __reduce__(self):
         return (Pose, (self.T, self.R))
-        
+
     def __hash__(self):
         return hash(self.T) + hash(self.R)
 
@@ -745,7 +745,7 @@ cdef class Pose:
         Tnew = other.R.rotate(self.T)._add(other.T)
         Rnew = other.R._add(self.R)
         return Pose(Tnew, Rnew)
-        
+
     def __add__(self, Pose other):
         """\
         Pose composition: M{PB(PA(x)) = (PA + PB)(x)}.
@@ -760,7 +760,7 @@ cdef class Pose:
     def __sub__(self, Pose other):
         """\
         Pose composition with the inverse.
-    
+
         @param other: The other pose transformation.
         @type other: L{Pose}
         @return: Composed transformation.
@@ -797,7 +797,7 @@ cdef class Pose:
 
     cpdef Point _map(self, Point p):
         return self.R.rotate(p)._add(self.T)
-        
+
     cpdef Point _dmap(self, Point p):
         cdef Point unit
         cdef double rho, eta
@@ -942,7 +942,7 @@ cdef class Triangle(Face):
 
             - T. Moller and B. Trumbore, "Fast, Minimum Storage Ray/Triangle
               Intersection," J. Graphics Tools, vol. 2, no. 1, pp. 21-28, 1997.
-        
+
         @param origin: The origin of the segment.
         @type origin: L{Point}
         @param end: The end of the segment.
@@ -1148,7 +1148,7 @@ def gaussian_pose_error(pose, double tsigma, double rsigma):
     """\
     Introduce random Gaussian noise to the specified pose and return the noisy
     pose.
-    
+
     @param p: The original pose.
     @type p: L{Pose}
     @param tsigma: The standard deviation of the translation error.
@@ -1162,3 +1162,55 @@ def gaussian_pose_error(pose, double tsigma, double rsigma):
     T = Point(gauss(T.x, tsigma), gauss(T.y, tsigma), gauss(T.z, tsigma))
     R += Rotation.from_euler('zyx', [Angle(gauss(0, rsigma)) for i in range(3)])
     return Pose(T=T, R=R)
+
+def avg_points(points):
+    """\
+    Average a set of points.
+
+    @param points: The points.
+    @type points: C{list} of L{Point}
+    @return: The average.
+    @rtype: L{Point}
+    """
+    avg = Point(0,0,0)
+    for p in points:
+        avg += p
+    return avg / float(len(points))
+
+def avg_quaternions(qts):
+    """\
+    Average a set of quaternions.
+
+    @param qts: The quaternions.
+    @type qts: C{list} of L{Quaternion}
+    @return: The average.
+    @rtype: L{Quaternion}
+    """
+    avg = Quaternion(0, Point(0,0,0))
+    for q in qts:
+        if qts[0] * q > 0.:
+            avg += q
+        else:
+            q = q.conjugate()
+            avg -= q
+    mag = avg.magnitude()
+    if mag > 0:
+        return avg / mag
+    else:
+        raise ValueError('Cannot normalize a zero vector.')
+
+def avg_poses(poses):
+    """\
+    Compute the pose average of a set of poses.
+
+    @param poses: The list of poses.
+    @type poses: C{list} of L{Pose}
+    @return: The averaged pose.
+    @rtype: L{Pose}
+    """
+    T = []
+    Q = []
+    for pose in poses:
+        T.append(pose.T)
+        Q.append(pose.R.Q)
+    return Pose(avg_points(T), Rotation(avg_quaternions(Q)))
