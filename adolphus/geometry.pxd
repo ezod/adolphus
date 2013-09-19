@@ -77,6 +77,8 @@ cdef class Face:
     cpdef object edges(self)
     cpdef Point normal(self)
     cpdef Pose planing_pose(self)
+    cpdef double dist_to_point(self, Point p)
+    
 
 
 cdef class Triangle(Face):
@@ -84,6 +86,7 @@ cdef class Triangle(Face):
     cpdef Triangle pose_map(self, Pose pose)
     cpdef Point intersection(self, Point origin, Point end, bool limit)
     cpdef bool overlap(self, Triangle other)
+    cpdef bool is_inside(self, Point p)
 
 
 cpdef bool triangle_frustum_intersection(Triangle triangle, object hull)

@@ -903,6 +903,23 @@ cdef class Face:
             self._planing_pose_c = True
             return self._planing_pose
 
+    cpdef double dist_to_point(self, Point p):
+        """\
+        Compute the distance from a point to this face.
+
+        @param p: The 3D point.
+        @type p: L{Point}
+        @return: The distance.
+        @rtype: C{double}
+        """
+        cdef double sn, sd, sb
+        cdef Point b
+        sn = -(self.normal().dot(p - self.vertices[2]))
+        sd = self.normal().dot(self.normal())
+        sb = sn / sd
+        b = p + self.normal()._mul(sb)
+        return p.euclidean(b)
+
 
 cdef class Triangle(Face):
     """\
@@ -980,8 +997,6 @@ cdef class Triangle(Face):
 
             - T. Moller, "A Fast Triangle/Triangle Intersection Test," J.
               Graphics Tools, vol. 2, no. 2, pp. 25-30, 1997.
-            - E. Haines, "Point in Polygon Strategies," in Graphics Gems IV,
-              P. S. Heckbert, ed., Academic Press Professional, pp. 24-46, 1994.
 
         @param other: The other triangle.
         @type other: L{Triangle}
@@ -1027,6 +1042,41 @@ cdef class Triangle(Face):
         if t[self][1] < t[other][0] or t[other][1] < t[self][0]:
             return False
         return True
+
+    cpdef bool is_inside(self, Point p):
+        """\
+        Check if a point is inside the triangle.
+
+            - E. Haines, "Point in Polygon Strategies," in Graphics Gems IV,
+              P. S. Heckbert, ed., Academic Press Professional, pp. 24-46, 1994.
+
+        @param p: The point to check.
+        @type p: L{Point}
+        @return: Whether the point is inside or not.
+        @rtype: C{bool}
+        """
+        # Check if the point is on the same plane as the triangle. If not, then
+        # return false.
+        if self.dist_to_point(p) > 1e-4:
+            return False
+        # If the point is on the same plane, then transform both using the
+        # pose of the plane.
+        cdef Pose pose = self.planing_pose()
+        cdef Triangle triangle_m = self.pose_map(pose)
+        cdef Point p_m = pose._map(p)
+        # Check for point in polygon (Haines 1994).
+        cdef int j = len(self.vertices) - 1
+        cdef bool c = False
+        for i in range(len(self.vertices)):
+            if (((triangle_m.vertices[i].y > p_m.y) != \
+                (triangle_m.vertices[j].y > p_m.y)) and \
+                (p_m.x < (triangle_m.vertices[j].x - triangle_m.vertices[i].x) * \
+                (p_m.y - triangle_m.vertices[i].y) / \
+                (triangle_m.vertices[j].y - triangle_m.vertices[i].y) + \
+                triangle_m.vertices[i].x)):
+                c = not c
+            j = i
+        return c
 
 
 cdef int which_side(object points, Point direction, Point vertex):
