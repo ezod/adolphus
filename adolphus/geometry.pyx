@@ -179,6 +179,17 @@ cdef class Point:
                      self.z * p.x - self.x * p.z,
                      self.x * p.y - self.y * p.x)
 
+    cpdef double cross_2d(self, Point p):
+        """\
+        Two dimensional cross product.
+
+        @param p: The operand vector.
+        @type p: L{Point}
+        @return: two dimensional cross product.
+        @rtype: L{Point}
+        """
+        return self.x * p.y - self.y * p.x
+
     cpdef double magnitude(self):
         """\
         Magnitude of this vector.
@@ -1018,11 +1029,31 @@ cdef class Triangle(Face):
         or all([dv < -1e-4 for dv in dvs[self]]):
             return False
         if all([abs(dv) < 1e-4 for dv in dvs[self]]):
-            # TODO: handle coplanar case for completeness
-            # project both triangles onto axis-aligned plane (which?)
-            # check edges of self for intersection with edges of other
+            # project both triangles onto axis-aligned plane.
+            pose1 = self.planing_pose()
+            pose2 = other.planing_pose()
+            pose12 = pose2 - pose1
+            new_self = self.pose_map(pose1)
+            new_other = self.pose_map(pose1 + pose12)
+            # check edges of self for intersection with edges of other.
+            index = [0,1,2,0]
+            v = new_self.vertices
+            self_edges = [[v[index[i]], v[index[i+1]]] for i in range(3)]
+            v = new_other.vertices
+            other_edges = [[v[index[i]], v[index[i+1]]] for i in range(3)]
+            for self_edge in self_edges:
+                for other_edge in other_edges:
+                    if segment_intersect(self_edge[0], self_edge[1], \
+                        other_edge[0], other_edge[1]):
+                        return True
             # check vertex of self for point-in-triangle with other
-            # and vice versa (Haines 1994)
+            # and vice versa (Haines 1994).
+            for vertex in other.vertices:
+                if self.is_inside(vertex):
+                    return True
+            for vertex in self.vertices:
+                if other.is_inside(vertex):
+                    return True
             return False
         else:
             normal = tuple(self.normal().cross(other.normal()))
@@ -1061,9 +1092,13 @@ cdef class Triangle(Face):
             return False
         # If the point is on the same plane, then transform both using the
         # pose of the plane.
-        cdef Pose pose = self.planing_pose()
-        cdef Triangle triangle_m = self.pose_map(pose)
-        cdef Point p_m = pose._map(p)
+        cdef Pose pose1, pose2
+        cdef Point T, p_m
+        pose1 = self.planing_pose()
+        T = p - pose1.T
+        pose2 = Pose(T, R=Rotation(Quaternion(1,Point(0,0,0))))
+        cdef Triangle triangle_m = self.pose_map(pose1)
+        p_m = (pose1 + pose2)._map(p)
         # Check for point in polygon (Haines 1994).
         cdef int j = len(self.vertices) - 1
         cdef bool c = False
@@ -1078,6 +1113,33 @@ cdef class Triangle(Face):
             j = i
         return c
 
+
+cpdef bool segment_intersect(Point p1, Point p2, Point q1, Point q2):
+    """\
+    Check if two line segments intersect each other.
+
+    @param p1: The start point of the first segment.
+    @type p1: L{Point}
+    @param p2: The end point of the first segment.
+    @type p2: L{Point}
+    @param q1: The start point of the second segment.
+    @type q1: L{Point}
+    @param q2: The end point of the second segment.
+    @type q2: L{Point}
+    @return: True if the line segments intersect each other.
+    @rtype C{bool}
+    """
+    cdef Point p, q
+    cdef double p_s, q_s
+    p = p2 - p1
+    q = q2 - q1
+    if (p).cross(q).magnitude() < 1e-4:
+        return False
+    p_s = (q1 - p1).cross_2d(q) / p.cross_2d(q)
+    q_s = (p1 - q1).cross_2d(p) / q.cross_2d(p)
+    if p_s >= 0 and p_s <= 1 and q_s >= 0 and q_s <= 1:
+        return True
+    return False
 
 cdef int which_side(object points, Point direction, Point vertex):
     """\

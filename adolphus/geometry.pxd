@@ -22,6 +22,7 @@ cdef class Point:
     cpdef Point _neg(self)
     cpdef double dot(self, Point p)
     cpdef Point cross(self, Point p)
+    cpdef double cross_2d(self, Point p)
     cpdef double magnitude(self)
     cpdef Point unit(self)
     cpdef double euclidean(self, Point p)
@@ -88,5 +89,5 @@ cdef class Triangle(Face):
     cpdef bool overlap(self, Triangle other)
     cpdef bool is_inside(self, Point p)
 
-
+cpdef bool segment_intersect(Point p1, Point p2, Point q1, Point q2)
 cpdef bool triangle_frustum_intersection(Triangle triangle, object hull)
