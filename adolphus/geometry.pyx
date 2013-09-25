@@ -931,6 +931,20 @@ cdef class Face:
         b = p + self.normal()._mul(sb)
         return p.euclidean(b)
 
+    cpdef object normal_angles(self):
+        """\
+        Compute the polar (rho) and azimuth (eta) angles of the
+        normal of this face.
+
+        @return: The polar and azimuth angles.
+        @rtype: C{tuple} of C{float}
+        """
+        cdef Point normal
+        normal = self.normal()
+        rho = normal.angle(Point(0, 0, 1))
+        eta = Angle(atan2(normal.y, normal.x))
+        return (rho, eta)
+
 
 cdef class Triangle(Face):
     """\
