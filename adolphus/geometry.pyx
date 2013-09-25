@@ -943,6 +943,8 @@ cdef class Triangle(Face):
         @param v: Vertices (in counterclockwise order looking at the face).
         @type v: C{tuple} of L{Point}
         """
+        if len(self.vertices) > 3:
+            self.vertices = self.vertices[:3]
         self._vertex_0 = self.vertices[0]
         self._vertex_1 = self.vertices[1]
         self._vertex_2 = self.vertices[2]
