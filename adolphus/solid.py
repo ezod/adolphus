@@ -196,6 +196,7 @@ class Solid(SceneObject):
         self.solid_triangles = new_triangles
         for i in range(len(self.solid_vertices)):
             self.solid_vertices[i] *= value
+        # TODO: Update the occlusion triangle list of this SceneObject.
         self._compute_normals()
         self._single_c = False
 
