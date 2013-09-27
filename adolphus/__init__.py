@@ -15,4 +15,4 @@ if os.path.exists(module):
     sys.path.append(module)
 
 __import__('pkg_resources').declare_namespace(__name__)
-__version__ = (0, 0, 0)
+__version__ = (0, 1, 0)

@@ -18,6 +18,7 @@ from .posable import OcclusionTriangle, SceneObject
 from .coverage import PointCache, Model
 from .laser import RangeModel
 from .robot import Robot
+from .solid import Solid
 
 
 modeltypes = {'standard': Model, 'range': RangeModel}
@@ -53,7 +54,7 @@ class YAMLParser(object):
         Tuple containing the coverage model and task models for this experiment.
         """
         return self.model, self.tasks
-    
+
     @staticmethod
     def _external_path(basepath, filename):
         """\
@@ -220,9 +221,21 @@ class YAMLParser(object):
                 occlusion = bool(obj['occlusion']) \
                     if 'occlusion' in obj else True
                 if occlusion and 'sprites' in obj:
-                    triangles = list(chain.from_iterable(\
-                        [self._parse_triangles(sprite, self._path) \
-                        for sprite in obj['sprites']]))
+                    _solid = False
+                    try:
+                        file = obj['sprites'][0]['triangles']
+                        if (file[-4:] == '.raw' or file[-4:] == '.dae') and \
+                            objecttype == 'scene':
+                            file = self._external_path(self._path, file)
+                            solid = Solid(file, obj['name'], pose, mount_pose)
+                            rmodel[obj['name']] = solid
+                            _solid = True
+                    except:
+                        pass
+                    if not _solid:
+                        triangles = list(chain.from_iterable(\
+                            [self._parse_triangles(sprite, self._path) \
+                            for sprite in obj['sprites']]))
                 else:
                     triangles = []
                 if objecttype in rmodel.yaml:
@@ -266,10 +279,10 @@ class YAMLParser(object):
                 return (r[0], r[1])
             except TypeError:
                 return (r, r)
-        xr = rangify(xr)    
-        yr = rangify(yr)    
-        zr = rangify(zr)    
-        rhor = rangify(rhor)    
+        xr = rangify(xr)
+        yr = rangify(yr)
+        zr = rangify(zr)
+        rhor = rangify(rhor)
         etar = rangify(etar)
         x, y, z = xr[0], yr[0], zr[0]
         while x <= xr[1]:
@@ -296,7 +309,7 @@ class YAMLParser(object):
     def _parse_task(self, task, modeltype):
         """\
         Parse a task model from YAML.
-        
+
         @param task: The YAML dict of the task model.
         @type task: C{dict}
         @param modeltype: The model class.
