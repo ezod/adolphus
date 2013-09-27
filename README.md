@@ -11,8 +11,7 @@ See our [screencast] [screencast] for an introduction.
 
 ## Dependencies
 
-Adolphus requires [Python] [python] 2.6 or later, [PyYAML] [pyyaml] 3.09 or
-later, [Cython] [cython] 0.14 or later, and [setuptools] [setuptools].
+Adolphus requires [Python] [python] 2.6 or later, [PyYAML] [pyyaml] 3.09 or later, [Cython] [cython] 0.14 or later, [pycollada][collada] 0.4 or later, and [setuptools] [setuptools].
 
 [Visual] [visual] 5.4 or later is required for 3D visualization and interaction
 (optional, recommended). [PyGTK] [pygtk] 2.22 or later is required for the
@@ -63,6 +62,7 @@ ACM/IEEE Intl. Conf. on Distributed Smart Cameras*, 2010, pp. 95-102.
 [pygtk]: http://www.pygtk.org/
 [setuptools]: http://pypi.python.org/pypi/setuptools
 [screencast]: http://www.youtube.com/watch?v=M-l79fkmmmA
+[collada]: https://github.com/pycollada/pycollada
 
 [icdsc12]: http://ieeexplore.ieee.org/xpl/articleDetails.jsp?reload=true&arnumber=6470136&sortType%3Dasc_p_Sequence%26filter%3DAND%28p_IS_Number%3A6470120%29
 [mav_aim12]: http://mavrinac.com/files/academic/mavrinac12_camsel.pdf
