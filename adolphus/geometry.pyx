@@ -1065,10 +1065,10 @@ cdef class Triangle(Face):
             # check vertex of self for point-in-triangle with other
             # and vice versa (Haines 1994).
             for vertex in other.vertices:
-                if self.is_inside(vertex):
+                if self.has_point(vertex):
                     return True
             for vertex in self.vertices:
-                if other.is_inside(vertex):
+                if other.has_point(vertex):
                     return True
             return False
         else:
@@ -1090,7 +1090,7 @@ cdef class Triangle(Face):
             return False
         return True
 
-    cpdef bool is_inside(self, Point p):
+    cpdef bool has_point(self, Point p):
         """\
         Check if a point is inside the triangle.
 
@@ -1259,6 +1259,64 @@ cpdef bool triangle_frustum_intersection(Triangle triangle, object hull):
     return True
 
 
+cpdef Point avg_points(object points):
+    """\
+    Average a set of points.
+
+    @param points: The points.
+    @type points: C{list} of L{Point}
+    @return: The average.
+    @rtype: L{Point}
+    """
+    cdef int n = len(points)
+    cdef Point avg = Point(0,0,0)
+    for i in range(n):
+        avg += points[i]
+    return avg._div(float(n))
+
+
+cpdef avg_quaternions(object qts):
+    """\
+    Average a set of quaternions.
+
+    @param qts: The quaternions.
+    @type qts: C{list} of L{Quaternion}
+    @return: The average.
+    @rtype: L{Quaternion}
+    """
+    cdef int n = len(qts)
+    cdef double mag
+    cdef Quaternion avg = Quaternion(0, Point(0,0,0))
+    for i in range(n):
+        if qts[0] * qts[i] > 0.0:
+            avg += qts[i]
+        else:
+            qts[i] = qts[i].conjugate()
+            avg -= qts[i]
+    mag = avg.magnitude()
+    if mag > 0.0:
+        return avg._div(mag)
+    else:
+        raise ValueError('Cannot normalize a zero vector.')
+
+
+def avg_poses(poses):
+    """\
+    Compute the pose average of a set of poses.
+
+    @param poses: The list of poses.
+    @type poses: C{list} of L{Pose}
+    @return: The averaged pose.
+    @rtype: L{Pose}
+    """
+    T = []
+    Q = []
+    for pose in poses:
+        T.append(pose.T)
+        Q.append(pose.R.Q)
+    return Pose(avg_points(T), Rotation(avg_quaternions(Q)))
+
+
 def random_unit_vector():
     """\
     Return a random unit vector, uniformly distributed over the locus of the
@@ -1316,55 +1374,3 @@ def gaussian_pose_error(pose, double tsigma, double rsigma):
     T = Point(gauss(T.x, tsigma), gauss(T.y, tsigma), gauss(T.z, tsigma))
     R += Rotation.from_euler('zyx', [Angle(gauss(0, rsigma)) for i in range(3)])
     return Pose(T=T, R=R)
-
-def avg_points(points):
-    """\
-    Average a set of points.
-
-    @param points: The points.
-    @type points: C{list} of L{Point}
-    @return: The average.
-    @rtype: L{Point}
-    """
-    avg = Point(0,0,0)
-    for p in points:
-        avg += p
-    return avg / float(len(points))
-
-def avg_quaternions(qts):
-    """\
-    Average a set of quaternions.
-
-    @param qts: The quaternions.
-    @type qts: C{list} of L{Quaternion}
-    @return: The average.
-    @rtype: L{Quaternion}
-    """
-    avg = Quaternion(0, Point(0,0,0))
-    for q in qts:
-        if qts[0] * q > 0.:
-            avg += q
-        else:
-            q = q.conjugate()
-            avg -= q
-    mag = avg.magnitude()
-    if mag > 0:
-        return avg / mag
-    else:
-        raise ValueError('Cannot normalize a zero vector.')
-
-def avg_poses(poses):
-    """\
-    Compute the pose average of a set of poses.
-
-    @param poses: The list of poses.
-    @type poses: C{list} of L{Pose}
-    @return: The averaged pose.
-    @rtype: L{Pose}
-    """
-    T = []
-    Q = []
-    for pose in poses:
-        T.append(pose.T)
-        Q.append(pose.R.Q)
-    return Pose(avg_points(T), Rotation(avg_quaternions(Q)))
