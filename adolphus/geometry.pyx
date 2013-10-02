@@ -1106,19 +1106,22 @@ cdef class Triangle(Face):
         # return false.
         if self.dist_to_point(p) > 1e-4:
             return False
+        # The point in polygon check does not always work when the point is in the
+        # boundaries, the following tries to catch this.
+        cdef int j = 2
+        for i in [0,1,2]:
+            if point_in_segment(self.vertices[i], self.vertices[j], p):
+                return True
+            j = i
         # If the point is on the same plane, then transform both using the
         # pose of the plane.
-        cdef Pose pose1, pose2
-        cdef Point T, p_m
-        pose1 = self.planing_pose()
-        T = p - pose1.T
-        pose2 = Pose(T, R=Rotation(Quaternion(1,Point(0,0,0))))
-        cdef Triangle triangle_m = self.pose_map(pose1)
-        p_m = (pose1 + pose2)._map(p)
+        cdef Pose pose = self.planing_pose()
+        cdef Triangle triangle_m = self.pose_map(pose)
+        cdef Point p_m = pose._map(p)
         # Check for point in polygon (Haines 1994).
-        cdef int j = len(self.vertices) - 1
+        j = 2
         cdef bool c = False
-        for i in range(len(self.vertices)):
+        for i in [0,1,2]:
             if (((triangle_m.vertices[i].y > p_m.y) != \
                 (triangle_m.vertices[j].y > p_m.y)) and \
                 (p_m.x < (triangle_m.vertices[j].x - triangle_m.vertices[i].x) * \
@@ -1130,9 +1133,32 @@ cdef class Triangle(Face):
         return c
 
 
+cpdef bool point_in_segment(Point s1, Point s2, Point p):
+    """\
+    Check if a point is in the line segment.
+
+    @param s1: The first point of the segment.
+    @type s1: L{Point}
+    @param s2: The second point of the segment.
+    @type s2: L{Point}
+    @param p: The point to check.
+    @type p: L{Point}
+    @return: Whether the point is in the segment or not.
+    @rtype: C{bool}
+    """
+    cdef Point s, s1p
+    s = s2 - s1
+    s1p = p - s1
+    if s.cross(s1p).magnitude() > 1e-4:
+        return False
+    if s.dot(s1p) >= 0 and s.dot(s1p) <= s.dot(s):
+        return True
+    else:
+        return False
+
 cpdef bool segment_intersect(Point p1, Point p2, Point q1, Point q2):
     """\
-    Check if two line segments intersect each other.
+    Check if two line segments (on the x-y plane) intersect each other.
 
     @param p1: The start point of the first segment.
     @type p1: L{Point}
@@ -1149,7 +1175,7 @@ cpdef bool segment_intersect(Point p1, Point p2, Point q1, Point q2):
     cdef double p_s, q_s
     p = p2 - p1
     q = q2 - q1
-    if (p).cross(q).magnitude() < 1e-4:
+    if p.cross(q).magnitude() < 1e-4:
         return False
     p_s = (q1 - p1).cross_2d(q) / p.cross_2d(q)
     q_s = (p1 - q1).cross_2d(p) / q.cross_2d(p)
@@ -1171,7 +1197,7 @@ cdef int which_side(object points, Point direction, Point vertex):
     @type direction: L{Point}
     @param vertex: The criterion vertex.
     @type vertex: L{Point}
-    @return: 0 if positive side, -1 if negative side, 0 if both.
+    @return: 1 if positive side, -1 if negative side, 0 if both.
     @rtype: C{int}
     """
     cdef Point point

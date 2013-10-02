@@ -90,5 +90,6 @@ cdef class Triangle(Face):
     cpdef bool is_inside(self, Point p)
 
 
+cpdef bool point_in_segment(Point s1, Point s2, Point p)
 cpdef bool segment_intersect(Point p1, Point p2, Point q1, Point q2)
 cpdef bool triangle_frustum_intersection(Triangle triangle, object hull)
