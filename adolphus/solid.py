@@ -1,6 +1,5 @@
 """\
-Library with 3D model class. This library implements some manipulations on 3D models
-that are represented as a triangular raw mesh.
+Mesh polygon library for 3D model representation.
 
 @author: Jose Alarcon
 @organization: University of Windsor
@@ -12,13 +11,14 @@ that are represented as a triangular raw mesh.
 from numpy import array
 from collada import Collada, material, source, geometry, scene
 
-from .geometry import Point, DirectionalPoint, Pose, Triangle, avg_points
+from .coverage import PointCache
 from .posable import OcclusionTriangle, SceneObject
+from .geometry import Point, DirectionalPoint, Pose, Triangle, avg_points
 
 
 class Solid(SceneObject):
     """\
-    Mesh polygon for 3D model representation class.
+    Solid class.
     """
     def __init__(self, file, name, pose=Pose(), mount_pose=Pose(), mount=None):
         """\
@@ -39,10 +39,8 @@ class Solid(SceneObject):
         self.solid_normals = []
         self.solid_indices = []
         self.solid_triangles = []
-        self._single = []
+        self._single = PointCache()
         self._single_c = False
-        self._raw = False
-        self._dae = False
         if file[-4:] == '.raw':
             self._import_raw(file)
         elif file[-4:] == '.dae':
@@ -53,7 +51,7 @@ class Solid(SceneObject):
         occ_triangle = []
         for triangle in self.solid_triangles:
             occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
-        SceneObject.__init__(self, name, pose=pose, mount_pose=mount_pose, \
+        super(Solid, self).__init__(name, pose=pose, mount_pose=mount_pose, \
             mount=mount, primitives=[], triangles=occ_triangle)
         self.visualize()
 
@@ -74,7 +72,6 @@ class Solid(SceneObject):
                     if point not in self.solid_vertices:
                         self.solid_vertices.append(point)
                 self.solid_triangles.append(Triangle(*points))
-        self._raw = True
         self._compute_normals()
 
     def _import_dae(self, file):
@@ -92,13 +89,16 @@ class Solid(SceneObject):
                     if point not in self.solid_vertices:
                         self.solid_vertices.append(point)
             self.solid_triangles.append(Triangle(*points))
-        self._dae = True
         self._compute_normals()
 
     def _compute_normals(self):
         """\
         Compute the normals and the index list of this model.
         """
+        del self.solid_normals
+        del self.solid_indices
+        self.solid_normals = []
+        self.solid_indices = []
         n = 0
         for triangle in self.solid_triangles:
             self.solid_normals.append(triangle.normal())
@@ -188,17 +188,32 @@ class Solid(SceneObject):
         """
         new_triangles = []
         for triangle in self.solid_triangles:
-            points = []
-            for point in triangle.vertices:
-                points.append(point * value)
-            new_triangles.append(Triangle(*points))
+            new_triangles.append(Triangle(*[p * value for p in triangle.vertices]))
         del self.solid_triangles
         self.solid_triangles = new_triangles
         for i in range(len(self.solid_vertices)):
             self.solid_vertices[i] *= value
-        # TODO: Update the occlusion triangle list of this SceneObject.
         self._compute_normals()
         self._single_c = False
+
+        # Update visualization by re-drawing the triangles.
+        for triangle in self.triangles:
+            triangle.visible = False
+        del self.triangles
+        occ_triangle = []
+        for triangle in self.solid_triangles:
+            occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
+        try:
+            self.triangles = set()
+        except AttributeError:
+            # Child class handles triangles separately.
+            pass
+        else:
+            for triangle in occ_triangle:
+                triangle.mount = self
+                self.triangles.add(triangle)
+            self._triangles_view = False
+        self.visualize()
 
     def single(self):
         """\
@@ -212,12 +227,11 @@ class Solid(SceneObject):
             return self._single
         else:
             del self._single
-            self._single = []
+            self._single = PointCache()
             for triangle in self.solid_triangles:
                 average = avg_points(triangle.vertices)
                 angles = triangle.normal_angles()
-                point = DirectionalPoint(average.x, average.y, average.z, \
-                    angles[0], angles[1])
-                self._single.append(point)
+                self._single[DirectionalPoint(average.x, average.y, average.z, \
+                    angles[0], angles[1])] = 1.0
             self._single_c = True
             return self._single

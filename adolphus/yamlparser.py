@@ -220,8 +220,8 @@ class YAMLParser(object):
                     primitives = []
                 occlusion = bool(obj['occlusion']) \
                     if 'occlusion' in obj else True
+                _solid = False
                 if occlusion and 'sprites' in obj:
-                    _solid = False
                     try:
                         file = obj['sprites'][0]['triangles']
                         if (file[-4:] == '.raw' or file[-4:] == '.dae') and \
@@ -247,7 +247,7 @@ class YAMLParser(object):
                     config = obj['config'] if 'config' in obj else None
                     rmodel[obj['name']] = Robot(obj['name'], pose=pose,
                         links=links, config=config, occlusion=occlusion)
-                else:
+                elif not _solid:
                     rmodel[obj['name']] = SceneObject(obj['name'], pose=pose,
                         mount_pose=mount_pose, primitives=primitives,
                         triangles=triangles)
