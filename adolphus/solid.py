@@ -12,6 +12,7 @@ from numpy import array
 from collada import Collada, material, source, geometry, scene
 
 from .coverage import PointCache
+from .visualization import VISUAL_ENABLED
 from .posable import OcclusionTriangle, SceneObject
 from .geometry import Point, DirectionalPoint, Pose, Triangle, avg_points
 
@@ -53,7 +54,8 @@ class Solid(SceneObject):
             occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
         super(Solid, self).__init__(name, pose=pose, mount_pose=mount_pose, \
             mount=mount, primitives=[], triangles=occ_triangle)
-        self.visualize()
+        if VISUAL_ENABLED:
+            self.visualize()
 
     def _import_raw(self, file):
         """\
@@ -197,8 +199,11 @@ class Solid(SceneObject):
         self._single_c = False
 
         # Update visualization by re-drawing the triangles.
-        for triangle in self.triangles:
-            triangle.visible = False
+        try:
+            for triangle in self.triangles:
+                triangle.visible = False
+        except:
+            pass
         del self.triangles
         occ_triangle = []
         for triangle in self.solid_triangles:
@@ -213,7 +218,8 @@ class Solid(SceneObject):
                 triangle.mount = self
                 self.triangles.add(triangle)
             self._triangles_view = False
-        self.visualize()
+        if VISUAL_ENABLED:
+            self.visualize()
 
     def single(self):
         """\
