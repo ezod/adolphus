@@ -49,6 +49,7 @@ class Solid(SceneObject):
         else:
             raise Exception("File format not supported.")
 
+        # Initialize this class' interface with Adolphus.
         occ_triangle = []
         for triangle in self.solid_triangles:
             occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
@@ -81,16 +82,17 @@ class Solid(SceneObject):
         Import a collada object.
         """
         solid = Collada(file)
-        triangle_set = solid.geometries[0].primitives[0]
-        for triangle in triangle_set:
-            v = triangle.vertices
-            points = [Point(v[0][0], v[0][1], v[0][2]), \
-                      Point(v[1][0], v[1][1], v[1][2]), \
-                      Point(v[2][0], v[2][1], v[2][2])]
-            for point in points:
-                    if point not in self.solid_vertices:
-                        self.solid_vertices.append(point)
-            self.solid_triangles.append(Triangle(*points))
+        for geometry in solid.geometries:
+            for triangle_set in geometry.primitives:
+                for triangle in triangle_set:
+                    v = triangle.vertices
+                    points = [Point(v[0][0], v[0][1], v[0][2]), \
+                              Point(v[1][0], v[1][1], v[1][2]), \
+                              Point(v[2][0], v[2][1], v[2][2])]
+                    for point in points:
+                            if point not in self.solid_vertices:
+                                self.solid_vertices.append(point)
+                    self.solid_triangles.append(Triangle(*points))
         self._compute_normals()
 
     def _compute_normals(self):

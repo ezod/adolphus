@@ -227,8 +227,6 @@ class YAMLParser(object):
                         if (file[-4:] == '.raw' or file[-4:] == '.dae') and \
                             objecttype == 'scene':
                             file = self._external_path(self._path, file)
-                            solid = Solid(file, obj['name'], pose, mount_pose)
-                            rmodel[obj['name']] = solid
                             _solid = True
                     except:
                         pass
@@ -247,7 +245,9 @@ class YAMLParser(object):
                     config = obj['config'] if 'config' in obj else None
                     rmodel[obj['name']] = Robot(obj['name'], pose=pose,
                         links=links, config=config, occlusion=occlusion)
-                elif not _solid:
+                elif _solid:
+                    rmodel[obj['name']] = Solid(file, obj['name'], pose, mount_pose)
+                else:
                     rmodel[obj['name']] = SceneObject(obj['name'], pose=pose,
                         mount_pose=mount_pose, primitives=primitives,
                         triangles=triangles)
