@@ -302,15 +302,15 @@ class RenderDynamic(object):
             self.gen_render_dynamic()
             return self.find_boundary()
 
-    def remove_face(self, indices):
+    def remove_face(self, faces):
         """\
         Remove a face from this object.
 
-        @param indices: The indices in the list of faces to remove.
-        @type indices: C{list} of C{int}
+        @param indices: The faces to remove.
+        @type indices: C{list} of C{adolphus.geometry.Triangle}
         """
-        for index in indices:
-            self.faces.pop(index)
+        for face in faces:
+            self.faces.pop(self.faces.index(face))
         self.compute_topology()
         self.gen_render_dynamic()
 
