@@ -71,7 +71,7 @@ class RenderDynamic(object):
                 self.collada_indices.append(self.vertices.index(vertex))
                 self.collada_indices.append(n)
             n += 1
-        self.faces = _originals
+        self.faces = self._originals
 
     def _build_graph(self):
         """\
