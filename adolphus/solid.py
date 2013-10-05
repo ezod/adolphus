@@ -355,6 +355,11 @@ class Solid(SceneObject):
         self._single_c = False
         try:
             del self._graph
+            del self.vertex_vertex
+            del self.edge_face
+            del self.face_vertex
+            del self.edge_vertex
+            del self.face_edge
         except:
             pass
 
