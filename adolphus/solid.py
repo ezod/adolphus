@@ -270,6 +270,7 @@ class RenderDynamic(object):
         @return: The index of the face.
         @rtype: C{int}
         """
+        assert(a!=b and b!=c and a!=c), "Invalid triangle."
         for i in range(len(self.faces)):
             if a in self.faces[i].vertices and b in self.faces[i].vertices and \
                 c in self.faces[i].vertices:
