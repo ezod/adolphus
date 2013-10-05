@@ -410,7 +410,7 @@ class Solid(RenderDynamic, SceneObject):
             pass
         del self.triangles
         occ_triangle = []
-        for triangle in self.face:
+        for triangle in self.faces:
             occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
         try:
             self.triangles = set()
