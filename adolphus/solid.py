@@ -195,7 +195,7 @@ class Solid(SceneObject):
         for face in self.faces:
             j = 2
             edges = []
-            for i in [0,1,2];
+            for i in [0,1,2]:
                 edges.append((face.vertices[i], face.vertices[j]))
                 j = i
             self.edge_face.append(edges)
