@@ -59,19 +59,19 @@ class RenderDynamic(object):
         for item in self._originals:
             j = 2
             for i in [0,1,2]:
-                _edge = (item[i], item[j])
-                if _edge not in self.edges and (item[j], item[i]) not in self.edges:
+                _edge = (item.vertices[i], item.vertices[j])
+                if _edge not in self.edges and \
+                    (item.vertices[j], item.vertices[i]) not in self.edges:
                     self.edges.append(_edge)
-                if item[i] not in self.vertices:
-                    self.vertices.append(item[i])
+                if item.vertices[i] not in self.vertices:
+                    self.vertices.append(item.vertices[i])
                 j = i
-            triangle = Triangle(*item)
-            self.normals.append(triangle.normal())
-            for vertex in triangle.vertices:
+            self.normals.append(item.normal())
+            for vertex in item.vertices:
                 self.collada_indices.append(self.vertices.index(vertex))
                 self.collada_indices.append(n)
-            self.faces.append(triangle)
             n += 1
+        self.faces = _originals
 
     def _build_graph(self):
         """\
@@ -368,9 +368,10 @@ class Solid(RenderDynamic, SceneObject):
                 num = []
                 for item in line:
                     num.append(float(item))
-                self._triangles.append([Point(num[0], num[1], num[2]), \
-                                        Point(num[3], num[4], num[5]), \
-                                        Point(num[6], num[7], num[8])])
+                points = [Point(num[0], num[1], num[2]), \
+                          Point(num[3], num[4], num[5]), \
+                          Point(num[6], num[7], num[8])]
+                self._triangles.append(Triangle(*points))
 
     def _import_dae(self, file):
         """\
@@ -383,9 +384,10 @@ class Solid(RenderDynamic, SceneObject):
                 for triangle in triangle_set:
                     v = triangle.vertices
                     try:
-                        self._triangles.append([Point(v[0][0], v[0][1], v[0][2]), \
-                                                Point(v[1][0], v[1][1], v[1][2]), \
-                                                Point(v[2][0], v[2][1], v[2][2])])
+                        points = [Point(v[0][0], v[0][1], v[0][2]), \
+                                  Point(v[1][0], v[1][1], v[1][2]), \
+                                  Point(v[2][0], v[2][1], v[2][2])]
+                        self._triangles.append(Triangle(*points))
                     except IndexError:
                         pass
 
