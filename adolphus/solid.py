@@ -239,7 +239,7 @@ class Solid(SceneObject):
         @param vertex: The vertex.
         @type vertex: L{adolphus.geometry.Point}
         @return: The indices of the faces around a vertex.
-        @rtype: C{list} of L{int}
+        @rtype: C{list} of C{int}
         """
         index = self.vertices.index(vertex)
         try:
@@ -340,6 +340,22 @@ class Solid(SceneObject):
         self._face_vertex()
         self._edge_vertex()
         self._face_edge()
+
+    def find_boundary(self):
+        """\
+        Find the boundary of this solid.
+
+        @return: The edges in the boundary of this model.
+        @rtype: C{list} of C{tuple} of L{adolphus.geometry.Point}
+        """
+        try:
+            indices = [i for i in range(len(self.face_edge)) \
+                if len(self.face_edge[i]) == 1]
+            edges = [self.edges[i] for i in indices]
+            return edges
+        except:
+            self.gen_render_dynamic()
+            return self.find_boundary()
 
     def scale(self, value):
         """\
