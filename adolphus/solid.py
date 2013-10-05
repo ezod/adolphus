@@ -23,96 +23,40 @@ from .posable import OcclusionTriangle, SceneObject
 from .geometry import Point, DirectionalPoint, Pose, Triangle, avg_points
 
 
-class Solid(SceneObject):
+class RenderDynamic(object):
     """\
-    Solid class.
-
-    Refer to http://en.wikipedia.org/wiki/Polygon_mesh for a description
-    of render dynamic.
+    Render dynamic class.
     """
-    def __init__(self, file, name, pose=Pose(), mount_pose=Pose(), mount=None):
+    def __init__(self, triangles):
         """\
         Constructor.
 
-        @param file: The file containing the object model.
-        @type file: C{str}
-        @param name: The name of the model.
-        @type name: C{str}
-        @param pose: Pose of the object in space (optional).
-        @type pose: L{Pose}
-        @param mount_pose: The transformation to the mounting end (optional).
-        @type mount_pose: L{Pose}
-        @param mount: Mount for this object (optional).
-        @type mount: C{object}
+        @param triangles: The list of triangles of the model.
+        @type triangles: C{list} of L{adolphus.geometry.Triangle}
         """
-        self._single = PointCache()
-        self._single_c = False
-        if file[-4:] == '.raw':
-            self._import_raw(file)
-        elif file[-4:] == '.dae':
-            self._import_dae(file)
-        else:
-            raise Exception("File format not supported.")
+        self._originals = triangles
+        self.compute_topology()
 
-        # Initialize this class' interface with Adolphus.
-        occ_triangle = []
-        for triangle in self.faces:
-            occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
-        super(Solid, self).__init__(name, pose=pose, mount_pose=mount_pose, \
-            mount=mount, primitives=[], triangles=occ_triangle)
-        if VISUAL_ENABLED:
-            self.visualize()
-
-    def _import_raw(self, file):
-        """\
-        Import a raw triangulated mesh.
-        """
-        self._triangles = []
-        with open(file, 'r') as f:
-            for line in f.readlines():
-                line = line[:-2].split(' ')
-                num = []
-                for item in line:
-                    num.append(float(item))
-                self._triangles.append([Point(num[0], num[1], num[2]), \
-                                        Point(num[3], num[4], num[5]), \
-                                        Point(num[6], num[7], num[8])])
-        self._compute_topology()
-
-    def _import_dae(self, file):
-        """\
-        Import a collada object.
-        """
-        solid = Collada(file)
-        self._triangles = []
-        for geometry in solid.geometries:
-            for triangle_set in geometry.primitives:
-                for triangle in triangle_set:
-                    v = triangle.vertices
-                    self._triangles.append([Point(v[0][0], v[0][1], v[0][2]), \
-                                            Point(v[1][0], v[1][1], v[1][2]), \
-                                            Point(v[2][0], v[2][1], v[2][2])])
-        self._compute_topology()
-
-    def _compute_topology(self):
+    def compute_topology(self):
         """\
         Compute the normals and the index list of this model.
         """
         try:
+            del self._graph
             del self.vertices
-            del self.normals
             del self.edges
             del self.faces
+            del self.normals
             del self.collada_indices
         except:
             pass
         self.vertices = []
-        self.normals = []
         self.edges = []
         self.faces = []
+        self.normals = []
         self.collada_indices = []
         n = 0
-        for item in self._triangles:
+        for item in self._originals:
             j = 2
             for i in [0,1,2]:
                 _edge = (item[i], item[j])
@@ -357,6 +301,78 @@ class Solid(SceneObject):
             self.gen_render_dynamic()
             return self.find_boundary()
 
+
+class Solid(RenderDynamic, SceneObject):
+    """\
+    Solid class.
+
+    Refer to http://en.wikipedia.org/wiki/Polygon_mesh for a description
+    of render dynamic.
+    """
+    def __init__(self, file, name, pose=Pose(), mount_pose=Pose(), mount=None):
+        """\
+        Constructor.
+
+        @param file: The file containing the object model.
+        @type file: C{str}
+        @param name: The name of the model.
+        @type name: C{str}
+        @param pose: Pose of the object in space (optional).
+        @type pose: L{Pose}
+        @param mount_pose: The transformation to the mounting end (optional).
+        @type mount_pose: L{Pose}
+        @param mount: Mount for this object (optional).
+        @type mount: C{object}
+        """
+        self._single = PointCache()
+        self._single_c = False
+        if file[-4:] == '.raw':
+            self._import_raw(file)
+        elif file[-4:] == '.dae':
+            self._import_dae(file)
+        else:
+            raise Exception("File format not supported.")
+
+        RenderDynamic.__init__(self, self._triangles)
+
+        # Initialize this class' interface with Adolphus.
+        occ_triangle = []
+        for triangle in self.faces:
+            occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
+        SceneObject.__init__(self, name, pose=pose, mount_pose=mount_pose, \
+            mount=mount, primitives=[], triangles=occ_triangle)
+        if VISUAL_ENABLED:
+            self.visualize()
+
+    def _import_raw(self, file):
+        """\
+        Import a raw triangulated mesh.
+        """
+        self._triangles = []
+        with open(file, 'r') as f:
+            for line in f.readlines():
+                line = line[:-2].split(' ')
+                num = []
+                for item in line:
+                    num.append(float(item))
+                self._triangles.append([Point(num[0], num[1], num[2]), \
+                                        Point(num[3], num[4], num[5]), \
+                                        Point(num[6], num[7], num[8])])
+
+    def _import_dae(self, file):
+        """\
+        Import a collada object.
+        """
+        solid = Collada(file)
+        self._triangles = []
+        for geometry in solid.geometries:
+            for triangle_set in geometry.primitives:
+                for triangle in triangle_set:
+                    v = triangle.vertices
+                    self._triangles.append([Point(v[0][0], v[0][1], v[0][2]), \
+                                            Point(v[1][0], v[1][1], v[1][2]), \
+                                            Point(v[2][0], v[2][1], v[2][2])])
+
     def scale(self, value):
         """\
         Scale the model by a factor on its x, y, and z coordinates.
@@ -367,17 +383,8 @@ class Solid(SceneObject):
         for i in range(len(self._triangles)):
             for j in [0,1,2]:
                 self._triangles[i][j] *= value
-        self._compute_topology()
+        self.compute_topology()
         self._single_c = False
-        try:
-            del self._graph
-            del self.vertex_vertex
-            del self.edge_face
-            del self.face_vertex
-            del self.edge_vertex
-            del self.face_edge
-        except:
-            pass
 
         # Update visualization by re-drawing the triangles.
         try:
