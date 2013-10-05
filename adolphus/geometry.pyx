@@ -966,6 +966,15 @@ cdef class Triangle(Face):
         self._edge_1 = self.edges()[1]
         self._edge_2 = self.edges()[2]
 
+    def __richcmp__(self, Triangle tri, int t):
+        eq = (self.vertices[0] - tri.vertices[0]).magnitude() < 1e-4 and \
+             (self.vertices[1] - tri.vertices[1]).magnitude() < 1e-4 and \
+             (self.vertices[2] - tri.vertices[2]).magnitude() < 1e-4
+        if t == 2:
+            return eq
+        if t == 3:
+            return not eq
+
     cpdef Triangle pose_map(self, Pose pose):
         """\
         Map triangle through a pose.
