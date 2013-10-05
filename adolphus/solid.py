@@ -382,9 +382,12 @@ class Solid(RenderDynamic, SceneObject):
             for triangle_set in geometry.primitives:
                 for triangle in triangle_set:
                     v = triangle.vertices
-                    self._triangles.append([Point(v[0][0], v[0][1], v[0][2]), \
-                                            Point(v[1][0], v[1][1], v[1][2]), \
-                                            Point(v[2][0], v[2][1], v[2][2])])
+                    try:
+                        self._triangles.append([Point(v[0][0], v[0][1], v[0][2]), \
+                                                Point(v[1][0], v[1][1], v[1][2]), \
+                                                Point(v[2][0], v[2][1], v[2][2])])
+                    except IndexError:
+                        pass
 
     def scale(self, value):
         """\
