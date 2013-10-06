@@ -399,9 +399,11 @@ class Solid(RenderDynamic, SceneObject):
         @param value: The scalar factor.
         @type value: C{float}
         """
-        for i in range(len(self._triangles)):
-            for j in [0,1,2]:
-                self._triangles[i][j] *= value
+        new_triangles = []
+        for triangle in self._triangles:
+            new_triangles.append(Triangle(*[p * value for p in triangle.vertices]))
+        del self._triangles
+        self._triangles = new_triangles
         self.compute_topology()
         self._single_c = False
 
@@ -456,7 +458,7 @@ class Solid(RenderDynamic, SceneObject):
         f = open(name+'.raw', 'w')
         for triangle in self._triangles:
             line = ''
-            for point in triangle:
+            for point in triangle.vertices:
                 line += str(point.x) + ' ' + str(point.y) + ' ' + str(point.z) + ' '
             line = line[:-1]
             line += '\n'
