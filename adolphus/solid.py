@@ -275,6 +275,8 @@ class RenderDynamic(object):
             if a in self.faces[i].vertices and b in self.faces[i].vertices and \
                 c in self.faces[i].vertices:
                 return i
+            else:
+                return None
 
     def gen_render_dynamic(self):
         """\
