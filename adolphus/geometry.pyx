@@ -966,6 +966,9 @@ cdef class Triangle(Face):
         self._edge_1 = self.edges()[1]
         self._edge_2 = self.edges()[2]
 
+    def __hash__(self):
+        return hash(self.vertices)
+
     def __richcmp__(self, Triangle tri, int t):
         eq = (self.vertices[0] - tri.vertices[0]).magnitude() < 1e-4 and \
              (self.vertices[1] - tri.vertices[1]).magnitude() < 1e-4 and \
