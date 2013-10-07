@@ -73,6 +73,29 @@ class RenderDynamic(object):
             n += 1
         self.faces = self._originals
 
+    def set_originals(self, triangles):
+        """\
+        Set the base set of triangles of this model
+        """
+        try:
+            del self.vertex_vertex
+            del self.edge_face
+            del self.face_vertex
+            del self.edge_vertex
+            del self.face_edge
+        except:
+            pass
+        self._originals = triangles
+        self.compute_topology()
+
+    def get_originals(self):
+        """\
+        Get the base set of triangles.
+        """
+        return self._originals
+
+    originals = property(get_originals, set_originals)
+
     def _build_graph(self):
         """\
         Build the topology graph of this object.
@@ -406,15 +429,7 @@ class Solid(RenderDynamic, SceneObject):
             new_triangles.append(Triangle(*[p * value for p in triangle.vertices]))
         del self._triangles
         self._triangles = new_triangles
-        try:
-            del self.vertex_vertex
-            del self.edge_face
-            del self.face_vertex
-            del self.edge_vertex
-            del self.face_edge
-        except:
-            pass
-        RenderDynamic.__init__(self, self._triangles)
+        self.originals = new_triangles
         self._single_c = False
 
         # Update visualization by re-drawing the triangles.
