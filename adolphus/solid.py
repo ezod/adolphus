@@ -406,7 +406,15 @@ class Solid(RenderDynamic, SceneObject):
             new_triangles.append(Triangle(*[p * value for p in triangle.vertices]))
         del self._triangles
         self._triangles = new_triangles
-        self.compute_topology()
+        try:
+            del self.vertex_vertex
+            del self.edge_face
+            del self.face_vertex
+            del self.edge_vertex
+            del self.face_edge
+        except:
+            pass
+        RenderDynamic.__init__(self, self._triangles)
         self._single_c = False
 
         # Update visualization by re-drawing the triangles.
