@@ -294,12 +294,13 @@ class RenderDynamic(object):
         @rtype: C{int}
         """
         assert(a!=b and b!=c and a!=c), "Invalid triangle."
-        for i in range(len(self.faces)):
-            if a in self.faces[i].vertices and b in self.faces[i].vertices and \
-                c in self.faces[i].vertices:
-                return i
-            else:
-                return None
+        if not hasattr(self, 'face_vertex'):
+            self._face_vertex()
+        aa = set(self.faces_of_vertex(a))
+        bb = set(self.faces_of_vertex(b))
+        cc = set(self.faces_of_vertex(c))
+        tri = list(aa & bb & cc)
+        return tri[0] if tri else None
 
     def gen_render_dynamic(self):
         """\
@@ -318,14 +319,12 @@ class RenderDynamic(object):
         @return: The edges in the boundary of this model.
         @rtype: C{list} of C{tuple} of L{adolphus.geometry.Point}
         """
-        try:
-            indices = [i for i in range(len(self.face_edge)) \
-                if len(self.face_edge[i]) == 1]
-            edges = [self.edges[i] for i in indices]
-            return edges
-        except:
-            self.gen_render_dynamic()
-            return self.find_boundary()
+        if not hasattr(self, 'face_edge'):
+            self._face_edge()
+        indices = [i for i in range(len(self.face_edge)) \
+            if len(self.face_edge[i]) == 1]
+        edges = [self.edges[i] for i in indices]
+        return edges
 
     def remove_face(self, indices):
         """\
