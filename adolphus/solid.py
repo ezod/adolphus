@@ -279,6 +279,22 @@ class RenderDynamic(object):
             self._face_edge()
             return self.faces_of_edge(edge)
 
+    def faces_of_face(self, index):
+        """\
+        Find the faces that touch the face at the given index.
+
+        @param index: The index of the face.
+        @type index: C{int}
+        @return: The indices of the faces that touch the given face.
+        @rtype: C{list} of C{int}
+        """
+        if not hasattr(self, 'face_vertex'):
+            self._face_vertex()
+        faces = []
+        for v in self.faces[index].vertices:
+            faces += self.faces_of_vertex(v)
+        return list(set(faces) - set([index]))
+
     def flook(self, a, b, c):
         """\
         Find the face with the given vertices (in counterclockwise order
