@@ -601,13 +601,29 @@ cdef class Rotation:
         @rtype: L{Rotation}
         """
         cdef double a, b, c, d
-        a = 0.5 * sqrt(1.0 + R[0][0] + R[1][1] + R[2][2])
-        b = copysign(0.5 * sqrt(1 + R[0][0] - R[1][1] - R[2][2]),
-            R[2][1] - R[1][2])
-        c = copysign(0.5 * sqrt(1 - R[0][0] + R[1][1] - R[2][2]),
-            R[0][2] - R[2][0])
-        d = copysign(0.5 * sqrt(1 - R[0][0] - R[1][1] + R[2][2]),
-            R[1][0] - R[0][1])
+        if (1.0 + R[0][0] + R[1][1] + R[2][2]) < 0 and \
+            (1.0 + R[0][0] + R[1][1] + R[2][2]) > -1e-4:
+            a = 0
+        else:
+            a = 0.5 * sqrt(1.0 + R[0][0] + R[1][1] + R[2][2])
+        if (1 + R[0][0] - R[1][1] - R[2][2]) < 0 and \
+            (1 + R[0][0] - R[1][1] - R[2][2]) > -1e-4:
+            b = copysign(0, R[2][1] - R[1][2])
+        else:
+            b = copysign(0.5 * sqrt(1 + R[0][0] - R[1][1] - R[2][2]), R[2][1] - \
+                R[1][2])
+        if (1 - R[0][0] + R[1][1] - R[2][2]) < 0 and \
+            (1 - R[0][0] + R[1][1] - R[2][2]) > -1e-4:
+            c = copysign(0, R[0][2] - R[2][0])
+        else:
+            c = copysign(0.5 * sqrt(1 - R[0][0] + R[1][1] - R[2][2]), R[0][2] - \
+                R[2][0])
+        if (1 - R[0][0] - R[1][1] + R[2][2]) < 0 and \
+            (1 - R[0][0] - R[1][1] + R[2][2]) > -1e-4:
+            d = copysign(0, R[1][0] - R[0][1])
+        else:
+            d = copysign(0.5 * sqrt(1 - R[0][0] - R[1][1] + R[2][2]), R[1][0] - \
+                R[0][1])
         return Rotation(Quaternion(a, Point(b, c, d)))
 
     @classmethod
