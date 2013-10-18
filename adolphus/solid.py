@@ -56,7 +56,13 @@ class RenderDynamic(object):
         self.normals = []
         self.collada_indices = []
         n = 0
+        stable = []
         for item in self._originals:
+            try:
+                self.normals.append(item.normal())
+            except:
+                continue
+            stable.append(item)
             j = 2
             for i in [0,1,2]:
                 _edge = (item.vertices[i], item.vertices[j])
@@ -66,11 +72,12 @@ class RenderDynamic(object):
                 if item.vertices[i] not in self.vertices:
                     self.vertices.append(item.vertices[i])
                 j = i
-            self.normals.append(item.normal())
             for vertex in item.vertices:
                 self.collada_indices.append(self.vertices.index(vertex))
                 self.collada_indices.append(n)
             n += 1
+        del self._originals
+        self._originals = stable
         self.faces = self._originals
 
     def set_originals(self, triangles):
