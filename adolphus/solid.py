@@ -8,6 +8,7 @@ Mesh polygon library for 3D model representation.
 """
 
 
+from math import pi
 from numpy import array
 from collada import Collada, material, source, geometry, scene
 
@@ -481,11 +482,13 @@ class Solid(RenderDynamic, SceneObject):
         if VISUAL_ENABLED:
             self.visualize()
 
-    def single(self):
+    def single(self, reverse=False):
         """\
         Reduce the number of points per triangle to one. The resulting point is
         located at the centre of the triangle.
 
+        @param reverse: If true, reverse the orientation of the faces.
+        @type reverse: C{bool}
         @return: The list of points in the model.
         @rtype: C{list} of L{adolphus.geometry.DirectionalPoint}
         """
@@ -497,6 +500,8 @@ class Solid(RenderDynamic, SceneObject):
             for triangle in self.faces:
                 average = avg_points(triangle.vertices)
                 angles = triangle.normal_angles()
+                if reverse:
+                    angles = [angles[0]-pi, angles[1]]
                 self._single[DirectionalPoint(average.x, average.y, average.z, \
                     angles[0], angles[1])] = 1.0
             self._single_c = True
