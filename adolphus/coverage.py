@@ -672,6 +672,7 @@ class Model(dict):
 
     def __delitem__(self, key):
         self[key].visible = False
+        self[key].__del__()
         self.cameras.discard(key)
         self._oc_mask.discard(key)
         super(Model, self).__delitem__(key)
@@ -732,7 +733,7 @@ class Model(dict):
         for ckey in self._occlusion_cache:
             for obj in obj_set:
                 for triangle in self[sceneobject].triangles:
-                    try: 
+                    try:
                         del self._occlusion_cache[ckey][obj]\
                             [triangle.triangle]
                     except KeyError:

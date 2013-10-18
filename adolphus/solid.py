@@ -405,6 +405,10 @@ class Solid(RenderDynamic, SceneObject):
         if VISUAL_ENABLED:
             self.visualize()
 
+    def __del__(self):
+        for triangle in self.triangles:
+            triangle.visible = False
+
     def _import_raw(self, file):
         """\
         Import a raw triangulated mesh.
