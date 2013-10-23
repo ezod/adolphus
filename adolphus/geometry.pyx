@@ -639,8 +639,11 @@ cdef class Rotation:
         @return: Quaternion representation of the rotation.
         @rtype: L{Rotation}
         """
-        return Rotation(Quaternion(cos(theta / 2.0),
-                                   axis.unit() * sin(theta / 2.0)))
+        if abs(theta) < 1e-4 and axis == Point(0,0,0):
+            return Rotation(Quaternion(1, Point(0,0,0)))
+        else:
+            return Rotation(Quaternion(cos(theta / 2.0), \
+                axis.unit() * sin(theta / 2.0)))
 
     @classmethod
     def from_euler(cls, convention, angles):
