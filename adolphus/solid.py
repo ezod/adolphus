@@ -417,7 +417,10 @@ class Solid(RenderDynamic, SceneObject):
         self._triangles = []
         with open(file, 'r') as f:
             for line in f.readlines():
-                line = line[:-2].split(' ')
+                if line[-2] == "\r":
+                    line = line[:-2].split(' ')
+                else:
+                    line = line[:-1].split(' ')
                 num = []
                 for item in line:
                     num.append(float(item))
