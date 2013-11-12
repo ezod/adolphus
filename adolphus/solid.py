@@ -421,6 +421,8 @@ class Solid(RenderDynamic, SceneObject):
                     line = line[:-2].split(' ')
                 else:
                     line = line[:-1].split(' ')
+                if line[-1] == '':
+                    line = line[:-1]
                 num = []
                 for item in line:
                     num.append(float(item))
