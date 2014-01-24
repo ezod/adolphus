@@ -19,7 +19,7 @@ NAME = 'adolphus'
 URL = 'http://github.com/ezod/adolphus'
 PACKAGE = 'adolphus'
 
-CYTHON_MODULES = ['geometry', 'posable', 'robot']
+CYTHON_MODULES = ['geometry', 'posable', 'robot', 'tensor']
 
 
 class GenerateDoc(Command):
