@@ -15,27 +15,27 @@ cdef class Tensor:
     """\
     Tensor class.
     """
-    def __cinit__(self, m=[]):
+    def __cinit__(self, matrix=[]):
         """\
         Constructor.
         
-        @param m: The n x m tensor matrix.
-        @type m: C{list} of C{list}
+        @param matrix: The m x n tensor matrix.
+        @type matrix: C{list} of C{list}
         """
-        self._m = m
-        self._h = len(m)
+        self._matrix = matrix
+        self._h = len(matrix)
         if self._h == 0:
             self._w = 0
             vector = []
         else:
             try:
-                self._w = len(m[0])
+                self._w = len(matrix[0])
                 if self._w == 0:
                     self._h = 0
                     vector = []
                 else:
                     vector = []
-                    for row in m:
+                    for row in matrix:
                         assert len(row) == self._w, "All rows must have the same size."
                         for col in row:
                             assert isinstance(col, float) or isinstance(col, int), \
@@ -44,21 +44,21 @@ cdef class Tensor:
                             vector.append(col)
             except TypeError:
                 self._w = 1
-                for col in m:
+                for col in matrix:
                     assert isinstance(col, float) or isinstance(col, int), \
                         "No valid type cast exists from " + \
                         type(col).__name__ + " to \'float\'."
-                vector = m
+                vector = matrix
 
         self._tensor = array('d', vector)
 
     def __hash__(self):
         return hash(repr(self))
-
+        
     def __reduce__(self):
-        return (Tensor, (self._m))
-
-    	def __getitem__(self, ij):
+        return (Tensor, (self._matrix))
+        
+    def __getitem__(self, ij):
         i,j = ij
         return self._tensor.__getitem__((i * self._w) + j)
 

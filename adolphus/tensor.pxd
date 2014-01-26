@@ -12,4 +12,4 @@ from cpython cimport bool
 
 cdef class Tensor:
     cdef int _w, _h
-    cdef object _m, _tensor
+    cdef object _matrix, _tensor
