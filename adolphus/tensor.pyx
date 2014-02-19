@@ -8,8 +8,10 @@ between tensors. The base Tensor class is implemented as an m x n matrix.
 @license: GPL-3
 """
 
+from math import sqrt
 from array import array
 from cpython cimport bool
+
 
 cdef class Tensor:
     """\
@@ -49,7 +51,7 @@ cdef class Tensor:
                         "No valid type cast exists from " + \
                         type(col).__name__ + " to \'float\'."
                 vector = matrix
-        assert self._h == self._w, "Tensor matrix must be square."
+        #assert self._h == self._w, "Tensor matrix must be square."
         self._tensor = array('d', vector)
 
     def __hash__(self):
@@ -69,7 +71,7 @@ cdef class Tensor:
                 elif i >= 0 and i < self._h:
                     irange = [i]
                 else:
-                    raise IndexError("Index out of range.")
+                    raise IndexError("Row index out of range.")
             elif type(i).__name__ == 'slice':
                 if i.start == None:
                     i1 = 0
@@ -78,7 +80,7 @@ cdef class Tensor:
                 elif i.start >= 0 and i.start < self._h:
                     i1 = i.start
                 else:
-                    raise IndexError("Index out of range.")
+                    raise IndexError("Row index out of range.")
                 if i.stop == None:
                     i2 = -1 + self._h
                 elif i.stop < 0 and i.stop >= -self._h:
@@ -86,7 +88,7 @@ cdef class Tensor:
                 elif i.stop >= 0 and i.stop < self._h:
                     i2 = i.stop
                 else:
-                    raise IndexError("Index out of range.")
+                    raise IndexError("Row index out of range.")
                 irange = [item for item in xrange(i1, i2 + 1)]
             if type(j).__name__ == 'int':
                 if j < 0 and j >= -self._w:
@@ -94,7 +96,7 @@ cdef class Tensor:
                 elif j >= 0 and j < self._w:
                     jrange = [j]
                 else:
-                    raise IndexError("Index out of range.")
+                    raise IndexError("Column index out of range.")
             elif type(j).__name__ == 'slice':
                 if j.start == None:
                     j1 = 0
@@ -103,7 +105,7 @@ cdef class Tensor:
                 elif j.start >= 0 and j.start < self._w:
                     j1 = j.start
                 else:
-                    raise IndexError("Index out of range.")
+                    raise IndexError("Column index out of range.")
                 if j.stop == None:
                     j2 = -1 + self._w
                 elif j.stop < 0 and j.stop >= -self._w:
@@ -111,7 +113,7 @@ cdef class Tensor:
                 elif j.stop >= 0 and j.stop < self._w:
                     j2 = j.stop
                 else:
-                    raise IndexError("Index out of range.")
+                    raise IndexError("Column index out of range.")
                 jrange = [item for item in xrange(j1, j2 + 1)]
         out = []
         for i in irange:
@@ -127,7 +129,7 @@ cdef class Tensor:
         assert h1 == h2 and w1 == w2, "Both tensors must be of the same size."
         cdef bool eq = True
         for i in xrange(h1):
-            for j in xrange(w2):
+            for j in xrange(w1):
                 if abs(self[i,j] - t[i,j]) > 1e-9:
                     eq = False
                     break
@@ -180,3 +182,21 @@ cdef class Tensor:
         Return a tuple containing the height and width of the Tensor.
         """
         return (self._h, self._w)
+
+    cpdef double frobenius(self, Tensor t):
+        """\
+        Compute the distance from this tensor to another based on the frobenius norm.
+        
+        @param t: The other tensor.
+        @type t: L{Tensor}
+        @return: Frobenius based distance.
+        @rtype: C{float}
+        """
+        h1, w1 = self.size
+        h2, w2 = t.size
+        assert h1 == h2 and w1 == w2, "Both tensors must be of the same size."
+        cdef double distance = 0
+        for i in xrange(h1):
+            for j in xrange(w1):
+                distance += (t[i,j] - self[i,j]) ** 2
+        return sqrt(distance)
