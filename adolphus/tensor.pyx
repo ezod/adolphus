@@ -8,16 +8,19 @@ between tensors. The base Tensor class is implemented as an m x n matrix.
 @license: GPL-3
 """
 
+import numpy as np
 from math import sqrt
 from array import array
 from cpython cimport bool
+
+from adolphus.geometry import Point, avg_points
 
 
 cdef class Tensor:
     """\
     Tensor class.
     """
-    def __cinit__(self, matrix=[]):
+    def __init__(self, matrix=[]):
         """\
         Constructor.
         
@@ -38,7 +41,8 @@ cdef class Tensor:
                 else:
                     vector = []
                     for row in matrix:
-                        assert len(row) == self._w, "All rows must have the same size."
+                        assert len(row) == self._w, "All rows must have the " \
+                            + "same size."
                         for col in row:
                             assert isinstance(col, float) or isinstance(col, int), \
                                 "No valid type cast exists from " + \
@@ -185,7 +189,7 @@ cdef class Tensor:
 
     cpdef double frobenius(self, Tensor t):
         """\
-        Compute the distance from this tensor to another based on the frobenius norm.
+        Compute the frobenius distance from this tensor to another.
         
         @param t: The other tensor.
         @type t: L{Tensor}
@@ -200,3 +204,72 @@ cdef class Tensor:
             for j in xrange(w1):
                 distance += (t[i,j] - self[i,j]) ** 2
         return sqrt(distance)
+
+
+cdef class CameraTensor(Tensor):
+    """\
+    Camera Tensor calss.
+    """
+    def __init__(self, camera, task_params):
+        """\
+        Constructor.
+        
+        @param camera: The camera to aproximate.
+        @type camera: L{adolphus.coverage.Camera}
+        @param task_params: The task parameters.
+        @type task_params: C{dict}
+        """
+        # Find the minimum and maximum depths of coverage in the frustum.
+        z_lim = [max(camera.zres(task_params['res_max'][1]),
+                     camera.zc(task_params['blur_max'][1] * \
+                     min(camera._params['s']))[0]),
+                 min(camera.zres(task_params['res_min'][1]),
+                     camera.zc(task_params['blur_max'][1] * \
+                     min(camera._params['s']))[1])]
+        # No primitives if no coverage.
+        assert z_lim[0] < z_lim[1], "This camera has no coverage."
+        # Otherwise, generate the hull.
+        hull = []
+        for z in z_lim:
+            hull += [Point(camera.fov['tahl'] * z, camera.fov['tavt'] * z, z),
+                     Point(camera.fov['tahl'] * z, camera.fov['tavb'] * z, z),
+                     Point(camera.fov['tahr'] * z, camera.fov['tavb'] * z, z),
+                     Point(camera.fov['tahr'] * z, camera.fov['tavt'] * z, z)]
+        centre_c = avg_points(hull)
+        first_axis = avg_points(hull[4:]) - centre_c
+        second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
+        third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
+        matrix1 = np.array([[first_axis.x, second_axis.x, third_axis.x], \
+                            [first_axis.y, second_axis.y, third_axis.y], \
+                            [first_axis.z, second_axis.z, third_axis.z]])
+        lambda1 = first_axis.magnitude()
+        lambda2 = second_axis.magnitude()
+        lambda3 = third_axis.magnitude()
+        shape = np.array([[lambda1, 0, 0],[0, lambda2, 0],[0, 0, lambda3]])
+        first_axis = first_axis.unit()
+        second_axis = second_axis.unit()
+        third_axis = third_axis.unit()
+        orth_basis = np.array([[first_axis.x, second_axis.x, third_axis.x], \
+                               [first_axis.y, second_axis.y, third_axis.y], \
+                               [first_axis.z, second_axis.z, third_axis.z]])
+        print np.linalg.eig(matrix1)
+        print '\n'
+        print shape
+        print orth_basis
+        print '\n'
+        print '\n'
+        print shape * orth_basis
+        print matrix1
+        Tensor.__init__(self, matrix1)
+
+
+cdef class TiangleTensor(Tensor):
+    """\
+    Triangle Tensor class.
+    """
+    def __init__(self, triangle):
+        """\
+        Constructor.
+        """
+        # TODO: Implement.
+        Tensor.__init__(self, [])
