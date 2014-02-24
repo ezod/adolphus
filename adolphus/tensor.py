@@ -11,12 +11,11 @@ between tensors. The base Tensor class is implemented as an m x n matrix.
 import numpy as np
 from math import sqrt
 from array import array
-from cpython cimport bool
 
 from adolphus.geometry import Point, avg_points
 
 
-cdef class Tensor:
+class Tensor(object):
     """\
     Tensor class.
     """
@@ -127,11 +126,11 @@ cdef class Tensor:
             out.append(row)
         return out
 
-    def __richcmp__(self, Tensor t, int o):
+    def __richcmp__(self, t, o):
         h1, w1 = self.size
         h2, w2 = t.size
         assert h1 == h2 and w1 == w2, "Both tensors must be of the same size."
-        cdef bool eq = True
+        eq = True
         for i in xrange(h1):
             for j in xrange(w1):
                 if abs(self[i,j] - t[i,j]) > 1e-9:
@@ -187,7 +186,7 @@ cdef class Tensor:
         """
         return (self._h, self._w)
 
-    cpdef double frobenius(self, Tensor t):
+    def frobenius(self, t):
         """\
         Compute the frobenius distance from this tensor to another.
         
@@ -199,14 +198,14 @@ cdef class Tensor:
         h1, w1 = self.size
         h2, w2 = t.size
         assert h1 == h2 and w1 == w2, "Both tensors must be of the same size."
-        cdef double distance = 0
+        distance = 0
         for i in xrange(h1):
             for j in xrange(w1):
                 distance += (t[i,j] - self[i,j]) ** 2
         return sqrt(distance)
 
 
-cdef class CameraTensor(Tensor):
+class CameraTensor(Tensor):
     """\
     Camera Tensor calss.
     """
@@ -255,15 +254,18 @@ cdef class CameraTensor(Tensor):
         print np.linalg.eig(matrix1)
         print '\n'
         print shape
+        print '\n'
         print orth_basis
         print '\n'
         print '\n'
+        print '\n'
         print shape * orth_basis
+        print '\n'
         print matrix1
         Tensor.__init__(self, matrix1)
 
 
-cdef class TiangleTensor(Tensor):
+class TiangleTensor(Tensor):
     """\
     Triangle Tensor class.
     """
