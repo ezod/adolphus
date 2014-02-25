@@ -246,6 +246,15 @@ cdef class Point:
         """
         return Angle(acos(p.unit().dot(self.unit())))
 
+    def to_list(self):
+        """\
+        Return a list with the three components of this object.
+        
+        @return: List form of this object.
+        @rtype: C{list}
+        """
+        return [self.x, self.y, self.z]
+
 
 cdef class DirectionalPoint(Point):
     """\
