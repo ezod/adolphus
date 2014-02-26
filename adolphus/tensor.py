@@ -12,7 +12,12 @@ import numpy as np
 from math import sqrt
 from array import array
 
-from adolphus.geometry import Point, avg_points
+from .posable import SceneObject
+from .visualization import VISUAL_ENABLED
+from .geometry import Point, Rotation, Pose, avg_points
+
+if VISUAL_ENABLED:
+    import visual
 
 
 class Tensor(object):
@@ -54,7 +59,6 @@ class Tensor(object):
                         "No valid type cast exists from " + \
                         type(col).__name__ + " to \'float\'."
                 vector = matrix
-        #assert self._h == self._w, "Tensor matrix must be square."
         self._tensor = array('d', vector)
 
     def __hash__(self):
@@ -205,7 +209,7 @@ class Tensor(object):
         return sqrt(distance)
 
 
-class CameraTensor(Tensor):
+class CameraTensor(Tensor, SceneObject):
     """\
     Camera Tensor calss.
     """
@@ -226,7 +230,8 @@ class CameraTensor(Tensor):
                      camera.zc(task_params['blur_max'][1] * \
                      min(camera._params['s']))[1])]
         # No primitives if no coverage.
-        assert z_lim[0] < z_lim[1], "This camera has no coverage."
+        assert z_lim[0] < z_lim[1], "Camera has no coverage, unable to " + \
+            "initialize Tensor."
         # Otherwise, generate the hull.
         hull = []
         for z in z_lim:
@@ -238,31 +243,27 @@ class CameraTensor(Tensor):
         first_axis = avg_points(hull[4:]) - centre_c
         second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
         third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
-        matrix1 = np.array([[first_axis.x, second_axis.x, third_axis.x], \
-                            [first_axis.y, second_axis.y, third_axis.y], \
-                            [first_axis.z, second_axis.z, third_axis.z]])
-        lambda1 = first_axis.magnitude()
-        lambda2 = second_axis.magnitude()
-        lambda3 = third_axis.magnitude()
-        shape = np.array([[lambda1, 0, 0],[0, lambda2, 0],[0, 0, lambda3]])
-        first_axis = first_axis.unit()
-        second_axis = second_axis.unit()
-        third_axis = third_axis.unit()
-        orth_basis = np.array([[first_axis.x, second_axis.x, third_axis.x], \
-                               [first_axis.y, second_axis.y, third_axis.y], \
-                               [first_axis.z, second_axis.z, third_axis.z]])
-        print np.linalg.eig(matrix1)
-        print '\n'
-        print shape
-        print '\n'
-        print orth_basis
-        print '\n'
-        print '\n'
-        print '\n'
-        print shape * orth_basis
-        print '\n'
-        print matrix1
-        Tensor.__init__(self, matrix1)
+        self.centre = camera.pose.map(centre_c)
+        self.axis1 = camera.pose.R.rotate(first_axis)
+        self.axis2 = camera.pose.R.rotate(second_axis)
+        self.axis3 = camera.pose.R.rotate(third_axis)
+        matrix1 = np.array([[self.axis1.x, self.axis2.x, self.axis3.x], \
+                            [self.axis1.y, self.axis2.y, self.axis3.y], \
+                            [self.axis1.z, self.axis2.z, self.axis3.z]])
+        primitives = []
+        if VISUAL_ENABLED:
+            for axis in [self.axis1, self.axis2, self.axis3]:
+                primitives.append({'type':          'arrow',
+                                   'pos':           self.centre.to_list(),
+                                   'axis':          axis.to_list(),
+                                   'shaftwidth':    3,
+                                   'color':         [0, 0, 1],
+                                   'material':      visual.materials.emissive})
+        Tensor.__init__(self, matrix1.tolist())
+        SceneObject.__init__(self, camera.name + "Tensor", \
+                             primitives=primitives, triangles=[])
+        if VISUAL_ENABLED:
+            self.visualize()
 
 
 class TiangleTensor(Tensor):
@@ -273,5 +274,5 @@ class TiangleTensor(Tensor):
         """\
         Constructor.
         """
-        # TODO: Implement.
+        # TODO: Implement this class.
         Tensor.__init__(self, [])
