@@ -11,8 +11,9 @@ between tensors. The base Tensor class is implemented as an m x n matrix.
 import numpy as np
 from math import sqrt
 from array import array
+from numbers import Number
 
-from .posable import SceneObject
+from .coverage import Camera
 from .visualization import VISUAL_ENABLED
 from .geometry import Point, Rotation, Pose, avg_points
 
@@ -209,61 +210,133 @@ class Tensor(object):
         return sqrt(distance)
 
 
-class CameraTensor(Tensor, SceneObject):
+class CameraTensor(Camera, Tensor):
     """\
     Camera Tensor calss.
     """
-    def __init__(self, camera, task_params):
+    def __init__(self, task_params, name, params, pose=Pose(), mount_pose=Pose(), \
+                 mount=None, primitives=list(), triangles=list()):
         """\
         Constructor.
         
-        @param camera: The camera to aproximate.
-        @type camera: L{adolphus.coverage.Camera}
         @param task_params: The task parameters.
         @type task_params: C{dict}
+        @param name: The name of the camera.
+        @type name: C{str}
+        @param params: The intrinsic camera parameters.
+        @type params: C{dict}
+        @param pose: Pose of the camera in space (optional).
+        @type pose: L{Pose}
+        @param mount_pose: The transformation to the mounting end (optional).
+        @type mount_pose: L{Pose}
+        @param mount: Mount object for the camera (optional).
+        @type mount: C{object}
+        @param primitives: Sprite primitives for the camera.
+        @type primitives: C{dict}
+        @param triangles: The opaque triangles of this camera (optional).
+        @type triangles: C{list} of L{OcclusionTriangle}
         """
-        # Find the minimum and maximum depths of coverage in the frustum.
-        z_lim = [max(camera.zres(task_params['res_max'][1]),
-                     camera.zc(task_params['blur_max'][1] * \
-                     min(camera._params['s']))[0]),
-                 min(camera.zres(task_params['res_min'][1]),
-                     camera.zc(task_params['blur_max'][1] * \
-                     min(camera._params['s']))[1])]
-        # No primitives if no coverage.
-        assert z_lim[0] < z_lim[1], "Camera has no coverage, unable to " + \
-            "initialize Tensor."
-        # Otherwise, generate the hull.
-        hull = []
-        for z in z_lim:
-            hull += [Point(camera.fov['tahl'] * z, camera.fov['tavt'] * z, z),
-                     Point(camera.fov['tahl'] * z, camera.fov['tavb'] * z, z),
-                     Point(camera.fov['tahr'] * z, camera.fov['tavb'] * z, z),
-                     Point(camera.fov['tahr'] * z, camera.fov['tavt'] * z, z)]
+        self._params = params
+        self.task_params = task_params
+        Camera.__init__(self, name, params, pose, mount_pose, mount, \
+                        primitives, triangles)
+        tensor_matrix = self._get_tensor_matrix(task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    def frustum_primitives(self, task_params):
+        """\
+        Generate the curve primitives for this camera's frustum for a given
+        task.
+    
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
+        @return: Frustum primitives.
+        @rtype: C{list} of C{dict}
+        """
+        hull = self.gen_frustum_hull(task_params)
+        if not hull:
+            return []
+        # Return the primitives based on the hull.
+        primitives = [{'type': 'curve', 'color': (1, 0, 0), 'pos': hull[i:i + 4] + \
+            hull[i:i + 1]} for i in range(0, 16, 4)] + \
+            [{'type': 'curve', 'color': (1, 0, 0),
+            'pos': [hull[i], hull[i + 4]]} for i in range(4)]
+        # Include the orthogonal basis for the Camera Tensor.
+        for i in range(len(hull)):
+            hull[i] = Point(*hull[i])
         centre_c = avg_points(hull)
         first_axis = avg_points(hull[4:]) - centre_c
         second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
         third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
-        self.centre = camera.pose.map(centre_c)
-        self.axis1 = camera.pose.R.rotate(first_axis)
-        self.axis2 = camera.pose.R.rotate(second_axis)
-        self.axis3 = camera.pose.R.rotate(third_axis)
-        matrix1 = np.array([[self.axis1.x, self.axis2.x, self.axis3.x], \
-                            [self.axis1.y, self.axis2.y, self.axis3.y], \
-                            [self.axis1.z, self.axis2.z, self.axis3.z]])
-        primitives = []
-        if VISUAL_ENABLED:
-            for axis in [self.axis1, self.axis2, self.axis3]:
-                primitives.append({'type':          'arrow',
-                                   'pos':           self.centre.to_list(),
-                                   'axis':          axis.to_list(),
-                                   'shaftwidth':    3,
-                                   'color':         [0, 0, 1],
-                                   'material':      visual.materials.emissive})
-        Tensor.__init__(self, matrix1.tolist())
-        SceneObject.__init__(self, camera.name + "Tensor", \
-                             primitives=primitives, triangles=[])
-        if VISUAL_ENABLED:
-            self.visualize()
+        for axis in [first_axis, second_axis, third_axis]:
+            primitives.append({'type':          'arrow',
+                               'pos':           centre_c.to_list(),
+                               'axis':          axis.to_list(),
+                               'shaftwidth':    3,
+                               'color':         [0, 0, 1],
+                               'material':      visual.materials.emissive})
+        return primitives
+
+    def _get_tensor_matrix(self, task_params):
+        """\
+        Compute the orthogonal basis of this camera tensor.
+        
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
+        @return: The tensor matrix.
+        @rtype: C{list} of C{list}
+        """
+        hull = self.gen_frustum_hull(task_params)
+        assert hull, "Camera has no coverage, unable to initialize Tensor."
+        for i in range(len(hull)):
+            hull[i] = Point(*hull[i])
+        centre_c = avg_points(hull)
+        first_axis = avg_points(hull[4:]) - centre_c
+        second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
+        third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
+        # The Tensor is expressed in wcs.
+        self.frustum_centre = self.pose.map(centre_c)
+        axis1 = self.pose.R.rotate(first_axis)
+        axis2 = self.pose.R.rotate(second_axis)
+        axis3 = self.pose.R.rotate(third_axis)
+        return [[axis1.x, axis2.x, axis3.x], \
+                [axis1.y, axis2.y, axis3.y], \
+                [axis1.z, axis2.z, axis3.z]]
+
+    def setparam(self, param, value):
+        """\
+        Set a camera parameter.
+    
+        @param param: The name of the paramater to set.
+        @type param: C{str}
+        @param value: The value to which to set the parameter.
+        @type value: C{float} or C{list} of C{float}
+        """
+        Camera.setparam(self, param, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    def set_absolute_pose(self, value):
+        Camera.set_absolute_pose(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    absolute_pose = property(Camera.get_absolute_pose, set_absolute_pose)
+    pose = absolute_pose
+
+    def set_relative_pose(self, value):
+        Camera.set_relative_pose(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    relative_pose = property(Camera.get_relative_pose, set_relative_pose)
+
+    def set_mount(self, value):
+        Camera.set_mount(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    mount = property(Camera.get_mount, set_mount)
 
 
 class TiangleTensor(Tensor):
