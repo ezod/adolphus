@@ -594,15 +594,14 @@ class Camera(SceneObject):
         self.opacity = 1.0 if self.active else 0.2
         super(Camera, self).update_visualization()
 
-    def frustum_primitives(self, task_params):
+    def gen_frustum_hull(self, task_params):
         """\
-        Generate the curve primitives for this camera's frustum for a given
-        task.
-
+        Generate the points for this camera's frustum's hull for a given task.
+        
         @param task_params: Task parameters.
         @type task_params: C{dict}
-        @return: Frustum primitives.
-        @rtype: C{list} of C{dict}
+        @return: Frustum hull.
+        @rtype: C{list} of C{tuple}
         """
         # Find the minimum and maximum depths of coverage in the frustum.
         z_lim = [max(self.zres(task_params['res_max'][1]),
@@ -621,6 +620,21 @@ class Camera(SceneObject):
                      (self.fov['tahl'] * z, self.fov['tavb'] * z, z),
                      (self.fov['tahr'] * z, self.fov['tavb'] * z, z),
                      (self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
+        return hull
+
+    def frustum_primitives(self, task_params):
+        """\
+        Generate the curve primitives for this camera's frustum for a given
+        task.
+
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
+        @return: Frustum primitives.
+        @rtype: C{list} of C{dict}
+        """
+        hull = self.gen_frustum_hull(task_params)
+        if not hull:
+            return []
         # Return the primitives based on the hull.
         return [{'type': 'curve', 'color': (1, 0, 0), 'pos': hull[i:i + 4] + \
             hull[i:i + 1]} for i in range(0, 16, 4)] + \
