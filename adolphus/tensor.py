@@ -72,8 +72,11 @@ class Tensor(object):
         if type(val).__name__ == 'int' or type(val).__name__ == 'slice':
             raise IndexError("Two indices are required.")
         if type(val).__name__ == 'tuple':
+            single_i = False
+            single_j = False
             i, j = val
             if type(i).__name__ == 'int':
+                single_i = True
                 if i < 0 and i >= -self._h:
                     irange = [i + self._h]
                 elif i >= 0 and i < self._h:
@@ -99,6 +102,7 @@ class Tensor(object):
                     raise IndexError("Row index out of range.")
                 irange = [item for item in xrange(i1, i2 + 1)]
             if type(j).__name__ == 'int':
+                single_j = True
                 if j < 0 and j >= -self._w:
                     jrange = [j + self._w]
                 elif j >= 0 and j < self._w:
@@ -123,6 +127,8 @@ class Tensor(object):
                 else:
                     raise IndexError("Column index out of range.")
                 jrange = [item for item in xrange(j1, j2 + 1)]
+        if single_i and single_j:
+            return self._tensor.__getitem__((i * self._w) + j)
         out = []
         for i in irange:
             row = []
@@ -243,6 +249,67 @@ class CameraTensor(Camera, Tensor):
         tensor_matrix = self._get_tensor_matrix(task_params)
         Tensor.__init__(self, tensor_matrix)
 
+    def setparam(self, param, value):
+        """\
+        Set a camera parameter.
+
+        @param param: The name of the paramater to set.
+        @type param: C{str}
+        @param value: The value to which to set the parameter.
+        @type value: C{float} or C{list} of C{float}
+        """
+        Camera.setparam(self, param, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    def set_absolute_pose(self, value):
+        Camera.set_absolute_pose(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    absolute_pose = property(Camera.get_absolute_pose, set_absolute_pose)
+    pose = absolute_pose
+
+    def set_relative_pose(self, value):
+        Camera.set_relative_pose(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    relative_pose = property(Camera.get_relative_pose, set_relative_pose)
+
+    def set_mount(self, value):
+        Camera.set_mount(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.task_params)
+        Tensor.__init__(self, tensor_matrix)
+
+    mount = property(Camera.get_mount, set_mount)
+
+    def _get_tensor_matrix(self, task_params):
+        """\
+        Compute the orthogonal basis of this camera tensor.
+        
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
+        @return: The tensor matrix.
+        @rtype: C{list} of C{list}
+        """
+        hull = self.gen_frustum_hull(task_params)
+        assert hull, "Camera has no coverage, unable to initialize Tensor."
+        for i in range(len(hull)):
+            hull[i] = Point(*hull[i])
+        centre_c = avg_points(hull)
+        first_axis = avg_points(hull[4:]) - centre_c
+        second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
+        third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
+        # The Tensor is expressed in wcs.
+        self._frustum_centre = self.pose.map(centre_c)
+        axis1 = self.pose.R.rotate(first_axis)
+        axis2 = self.pose.R.rotate(second_axis)
+        axis3 = self.pose.R.rotate(third_axis)
+        return [[axis1.x, axis2.x, axis3.x], \
+                [axis1.y, axis2.y, axis3.y], \
+                [axis1.z, axis2.z, axis3.z]]
+
     def frustum_primitives(self, task_params):
         """\
         Generate the curve primitives for this camera's frustum for a given
@@ -277,66 +344,38 @@ class CameraTensor(Camera, Tensor):
                                'material':      visual.materials.emissive})
         return primitives
 
-    def _get_tensor_matrix(self, task_params):
+    @property
+    def centre(self):
         """\
-        Compute the orthogonal basis of this camera tensor.
-        
-        @param task_params: Task parameters.
-        @type task_params: C{dict}
-        @return: The tensor matrix.
-        @rtype: C{list} of C{list}
+        Return the location in the wcs of this camera's tensor.
         """
-        hull = self.gen_frustum_hull(task_params)
-        assert hull, "Camera has no coverage, unable to initialize Tensor."
-        for i in range(len(hull)):
-            hull[i] = Point(*hull[i])
-        centre_c = avg_points(hull)
-        first_axis = avg_points(hull[4:]) - centre_c
-        second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
-        third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
-        # The Tensor is expressed in wcs.
-        self.frustum_centre = self.pose.map(centre_c)
-        axis1 = self.pose.R.rotate(first_axis)
-        axis2 = self.pose.R.rotate(second_axis)
-        axis3 = self.pose.R.rotate(third_axis)
-        return [[axis1.x, axis2.x, axis3.x], \
-                [axis1.y, axis2.y, axis3.y], \
-                [axis1.z, axis2.z, axis3.z]]
-
-    def setparam(self, param, value):
-        """\
-        Set a camera parameter.
+        return self._frustum_centre
     
-        @param param: The name of the paramater to set.
-        @type param: C{str}
-        @param value: The value to which to set the parameter.
-        @type value: C{float} or C{list} of C{float}
+    @property
+    def axis(self):
+        """\
+        Return the coordinates, in the camera's reference frame, of this
+        camera's optical axis.
         """
-        Camera.setparam(self, param, value)
-        tensor_matrix = self._get_tensor_matrix(self.task_params)
-        Tensor.__init__(self, tensor_matrix)
+        return Point(self[0,0], self[1,0], self[2,0])
 
-    def set_absolute_pose(self, value):
-        Camera.set_absolute_pose(self, value)
-        tensor_matrix = self._get_tensor_matrix(self.task_params)
-        Tensor.__init__(self, tensor_matrix)
-
-    absolute_pose = property(Camera.get_absolute_pose, set_absolute_pose)
-    pose = absolute_pose
-
-    def set_relative_pose(self, value):
-        Camera.set_relative_pose(self, value)
-        tensor_matrix = self._get_tensor_matrix(self.task_params)
-        Tensor.__init__(self, tensor_matrix)
-
-    relative_pose = property(Camera.get_relative_pose, set_relative_pose)
-
-    def set_mount(self, value):
-        Camera.set_mount(self, value)
-        tensor_matrix = self._get_tensor_matrix(self.task_params)
-        Tensor.__init__(self, tensor_matrix)
-
-    mount = property(Camera.get_mount, set_mount)
+    def weighted_euclidean(self, other):
+        """\
+        Compute the euclidean distance from this tensor to another. The distance is
+        weighted by the degree of coloneairty btween the principal axes of this and
+        the other tensor.
+        
+        @param other: The other tensor.
+        @type other: L{CameraTensor} or L{TriangleTensor}
+        @return: The distance.
+        @rtype: C{float}
+        """
+        centre_dis = self.centre.euclidean(other.centre)
+        axis_dis = self.axis.euclidean(other.axis)
+        if axis_dis > sqrt(2):
+            return -1
+        collinear = 1 / (sqrt(2) - axis_dis)
+        return collinear * centre_dis
 
 
 class TiangleTensor(Tensor):
