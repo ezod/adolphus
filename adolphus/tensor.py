@@ -301,8 +301,11 @@ class CameraTensor(Camera, Tensor):
         first_axis = avg_points(hull[4:]) - centre_c
         second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
         third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
-        # The Tensor is expressed in wcs.
+        # Store the coordinates of the optical axis in this camera's reference frame.
+        self._optical_axis = first_axis
+        # Store the coordinates of this tensor in the wcs.
         self._frustum_centre = self.pose.map(centre_c)
+        # The Tensor is expressed in wcs.
         axis1 = self.pose.R.rotate(first_axis)
         axis2 = self.pose.R.rotate(second_axis)
         axis3 = self.pose.R.rotate(third_axis)
@@ -357,7 +360,7 @@ class CameraTensor(Camera, Tensor):
         Return the coordinates, in the camera's reference frame, of this
         camera's optical axis.
         """
-        return Point(self[0,0], self[1,0], self[2,0])
+        return self._optical_axis
 
     def weighted_euclidean(self, other):
         """\
