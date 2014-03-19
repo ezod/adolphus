@@ -248,6 +248,8 @@ class CameraTensor(Camera, Tensor):
                         primitives, triangles)
         tensor_matrix = self._get_tensor_matrix(task_params)
         Tensor.__init__(self, tensor_matrix)
+        if VISUAL_ENABLED:
+            self.visualize()
 
     def setparam(self, param, value):
         """\
@@ -301,8 +303,6 @@ class CameraTensor(Camera, Tensor):
         first_axis = avg_points(hull[4:]) - centre_c
         second_axis = avg_points([hull[2], hull[3], hull[6], hull[7]]) - centre_c
         third_axis = avg_points([hull[0], hull[3], hull[4], hull[7]]) - centre_c
-        # Store the coordinates of the optical axis in this camera's reference frame.
-        self._optical_axis = first_axis
         # Store the coordinates of this tensor in the wcs.
         self._frustum_centre = self.pose.map(centre_c)
         # The Tensor is expressed in wcs.
@@ -357,10 +357,9 @@ class CameraTensor(Camera, Tensor):
     @property
     def axis(self):
         """\
-        Return the coordinates, in the camera's reference frame, of this
-        camera's optical axis.
+        Return the coordinates of this camera's optical axis in the camera's frame.
         """
-        return self._optical_axis
+        return Point(self[0,0], self[1,0], self[2,0])
 
     def weighted_euclidean(self, other):
         """\
@@ -374,11 +373,10 @@ class CameraTensor(Camera, Tensor):
         @rtype: C{float}
         """
         centre_dis = self.centre.euclidean(other.centre)
-        axis_dis = self.axis.euclidean(other.axis)
-        if axis_dis > sqrt(2):
+        collinear = self.axis.unit().dot(-other.axis.unit())
+        if collinear <= 0:
             return -1
-        collinear = 1 / (sqrt(2) - axis_dis)
-        return collinear * centre_dis
+        return (1 / collinear) * centre_dis
 
 
 class TiangleTensor(Tensor):
