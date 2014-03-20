@@ -100,7 +100,7 @@ class Tensor(object):
                     i2 = i.stop
                 else:
                     raise IndexError("Row index out of range.")
-                irange = [item for item in xrange(i1, i2 + 1)]
+                irange = [item for item in range(i1, i2 + 1)]
             if type(j).__name__ == 'int':
                 single_j = True
                 if j < 0 and j >= -self._w:
@@ -126,7 +126,7 @@ class Tensor(object):
                     j2 = j.stop
                 else:
                     raise IndexError("Column index out of range.")
-                jrange = [item for item in xrange(j1, j2 + 1)]
+                jrange = [item for item in range(j1, j2 + 1)]
         if single_i and single_j:
             return self._tensor.__getitem__((i * self._w) + j)
         out = []
@@ -142,8 +142,8 @@ class Tensor(object):
         h2, w2 = t.size
         assert h1 == h2 and w1 == w2, "Both tensors must be of the same size."
         eq = True
-        for i in xrange(h1):
-            for j in xrange(w1):
+        for i in range(h1):
+            for j in range(w1):
                 if abs(self[i,j] - t[i,j]) > 1e-9:
                     eq = False
                     break
@@ -152,14 +152,28 @@ class Tensor(object):
         if o == 3:
             return not eq
 
+    def __neg__(self):
+        """\
+        Negate this tensor, except for the camera's 'y' axis, since it is assumed
+        that rotations around the optical axis have no efect.
+        Note: This function is meant for tensors of size 3x3.
+    
+        @return: Negated tensor.
+        @rtype: L{Tensor}
+        """
+        n_matrix = [[-self[0,0], -self[0,1], self[0,2]], \
+                    [-self[1,0], -self[1,1], self[1,2]], \
+                    [-self[2,0], -self[2,1], self[2,2]]]
+        return Tensor(n_matrix)
+
     def __repr__(self):
         """\
         Canonical string representation.
         """
         line = type(self).__name__ + "(["
-        for i in xrange(self._h):
+        for i in range(self._h):
             line += "["
-            for j in xrange(self._w):
+            for j in range(self._w):
                 if j < self._h - 1:
                     line += str(self._tensor.__getitem__((i * self._w) + j)) + ", "
                 elif j == self._h - 1:
@@ -176,9 +190,9 @@ class Tensor(object):
         String representation, displays in a tuple format.
         """
         line = "(["
-        for i in xrange(self._h):
+        for i in range(self._h):
             line += "["
-            for j in xrange(self._w):
+            for j in range(self._w):
                 if j < self._h - 1:
                     line += str(self._tensor.__getitem__((i * self._w) + j)) + ", "
                 elif j == self._h - 1:
@@ -197,6 +211,22 @@ class Tensor(object):
         """
         return (self._h, self._w)
 
+    def unit(self):
+        """\
+        Normalize this tensor.
+        Note: This function is meant for tensors of size 3x3.
+        
+        @return: Normalized tensor.
+        @rtype: L{Tensor}
+        """
+        axis1 = Point(self[0,0], self[1,0], self[2,0]).unit()
+        axis2 = Point(self[0,1], self[1,1], self[2,1]).unit()
+        axis3 = Point(self[0,2], self[1,2], self[2,2]).unit()
+        matrix = [[axis1.x, axis2.x, axis3.x], \
+                  [axis1.y, axis2.y, axis3.y], \
+                  [axis1.z, axis2.z, axis3.z]]
+        return Tensor(matrix)
+
     def frobenius(self, t):
         """\
         Compute the frobenius distance from this tensor to another.
@@ -210,8 +240,8 @@ class Tensor(object):
         h2, w2 = t.size
         assert h1 == h2 and w1 == w2, "Both tensors must be of the same size."
         distance = 0
-        for i in xrange(h1):
-            for j in xrange(w1):
+        for i in range(h1):
+            for j in range(w1):
                 distance += (t[i,j] - self[i,j]) ** 2
         return sqrt(distance)
 
@@ -377,6 +407,23 @@ class CameraTensor(Camera, Tensor):
         if collinear <= 0:
             return -1
         return (1 / collinear) * centre_dis
+
+    def weighted_frobenius(self, other):
+        """
+        Compute the frobenius distance from this tensor to another. The distance is
+        weighted by the euclidean distance btween the tensors.
+        
+        @param other: The other tensor.
+        @type other: L{CameraTensor} or L{TriangleTensor}
+        @return: The distance.
+        @rtype: C{float}
+        """
+        euc_dist = self.centre.euclidean(other.centre)
+        frob_dis = self.unit().frobenius(-other.unit())
+        try:
+            return (1 / (1 - (frob_dis / sqrt(8)))) * euc_dist
+        except ZeroDivisionError:
+            return -1
 
 
 class TiangleTensor(Tensor):
