@@ -156,7 +156,7 @@ class Tensor(object):
     def __neg__(self):
         """\
         Negate this tensor, except for the camera's 'y' axis, since it is assumed
-        that rotations around the optical axis have no efect.
+        that rotations around the optical axis have no effect.
         Note: This function is meant for tensors of size 3x3.
     
         @return: Negated tensor.
@@ -230,7 +230,7 @@ class Tensor(object):
 
     def frobenius(self, t):
         """\
-        Compute the frobenius distance from this tensor to another.
+        Compute the Frobenius distance from this tensor to another.
         
         @param t: The other tensor.
         @type t: L{Tensor}
@@ -249,7 +249,7 @@ class Tensor(object):
 
 class CameraTensor(Camera, Tensor):
     """\
-    Camera Tensor calss.
+    Camera Tensor class.
     """
     def __init__(self, task_params, name, params, pose=Pose(), mount_pose=Pose(), \
                  mount=None, primitives=list(), triangles=list()):
@@ -286,7 +286,7 @@ class CameraTensor(Camera, Tensor):
         """\
         Set a camera parameter.
 
-        @param param: The name of the paramater to set.
+        @param param: The name of the parameter to set.
         @type param: C{str}
         @param value: The value to which to set the parameter.
         @type value: C{float} or C{list} of C{float}
@@ -395,7 +395,7 @@ class CameraTensor(Camera, Tensor):
     def weighted_euclidean(self, other):
         """\
         Compute the euclidean distance from this tensor to another. The distance is
-        weighted by the degree of coloneairty btween the principal axes of this and
+        weighted by the degree of coloneairty between the principal axes of this and
         the other tensor.
         
         @param other: The other tensor.
@@ -411,8 +411,8 @@ class CameraTensor(Camera, Tensor):
 
     def weighted_frobenius(self, other):
         """
-        Compute the frobenius distance from this tensor to another. The distance is
-        weighted by the euclidean distance btween the tensors.
+        Compute the Frobenius distance from this tensor to another. The distance is
+        weighted by the euclidean distance between the tensors.
         
         @param other: The other tensor.
         @type other: L{CameraTensor} or L{TriangleTensor}
@@ -442,7 +442,7 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         @param mount: The mount of the triangle (optional).
         @type mount: L{adolphus.posable.Posable}
         """
-        # self.vertices = vertices
+        self._guide_c = False
         OcclusionTriangle.__init__(self, vertices, pose, mount)
         tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
         Tensor.__init__(self, tensor_matrix)
@@ -540,13 +540,15 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         """
         return Point(self[0,0], self[1,0], self[2,0])
 
-    def visualize_tensor(self):
+    def toggle_tensor_vis(self):
         """\
         Toggle the visualization of this tensor's basis.
         """
-        try:
+        if self._guide_c:
+            self.guide.visible = False
             del self.guide
-        except:
+            self._guide_c = False
+        else:
             basis = self._get_tensor_basis(self.triangle.vertices)
             centre = avg_points(self.triangle.vertices)
             primitives = []
@@ -559,3 +561,4 @@ class TriangleTensor(OcclusionTriangle, Tensor):
                                    'material':      visual.materials.emissive})
             self.guide = SceneObject('guide', mount=self, primitives=primitives)
             self.guide.visualize()
+            self._guide_c = True
