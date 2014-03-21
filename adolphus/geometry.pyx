@@ -1196,6 +1196,24 @@ cpdef bool point_in_segment(Point s1, Point s2, Point p):
     else:
         return False
 
+cpdef double point_segment_dis(Point s1, Point s2, Point p):
+    """\
+    Return the distance from  point to a line segment along the line that is
+    perpendicular to the line segment and that pases through the point.
+    
+        - U{http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html}
+    
+    @param s1: The first point of the segment.
+    @type s1: L{Point}
+    @param s2: The second point of the segment.
+    @type s2: L{Point}
+    @param p: The point to check.
+    @type p: L{Point}
+    @return: The distance.
+    @rtype: C{double}
+    """
+    return ((p - s1).cross(p - s2)).magnitude() / (s2 - s1).magnitude()
+
 cpdef bool segment_intersect(Point p1, Point p2, Point q1, Point q2):
     """\
     Check if two line segments (on the x-y plane) intersect each other.
@@ -1315,7 +1333,7 @@ cpdef Point avg_points(object points):
     return avg._div(float(n))
 
 
-cpdef avg_quaternions(object qts):
+cpdef Quaternion avg_quaternions(object qts):
     """\
     Average a set of quaternions.
 
