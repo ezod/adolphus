@@ -15,7 +15,8 @@ from numbers import Number
 
 from .coverage import Camera
 from .visualization import VISUAL_ENABLED
-from .geometry import Point, Rotation, Pose, avg_points
+from .posable import OcclusionTriangle, SceneObject
+from .geometry import Point, Rotation, Pose, point_segment_dis, avg_points
 
 if VISUAL_ENABLED:
     import visual
@@ -426,13 +427,135 @@ class CameraTensor(Camera, Tensor):
             return -1
 
 
-class TiangleTensor(Tensor):
+class TriangleTensor(OcclusionTriangle, Tensor):
     """\
     Triangle Tensor class.
     """
-    def __init__(self, triangle):
+    def __init__(self, vertices, pose=Pose(), mount=None):
         """\
         Constructor.
+
+        @param vertices: The vertices of the triangle.
+        @type vertices: C{tuple} of L{Point}
+        @param pose: The pose of the triangle normal (from z-hat).
+        @type pose: L{Pose}
+        @param mount: The mount of the triangle (optional).
+        @type mount: L{adolphus.posable.Posable}
         """
-        # TODO: Implement this class.
-        Tensor.__init__(self, [])
+        # self.vertices = vertices
+        OcclusionTriangle.__init__(self, vertices, pose, mount)
+        tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
+        Tensor.__init__(self, tensor_matrix)
+        if VISUAL_ENABLED:
+            self.visualize()
+
+    def set_absolute_pose(self, value):
+        OcclusionTriangle.set_absolute_pose(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
+        Tensor.__init__(self, tensor_matrix)
+    
+    absolute_pose = property(OcclusionTriangle.get_absolute_pose, set_absolute_pose)
+    pose = absolute_pose
+    
+    def set_relative_pose(self, value):
+        OcclusionTriangle.set_relative_pose(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
+        Tensor.__init__(self, tensor_matrix)
+    
+    relative_pose = property(OcclusionTriangle.get_relative_pose, set_relative_pose)
+    
+    def set_mount(self, value):
+        OcclusionTriangle.set_mount(self, value)
+        tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
+        Tensor.__init__(self, tensor_matrix)
+    
+    mount = property(OcclusionTriangle.get_mount, set_mount)
+
+    def _get_tensor_basis(self, vertices):
+        """\
+        Compute the orthogonal basis of this triangle tensor (in the triangle's
+        frame).
+        
+        @param vertices: The vertices of the triangle.
+        @type vertices: C{tuple} of L{Point}
+        @return: The tensor matrix.
+        @rtype: C{list} of C{list}
+        """
+        centre = avg_points(vertices)
+        # Choose the most coolinear pair of vectors (from the centre to the vertices)
+        # as the cross product that will result on this tensor's principal axis.
+        vector1 = vertices[0] - centre
+        vector2 = vertices[1] - centre
+        vector3 = vertices[2] - centre
+        mag1 = point_segment_dis(vertices[0], vertices[1], centre)
+        mag2 = point_segment_dis(vertices[0], vertices[2], centre)
+        mag3 = point_segment_dis(vertices[1], vertices[2], centre)
+        mag = min([mag1, mag2, mag3])
+        if abs(vector1.dot(vector2)) > abs(vector1.dot(vector3)):
+            pair = [vector1, vector2]
+        else:
+            pair = [vector1, vector3]
+        if abs(pair[0].dot(pair[1])) < abs(vector2.dot(vector3)):
+            pair = [vector2, vector3]
+        first_axis = pair[0].unit().cross(pair[1].unit())
+        second_axis = pair[0].unit()
+        third_axis = second_axis.cross(first_axis)
+        return [first_axis * mag, second_axis * mag, third_axis * mag]
+
+    def _get_tensor_matrix(self, vertices):
+        """\
+        Compute the orthogonal basis of this triangle tensor (in wcs).
+        
+        @param vertices: The vertices of the triangle.
+        @type vertices: C{tuple} of L{Point}
+        @return: The tensor matrix.
+        @rtype: C{list} of C{list}
+        """
+        centre = avg_points(vertices)
+        basis = self._get_tensor_basis(vertices)
+        planing_pose = self.triangle.planing_pose()
+        pose = self.pose - planing_pose
+        # Store the coordinates of this tensor in the wcs.
+        self._centre = pose.map(centre)
+        # The Tensor is expressed in wcs.
+        axis1 = pose.R.rotate(basis[0])
+        axis2 = pose.R.rotate(basis[1])
+        axis3 = pose.R.rotate(basis[2])
+        return [[axis1.x, axis2.x, axis3.x], \
+                [axis1.y, axis2.y, axis3.y], \
+                [axis1.z, axis2.z, axis3.z]]
+
+    @property
+    def centre(self):
+        """\
+        Return the location in the wcs of this triangle's tensor.
+        """
+        return self._centre
+    
+    @property
+    def axis(self):
+        """\
+        Return the coordinates of this triangle's surface normal in the triangle's
+        frame.
+        """
+        return Point(self[0,0], self[1,0], self[2,0])
+
+    def visualize_tensor(self):
+        """\
+        Toggle the visualization of this tensor's basis.
+        """
+        try:
+            del self.guide
+        except:
+            basis = self._get_tensor_basis(self.triangle.vertices)
+            centre = avg_points(self.triangle.vertices)
+            primitives = []
+            for axis in basis:
+                primitives.append({'type':          'arrow',
+                                   'pos':           centre.to_list(),
+                                   'axis':          axis.to_list(),
+                                   'shaftwidth':    3,
+                                   'color':         [0, 0, 1],
+                                   'material':      visual.materials.emissive})
+            self.guide = SceneObject('guide', mount=self, primitives=primitives)
+            self.guide.visualize()
