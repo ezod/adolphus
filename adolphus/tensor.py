@@ -482,15 +482,18 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         @rtype: C{list} of C{list}
         """
         centre = avg_points(vertices)
-        # Choose the most coolinear pair of vectors (from the centre to the vertices)
-        # as the cross product that will result on this tensor's principal axis.
         vector1 = vertices[0] - centre
         vector2 = vertices[1] - centre
         vector3 = vertices[2] - centre
+        # The magnitude of the axis should be the same as the radius of the largest
+        # circle that can grow from the centre of the triangle without crossing the
+        # edges of the triangle.
         mag1 = point_segment_dis(vertices[0], vertices[1], centre)
         mag2 = point_segment_dis(vertices[0], vertices[2], centre)
         mag3 = point_segment_dis(vertices[1], vertices[2], centre)
         mag = min([mag1, mag2, mag3])
+        # Choose the most coolinear pair of vectors (from the centre to the vertices)
+        # as the cross product that will result on this tensor's principal axis.
         if abs(vector1.dot(vector2)) > abs(vector1.dot(vector3)):
             pair = [vector1, vector2]
         else:
@@ -536,7 +539,7 @@ class TriangleTensor(OcclusionTriangle, Tensor):
     def axis(self):
         """\
         Return the coordinates of this triangle's surface normal in the triangle's
-        frame.
+        frame (with respecto to it's centre and not the fist vertex).
         """
         return Point(self[0,0], self[1,0], self[2,0])
 
