@@ -453,6 +453,9 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         OcclusionTriangle.set_absolute_pose(self, value)
         tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
         Tensor.__init__(self, tensor_matrix)
+        if self._guide_c:
+            self.toggle_tensor_vis()
+            self.toggle_tensor_vis()
     
     absolute_pose = property(OcclusionTriangle.get_absolute_pose, set_absolute_pose)
     pose = absolute_pose
@@ -461,6 +464,9 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         OcclusionTriangle.set_relative_pose(self, value)
         tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
         Tensor.__init__(self, tensor_matrix)
+        if self._guide_c:
+            self.toggle_tensor_vis()
+            self.toggle_tensor_vis()
     
     relative_pose = property(OcclusionTriangle.get_relative_pose, set_relative_pose)
     
@@ -468,8 +474,22 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         OcclusionTriangle.set_mount(self, value)
         tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
         Tensor.__init__(self, tensor_matrix)
+        if self._guide_c:
+            self.toggle_tensor_vis()
+            self.toggle_tensor_vis()
     
     mount = property(OcclusionTriangle.get_mount, set_mount)
+
+    def _pose_changed_hook(self):
+        """\
+        Hook called on pose change.
+        """
+        OcclusionTriangle._pose_changed_hook(self)
+        tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
+        Tensor.__init__(self, tensor_matrix)
+        if self._guide_c:
+            self.toggle_tensor_vis()
+            self.toggle_tensor_vis()
 
     def _get_tensor_basis(self, vertices):
         """\
