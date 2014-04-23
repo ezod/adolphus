@@ -228,6 +228,18 @@ class Tensor(object):
                   [axis1.z, axis2.z, axis3.z]]
         return Tensor(matrix)
 
+    def schatten(self):
+        """\
+        The schatten norm of this tensor.
+        
+        @return: The schatten norm.
+        @rtype: L{float}
+        """
+        lambda1 = Point(self[0,0], self[1,0], self[2,0]).magnitude()
+        lambda2 = Point(self[0,1], self[1,1], self[2,1]).magnitude()
+        lambda3 = Point(self[0,2], self[1,2], self[2,2]).magnitude()
+        return sqrt(lambda1**2 + lambda2**2 + lambda3**2)
+
     def frobenius(self, t):
         """\
         Compute the Frobenius distance from this tensor to another.
@@ -405,9 +417,9 @@ class CameraTensor(Camera, Tensor):
         """
         centre_dis = self.centre.euclidean(other.centre)
         collinear = self.axis.unit().dot(-other.axis.unit())
-        if collinear <= 0:
-            return -1
-        return (1 / collinear) * centre_dis
+        if collinear > 0:
+            return (1 / collinear) * centre_dis
+        return -1
 
     def weighted_frobenius(self, other):
         """
@@ -425,6 +437,21 @@ class CameraTensor(Camera, Tensor):
             return (1 / (1 - (frob_dis / sqrt(8)))) * euc_dist
         except ZeroDivisionError:
             return -1
+
+    def strength(self, triangle):
+        """\
+        Return the equivalent to the coverage strength for a triangle tensor.
+    
+        @param point: The triangle to test.
+        @type point: L{TriangleTensor}
+        @return: The vision distance scaled to the limits of the frustum.
+        @rtype: C{float}
+        """
+        vd = self.weighted_frobenius(triangle)
+        ratio = vd / self.schatten()
+        if ratio > 1:
+            return 0
+        return 1 - ratio
 
 
 class TriangleTensor(OcclusionTriangle, Tensor):
