@@ -461,6 +461,18 @@ cdef class Quaternion:
         """
         return '(%.4f, %s)' % (self.a, self.v)
 
+    cpdef double dot(self, Quaternion q):
+        """\
+        Dot product.
+        
+        @param q: The operand quaternion.
+        @type q: L{Quaternion}
+        @return: Dot product.
+        @rtype: C{float}
+        """
+        return self.a * q.a + self.v.x * q.v.x + self.v.y * q.v.y + \
+               self.v.z * q.v.z
+
     cpdef double magnitude(self):
         """\
         Magnitude (norm) of this quaternion.
@@ -516,6 +528,17 @@ cdef class Quaternion:
             self._inverse = self.conjugate() / (self.magnitude() ** 2)
             self._inverse_c = True
             return self._inverse
+
+    cpdef double distance(self, Quaternion q):
+        """\
+        Distance between two quaternions.
+        
+        @param q: The operand quaternion.
+        @type q: L{Quaternion}
+        @return: Distance.
+        @rtype: C{float}
+        """
+        return (self.unit() - q.unit()).magnitude()
 
 
 cdef class Rotation:

@@ -44,10 +44,12 @@ cdef class Quaternion:
     cpdef Quaternion _mul(self, Quaternion q)
     cpdef Quaternion _div(self, double s)
     cpdef Quaternion _neg(self)
+    cpdef double dot(self, Quaternion q)
     cpdef double magnitude(self)
     cpdef Quaternion unit(self)
     cpdef Quaternion conjugate(self)
     cpdef Quaternion inverse(self)
+    cpdef double distance(self, Quaternion q)
 
 
 cdef class Rotation:
