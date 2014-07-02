@@ -9,7 +9,7 @@ between tensors. The base Tensor class is implemented as an m x n matrix.
 """
 
 import numpy as np
-from math import sqrt
+from math import pi, sqrt
 from array import array
 from numbers import Number
 
@@ -29,7 +29,7 @@ class Tensor(object):
     def __init__(self, matrix=[]):
         """\
         Constructor.
-        
+
         @param matrix: The n x n tensor matrix.
         @type matrix: C{list} of C{list}
         """
@@ -65,10 +65,10 @@ class Tensor(object):
 
     def __hash__(self):
         return hash(repr(self))
-        
+
     def __reduce__(self):
         return (Tensor, (self._matrix))
-        
+
     def __getitem__(self, val):
         if type(val).__name__ == 'int' or type(val).__name__ == 'slice':
             raise IndexError("Two indices are required.")
@@ -158,7 +158,7 @@ class Tensor(object):
         Negate this tensor, except for the camera's 'y' axis, since it is assumed
         that rotations around the optical axis have no effect.
         Note: This function is meant for tensors of size 3x3.
-    
+
         @return: Negated tensor.
         @rtype: L{Tensor}
         """
@@ -216,7 +216,7 @@ class Tensor(object):
         """\
         Normalize this tensor.
         Note: This function is meant for tensors of size 3x3.
-        
+
         @return: Normalized tensor.
         @rtype: L{Tensor}
         """
@@ -231,7 +231,7 @@ class Tensor(object):
     def schatten(self):
         """\
         The schatten norm of this tensor.
-        
+
         @return: The schatten norm.
         @rtype: L{float}
         """
@@ -243,7 +243,7 @@ class Tensor(object):
     def frobenius(self, t):
         """\
         Compute the Frobenius distance from this tensor to another.
-        
+
         @param t: The other tensor.
         @type t: L{Tensor}
         @return: Frobenius based distance.
@@ -263,11 +263,19 @@ class CameraTensor(Camera, Tensor):
     """\
     Camera Tensor class.
     """
+    defaults = {'ocular': 1,
+                'boundary_padding': 0.0,
+                'res_max': [0.0] * 2,
+                'res_min': [float('inf')] * 2,
+                'blur_max': [1.0, float('inf')],
+                'angle_max': [pi / 2.0] * 2}
+    param_keys = ['A', 'dim', 'f', 'o', 's', 'zS']
+
     def __init__(self, task_params, name, params, pose=Pose(), mount_pose=Pose(), \
                  mount=None, primitives=list(), triangles=list()):
         """\
         Constructor.
-        
+
         @param task_params: The task parameters.
         @type task_params: C{dict}
         @param name: The name of the camera.
@@ -285,12 +293,23 @@ class CameraTensor(Camera, Tensor):
         @param triangles: The opaque triangles of this camera (optional).
         @type triangles: C{list} of L{OcclusionTriangle}
         """
-        self._params = params
-        self.task_params = task_params
-        Camera.__init__(self, name, params, pose, mount_pose, mount, \
+        # Set the task parameters.
+        self.task_params = self.defaults
+        for param in task_params:
+            self.task_params[param] = task_params[param]
+        # Set the camera parameters.
+        self._params = {}
+        for param in params:
+            if not param in self.param_keys:
+                continue
+            value = params[param]
+            # Split the 's' parameter into a pair if specified as a single value.
+            if param == 's' and isinstance(value, Number):
+                value = [value, value]
+            self._params[param] = value
+        Camera.__init__(self, name, self._params, pose, mount_pose, mount, \
                         primitives, triangles)
-        tensor_matrix = self._get_tensor_matrix(task_params)
-        Tensor.__init__(self, tensor_matrix)
+        Tensor.__init__(self, self._get_tensor_matrix(self.task_params))
         if VISUAL_ENABLED:
             self.visualize()
 
@@ -332,7 +351,7 @@ class CameraTensor(Camera, Tensor):
     def _get_tensor_matrix(self, task_params):
         """\
         Compute the orthogonal basis of this camera tensor.
-        
+
         @param task_params: Task parameters.
         @type task_params: C{dict}
         @return: The tensor matrix.
@@ -360,7 +379,7 @@ class CameraTensor(Camera, Tensor):
         """\
         Generate the curve primitives for this camera's frustum for a given
         task.
-    
+
         @param task_params: Task parameters.
         @type task_params: C{dict}
         @return: Frustum primitives.
@@ -396,7 +415,7 @@ class CameraTensor(Camera, Tensor):
         Return the location in the wcs of this camera's tensor.
         """
         return self._frustum_centre
-    
+
     @property
     def axis(self):
         """\
@@ -409,7 +428,7 @@ class CameraTensor(Camera, Tensor):
         Compute the euclidean distance from this tensor to another. The distance is
         weighted by the degree of coloneairty between the principal axes of this and
         the other tensor.
-        
+
         @param other: The other tensor.
         @type other: L{CameraTensor} or L{TriangleTensor}
         @return: The distance.
@@ -425,7 +444,7 @@ class CameraTensor(Camera, Tensor):
         """
         Compute the Frobenius distance from this tensor to another. The distance is
         weighted by the euclidean distance between the tensors.
-        
+
         @param other: The other tensor.
         @type other: L{CameraTensor} or L{TriangleTensor}
         @return: The distance.
@@ -441,7 +460,7 @@ class CameraTensor(Camera, Tensor):
     def strength(self, triangle):
         """\
         Return the equivalent to the coverage strength for a triangle tensor.
-    
+
         @param point: The triangle to test.
         @type point: L{TriangleTensor}
         @return: The vision distance scaled to the limits of the frustum.
@@ -471,8 +490,7 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         """
         self._guide_c = False
         OcclusionTriangle.__init__(self, vertices, pose, mount)
-        tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
-        Tensor.__init__(self, tensor_matrix)
+        Tensor.__init__(self, self._get_tensor_matrix(self.triangle.vertices))
         if VISUAL_ENABLED:
             self.visualize()
 
@@ -483,10 +501,10 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         if self._guide_c:
             self.toggle_tensor_vis()
             self.toggle_tensor_vis()
-    
+
     absolute_pose = property(OcclusionTriangle.get_absolute_pose, set_absolute_pose)
     pose = absolute_pose
-    
+
     def set_relative_pose(self, value):
         OcclusionTriangle.set_relative_pose(self, value)
         tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
@@ -494,9 +512,9 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         if self._guide_c:
             self.toggle_tensor_vis()
             self.toggle_tensor_vis()
-    
+
     relative_pose = property(OcclusionTriangle.get_relative_pose, set_relative_pose)
-    
+
     def set_mount(self, value):
         OcclusionTriangle.set_mount(self, value)
         tensor_matrix = self._get_tensor_matrix(self.triangle.vertices)
@@ -504,7 +522,7 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         if self._guide_c:
             self.toggle_tensor_vis()
             self.toggle_tensor_vis()
-    
+
     mount = property(OcclusionTriangle.get_mount, set_mount)
 
     def _pose_changed_hook(self):
@@ -522,7 +540,7 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         """\
         Compute the orthogonal basis of this triangle tensor (in the triangle's
         frame).
-        
+
         @param vertices: The vertices of the triangle.
         @type vertices: C{tuple} of L{Point}
         @return: The tensor matrix.
@@ -555,7 +573,7 @@ class TriangleTensor(OcclusionTriangle, Tensor):
     def _get_tensor_matrix(self, vertices):
         """\
         Compute the orthogonal basis of this triangle tensor (in wcs).
-        
+
         @param vertices: The vertices of the triangle.
         @type vertices: C{tuple} of L{Point}
         @return: The tensor matrix.
@@ -581,7 +599,7 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         Return the location in the wcs of this triangle's tensor.
         """
         return self._centre
-    
+
     @property
     def axis(self):
         """\
