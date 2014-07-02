@@ -19,8 +19,9 @@ except ImportError:
     HYPGERGRAPH_ENABLED = False
 
 from .coverage import PointCache
+from .posable import SceneObject
+from .tensor import TriangleTensor
 from .visualization import VISUAL_ENABLED
-from .posable import OcclusionTriangle, SceneObject
 from .geometry import Point, DirectionalPoint, Pose, Triangle, avg_points
 
 
@@ -400,7 +401,7 @@ class Solid(RenderDynamic, SceneObject):
         # Initialize this class' interface with Adolphus.
         occ_triangle = []
         for triangle in self.faces:
-            occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
+            occ_triangle.append(TriangleTensor(triangle.vertices, Pose(), None))
         SceneObject.__init__(self, name, pose=pose, mount_pose=mount_pose, \
             mount=mount, primitives=[], triangles=occ_triangle)
         if VISUAL_ENABLED:
@@ -473,7 +474,7 @@ class Solid(RenderDynamic, SceneObject):
         del self.triangles
         occ_triangle = []
         for triangle in self.faces:
-            occ_triangle.append(OcclusionTriangle(triangle.vertices, Pose(), None))
+            occ_triangle.append(TriangleTensor(triangle.vertices, Pose(), None))
         try:
             self.triangles = set()
         except AttributeError:
