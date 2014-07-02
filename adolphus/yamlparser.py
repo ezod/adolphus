@@ -19,6 +19,7 @@ from .coverage import PointCache, Model
 from .laser import RangeModel
 from .robot import Robot
 from .solid import Solid
+from .tensor import CameraTensor
 
 
 modeltypes = {'standard': Model, 'range': RangeModel}
@@ -236,10 +237,20 @@ class YAMLParser(object):
                             for sprite in obj['sprites']]))
                 else:
                     triangles = []
-                if objecttype in rmodel.yaml:
+                _tensor = False
+                try:
+                    _tensor = True if obj['type'] == 'tensor' else False
+                except KeyError:
+                    pass
+                if (objecttype in rmodel.yaml) and (not _tensor):
                     rmodel[obj['name']] = rmodel.yaml[objecttype](obj['name'],
                         obj, pose=pose, mount_pose=mount_pose,
                         primitives=primitives, triangles=triangles)
+                elif _tensor:
+                    tp = obj['tp'] if 'tp' in obj else {}
+                    rmodel[obj['name']] = CameraTensor(tp, obj['name'], obj, \
+                        pose=pose, mount_pose=mount_pose, primitives=primitives, \
+                        triangles=triangles)
                 elif objecttype == 'robots':
                     links = self._parse_links(obj['robot'])
                     config = obj['config'] if 'config' in obj else None
