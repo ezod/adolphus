@@ -557,17 +557,9 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         mag2 = point_segment_dis(vertices[0], vertices[2], centre)
         mag3 = point_segment_dis(vertices[1], vertices[2], centre)
         mag = min([mag1, mag2, mag3])
-        # Choose the most coolinear pair of vectors (from the centre to the vertices)
-        # as the cross product that will result on this tensor's principal axis.
-        if abs(vector1.dot(vector2)) > abs(vector1.dot(vector3)):
-            pair = [vector1, vector2]
-        else:
-            pair = [vector1, vector3]
-        if abs(pair[0].dot(pair[1])) < abs(vector2.dot(vector3)):
-            pair = [vector2, vector3]
-        first_axis = pair[0].unit().cross(pair[1].unit())
-        second_axis = pair[0].unit()
-        third_axis = second_axis.cross(first_axis)
+        first_axis = vector1.unit().cross(vector2.unit()).unit()
+        second_axis = vector1.unit()
+        third_axis = second_axis.cross(first_axis).unit()
         return [first_axis * mag, second_axis * mag, third_axis * mag]
 
     def _get_tensor_matrix(self, vertices):
