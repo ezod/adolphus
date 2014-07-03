@@ -9,14 +9,14 @@ between tensors. The base Tensor class is implemented as an m x n matrix.
 """
 
 import numpy as np
-from math import pi, sqrt
 from array import array
 from numbers import Number
+from math import pi, sqrt, sin, cos, atan2
 
 from .coverage import Camera
 from .visualization import VISUAL_ENABLED
 from .posable import OcclusionTriangle, SceneObject
-from .geometry import Point, Rotation, Pose, point_segment_dis, avg_points
+from .geometry import Angle, Point, Rotation, Pose, point_segment_dis, avg_points
 
 if VISUAL_ENABLED:
     import visual
@@ -423,24 +423,24 @@ class CameraTensor(Camera, Tensor):
         """
         return Point(self[0,0], self[1,0], self[2,0])
 
-    def weighted_euclidean(self, other):
+    def deploy(self, pose):
         """\
-        Compute the euclidean distance from this tensor to another. The distance is
-        weighted by the degree of coloneairty between the principal axes of this and
-        the other tensor.
+        Change the pose of this CameraTensor to reflect the pose of the frustum.
 
-        @param other: The other tensor.
-        @type other: L{CameraTensor} or L{TriangleTensor}
-        @return: The distance.
-        @rtype: C{float}
+        @param pose: The pose of the frustum.
+        @type pose: L{Pose}
         """
-        centre_dis = self.centre.euclidean(other.centre)
-        collinear = self.axis.unit().dot(-other.axis.unit())
-        if collinear > 0:
-            return (1 / collinear) * centre_dis
-        return -1
+        matrix = pose.R.to_rotation_matrix()
+        axis = -Point(matrix[0][2], matrix[1][2], matrix[2][2])
+        standoff = self.pose.T.euclidean(self.centre)
+        rho = axis.angle(Point(0, 0, 1))
+        eta = Angle(atan2(axis.y, axis.x))
+        x = pose.T.x + (standoff * sin(rho) * cos(eta))
+        y = pose.T.y + (standoff * sin(rho) * sin(eta))
+        z = pose.T.z + (standoff * cos(rho))
+        self.pose = Pose(Point(x,y,z), pose.R)
 
-    def weighted_frobenius(self, other):
+    def vision_distance(self, other):
         """
         Compute the Frobenius distance from this tensor to another. The distance is
         weighted by the euclidean distance between the tensors.
@@ -466,7 +466,7 @@ class CameraTensor(Camera, Tensor):
         @return: The vision distance scaled to the limits of the frustum.
         @rtype: C{float}
         """
-        vd = self.weighted_frobenius(triangle)
+        vd = self.vision_distance(triangle)
         ratio = vd / self.schatten()
         if ratio > 1:
             return 0
