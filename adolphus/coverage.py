@@ -552,16 +552,8 @@ class Camera(SceneObject):
         @return: True if occluded.
         @rtype: C{bool}
         """
-        # Calculate the maximum depth of coverage in the frustum.
-        z = min(self.zres(task_params['res_min'][1]),
-                self.zc(task_params['blur_max'][1] * \
-                min(self._params['s']))[1])
         # Build a pyramid containing the frustum.
-        hull = [Point(0, 0, 0),
-                Point(self.fov['tahl'] * z, self.fov['tavt'] * z, z),
-                Point(self.fov['tahl'] * z, self.fov['tavb'] * z, z),
-                Point(self.fov['tahr'] * z, self.fov['tavb'] * z, z),
-                Point(self.fov['tahr'] * z, self.fov['tavt'] * z, z)]
+        hull = gen_frustum_hull(task_params)
         # Map the triangle to camera coordinates.
         ctriangle = triangle.pose_map(self.pose.inverse())
         # Return whether an intersection exists.
@@ -597,7 +589,7 @@ class Camera(SceneObject):
     def gen_frustum_hull(self, task_params):
         """\
         Generate the points for this camera's frustum's hull for a given task.
-        
+
         @param task_params: Task parameters.
         @type task_params: C{dict}
         @return: Frustum hull.
