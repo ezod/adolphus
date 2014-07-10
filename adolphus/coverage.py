@@ -9,10 +9,10 @@ classes.
 @license: GPL-3
 """
 
-from math import cos, tan, atan, pi
+from copy import deepcopy
 from numbers import Number
 from itertools import combinations
-from copy import deepcopy
+from math import pi, sin, cos, tan, atan, atan2
 
 HYPERGRAPH_ENABLED = True
 try:
@@ -20,9 +20,9 @@ try:
 except ImportError:
     HYPGERGRAPH_ENABLED = False
 
-from .geometry import Point, Pose, triangle_frustum_intersection
 from .posable import Posable, SceneObject
 from .visualization import Visualizable, VISUAL_SETTINGS
+from .geometry import Angle, Point, Pose, triangle_frustum_intersection, avg_points
 
 
 class PointCache(dict):
@@ -553,7 +553,8 @@ class Camera(SceneObject):
         @rtype: C{bool}
         """
         # Build a pyramid containing the frustum.
-        hull = gen_frustum_hull(task_params)
+        hull = [Point(p[0], p[1], p[2]) \
+            for p in self.gen_frustum_hull(task_params)]
         # Map the triangle to camera coordinates.
         ctriangle = triangle.pose_map(self.pose.inverse())
         # Return whether an intersection exists.
@@ -632,6 +633,27 @@ class Camera(SceneObject):
             hull[i:i + 1]} for i in range(0, 16, 4)] + \
             [{'type': 'curve', 'color': (1, 0, 0),
             'pos': [hull[i], hull[i + 4]]} for i in range(4)]
+
+    def deploy(self, pose, task_params):
+        """\
+        Change the pose of this Camera to reflect the desired pose for the frustum.
+
+        @param pose: The pose of the frustum.
+        @type pose: L{Pose}
+        @param task_params: Task parameters.
+        @type task_params: C{dict}
+        """
+        matrix = pose.R.to_rotation_matrix()
+        axis = -Point(matrix[0][2], matrix[1][2], matrix[2][2])
+        centre = avg_points([Point(p[0], p[1], p[2]) \
+            for p in self.gen_frustum_hull(task_params)])
+        standoff = self.pose.T.euclidean(centre)
+        rho = axis.angle(Point(0, 0, 1))
+        eta = Angle(atan2(axis.y, axis.x))
+        x = pose.T.x + (standoff * sin(rho) * cos(eta))
+        y = pose.T.y + (standoff * sin(rho) * sin(eta))
+        z = pose.T.z + (standoff * cos(rho))
+        self.pose = Pose(Point(x,y,z), pose.R)
 
 
 class Model(dict):
