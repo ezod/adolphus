@@ -29,10 +29,12 @@ except ImportError:
 
 import yaml
 
-from .geometry import Angle, Point, DirectionalPoint, Quaternion, Rotation, Pose
 from .robot import Robot
+from .solid import Solid
 from .laser import RangeModel
+from .tensor import TensorModel
 from .yamlparser import YAMLParser
+from .geometry import Angle, Point, DirectionalPoint, Quaternion, Rotation, Pose
 
 
 commands = {}
@@ -239,7 +241,7 @@ def activeguides(ex, args, response):
 def cameraview(ex, args, response):
     """\
     Switch to camera view for the specified camera.
-    
+
     usage: %s name
     """
     if len(args):
@@ -317,7 +319,7 @@ def getpose(ex, args, response):
     Return the (absolute) pose of an object. If using CSV or text response,
     a rotation format may be specified (one of 'quaternion', 'matrix',
     'axis-angle', or 'euler-zyx').
-    
+
     usage: %s name [rformat]
     """
     obj = ex.model[args[0]] if args[0] in ex.model else ex.tasks[args[0]]
@@ -402,7 +404,7 @@ def modify(ex, args, response):
     """\
     Enable interactive pose modification for the specified object, or disable
     modification if no object is specified.
-    
+
     usage: %s [name]
     """
     try:
@@ -420,7 +422,7 @@ def modify(ex, args, response):
 @command
 def setparam(ex, args, response):
     """\
-    Set a parameter of a camera or task. 
+    Set a parameter of a camera or task.
 
     usage: %s object parameter value*
     """
@@ -451,7 +453,7 @@ def setactive(ex, args, response):
     """\
     Toggle the active state of the specified camera (or, if unspecified, that
     of all cameras).
-    
+
     usage: %s [camera]
     """
     try:
@@ -548,7 +550,7 @@ def strength(ex, args, response):
     """\
     Return the coverage strength of the specified point with respect to the
     task parameters of the specified task.
-    
+
     usage: %s task x y z [rho eta]
     """
     task = ex.tasks[args.pop(0)]
@@ -579,7 +581,7 @@ def tasks(ex, args, response):
 def showtask(ex, args, response):
     """\
     Show the points of the specified task.
-    
+
     usage: %s task
     """
     ex.tasks[args[0]].visualize()
@@ -598,6 +600,22 @@ def hidetasks(ex, args, response):
             pass
 
 @command
+def showtensors(ex, args, response):
+    """\
+    Toggle the visualization of the triangle tensors in the model.
+
+    usage %s object
+    """
+    if not args:
+        args = []
+        for item in ex.model.keys():
+            if type(ex.model[item]) == Solid:
+                args.append(item)
+    for arg in args:
+        for t in ex.model[arg].triangles:
+            t.toggle_tensor_vis()
+
+@command
 def coverage(ex, args, response):
     """\
     Return the coverage performance for the specified task(s).
@@ -605,6 +623,9 @@ def coverage(ex, args, response):
     usage: %s task
     """
     clear(ex, [])
+
+    if type(ex.model) == TensorModel:
+        return tensorcoverage(ex, args, response)
     try:
         ex.display.userspin = False
         performance = {}
@@ -614,6 +635,38 @@ def coverage(ex, args, response):
             ex.coverage[arg] = ex.model.coverage(ex.tasks[arg])
             ex.coverage[arg].visualize()
             performance[arg] = ex.model.performance(ex.tasks[arg],
+                coverage=ex.coverage[arg])
+        if response == 'pickle':
+            return pickle.dumps(performance)
+        elif response == 'csv':
+            return (','.join(['%s:%f' % (key, performance[key])
+                    for key in performance]) + '#')
+        elif response == 'text':
+            return ('\n'.join(['%s: %.4f' % (key, performance[key])
+                    for key in performance]))
+    finally:
+        ex.display.userspin = True
+
+@command
+def tensorcoverage(ex, args, response):
+    """\
+    Return the coverage performance for the specified task(s).
+
+    usage: %s object
+    """
+    clear(ex, [])
+    try:
+        ex.display.userspin = False
+        performance = {}
+        if not args:
+            args = []
+            for item in ex.model.keys():
+                if type(ex.model[item]) == Solid:
+                    args.append(item)
+        for arg in args:
+            ex.coverage[arg] = ex.model.coverage(ex.model[arg])
+            ex.coverage[arg].visualize()
+            performance[arg] = ex.model.performance(ex.model[arg], \
                 coverage=ex.coverage[arg])
         if response == 'pickle':
             return pickle.dumps(performance)
