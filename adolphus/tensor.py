@@ -13,10 +13,12 @@ from array import array
 from numbers import Number
 from math import pi, sqrt, sin, cos, atan2
 
-from .coverage import Camera
+
 from .visualization import VISUAL_ENABLED
 from .posable import OcclusionTriangle, SceneObject
-from .geometry import Angle, Point, Rotation, Pose, point_segment_dis, avg_points
+from .geometry import point_segment_dis, avg_points
+from .coverage import PointCache, Task, Camera, Model
+from .geometry import Angle, Point, DirectionalPoint, Rotation, Pose
 
 if VISUAL_ENABLED:
     import visual
@@ -423,23 +425,6 @@ class CameraTensor(Camera, Tensor):
         """
         return Point(self[0,0], self[1,0], self[2,0])
 
-    def deploy(self, pose):
-        """\
-        Change the pose of this CameraTensor to reflect the pose of the frustum.
-
-        @param pose: The pose of the frustum.
-        @type pose: L{Pose}
-        """
-        matrix = pose.R.to_rotation_matrix()
-        axis = -Point(matrix[0][2], matrix[1][2], matrix[2][2])
-        standoff = self.pose.T.euclidean(self.centre)
-        rho = axis.angle(Point(0, 0, 1))
-        eta = Angle(atan2(axis.y, axis.x))
-        x = pose.T.x + (standoff * sin(rho) * cos(eta))
-        y = pose.T.y + (standoff * sin(rho) * sin(eta))
-        z = pose.T.z + (standoff * cos(rho))
-        self.pose = Pose(Point(x,y,z), pose.R)
-
     def vision_distance(self, other):
         """
         Compute the Frobenius distance from this tensor to another. The distance is
@@ -453,7 +438,7 @@ class CameraTensor(Camera, Tensor):
         euc_dist = self.centre.euclidean(other.centre)
         frob_dis = self.unit().frobenius(-other.unit())
         try:
-            return (1 / (1 - (frob_dis / sqrt(8)))) * euc_dist
+            return (1 / (1 - (frob_dis / sqrt(8)))) * (euc_dist + 1e-4)
         except ZeroDivisionError:
             return -1
 
@@ -466,11 +451,13 @@ class CameraTensor(Camera, Tensor):
         @return: The vision distance scaled to the limits of the frustum.
         @rtype: C{float}
         """
-        vd = self.vision_distance(triangle)
-        ratio = vd / self.schatten()
-        if ratio > 1:
-            return 0
-        return 1 - ratio
+        euc_dis = self.centre.euclidean(triangle.centre)
+        rot_dis = self.axis.unit().euclidean(-triangle.axis.unit())
+        re = 1 - euc_dis / self.schatten()**2
+        rr = 1 - rot_dis / sqrt(2)
+        de = 0 if re < 0 else re
+        dr = 0 if rr < 0 else rr
+        return sqrt(de * dr)
 
 
 class TriangleTensor(OcclusionTriangle, Tensor):
@@ -573,14 +560,12 @@ class TriangleTensor(OcclusionTriangle, Tensor):
         """
         centre = avg_points(vertices)
         basis = self._get_tensor_basis(vertices)
-        planing_pose = self.triangle.planing_pose()
-        pose = self.pose - planing_pose
         # Store the coordinates of this tensor in the wcs.
-        self._centre = pose.map(centre)
+        self._centre = self.pose.map(centre)
         # The Tensor is expressed in wcs.
-        axis1 = pose.R.rotate(basis[0])
-        axis2 = pose.R.rotate(basis[1])
-        axis3 = pose.R.rotate(basis[2])
+        axis1 = self.pose.R.rotate(basis[0])
+        axis2 = self.pose.R.rotate(basis[1])
+        axis3 = self.pose.R.rotate(basis[2])
         return [[axis1.x, axis2.x, axis3.x], \
                 [axis1.y, axis2.y, axis3.y], \
                 [axis1.z, axis2.z, axis3.z]]
@@ -622,3 +607,98 @@ class TriangleTensor(OcclusionTriangle, Tensor):
             self.guide = SceneObject('guide', mount=self, primitives=primitives)
             self.guide.visualize()
             self._guide_c = True
+
+
+class TensorModel(Model):
+    """\
+    Multi-camera coverage strength model for tensor based modelling.
+    """
+
+    yaml = {'cameras': CameraTensor, 'tasks': Task}
+
+    def strength(self, triangle, triangle_set, subset=None):
+        """\
+        Return the individual coverage strength of a point in the coverage
+        strength model.
+
+        @param triangle: The triangle to test.
+        @type triangle: L{TensorTriangle}
+        @param triangle_set: Set of additional triangles for occlusion.
+        @type triangle_set: C{list} of L{Triangle}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
+        @return: The coverage strength of the point.
+        @rtype: C{float}
+        """
+        maxstrength = 0.0
+        # If there are no views, this loop does nothing and 0.0 is returned.
+        for view in self.views(subset=subset):
+            # The view has at least one camera, so minstrength will be
+            # overwritten with the minimum strength within the view.
+            minstrength = float('inf')
+            for camera in view:
+                # Check the coverage strength for this camera.
+                strength = self[camera].strength(triangle)
+                # The following should short-circuit if strength = 0, and thus
+                # not incur a performance hit for the occlusion check(s).
+                if not strength or self.occluded(triangle.centre, camera, \
+                    triangle_set=triangle_set):
+                    minstrength = 0.0
+                    break
+                elif strength < minstrength:
+                    minstrength = strength
+            # Update the maximum strength for any view.
+            maxstrength = max(maxstrength, minstrength)
+            # If the strength is 1.0, return it immediately.
+            if maxstrength == 1.0:
+                break
+        return maxstrength
+
+    def coverage(self, object, subset=None):
+        """\
+        Return the coverage model of this multi-camera network with respect to
+        the points in a given task model.
+
+        @param object: The task model.
+        @type object: L{adolphus.solid.Solid}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
+        @return: The coverage model.
+        @rtype: L{PointCache}
+        """
+        triangle_set = set()
+        for obj in self:
+            for t in self[obj].triangles:
+                triangle_set.add(t.triangle)
+        coverage = PointCache()
+        for triangle in object.triangles:
+            p = triangle.centre
+            rho = triangle.axis.angle(Point(0, 0, 1))
+            eta = Angle(atan2(triangle.axis.y, triangle.axis.x))
+            point = DirectionalPoint(p.x, p.y, p.z, rho, eta)
+            # Calculate coverage strength for each mapped task point.
+            coverage[point] = self.strength(triangle, triangle_set, subset)
+        return coverage
+
+    def performance(self, object, subset=None, coverage=None):
+        """\
+        Return the coverage performance of this multi-camera network with
+        respect to a given task model. If a previously computed coverage cache
+        is provided, it is assumed to contain the same points as the mapped
+        task model.
+
+        @param object: The task model.
+        @type object: L{adolphus.solid.Solid}
+        @param subset: Subset of cameras (defaults to all active cameras).
+        @type subset: C{set}
+        @param coverage: Previously computed coverage cache for these points.
+        @type coverage: L{PointCache}
+        @return: Performance metric in [0, 1].
+        @rtype: C{float}
+        """
+        coverage = coverage or self.coverage(object, subset)
+        Fn, Fd = 0.0, 0.0
+        for point in coverage.keys():
+            Fn += coverage[point]
+            Fd += 1
+        return Fn / Fd
