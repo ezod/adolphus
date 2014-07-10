@@ -9,20 +9,21 @@ YAML parser module.
 
 import os
 import yaml
-import pkg_resources
 from math import pi
+import pkg_resources
 from itertools import chain
 
-from .geometry import Angle, Point, DirectionalPoint, Pose, Rotation, Quaternion
-from .posable import OcclusionTriangle, SceneObject
-from .coverage import PointCache, Model
-from .laser import RangeModel
+
 from .robot import Robot
 from .solid import Solid
-from .tensor import CameraTensor
+from .laser import RangeModel
+from .coverage import PointCache, Model
+from .tensor import CameraTensor, TensorModel
+from .posable import OcclusionTriangle, SceneObject
+from .geometry import Angle, Point, DirectionalPoint, Pose, Rotation, Quaternion
 
 
-modeltypes = {'standard': Model, 'range': RangeModel}
+modeltypes = {'standard': Model, 'range': RangeModel, 'tensor': TensorModel}
 
 
 class YAMLParser(object):
@@ -237,16 +238,12 @@ class YAMLParser(object):
                             for sprite in obj['sprites']]))
                 else:
                     triangles = []
-                _tensor = False
-                try:
-                    _tensor = True if obj['type'] == 'tensor' else False
-                except KeyError:
-                    pass
+                _tensor = True if modeltype == TensorModel else False
                 if (objecttype in rmodel.yaml) and (not _tensor):
                     rmodel[obj['name']] = rmodel.yaml[objecttype](obj['name'],
                         obj, pose=pose, mount_pose=mount_pose,
                         primitives=primitives, triangles=triangles)
-                elif _tensor:
+                elif (objecttype in rmodel.yaml) and _tensor:
                     tp = obj['tp'] if 'tp' in obj else {}
                     rmodel[obj['name']] = CameraTensor(tp, obj['name'], obj, \
                         pose=pose, mount_pose=mount_pose, primitives=primitives, \
