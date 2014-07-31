@@ -44,7 +44,7 @@ for testing by issuing the following commands in the repository root:
 ####Conference Proceedings
 
 * J.L. Alarcon-Herrera, X. Chen, and X. Zhang, "Viewpoint Selection for Vision Systems in Industrial Inspection,” in *IEEE International Conference on Robotics and Automation*, 2014, pp. 4934-4939.
-* J.L. Alarcon-Herrera and X. Chen, "Deployment of Visual Sensor Networks Using a Graph-Based Approach,” to appear in *IEEE International Symposium on Circuits and Systems*, 2014.
+* J.L. Alarcon-Herrera and X. Chen, "[Deployment of Visual Sensor Networks Using a Graph-Based Approach][iscas-14],” in *IEEE International Symposium on Circuits and Systems*, 2014, pp. 2575-2578.
 * X. Zhang, J.L. Alarcon-Herrera and X. Chen, "Optimization for 3D Model-based Multi-Camera Deployment,” accepted for publication in *World Congress of the International Federation of Automatic Control*, 2014.
 * J.L. Alarcon-Herrera and X. Chen, ”Graph-Based Visual Sensor Deployment and Optics Optimization,” accepted for publication in *Chinese Control Conference*, 2014.
 * J.L. Alarcon-Herrera, X. Chen, and M. Ahmadi, "[Re-Configuration Strategy for PTZ Camera Networks][ifac-a-13]," in *IFAC Symposium on Mechatronic Systems*, 2013, pp. 563-568.
@@ -68,6 +68,7 @@ for testing by issuing the following commands in the repository root:
 [screencast]: http://www.youtube.com/watch?v=M-l79fkmmmA
 [collada]: https://github.com/pycollada/pycollada
 
+[iscas-14]:http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6865699&refinements%3D4277101843%26sortType%3Dasc_p_Sequence%26filter%3DAND%28p_IS_Number%3A6865048%29
 [ifac-a-13]:http://www.ifac-papersonline.net/Detailed/59145.html
 [icira-a-12]:http://dl.acm.org/citation.cfm?id=2404301#!
 [icira-s-12]:http://dl.acm.org/citation.cfm?id=2404347#!
