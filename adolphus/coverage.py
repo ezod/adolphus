@@ -634,9 +634,9 @@ class Camera(SceneObject):
             [{'type': 'curve', 'color': (1, 0, 0),
             'pos': [hull[i], hull[i + 4]]} for i in range(4)]
 
-    def deploy(self, pose, task_params):
+    def deployment_pose(self, pose, task_params):
         """\
-        Change the pose of this Camera to reflect the desired pose for the frustum.
+        Compute the pose of this camera to reflect the desired pose for the frustum.
 
         @param pose: The pose of the frustum.
         @type pose: L{Pose}
@@ -653,7 +653,7 @@ class Camera(SceneObject):
         x = pose.T.x + (standoff * sin(rho) * cos(eta))
         y = pose.T.y + (standoff * sin(rho) * sin(eta))
         z = pose.T.z + (standoff * cos(rho))
-        self.pose = Pose(Point(x,y,z), pose.R)
+        return Pose(Point(x,y,z), pose.R)
 
 
 class Model(dict):
