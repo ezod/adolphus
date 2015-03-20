@@ -8,6 +8,7 @@ Visualization helper module.
 """
 
 import os
+from sys import platform as _platform
 
 VISUAL_ENABLED = True
 try:
@@ -21,13 +22,17 @@ class VisualizationError(Exception):
     pass
 
 
-if os.name == 'posix':
-    # TODO: Test on Linux.
+if _platform == "darwin":
     screen = os.popen("system_profiler SPDisplaysDataType | grep Resolution").readlines()[0]
     screen = screen.split(':')[1][:-1].split('x')
     width = float(screen[0][:-1])
     height = float(screen[1][1:])
-elif os.name == 'nt':
+elif _platform == "linux" or _platform == "linux2":
+    screen = os.popen("xdpyinfo  | grep 'dimensions:'").readlines()[0]
+    screen = screen.split(':')[1][:-1].split('x')
+    width = float(screen[0])
+    height = float(screen[1].split('p')[0])
+elif _platform == '':
     import ctypes
     user32 = ctypes.windll.user32
     width = float(user32.GetSystemMetrics(0))
