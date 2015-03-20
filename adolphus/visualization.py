@@ -32,7 +32,7 @@ elif _platform == "linux" or _platform == "linux2":
     screen = screen.split(':')[1][:-1].split('x')
     width = float(screen[0])
     height = float(screen[1].split('p')[0])
-elif _platform == '':
+elif _platform == 'win32':
     import ctypes
     user32 = ctypes.windll.user32
     width = float(user32.GetSystemMetrics(0))
